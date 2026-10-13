@@ -1,11 +1,26 @@
 CURRENTTASK: Dados Relâmpago (whitelabel dice original) shipped (0034); PG Soft
 wallet path documented (0035, not built). Proxy hardened (0037: token leak,
-  silent truncation, error leak, a real cache, health counters). Next: owner
-  redeploys the Worker (0033) so the live site picks up the proxy fixes, then
-  more originals or the PG Soft mirror.
+  silent truncation, error leak, a real cache, health counters) and the deploy
+  made independent of this machine (0038: the image builds the storefront,
+  the tree is a git repo, Render scripted). Suites frame 45/45, demo 191/191,
+  verify 0. Next: one credential (a git remote + a Render account) and the
+  site is live — `docs/deploy-easy.md`.
 
 ## STATUS
 
+- **DEPLOY IS INDEPENDENT OF THIS MACHINE (decision 0038).** The Dockerfile
+  builds `web/out` in a node stage and hands it to the python runtime, so a
+  deploy is the repository plus the Dockerfile. Verified: `npm ci && npm run
+  build` from clean; the runtime file set alone boots and serves the
+  storefront, the catalog (10 in-house + 182 publisher) and a live publisher
+  game through the proxy; a fresh clone carries what a build needs and none
+  of this machine's state.
+- **NEEDS ONE THING FROM THE OWNER:** a repository Render can build from.
+  Either (a) push to GitHub and click New > Blueprint > Apply, or (b) set
+  `RENDER_API_KEY` + `RENDER_REPO` and run `python scripts/render_deploy.py`,
+  which creates the service, deploys and watches it live. Until then there is
+  no live site: the Worker `candibet.road-hydrant.workers.dev` is gone (its
+  temporary account was reaped).
 - **PROXY HARDENED (decision 0037).** The player's wallet token no longer
   reaches the publisher; an oversized publisher answer is refused instead of
   truncated mid-bundle; upstream errors close their connection; a document's

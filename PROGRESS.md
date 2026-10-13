@@ -1,5 +1,31 @@
 # PROGRESS
 
+## DONE (2026-10-13 — the deploy stopped depending on the build machine, decision 0038)
+
+- **The image builds the storefront itself** (node stage → `web/out` → python
+  runtime). A deploy is now *the repository plus the Dockerfile*: nothing is
+  built or committed from any machine first, and `web/out` can never be stale
+  in the image because it is not in the image at all.
+- **It is a git repository** (701 files on `main`, first commit) with
+  `.gitignore` (no `node_modules`, no `web/out`, no live `demo/data`, no
+  wrangler state) and `.gitattributes` (LF, so the Linux build never meets a
+  CRLF in `deploy/*.sh`).
+- **Verified without Docker:** `npm ci && npm run build` from a clean tree;
+  the runtime file set alone (no sources, no docs) booting and serving the
+  storefront, the catalog (10 in-house + 182 publisher) and a live publisher
+  game through the proxy; a fresh `git clone` carrying everything needed and
+  no local state.
+- **`scripts/render_deploy.py`**: `--check` preflight (credential-free) and a
+  full create-or-find → deploy → watch-to-live over the public Render API.
+- **`render.yaml`**: `numInstances: 1`, free-plan data reality documented.
+- `docs/deploy-easy.md` rewritten as the runbook (states + checks + the two
+  ways in + post-deploy smoke + triage). `make deploy-check` added.
+- **Still missing: one credential.** No git remote, no Render account on this
+  machine. Push the repo and either click Apply, or hand over
+  `RENDER_API_KEY` + `RENDER_REPO` and I run the deploy.
+- Suites unchanged by this pass: `frame` 45/45, `demo` 191/191,
+  `verify.py` 0 problems.
+
 ## DONE (2026-10-13 — publisher-game proxy: leaks, truncation and the cache it never had, decision 0037)
 
 - **A player's wallet token was being forwarded to the publisher** (the
