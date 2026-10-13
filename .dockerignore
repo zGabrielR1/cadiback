@@ -7,28 +7,31 @@
 # host-built `node_modules`, the dev server's `.next`, the live data dir, the
 # retired paths under `archive/`, and the decision/capture/docs material that
 # is not code.
+#
+# A pattern with no slash matches at ANY depth here, exactly as Docker does it.
+# So a line reading `games` would also remove `web/public/games` — every cover
+# the lobby cards load — and the build would still succeed. Do not add a bare
+# name that is also a runtime directory; `python scripts/docker_context.py`
+# fails the build early if one ever slips in.
+
 .git
+.gitattributes
 .gitignore
-.commandcode
 archive
-container
 decisions
-deploy
 docs
-examples
-games
-p2
-p3
-research
 scripts
 
-# the provider catalog ships; its fetch caches are machine state
+# the provider catalogue ships; its fetch caches are machine state
 probes/*cache*.json
 
+# build output and dev-server caches: the image builds its own copy
 web/node_modules
 web/.next
 web/out
 web/README.md
+
+# the live ledger, profiles, rounds and admin sessions
 demo/data
 
 **/__pycache__

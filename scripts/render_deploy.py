@@ -194,22 +194,122 @@ def _call(path: str, key: str, payload: dict | None = None,
         raise RenderError(f"unreadable answer from {path}: {exc}") from exc
 
 
-def find_service(key: str) -> dict | None:
-    """The service we already own, if it exists."""
+def entity(answer, *names: str) -> dict:
+    """One object out of an answer, whatever envelope it arrived in.
+
+    Render is not consistent here and the docs do not say which is which:
+    `/services` and `/owners` answer `[{"cursor": …, "service": {…}}]`, a
+    single-service GET answers the object bare. Every read therefore unwraps
+    instead of indexing, and `entities()` below handles the page of them.
+    """
+    if isinstance(answer, list):
+        for item in answer:
+            found = entity(item, *names)
+            if found:
+                return found
+        return {}
+    if not isinstance(answer, dict):
+        return {}
+    for name in names:
+        found = answer.get(name)
+        if isinstance(found, dict) and found:
+            return found
+    return answer if ("id" in answer or "name" in answer) else {}
+
+
+def entities(answer, *names: str) -> list[dict]:
+    """Every object of a kind in an answer (a page of them, usually one)."""
+    items = answer if isinstance(answer, list) else [answer]
+    out: list[dict] = []
+    for item in items:
+        if isinstance(item, list):
+            out.extend(entities(item, *names))
+            continue
+        found = entity(item, *names)
+        if found:
+            out.append(found)
+    return out
+
+
+def cursor_of(answer) -> str:
+    """The next-page cursor, wherever the envelope kept it."""
+    items = answer if isinstance(answer, list) else [answer]
+    for item in items:
+        if isinstance(item, dict) and item.get("cursor"):
+            return item["cursor"]
+    return ""
+
+
+def find_service(key: str, repo: str = "") -> dict | None:
+    """The service that builds our repository, whatever it is named.
+
+    Matched on the repository first, not on the name: an account created in
+    the dashboard carries the repo's own name, and creating a second service
+    beside it would be the wrong move — two of them, one of them broken.
+    """
     cursor = None
+    named: dict | None = None
     while True:
         path = "/services?limit=100" + (f"&cursor={cursor}" if cursor else "")
         page = _call(path, key)
-        for service in page:
-            if service.get("name") == SERVICE["name"]:
+        for service in entities(page, "service"):
+            if repo and (service.get("repo") or "").rstrip("/").lower() == \
+                    repo.rstrip("/").lower():
                 return service
-        cursor = page[-1].get("cursor") if page else None
+            if service.get("name") == SERVICE["name"]:
+                named = service
+        cursor = cursor_of(page)
         if not cursor:
-            return None
+            break
+    return named if not repo else None
 
 
-def create_service(key: str, repo: str) -> dict:
-    body = dict(SERVICE, repo=repo)
+def find_owner(key: str) -> dict:
+    """The account the service will belong to.
+
+    Render requires an explicit owner: a personal account (`usr-…`) or one of
+    the workspaces (`tea-…`). A personal key sees exactly one personal owner;
+    when only workspaces are visible, the first is named so the choice is
+    visible rather than silent.
+    """
+    answer = _call("/owners", key)
+    owners = entities(answer, "owner")
+    if not owners:
+        raise RenderError("this key cannot see any account")
+    personal = [o for o in owners if o.get("type") == "user"]
+    chosen = personal[0] if personal else owners[0]
+    if not personal and len(owners) > 1:
+        print(f"note: several accounts on this key; using "
+              f"{chosen.get('name')} ({chosen.get('type')})")
+    return chosen
+
+
+def configure(service_id: str, key: str) -> dict:
+    """Make an existing service what `SERVICE` says it should be.
+
+    A service created in the dashboard arrives as Render's Python default
+    (`pip install -r requirements.txt`, gunicorn, no health check) whatever
+    the repository holds — which cannot build this project. The runtime and
+    the routing details are editable; `Dockerfile` at the repo root is Render's
+    own default, which is where ours is.
+    """
+    body = {
+        "serviceDetails": {
+            "runtime": SERVICE["runtime"],
+            "plan": SERVICE["plan"],
+            "healthCheckPath": SERVICE["healthCheckPath"],
+            "dockerfilePath": SERVICE["dockerfilePath"],
+            "numInstances": 1,
+        },
+        "envVars": [{"key": item["key"], "value": item["value"]}
+                    for item in SERVICE["envVars"]],
+    }
+    _call(f"/services/{service_id}", key, body, "PATCH")
+    return _call(f"/services/{service_id}", key)
+
+
+def create_service(key: str, repo: str, owner: dict) -> dict:
+    body = dict(SERVICE, repo=repo, ownerID=owner["id"])
     body["envVars"] = [{"key": item["key"], "value": item["value"]}
                        for item in SERVICE["envVars"]]
     try:
@@ -222,14 +322,15 @@ def create_service(key: str, repo: str) -> dict:
 
 def deploy(service_id: str, key: str) -> str:
     """Kick a deploy and watch it to a terminal state."""
-    trigger = _call(f"/services/{service_id}/deploys", key,
-                    {"clearCache": "do_not_clear"}, "POST")
+    trigger = entity(_call(f"/services/{service_id}/deploys", key,
+                           {"clearCache": "do_not_clear"}, "POST"), "deploy")
     deploy_id = trigger.get("id", "")
     print(f"deploy {deploy_id}: building…")
     seen = ""
     for _ in range(180):           # ~30 min at 10s
         time.sleep(10)
-        status = _call(f"/services/{service_id}/deploys/{deploy_id}", key)
+        status = entity(_call(f"/services/{service_id}/deploys/{deploy_id}", key),
+                        "deploy")
         state = f"{status.get('status')} {(status.get('commit') or {}).get('shortHash', '')}"
         if state != seen:
             print(" ", state)
@@ -241,17 +342,25 @@ def deploy(service_id: str, key: str) -> str:
 
 
 def run(key: str, repo: str, force: bool) -> int:
-    """Find or create the service, deploy it, watch it go live."""
-    existing = find_service(key)
+    """Find or create the service, make it ours, deploy it, watch it go live."""
+    existing = find_service(key, repo)
     if existing and not force:
         url = existing.get("serviceDetails", {}).get("url")
-        print(f"service candibet already exists: {url or '(no url yet)'}")
+        print(f"service {existing.get('name')} already exists: "
+              f"{url or '(no url yet)'}")
         print("re-run with --yes to deploy the current commit")
         return 0
     if check_tree():
         print("refusing to deploy a tree that fails preflight")
         return 1
-    service = existing or create_service(key, repo)
+    if existing:
+        service = configure(existing["id"], key)
+        print(f"reconfigured {existing.get('name')} -> "
+              f"{service.get('serviceDetails', {}).get('runtime')} runtime")
+    else:
+        owner = find_owner(key)
+        print(f"owner:  {owner.get('name')} [{owner.get('id')}]")
+        service = create_service(key, repo, owner)
     service_id = service["id"]
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
@@ -285,9 +394,9 @@ def main() -> int:
                   f"{KEY_FILE}")
             return 2
         if args.url_only:
-            existing = find_service(key)
+            existing = find_service(key, args.repo or read_repo())
             url = (existing or {}).get("serviceDetails", {}).get("url")
-            print(url or "no candibet service on this account yet")
+            print(url or "no service for this repository on this account yet")
             return 0 if existing else 1
         if not args.repo:
             print(f"need the repository: set RENDER_REPO, or put one line in "
