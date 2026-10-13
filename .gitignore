@@ -29,6 +29,10 @@ demo/data/
 Thumbs.db
 *.swp
 
-# local env
+# local env / credentials. `.env.render` holds a live Render API key: a
+# deploy credential must never reach the repository, and the tree is about to
+# be pushed to a public repo.
 .env
-.env.local
+.env.*
+!.env.example
+!.env.template

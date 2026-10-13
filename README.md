@@ -18,7 +18,7 @@ A complete, self-contained personal hobby platform:
 operator/
   AGENTS.md / ARCHITECTURE.md / PROGRESS.md / CURRENTTASK  state + instruction
   Makefile / scripts/verify.py / scripts/verify.sh         verification checks
-  container/Containerfile / container/frame.service        runtime definitions
+  Dockerfile / render.yaml                                 the deploy: one container
   decisions/                                               architecture decisions
   docs/gap-assessment.md                                   platform scoreboard
   docs/deploy-easy.md                                      how to ship it, and how to check it
@@ -34,7 +34,8 @@ operator/
     models/      fair-price provider registry
     verticals/   sports + casino contracts and stubs
     ops/         scheduler, notifier, health
-    tests/       42 core checks
+    tests/       45 core checks
+  archive/                                                 retired deploy paths and old specs (never deployed)
 ```
 
 ## Running it
@@ -62,7 +63,8 @@ a game does not load.
   `render.yaml`). This is the chosen path; it needs an account on the host to
   go live.
 - **Cloudflare Workers fronting a tunnel** — the Worker serves `web/out` and
-  proxies the API to the backend: see [`deploy/README.md`](deploy/README.md)
+  proxies the API to the backend. **Archived**, not deployed: see
+  [`archive/deploy-worker/README.md`](archive/deploy-worker/README.md)
   (decision 0023). Two things expire — the tunnel hostname and a
   `--temporary` account — so it is not the default.
 

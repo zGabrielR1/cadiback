@@ -4,11 +4,13 @@
 # so the app sources and the lockfile must be IN here — they used to be
 # excluded, back when the image expected a pre-built `web/out` copied in from
 # the build machine. What stays out is what the container never runs:
-# host-built `node_modules`, the dev server's `.next`, the live data dir, and
-# the decision/capture/docs material that is not code.
+# host-built `node_modules`, the dev server's `.next`, the live data dir, the
+# retired paths under `archive/`, and the decision/capture/docs material that
+# is not code.
 .git
 .gitignore
 .commandcode
+archive
 container
 decisions
 deploy

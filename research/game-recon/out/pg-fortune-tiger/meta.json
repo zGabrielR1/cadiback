@@ -1,4 +1,0 @@
-{
-  "game_id": "pg:fortune-tiger",
-  "error": "Error: page.goto: net::ERR_NAME_NOT_RESOLVED at https://m.pgsoft-games.com/126/index.html?l=pt&btt=1&__refer=m.pg-redirect.net&or=static.pgsoft-games.com\nCall log:\n\u001b[2m  - navigating to \"https://m.pgsoft-games.com/126/index.html?l=pt&btt=1&__refer=m.pg-redirect.net&or=static.pgsoft-games.com\", waiti"
-}

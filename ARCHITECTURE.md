@@ -9,7 +9,7 @@ verticals and pricing providers plug into one frame instead of forking it.
 ```text
 operator/
 ├── AGENTS.md / ARCHITECTURE.md / PROGRESS.md / CURRENTTASK
-├── Makefile / scripts/verify.py / scripts/verify.sh / container/
+├── Makefile / scripts/verify.py / scripts/verify.sh
 ├── decisions/ / docs/
 ├── frame/            the money core + verticals (stdlib only)
 ├── demo/             playable product: HTTP server, slot, Pix, risk, sports seam
