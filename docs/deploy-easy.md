@@ -65,15 +65,29 @@ push and no artifact to upload. Two ways in — pick one.
 ### B. API (fully scripted — what I run for you)
 
 ```bash
-export RENDER_API_KEY=rnd_...        # Render dashboard > Account > API Keys
-export RENDER_REPO=https://github.com/<you>/<repo>
 python scripts/render_deploy.py      # create-or-find, deploy, watch to live
 ```
 
+Credentials come from the environment, or — so nothing lands in a transcript —
+from two files in your home:
+
+| File | One line |
+| --- | --- |
+| `~/.render_api_key` | the key from Render → Account → API Keys |
+| `~/.render_repo` | `https://github.com/<you>/<repo>` |
+
+```powershell
+notepad $HOME\.render_api_key     # paste, save
+notepad $HOME\.render_repo        # paste the repo URL, save
+```
+
+(`setx` does not work here: a child process inherits its parent's
+environment, not the registry, so the variable never reaches the script.)
+
 The script mirrors `render.yaml` in `SERVICE` (one place, so the two cannot
-drift), refuses to deploy a tree that fails the preflight, and prints the
-live URL. Re-running it after a push is the whole update cycle; `--yes`
-redeploys an existing service.
+drift), refuses to deploy a tree that fails the preflight, and prints the live
+URL. Re-running it after a push is the whole update cycle; `--yes` redeploys
+an existing service, `--url-only` just prints where it is.
 
 ### What the deploy gives you
 

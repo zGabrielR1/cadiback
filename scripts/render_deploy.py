@@ -3,18 +3,23 @@
 The Render dashboard is the usual way in, but it is also three manual steps
 and a browser session. This does the same work over the public REST API:
 
+    # credentials, either in the environment...
     export RENDER_API_KEY=rnd_...          # dashboard > Account > API Keys
     export RENDER_REPO=https://github.com/<you>/<repo>
+    # ...or in two files next to your home (never in the repository):
+    #   ~/.render_api_key   one line, the key
+    #   ~/.render_repo      one line, the repository URL
     python scripts/render_deploy.py
 
 The repo must exist and contain this tree (public, or connected to the same
 account). `render.yaml` is the contract; this script sends the same settings
 explicitly so it also works where a Blueprint is not picked up.
 
-Two modes:
+Three modes:
 
-    python scripts/render_deploy.py --check   # is the tree deployable?
-    python scripts/render_deploy.py           # create/update, deploy, watch
+    python scripts/render_deploy.py --check     # is the tree deployable?
+    python scripts/render_deploy.py --url-only  # where is it, if it exists?
+    python scripts/render_deploy.py             # create/update, deploy, watch
 
 `--check` needs nothing but the tree, so it can be run before any credential
 exists — and it is the reason the deploy does not depend on the machine that
@@ -129,6 +134,41 @@ def check_tree() -> int:
     return 1 if problems else 0
 
 
+# Where the credentials come from when they are not in the environment. A
+# deploy key is a credential, and handing it over through a file keeps it out
+# of a chat transcript and out of the repository. `setx` is deliberately not
+# offered: a child process inherits its parent's environment, not the
+# registry, so a variable set there never reaches this script.
+KEY_FILE = os.path.join(os.path.expanduser("~"), ".render_api_key")
+REPO_FILE = os.path.join(os.path.expanduser("~"), ".render_repo")
+
+
+def _first_line(path: str) -> str:
+    with open(path, encoding="utf-8") as handle:
+        return handle.read().strip().splitlines()[0].strip()
+
+
+def read_key() -> str:
+    """The Render API key: environment first, then `~/.render_api_key`."""
+    key = os.environ.get("RENDER_API_KEY", "").strip()
+    if key:
+        return key
+    return _first_line(KEY_FILE) if os.path.isfile(KEY_FILE) else ""
+
+
+def read_repo() -> str:
+    """The repository Render builds from: environment, or `~/.render_repo`."""
+    repo = os.environ.get("RENDER_REPO", "").strip()
+    if repo:
+        return repo
+    return _first_line(REPO_FILE) if os.path.isfile(REPO_FILE) else ""
+
+
+class RenderError(RuntimeError):
+    """Render said no, or could not be reached. Always reported, never raised
+    as a traceback: a wrong key is an operator mistake, not a crash."""
+
+
 def _call(path: str, key: str, payload: dict | None = None,
           method: str = "GET") -> dict:
     req = urllib.request.Request(
@@ -138,8 +178,20 @@ def _call(path: str, key: str, payload: dict | None = None,
         headers={"Authorization": f"Bearer {key}",
                  "Content-Type": "application/json",
                  "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:300]
+        hint = ""
+        if exc.code in (401, 403):
+            hint = (" — the key is wrong, expired, or cannot see this account; "
+                    "check dashboard > Account > API Keys")
+        raise RenderError(f"{exc.code} {exc.reason}{hint}\n  {detail}") from exc
+    except urllib.error.URLError as exc:
+        raise RenderError(f"cannot reach {API}: {exc.reason}") from exc
+    except ValueError as exc:
+        raise RenderError(f"unreadable answer from {path}: {exc}") from exc
 
 
 def find_service(key: str) -> dict | None:
@@ -162,12 +214,10 @@ def create_service(key: str, repo: str) -> dict:
                        for item in SERVICE["envVars"]]
     try:
         return _call("/services", key, body, "POST")
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", "replace")
-        raise SystemExit(f"Render refused to create the service "
-                         f"({exc.code}): {detail[:400]}\n"
-                         "Most common cause: the repo must be public, or "
-                         "connected to this account, and `main` must exist.")
+    except RenderError as exc:
+        raise RenderError(
+            f"{exc}\n  Most common cause: the repository must be public, or "
+            "connected to this account, and `main` must exist in it.") from exc
 
 
 def deploy(service_id: str, key: str) -> str:
@@ -190,34 +240,18 @@ def deploy(service_id: str, key: str) -> str:
     return "timeout"
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true",
-                        help="only verify the tree is deployable")
-    parser.add_argument("--repo", default=os.environ.get("RENDER_REPO", ""),
-                        help="https://github.com/<you>/<repo>")
-    parser.add_argument("--yes", action="store_true",
-                        help="deploy even if the service already exists")
-    args = parser.parse_args()
-
-    if args.check:
-        return check_tree()
-
-    key = os.environ.get("RENDER_API_KEY", "").strip()
-    if not key or not args.repo:
-        print("need RENDER_API_KEY (dashboard > Account > API Keys) and "
-              "RENDER_REPO (https://github.com/<you>/<repo>)")
-        return 2
+def run(key: str, repo: str, force: bool) -> int:
+    """Find or create the service, deploy it, watch it go live."""
+    existing = find_service(key)
+    if existing and not force:
+        url = existing.get("serviceDetails", {}).get("url")
+        print(f"service candibet already exists: {url or '(no url yet)'}")
+        print("re-run with --yes to deploy the current commit")
+        return 0
     if check_tree():
         print("refusing to deploy a tree that fails preflight")
         return 1
-
-    existing = find_service(key)
-    if existing and not args.yes:
-        print(f"service candibet already exists: {existing.get('serviceDetails', {}).get('url')}")
-        print("re-run with --yes to deploy the current commit")
-        return 0
-    service = existing or create_service(key, args.repo)
+    service = existing or create_service(key, repo)
     service_id = service["id"]
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
@@ -225,9 +259,47 @@ def main() -> int:
     print("deploy:", outcome)
     if outcome != "live":
         print("not live — read the build log in the dashboard, or "
-              f"api.render.com/v1/services/{service_id}/deploys")
+              f"{API}/services/{service_id}/deploys")
         return 1
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true",
+                        help="only verify the tree is deployable")
+    parser.add_argument("--repo", default=read_repo(),
+                        help="https://github.com/<you>/<repo>")
+    parser.add_argument("--yes", action="store_true",
+                        help="deploy even if the service already exists")
+    parser.add_argument("--url-only", action="store_true",
+                        help="print the existing service's URL and exit")
+    args = parser.parse_args()
+
+    if args.check:
+        return check_tree()
+    try:
+        key = read_key()
+        if not key:
+            print(f"no Render API key: set RENDER_API_KEY, or put one line in "
+                  f"{KEY_FILE}")
+            return 2
+        if args.url_only:
+            existing = find_service(key)
+            url = (existing or {}).get("serviceDetails", {}).get("url")
+            print(url or "no candibet service on this account yet")
+            return 0 if existing else 1
+        if not args.repo:
+            print(f"need the repository: set RENDER_REPO, or put one line in "
+                  f"{REPO_FILE}")
+            return 2
+        return run(key, args.repo, args.yes)
+    except RenderError as exc:
+        print(f"render: {exc}")
+        return 3
+    except KeyboardInterrupt:
+        print("interrupted; the deploy may still be running on Render")
+        return 130
 
 
 if __name__ == "__main__":
