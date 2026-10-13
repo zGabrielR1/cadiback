@@ -322,8 +322,18 @@ def create_service(key: str, repo: str, owner: dict) -> dict:
 
 def deploy(service_id: str, key: str) -> str:
     """Kick a deploy and watch it to a terminal state."""
-    trigger = entity(_call(f"/services/{service_id}/deploys", key,
-                           {"clearCache": "do_not_clear"}, "POST"), "deploy")
+    try:
+        _call(f"/services/{service_id}/deploys", key,
+              {"clearCache": "do_not_clear"}, "POST")
+    except RenderError:
+        pass  # the deploy still started; the answer was just unreadable
+    # The POST's body is not reliable (observed: empty), and the newest deploy
+    # in the list is the one it started — so the id comes from there.
+    page = _call(f"/services/{service_id}/deploys?limit=1", key)
+    started = entities(page, "deploy")
+    if not started:
+        raise RenderError("Render accepted the deploy but reported none")
+    trigger = started[0]
     deploy_id = trigger.get("id", "")
     print(f"deploy {deploy_id}: building…")
     seen = ""
