@@ -1,0 +1,44 @@
+{
+  "game_id": "pgo:book-of-dead",
+  "provider": "play_n_go",
+  "title": "Rich Wilde and the Book of Dead",
+  "url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=pt&practice=1&channel=desktop&demo=2",
+  "tech": {
+    "title": "",
+    "canvas": 1,
+    "webgl": true,
+    "wasm": true,
+    "workers": 0,
+    "iframes": 0,
+    "scripts": [
+      "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/games/bookofdead/bookofdead_desktop.bundle.js",
+      "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/main.js",
+      "https://pc-prod-eu.playngonetwork.com/PlayerUI/main.js",
+      "(inline)",
+      "https://cdn.playngonetwork.com/hera/hera-1.46.0.29/container-launcher/ContainerLauncher_bundle.js"
+    ]
+  },
+  "websockets": [
+    "wss://ascflyp.playngonetwork.com//gamehub",
+    "wss://pc-prod-eu.playngonetwork.com/player-events"
+  ],
+  "byType": {
+    "document": 1,
+    "script": 4,
+    "xhr": 34,
+    "stylesheet": 17,
+    "font": 10,
+    "image": 19
+  },
+  "exts": {
+    "js": 4,
+    "css": 16,
+    "json": 7,
+    "woff": 10,
+    "jpg": 2,
+    "png": 15,
+    "mp3": 2,
+    "avif": 2
+  },
+  "totalRequests": 85
+}

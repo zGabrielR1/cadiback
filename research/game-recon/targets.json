@@ -1,0 +1,242 @@
+[
+ {
+  "game_id": "pp:gates-of-olympus",
+  "provider": "pragmatic_play",
+  "title": "Gates of Olympus",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympgate&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:sweet-bonanza",
+  "provider": "pragmatic_play",
+  "title": "Sweet Bonanza",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitsw&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:sugar-rush",
+  "provider": "pragmatic_play",
+  "title": "Sugar Rush",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20sugarrush&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:big-bass-bonanza",
+  "provider": "pragmatic_play",
+  "title": "Big Bass Bonanza",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbbonanza&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:starlight-princess",
+  "provider": "pragmatic_play",
+  "title": "Starlight Princess",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20starlight&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:dog-house-megaways",
+  "provider": "pragmatic_play",
+  "title": "The Dog House Megaways",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vswaysdogs&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:wolf-gold",
+  "provider": "pragmatic_play",
+  "title": "Wolf Gold",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs25wolfgold&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:fruit-party",
+  "provider": "pragmatic_play",
+  "title": "Fruit Party",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitparty&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:big-bass-splash",
+  "provider": "pragmatic_play",
+  "title": "Big Bass Splash",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbextreme&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:cleocatra",
+  "provider": "pragmatic_play",
+  "title": "Cleocatra",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20cleocatra&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:wild-west-gold",
+  "provider": "pragmatic_play",
+  "title": "Wild West Gold",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20wildwest&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "spribe:aviator",
+  "provider": "spribe",
+  "title": "Aviator",
+  "demo_url": "https://demo.spribe.io/launch/aviator?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "pp:spaceman",
+  "provider": "pragmatic_play",
+  "title": "Spaceman",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=spaceman&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "hs:rip-city-dice",
+  "provider": "hacksaw_gaming",
+  "title": "RIP City",
+  "demo_url": "https://static-live.hacksawgaming.com/2725/1.0.2/index.html?language=pt&channel=desktop&gameid=2725&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true"
+ },
+ {
+  "game_id": "pgo:book-of-dead",
+  "provider": "play_n_go",
+  "title": "Rich Wilde and the Book of Dead",
+  "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=pt&practice=1&channel=desktop&demo=2"
+ },
+ {
+  "game_id": "pp:roulette",
+  "provider": "pragmatic_play",
+  "title": "Roleta Europeia",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=roulette&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:blackjack",
+  "provider": "pragmatic_play",
+  "title": "Multihand Blackjack",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs1multihandbj&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:baccarat",
+  "provider": "pragmatic_play",
+  "title": "Baccarat",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs1baccarat&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "ev:lightning-roulette",
+  "provider": "evolution",
+  "title": "Lightning Roulette",
+  "demo_url": "https://games.evolution.com/live-casino/live-roulette/lightning-roulette/"
+ },
+ {
+  "game_id": "ev:crazy-time",
+  "provider": "evolution",
+  "title": "Crazy Time",
+  "demo_url": "https://games.evolution.com/live-casino/game-shows/crazy-time/"
+ },
+ {
+  "game_id": "pg:fortune-tiger",
+  "provider": "pg_soft",
+  "title": "Fortune Tiger",
+  "demo_url": "https://m.pgsoft-games.com/126/index.html?l=pt&btt=1&__refer=m.pg-redirect.net&or=static.pgsoft-games.com"
+ },
+ {
+  "game_id": "pg:mahjong-ways",
+  "provider": "pg_soft",
+  "title": "Mahjong Ways",
+  "demo_url": "https://m.pgsoft-games.com/65/index.html?l=pt&btt=1&__refer=m.pg-redirect.net&or=static.pgsoft-games.com"
+ },
+ {
+  "game_id": "pp:gates-of-olympus-1000",
+  "provider": "pragmatic_play",
+  "title": "Gates of Olympus 1000",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:sweet-bonanza-1000",
+  "provider": "pragmatic_play",
+  "title": "Sweet Bonanza 1000",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitswx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:sugar-rush-1000",
+  "provider": "pragmatic_play",
+  "title": "Sugar Rush 1000",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20sugarrushx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:big-bass-bonanza-1000",
+  "provider": "pragmatic_play",
+  "title": "Big Bass Bonanza 1000",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbbnz1000&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:zeus-vs-hades",
+  "provider": "pragmatic_play",
+  "title": "Zeus vs Hades — Gods of War",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs15godsofwar&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:jokers-jewels",
+  "provider": "pragmatic_play",
+  "title": "Joker's Jewels",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs5joker&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "pp:bonanza-gold",
+  "provider": "pragmatic_play",
+  "title": "Bonanza Gold",
+  "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20bonzgold&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL"
+ },
+ {
+  "game_id": "spribe:mines",
+  "provider": "spribe",
+  "title": "Mines",
+  "demo_url": "https://demo.spribe.io/launch/mines?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:plinko",
+  "provider": "spribe",
+  "title": "Plinko",
+  "demo_url": "https://demo.spribe.io/launch/plinko?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:dice",
+  "provider": "spribe",
+  "title": "Dice",
+  "demo_url": "https://demo.spribe.io/launch/dice?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:keno",
+  "provider": "spribe",
+  "title": "Keno",
+  "demo_url": "https://demo.spribe.io/launch/keno?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:goal",
+  "provider": "spribe",
+  "title": "Goal",
+  "demo_url": "https://demo.spribe.io/launch/goal?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:mini-roulette",
+  "provider": "spribe",
+  "title": "Mini Roulette",
+  "demo_url": "https://demo.spribe.io/launch/mini-roulette?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "spribe:hotline",
+  "provider": "spribe",
+  "title": "Hotline",
+  "demo_url": "https://demo.spribe.io/launch/hotline?currency=BRL&lang=pt"
+ },
+ {
+  "game_id": "pgo:reactoonz",
+  "provider": "play_n_go",
+  "title": "Reactoonz",
+  "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=reactoonz&lang=pt&practice=1&channel=desktop&demo=2"
+ },
+ {
+  "game_id": "pgo:fire-joker",
+  "provider": "play_n_go",
+  "title": "Fire Joker",
+  "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=firejoker&lang=pt&practice=1&channel=desktop&demo=2"
+ },
+ {
+  "game_id": "pgo:moon-princess",
+  "provider": "play_n_go",
+  "title": "Moon Princess",
+  "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=moonprincess&lang=pt&practice=1&channel=desktop&demo=2"
+ },
+ {
+  "game_id": "pgo:legacy-of-dead",
+  "provider": "play_n_go",
+  "title": "Legacy of Dead",
+  "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=legacyofdead&lang=pt&practice=1&channel=desktop&demo=2"
+ }
+]

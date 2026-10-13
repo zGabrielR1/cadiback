@@ -1,0 +1,1946 @@
+[
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20cleocatra&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+    "method": "GET",
+    "type": "document",
+    "status": 302,
+    "mime": "",
+    "bytes": -1,
+    "urlhash": "b0b02b75224ae8ab"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/html5Game.do?extGame=1&symbol=vs20cleocatra&gname=Cleocatra&jurisdictionID=99&mgckey=stylename@generic~SESSION@6507d6a5-db0d-4a8e-a766-7b91388de2b0",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 95723,
+    "urlhash": "d79cb7e79bb28595"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/js/html5-script-external.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 4357,
+    "urlhash": "90e5eb59b6d92a9b"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/operator_logos/logo_info.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 1883159,
+    "urlhash": "4853a80496c812d4"
+  },
+  {
+    "url": "https://www.google-analytics.com/analytics.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 52310,
+    "urlhash": "f81d4c26afadd15d"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/bootstrap.js?key=847ed",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 102084,
+    "urlhash": "24b699873f94be04"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/packages/pt_desktop.json?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 159436,
+    "urlhash": "4369ca1ed48dc126"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/customizations.info?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "binary/octet-stream",
+    "bytes": 0,
+    "urlhash": "63b6831fe3bc6728"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/style.css?key=847ed",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 19631,
+    "urlhash": "f201cab22e65d5bb"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/packages/pt_GUI_desktop.json?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1192109,
+    "urlhash": "3a338752cf7c1992"
+  },
+  {
+    "url": "https://unpkg.com/@grafana/faro-web-sdk@%5E1.0.0/dist/bundle/faro-web-sdk.iife.js",
+    "method": "GET",
+    "type": "script",
+    "status": 302,
+    "mime": "text/plain",
+    "bytes": -1,
+    "urlhash": "a0e24154feb1b165"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/build.js?key=85912352141d13b452276898fdebcef3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 3116207,
+    "urlhash": "22be3af6316b1f65"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/stats.do?mgckey=stylename@generic~SESSION@6507d6a5-db0d-4a8e-a766-7b91388de2b0&channel=desktop",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 30,
+    "urlhash": "5d69d880dc5d41b6"
+  },
+  {
+    "url": "https://www.googletagmanager.com/gtag/js?id=G-18F57V2EP0",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 474417,
+    "urlhash": "0300348c97fe9da0"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/client/resources.json?key=29f7fe610047c4b016b5edf4ace2794e",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 76737,
+    "urlhash": "4dc465b4188af94b"
+  },
+  {
+    "url": "https://unpkg.com/@grafana/faro-web-sdk@1.19.0/dist/bundle/faro-web-sdk.iife.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 92684,
+    "urlhash": "d592c09d8d497f07"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/client/game.json?key=1e14029b6b8674dd4aebcc80eecef690",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 22283,
+    "urlhash": "311e3ed4d526ebc0"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/2d9a0e86-3251-48a9-b6a5-ed6dda11b454",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 4266,
+    "urlhash": "e97d8dfab65929c7"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI000.json?key=21ef2a5235f0a20bce54a4a8e0591576",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 918104,
+    "urlhash": "8e398475f0262a6b"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/apps/lobby/meta.html?mgckey=stylename%40generic~SESSION%406507d6a5-db0d-4a8e-a766-7b91388de2b0&symbol=vs20cleocatra&language=pt&currency=BRL&region=Other&ingameLobbyApiURL=undefined&vendor=slots&currencyOriginal=BRL&jurisdiction=99&mid=394344843033562518&requirements=NEWV%2CSHINT%2C%2C&stylename=generic",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 20343,
+    "urlhash": "0db375855c707750"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI004.json?key=966bfee2231edc5f7977b5949ad35cc6",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 619617,
+    "urlhash": "8210700348521051"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI002.json?key=0e29f935c3a648ff97510fc530ed891f",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 654380,
+    "urlhash": "66e161558f7d2b87"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI006.json?key=129469851a394f6cdf5ff5aa94abdf7e",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 605922,
+    "urlhash": "6a1e7a2a09e21624"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI003.json?key=ff4e31aaa94fa7e43fdc7e7a695eb6ec",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 589466,
+    "urlhash": "505b15a07246d294"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI001.json?key=664bbe65889def9b4e02442fcac91cc6",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1438519,
+    "urlhash": "638954690a9e8587"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI005.json?key=1bcf6b403e7576d88aa780a9b7dee468",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1164205,
+    "urlhash": "dba346bb434740b6"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI_resources001.json?key=5195254a24bb908eca344c4f9be4fa9a",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 409246,
+    "urlhash": "d81eaaa542c001ef"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/GUI_resources000.json?key=1572a8bd59e23179529723d8a56a6c31",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 550991,
+    "urlhash": "314f5e6f3bee3d35"
+  },
+  {
+    "url": "https://stats-collector.zdoiodhtqahjizqq.net/log/data",
+    "method": "POST",
+    "type": "ping",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 6,
+    "urlhash": "051359e9fa2f3d21"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/game000.json?key=44982537317aefb7badde6f5376a6cc5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 741553,
+    "urlhash": "4e7313f687c2c675"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/game003.json?key=6e3af0a2577112d525b23964ecb4868b",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 654431,
+    "urlhash": "48b1356d3aa55201"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/game002.json?key=eed08da7870bdd2ddecf975c1fe77e7e",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1723082,
+    "urlhash": "9a8fb991e162ffc6"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/game001.json?key=6ad4490963dbd6d72135c5d5dfcba39b",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1082506,
+    "urlhash": "d05db7c8b9ee28ac"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources002.json?key=f8d03ff4186501b4f15fd3475805d87a",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 620176,
+    "urlhash": "2eca7321e3d08c7d"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources003.json?key=74ac787d67b6dc3c487b19fdb2267fd0",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 757181,
+    "urlhash": "661baf36d5a39125"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources005.json?key=b8a92f73a9f0e8b3388dea68b70cec96",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 541928,
+    "urlhash": "b1ec095b20df2a1f"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources011.json?key=cea7c426b3fd6b6f2e386c2d7510f87b",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 640184,
+    "urlhash": "6ba971affe11c79b"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources000.json?key=d97f145e536cd040f4fd180629e72d12",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1062075,
+    "urlhash": "93806a9f44de40f2"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources013.json?key=cef40582b3e065ea97da2e05c6055e3c",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 599279,
+    "urlhash": "a08c793f85981008"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources001.json?key=95c06f4a7c0fe2b9ce8355ecbaef0967",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1177908,
+    "urlhash": "4202c102505c5774"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources016.json?key=585004bb111b07169fff4b3d23ee690c",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 582214,
+    "urlhash": "5b3442e39e3e2b3e"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources010.json?key=dd740a0348d9f13f1b380266db3753e8",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 553030,
+    "urlhash": "dc74f7ffe2d15724"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources012.json?key=1bb675c32b2c00253bbe00600bfc66eb",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 713960,
+    "urlhash": "809ec56f9435299f"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources019.json?key=1adf1ed5484dfd351e47abbb281ef012",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 570184,
+    "urlhash": "ac6b41883ac2622c"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources022.json?key=6eecceaed90fbc9773ec7db32de2a462",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 723758,
+    "urlhash": "a69ed7466319f5f3"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources023.json?key=1bb33b728dacc76ed94515006d652fd5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 770821,
+    "urlhash": "a8c8fdfdfd2f7a3b"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources025.json?key=cb74c680bd2bdee986399b76e7ba8377",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 559665,
+    "urlhash": "16c9f1edfd6fac0e"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources024.json?key=1bac9b4f31de996543a9324e4b299643",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 614214,
+    "urlhash": "ba5d16bf21dfd09c"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources026.json?key=b6f7cc562a0d46ff51683e916c9e4ef2",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 550104,
+    "urlhash": "d2c0bed936d34e47"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources027.json?key=755b77d2b9e8fca5aa1416cd946179cd",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 554701,
+    "urlhash": "2c00d5881f732dd5"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources028.json?key=802ea425c18efead62d03d54f775c3bf",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 157911,
+    "urlhash": "358ac2bb87244294"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources004.json?key=7bfe526963f0adac58802dede3b9c4bf",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 684107,
+    "urlhash": "2f42b04e40b85a68"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources006.json?key=8cc6613464a55181fcf350b147ff6eaa",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 863639,
+    "urlhash": "f79b3c6373c53007"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources007.json?key=8a6cefbb37d1d7bf785e70fd90601147",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1913829,
+    "urlhash": "49531b81ea9d5811"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources008.json?key=58a7bd4c93595624808c5efaddf22a8e",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1685801,
+    "urlhash": "7b272014d4570462"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources009.json?key=cd64f92590b46906699ea92b7b3c18a0",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1676541,
+    "urlhash": "58dfce48aa937da5"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources014.json?key=83adf9d3ed4b049295ce40115a3cdfca",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 681141,
+    "urlhash": "47f990e6fb156ed1"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources015.json?key=0467dc8e03911119ad1a52160740c8f5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 638747,
+    "urlhash": "5a0c659ccfa80463"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources017.json?key=2d1084aad1966644d435e43fe6991a66",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 690050,
+    "urlhash": "133005cfbbf27f5e"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources018.json?key=feaa0d8fe3370a4972dda10a106aa095",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1275352,
+    "urlhash": "ba7397ec91590c5e"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources020.json?key=0363e3024100f80c7ffc38a0866d86b6",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 952661,
+    "urlhash": "a1abfd1e56ca66e0"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/main_resources021.json?key=cb3257334e564f9a4ff7ab6e3806eb8c",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 723494,
+    "urlhash": "8805bbd56fbe00db"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/other_resources000.json?key=c9261aa9a088bbbfe85456c1edb93b7a",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 481288,
+    "urlhash": "99a919a4c8b91ffc"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/e8e80a0f-4914-44ef-9b75-675d0e2c2f78",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 24888,
+    "urlhash": "bd56fa8e1a08e5cc"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/afab946c-1414-4339-8b50-947c57b5013e",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 17955,
+    "urlhash": "799cf1b3e8c6c37f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/33aaabd3-55ad-4f23-bb4a-8186a58acc6c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 32499,
+    "urlhash": "4511b9286203dbcf"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/df450ac2-e498-4186-bddf-06ff5f29cd6a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 85056,
+    "urlhash": "0e2896dd4d49cdea"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/a526160f-6fd8-431f-9adf-e054aaa11e7d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 2022,
+    "urlhash": "5681b89923d3194b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8150cc58-9d35-4e4b-a578-b1bc9744646a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10338,
+    "urlhash": "93987674f8f66edb"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/31e6f2c6-46ad-4973-8d07-2d191c7a8559",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9639,
+    "urlhash": "efae1cc1fe260241"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/05d1a076-01bf-49a9-af79-cd711be10e63",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 65280,
+    "urlhash": "99b7d432cb005f8e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/0c186ec7-2379-4e77-ad6c-0ecce472def9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 52005,
+    "urlhash": "1f1e2af11b925525"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ad63157f-1cf0-427f-bdb5-f2f9009130f2",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 38142,
+    "urlhash": "4c7c752d1251686f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/c62604ba-84cf-4b86-b077-f94fc2683992",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 33078,
+    "urlhash": "82a2034db24cd2a8"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/0e9a1556-d40f-45a6-b48f-4d21bed10399",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 33603,
+    "urlhash": "052d6273f27d14b3"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/046275d6-8edb-45c9-91d2-99eb7f12fb17",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10977,
+    "urlhash": "4cae97da838799c5"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6f05cc59-1410-4d3e-b384-7dca5ccb474a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 52584,
+    "urlhash": "2298e94e09650161"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/569b2718-8ecb-4c37-8725-5bb681cbef9d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 32979,
+    "urlhash": "eaf7c54cf846e430"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/9f1dfd62-bb63-4265-a44a-839a4c9130de",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 36339,
+    "urlhash": "dd09637e359685ec"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/1973d420-7073-49cb-a042-622a9e6f1c6a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 38364,
+    "urlhash": "73e8900ddd49f130"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5d3f67f1-ada8-4e0e-806c-d25db7171acd",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 27126,
+    "urlhash": "d8beff83b47decbb"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/08990285-9652-4952-979d-e88964bb2794",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 92130,
+    "urlhash": "683ba18390bde94c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/1adefeeb-7c18-4854-99b6-867304055a43",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 40617,
+    "urlhash": "dab7e3cfb294c3aa"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/60d6047d-d0ab-4920-964a-8601341873dc",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 32718,
+    "urlhash": "840db020b8a58704"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/b1f6620c-5c87-4174-89c1-16a440ab2b88",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 103212,
+    "urlhash": "6326008d03d5af58"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/28c8c3df-12a8-4e4e-9ea2-3787b7f5a894",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 92307,
+    "urlhash": "a45b3b7c9533516c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/c5a53f1a-aea5-4a82-af8e-0fe68b2e0fa0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 142449,
+    "urlhash": "73c0848914c94cee"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/38844504-66fd-47a3-9971-3117b022a756",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 84,
+    "urlhash": "b3aff04b6cea2b1f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6a3eefa0-19e1-48a4-b68b-8d22c0cef165",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 33525,
+    "urlhash": "e873a76a1f75522b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/071603a9-3b55-48b5-b521-ba7c603d9b35",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 222570,
+    "urlhash": "565bf627c93abc9f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5a46f4f7-e934-40ff-a5b3-f84bf566be58",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 50970,
+    "urlhash": "c0f6fb36707b3f33"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/bca52cfb-e501-4895-b9a5-83f2725a5c4c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 66249,
+    "urlhash": "41e1132ffceb8b5a"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ebec29c4-046c-4f15-8d61-4922696f92c7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 8745,
+    "urlhash": "f3e5b3fc7b371d45"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/356daae2-ef94-4823-8b48-d9d92cd9ce24",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 39243,
+    "urlhash": "7c31786cf84ab829"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/e61add66-0619-4539-a172-a2cd61f23299",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 152328,
+    "urlhash": "25e51ec3356fa1b5"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/47e8fc7f-3729-49e4-848c-fd2cb5f99b72",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 79245,
+    "urlhash": "fbcf0c1be501b27b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/eae07685-c6ed-411d-b668-8049c2007506",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 176712,
+    "urlhash": "271a3cac8f43e655"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5ddb5c4d-4edf-4e4f-8a35-ee7a6fd62b2c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 31239,
+    "urlhash": "8e0d0b88863d4bcf"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/16854398-a024-4081-9aca-8da6b2e4d5ce",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 29790,
+    "urlhash": "d7ab7db57f34c6a7"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/4e4f1be3-97bb-4a09-8ffb-c29b303d5bb0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 37098,
+    "urlhash": "1163bd97a095275c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ce759bab-0e87-49b5-aced-525e33e62ec6",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 15531,
+    "urlhash": "5baa867a099122f8"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/bcd893ce-4443-4ce4-a519-40ca8b88b127",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9525,
+    "urlhash": "ce547b655d76728e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f8b194bf-0fa8-4972-b506-f70280218f87",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 41835,
+    "urlhash": "aa63ea2617cea9a5"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f2094782-8f99-42a5-8f62-72bf3b44115c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 119616,
+    "urlhash": "681add36223bd904"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ff801c61-8731-4abe-b620-4c3900ef3f44",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1244292,
+    "urlhash": "4ee740edbdd2f080"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/47c1960b-9192-40d0-8221-900454b06b1b",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 294987,
+    "urlhash": "2422631546c3f7e5"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/54db86ea-2bc3-4b3d-9e5d-6b49f2547f48",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 149688,
+    "urlhash": "79c55b5274569f21"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8c34c753-ec2c-4a1e-9771-b9d34fbbf5e5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 27786,
+    "urlhash": "3124de88f19325a2"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/df8e0f28-c8b5-416a-80b4-eae3c587c083",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 60138,
+    "urlhash": "61f4be6f6c4c4161"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8a4ccb09-5438-4cfc-9434-048c4b00817f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1264266,
+    "urlhash": "da0ae6f52d9a916b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/9fc1e737-298c-4098-86b9-bdfb154aeb5d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1257321,
+    "urlhash": "73893a6afb8d3865"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/c6e659d8-5785-43b9-9a30-f567c1153edc",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 183786,
+    "urlhash": "a6334674b03b8449"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v4/gameService",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 5018,
+    "urlhash": "d05d28c8dae32674"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/e3405f7a-14d5-4178-a337-d7d060519348",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 199587,
+    "urlhash": "ce9c7e9f1bf47d3d"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6da7fe26-d3c5-4d33-9a3d-3448adb96bc8",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 135579,
+    "urlhash": "df3de81c058d29ea"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/fcff1a25-c45e-4124-86af-d9cdd57ff32e",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 147771,
+    "urlhash": "5b7f40e5c6071092"
+  },
+  {
+    "url": "https://clctr.ltguevmavv.com/collect",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "text/plain",
+    "bytes": 2,
+    "urlhash": "45f094b48e3ae81d"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/bd70f054-aafc-48e9-8e92-6adb420f6aea",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 186387,
+    "urlhash": "92242f415cc69fec"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/e990de1f-c097-4083-bd63-4cdf073b6a4c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 122028,
+    "urlhash": "c18ad17bc99dd94e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/541d8692-34c3-4777-9737-13a9fbb8263f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 106050,
+    "urlhash": "ceea4db11063d4bd"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/announcements/unread/?symbol=vs20cleocatra&mgckey=stylename@generic~SESSION@6507d6a5-db0d-4a8e-a766-7b91388de2b0",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/xml",
+    "bytes": 142,
+    "urlhash": "75e279087888a296"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/764ab4d4-275f-4642-8f12-ef408f9f7a89",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 188139,
+    "urlhash": "125af38ee7c04575"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/22b5a77e-9996-4e75-9d74-90c98084d83f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 139038,
+    "urlhash": "6b0a17ec57214a2d"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/90f0c004-1abb-40e8-b757-1d124c8ed367",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 129444,
+    "urlhash": "d8e562f7ee9dca24"
+  },
+  {
+    "url": "https://clctr.ltguevmavv.com/collect",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "text/plain",
+    "bytes": 2,
+    "urlhash": "45f094b48e3ae81d"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/saveSettings.do",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 0,
+    "urlhash": "0815a1ee49e7c1da"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/saveSettings.do",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 0,
+    "urlhash": "0815a1ee49e7c1da"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/24733318-131f-4e27-9071-846be80c8f1f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 510771,
+    "urlhash": "8aa3995872792b5e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/54dd150e-563c-443f-ac8f-bb73541438df",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 43563,
+    "urlhash": "0a6d410c4e7363fd"
+  },
+  {
+    "url": "https://clctr.ltguevmavv.com/collect",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "text/plain",
+    "bytes": 2,
+    "urlhash": "45f094b48e3ae81d"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/67ee70cb-827f-4e09-944a-fd30dddf33ed",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 34698,
+    "urlhash": "cb7e2441ecad8116"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/e58aeec4-2552-47fc-98df-1b8e44eb5bc7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 29706,
+    "urlhash": "3c70921381ce21d0"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/saveSettings.do",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 332,
+    "urlhash": "0815a1ee49e7c1da"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f5ce3294-ec6d-4341-9eb0-48aa749fe1c9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 227052,
+    "urlhash": "7a8c1fa438560539"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/24d674fe-3ae2-4936-b9bd-221e2ec57d9f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 22842,
+    "urlhash": "432771969bb8a179"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/d3db5b38-f471-4e9a-a4f7-7bc2db897638",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 217056,
+    "urlhash": "906465d509cf4b95"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/42d523c2-8aaa-46bc-b8a4-e0b7efea9c79",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 23337,
+    "urlhash": "75a5edfea24b8065"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/c83b6b2d-5439-4603-bb6e-f050348b6e2a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 226593,
+    "urlhash": "5909a34c39cefd54"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/0b344349-b797-4cec-930b-d0eb10154030",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 23697,
+    "urlhash": "05c584ca07115f0a"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/632737c4-f580-47ba-b4a7-4f2301f7d655",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 209898,
+    "urlhash": "8194e496d87a4e0b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/2ef286da-d547-4958-9aac-01c6fa348619",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 15675,
+    "urlhash": "e82e8a648b3175a0"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/afd5df72-fe18-403d-97bf-f47f41093a4b",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 244053,
+    "urlhash": "bf84bb0dc32faa45"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/89782434-317a-439b-9485-6e41ef20bce0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 35757,
+    "urlhash": "d7fb6c8f6cf4d853"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/b141f8f1-21a4-4067-b2eb-c965cfd140a7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 95736,
+    "urlhash": "ea34be9156f1b57e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/2c3b9961-92a8-4f46-8ae9-449913832ae7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 84600,
+    "urlhash": "4ec6ef359f2c8b37"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/625c5497-54cf-4c81-8c1a-5c5b8e1d8b8d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 130053,
+    "urlhash": "3ed6c99f79475e5f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/43dd1bba-6ad5-4429-841d-642daf796155",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 595746,
+    "urlhash": "3aa784f0f7a47067"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/34cdfbfb-7e0d-4daf-b9de-1d7a527f86f6",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 6549,
+    "urlhash": "7d1c057e9efecc9f"
+  },
+  {
+    "url": "https://clctr.ltguevmavv.com/collect",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "text/plain",
+    "bytes": 2,
+    "urlhash": "45f094b48e3ae81d"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/25f4c73b-e10b-46fa-a586-e6279bd86370",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 2121,
+    "urlhash": "882ddd6694c482c1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/66acc1a8-48a8-435f-b51d-bdf963c1b062",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 22491,
+    "urlhash": "afa6409be5adcbc1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/33d1c609-4aac-453d-b25b-0f091dbd71db",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 16239,
+    "urlhash": "803c424a196dd195"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/fe7f5a0a-e3e2-4524-bbce-d629ea7f11d9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1785,
+    "urlhash": "eed6f81af772cbd8"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/bbb48d87-3139-4b2c-9a21-5f7efed0eb26",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 3555,
+    "urlhash": "234bbae510601237"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/92af2b6f-3155-4535-a409-e987d876bb16",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 3270,
+    "urlhash": "df09405c024a4959"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/7b2d72e8-ac5c-4fdf-b88b-635b7306d509",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 5913,
+    "urlhash": "e3285b20af0bfbdb"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/238dac50-c7c4-449d-bd3d-35bd65fb43a7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 32691,
+    "urlhash": "96cae60abdb8385c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/fc16547e-dc04-45cd-b706-bbccecdd0bcf",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 117426,
+    "urlhash": "cba0deeded32bb37"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5ad48f38-c28c-4710-8670-9b1e1361c90a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 447510,
+    "urlhash": "ced58ededebb1f85"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/42f658c4-2369-4c23-8de3-19c745ace652",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 31791,
+    "urlhash": "6b019fdce85e08a1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/b38de25b-5a0e-4790-943b-b87b35810065",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 742869,
+    "urlhash": "62cb775bb54c37a9"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/157909e7-4836-4a68-be51-f987736fcb19",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 148509,
+    "urlhash": "40ce1d15ecaeb48c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/35112c78-2565-4e46-93b0-6012744038d4",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7497,
+    "urlhash": "502614edaf038daa"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/547c3196-ea11-4bc6-bc1d-b114de51c1bf",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 350961,
+    "urlhash": "7c3220825859b1cc"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/33a4de34-fff9-440b-b701-fa872cbba291",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 197982,
+    "urlhash": "fd2c56ec40d08b14"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/484da191-f177-43c6-8fd6-f1f7d473307d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 285408,
+    "urlhash": "6662682727fd31c1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5f919cec-7c9a-4713-9e40-f201571af807",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 242187,
+    "urlhash": "5b02bd567094178f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f6cf1840-31eb-4dbe-88ad-f50d3e321da7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 13578,
+    "urlhash": "e57a49f0f646c67c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/06fdd77f-a304-4200-ab87-e311f5c9dde4",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 273315,
+    "urlhash": "a73bf0eb2ecec6c9"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/eefb6f1d-03bf-42da-b566-5ecccb2796bb",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9657,
+    "urlhash": "17c2b43c3781cc0a"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ff0fe6e9-267a-495c-a72c-0c15183f0ff5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 30429,
+    "urlhash": "59c19a4da5efb9f1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/42a2c58d-d126-4db4-83bc-ae069403dfa1",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 83001,
+    "urlhash": "b6261238a18df511"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/61400a98-1135-4649-83c6-1fa8321e7ca8",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 214329,
+    "urlhash": "3bd446c0b72a1af2"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8cd14fb3-fcc7-4adb-af48-61f22f8b86ac",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1761,
+    "urlhash": "982cef0861462a53"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/85b43892-a5e3-4f9b-8323-6ad30ff8ca82",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 173424,
+    "urlhash": "074a142986c89186"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/9567946a-5803-4ec2-b30d-4e7e0fc232f2",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 295335,
+    "urlhash": "6e6905781783e837"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8138e646-64b0-4026-af1c-59e6971a4582",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 36366,
+    "urlhash": "05130f3d4d53d8f7"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6adb4918-2a27-4a26-9531-9829cc14596c",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 31611,
+    "urlhash": "389f9ad043377c05"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/4646807f-f0de-4293-9dd7-ce6aae2d542a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 348999,
+    "urlhash": "874ecd808e440d6a"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/68f2dcca-e2da-4bf8-a835-1f96601b7cc7",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 379515,
+    "urlhash": "a77e4f1572f7a9ba"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/17144740-fcc7-49ab-9665-2d597d277986",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 162936,
+    "urlhash": "33a4daf2f943153f"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f6b9b780-5b26-4463-99ba-2f248d96afdc",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10992,
+    "urlhash": "80b43edc767be3b1"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/8aa17caa-f6d2-4c2c-964f-20f016747cad",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 6780,
+    "urlhash": "dc353e4397c16dd6"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/11c84e8d-5a33-4898-8c19-8ff40281bf3e",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 5664,
+    "urlhash": "4b421d15816dd203"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/06eca9ac-2895-4bc6-a4b7-203f634357c2",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 6795,
+    "urlhash": "9f453e9a368d76d6"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/b42988d3-cdd1-44cc-b803-a826b8e7b938",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 2229,
+    "urlhash": "caab4e4c42282a63"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/bd58abe0fd84ee440a3959bf35fd1661.jpg?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 30414,
+    "urlhash": "e26c38874d6d6da4"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/ab382ce7-7f60-4df2-a7ce-082453f9ac1d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 30414,
+    "urlhash": "f5629e7966f3953e"
+  },
+  {
+    "url": "https://clctr.ltguevmavv.com/collect",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "text/plain",
+    "bytes": 2,
+    "urlhash": "45f094b48e3ae81d"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/20bb14764bf3bfd47abec6db2f14c0ca.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 75265,
+    "urlhash": "509f01a4bf210eae"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/1f69fd20-3c45-434b-a861-5c25140efb56",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 75265,
+    "urlhash": "fcf88cfcca17039e"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/37881737686b2d948bbbb7b8afe0b88d.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 110647,
+    "urlhash": "4fde8ca77575572b"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/057d95b8-69e8-4e4f-95b8-5de66b7102b2",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 110647,
+    "urlhash": "a677104584cf66ea"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/5115c0190c72cbd42b2d2780976f7844.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 33136,
+    "urlhash": "eb4d15f1d32f7687"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/851fc6a5-efe8-4238-a29a-0dae656a3337",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 33136,
+    "urlhash": "d037b7a41167ecf8"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/748592695ded08b468f3cfe8d244798d.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 36021,
+    "urlhash": "28b16039d716e082"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/fc2310a1-365d-42ca-9382-f095f328eabe",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 36021,
+    "urlhash": "9ba334bf7a7250b4"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/d7574bff474ed1d42b6c41d8d28caf55.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 606052,
+    "urlhash": "0442b3cd796133dc"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6342e7c5-6212-4d42-ae65-fcf69eabf90f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 606052,
+    "urlhash": "30cbf790863477e1"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/95149657fd72386459b32f3a42ac52d3.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 67328,
+    "urlhash": "c2032208d0d449a2"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/27061a88-c69c-4a7e-86eb-796ee75cd562",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 67328,
+    "urlhash": "7dbac451aa5d4600"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/77cbb9e1e1e27284e9b0049095873972.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 179473,
+    "urlhash": "8de74ada79216c9c"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/67525e8e-7283-495b-a022-71ebe0083a6f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 179473,
+    "urlhash": "c4a9f6049f1f20cc"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/saveSettings.do",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 344,
+    "urlhash": "0815a1ee49e7c1da"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/saveSettings.do",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 65,
+    "urlhash": "0815a1ee49e7c1da"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/78425a8f4423cf24caee38ae03ec2412.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 50176,
+    "urlhash": "bde6fb590bd9b0fe"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/6b786e6a-fb75-401e-9377-fb51672a22d9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 50176,
+    "urlhash": "476efe0988461a00"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/b761539ec65b4204194ca5cb19cea4d7.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9523,
+    "urlhash": "e2349c236b408d5e"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/50c8ad9b-4197-4967-aa5e-e0408ba3b3cc",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 9523,
+    "urlhash": "1b382d2ebcc54d59"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/a754989d1cb78b146abb063a7a4c69bd.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 308122,
+    "urlhash": "e7a3dbade85eade7"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/f0cf0f40-eb32-4c2d-936e-de0d27092dd6",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 308122,
+    "urlhash": "c902a1ad9a1d9ad3"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/57f50add903f37e4a87596bf64ceb639.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 96981,
+    "urlhash": "3a5be802a2abff36"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/91186469-d36c-4803-a272-33f23a52b710",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 96981,
+    "urlhash": "a9cbf63ee42cdd64"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/5be0f13dcd5169e4bb0fe94d3d3861fc.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 89300,
+    "urlhash": "a6661c364cebfb46"
+  },
+  {
+    "url": "blob:https://demogamesfree.pragmaticplay.net/5c593e59-fb07-4cd8-9393-5c4e36ced42b",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 89300,
+    "urlhash": "ee0f03b06ebd7897"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs20cleocatra/desktop/game/res/91fbc71d5f5ca0f47b65d3e8b33da122.png?key=847ed",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": -1,
+    "urlhash": "98200e6b0be4f6eb"
+  }
+]

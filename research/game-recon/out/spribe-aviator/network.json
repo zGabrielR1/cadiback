@@ -1,0 +1,515 @@
+[
+  {
+    "url": "https://demo.spribe.io/launch/aviator?currency=BRL&lang=pt",
+    "method": "GET",
+    "type": "document",
+    "status": 302,
+    "mime": "",
+    "bytes": -1,
+    "urlhash": "54ff6b00fe70a245"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/?currency=BRL&operator=demo&jurisdiction=CW&lang=pt&user=64880&token=37jo7N536ITMJ7DyLbgeFM7rgHPAhaZb",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 21960,
+    "urlhash": "dbd84a9aa8890a37"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/runtime.da7dcd113f9ca8e6.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 1333,
+    "urlhash": "6aa25069ea55367d"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/styles.7d19f71451d11240.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 99537,
+    "urlhash": "7c28e8679315c91b"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/polyfills.04f7ca256c7fd371.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 101308,
+    "urlhash": "f5c04a8a6545e8d7"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/Inter-Regular.1282ebc61b96a9d9.ttf",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "binary/octet-stream",
+    "bytes": 310252,
+    "urlhash": "2c05dd37fb037f0a"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/main.f4651df965443162.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 2604787,
+    "urlhash": "8a1e82443273c02e"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/i18n/pt.json?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 54864,
+    "urlhash": "1c2c046d521850e0"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/i18n/en.json?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 50445,
+    "urlhash": "fa8d10312a60dd15"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/bg/bg-dashed-line.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 5136,
+    "urlhash": "66e32459f8cddf99"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/bg/bg-sun.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 3677,
+    "urlhash": "15c2d4d8cd1c458e"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/prop/prop.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 2459,
+    "urlhash": "37e75f05e47aa47a"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/Inter-Bold.c146dcab14729d84.ttf",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "binary/octet-stream",
+    "bytes": 316584,
+    "urlhash": "49c681c1381f9031"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/partners-logo/partners-logo-neutral.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 18478,
+    "urlhash": "936c98d6d0a6112e"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/partners-logo/official.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 24171,
+    "urlhash": "bbba0b4b2d4fcb13"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/partners-logo/partners-logo.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 14308,
+    "urlhash": "20146e497981e005"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/sounds/sprite_audio.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 210123,
+    "urlhash": "47bdf6570adaaae6"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/sounds/bg_music.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 518911,
+    "urlhash": "963b8c0a024936ad"
+  },
+  {
+    "url": "https://app-config.spribegaming.com/aviator/demo?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 383,
+    "urlhash": "f0139e1f12660200"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/multiplier/bg/blur.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 377,
+    "urlhash": "b2738e1b9d6395ef"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/icons/login-timer.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 729,
+    "urlhash": "329e6cefac5dc5a6"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/icons/clock.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 587,
+    "urlhash": "b4ecbd4ccf4e1309"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/plane/spribe/plane-0.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 2685,
+    "urlhash": "3d446c165be0fd2e"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/icons/up-down.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 558,
+    "urlhash": "acf484df196f32f2"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/plane/spribe/plane-1.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 2786,
+    "urlhash": "10b0079360c3e93f"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/plane/spribe/plane-2.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 2704,
+    "urlhash": "5053ea0f869fd7a4"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/images/canvas/plane/spribe/plane-3.svg?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 2786,
+    "urlhash": "66e7f26d5a0c1222"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/aviator-logo.c6b742d995765be3.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 3879,
+    "urlhash": "4cf9acfed7bfd47c"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/burger.c6267b2d55596c34.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 547,
+    "urlhash": "32faa8198cb3cc57"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/show-more-icon.fdfdd113d7f9573e.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 537,
+    "urlhash": "ac6067d8d9387d3b"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/pf-icon.431e53a93be90923.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 782,
+    "urlhash": "65aa8d345f074ddb"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-20.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9320,
+    "urlhash": "2263ed527253a3c0"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/logo-icon.eaa752ca5b1bd8fb.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 1935,
+    "urlhash": "717013f0a4d5b2d7"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/minus-grey.337d79958d035ae8.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 213,
+    "urlhash": "cb75c1441ee922e8"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/plus-grey.5bf167adc606b769.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 360,
+    "urlhash": "0064d57d6ff4aaf4"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/remove.aeeca15ffd0d871e.svg",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 521,
+    "urlhash": "7f410959fa61c9ad"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-58.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 8075,
+    "urlhash": "8ee41bf02c966c63"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-5.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 11851,
+    "urlhash": "9f57165c1aa98dd3"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-44.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7915,
+    "urlhash": "6cf3887c920c59dc"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-2.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9865,
+    "urlhash": "0031f1c6db0de72d"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-72.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7819,
+    "urlhash": "1612944fb206afe4"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-19.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10894,
+    "urlhash": "9426641d8a17e3cf"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-14.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10203,
+    "urlhash": "91706cda3eaa1e5d"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-32.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7224,
+    "urlhash": "6393c377714e693c"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-22.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7125,
+    "urlhash": "72411d86bac21be5"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-1.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9367,
+    "urlhash": "2dc524b2bf2dca62"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-50.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 8955,
+    "urlhash": "bd22517f3a63ec03"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-4.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9854,
+    "urlhash": "e9d3cbd0ae3d9233"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-3.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 8719,
+    "urlhash": "96b287eda206abb3"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-10.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10346,
+    "urlhash": "f252ddc6f983163b"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-26.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7707,
+    "urlhash": "4df848b1c82d98ad"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-52.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 8160,
+    "urlhash": "b17155ce0ec2ef1e"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-13.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 11071,
+    "urlhash": "16ec7cfd7060f7b0"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-17.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9589,
+    "urlhash": "b7bfb2a4e42f4375"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-70.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 9039,
+    "urlhash": "1b31d7b5e5870b7a"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-31.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 7669,
+    "urlhash": "5eccc39630565241"
+  },
+  {
+    "url": "https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-10.png?v=v4.2.115-hotfix-5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 10346,
+    "urlhash": "f252ddc6f983163b"
+  }
+]

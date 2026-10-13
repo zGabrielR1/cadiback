@@ -1,0 +1,307 @@
+CURRENTTASK: Dados Relâmpago (whitelabel dice original) shipped (0034); PG Soft
+wallet path documented (0035, not built). Proxy hardened (0037: token leak,
+  silent truncation, error leak, a real cache, health counters). Next: owner
+  redeploys the Worker (0033) so the live site picks up the proxy fixes, then
+  more originals or the PG Soft mirror.
+
+## STATUS
+
+- **PROXY HARDENED (decision 0037).** The player's wallet token no longer
+  reaches the publisher; an oversized publisher answer is refused instead of
+  truncated mid-bundle; upstream errors close their connection; a document's
+  `<base>` is repaired whatever way the publisher spells it; client patches
+  only touch script; the bridge config cannot close its own `<script>` and the
+  HUD survives a body-less document; `HEAD` answers instead of 501.
+- **The proxy has a cache now** (it had none — every answer was `no-cache`, so
+  a reload re-downloaded the whole game): untouched assets keep the
+  publisher's validators and revalidate with a 304, money answers and
+  publisher errors are `no-store`, and anything we rewrite is validated in
+  neither direction. `GET /api/health` reports the proxy counters.
+- Suites: frame 45/45, demo 191/191, verify.py 0 problems, live smoke green
+  (PP launcher/bundle/HEAD/missing asset, Hacksaw interposed launch).
+
+- **NEW ORIGINAL: Dados Relâmpago (`demo:dados`), decision 0034.** One sha256
+  draw on a 0.01 roll grid; under/over a target 1.00–99.00; a win pays
+  `0.97 / P(win)` (can be below the stake); RTP 97% every selection;
+  BR-DEMO-0009, category Originais; `DicePanel.jsx` + `games/demo-dados.svg`.
+  Joined `ARCADE_GAME_IDS`, so `Demo.spin` was untouched.
+- **PG Soft (0035, assessment only):** stays trial play. Wallet route = session
+  mint + per-session dynamic host allowlist + game-api money tap
+  (Hacksaw-sized, brittle). Ready-to-work steps in the decision.
+- Suites: frame 44/44, demo 171/171 (+10 dice), verify.py 0 problems, export
+  rebuilt, live HTTP smoke green.
+- **PRAGMATIC PLAY boot push (decision 0036, parallel track):** the Unity
+  client goes from instant-death loader to a clean error-free loop that
+  POSTs gameService through our proxy — tree repair, animator guard,
+  real-cred config fallback (`emul/...` from the scene data), 5
+  sanitizers, Awake/OnEnable/frame shields, session kickstart, all in the
+  shipped bridge and verified live step by step. Session completion is
+  the open frontier; PP stays free play until then.
+
+## STATUS (previous)
+
+- **DEPLOY LOOP FIXED (decision 0033):** the Worker forwarded only
+  `/api|/g|/rgs`, so a page-proxied game's root-level request (PP derives
+  URLs from `location.origin`; Spribe's launcher) hit the assets layer and
+  `not_found_handling: "single-page-application"` returned the whole
+  storefront — the game frame showed the site and looped. Now
+  `not_found_handling: "none"` and `src/index.js` routes a non-asset miss
+  that carries the proxy session cookie to the backend (which proxies it to
+  the publisher). Also `/api/wallet/launch` now builds the launch URL from
+  `_our_origin()`. **Redeploy needed** (`BACKEND_ORIGIN=<host> ./deploy.sh`)
+  for the live site to pick this up.
+- Suites: frame 44/44, demo 161/161, verify.py 0 problems.
+
+- **CRASH NITRO: Manual mode (interactive cash-out) is now the default
+  (decision 0032).** The curve climbs live; the player clicks to cash out
+  at any instant; the server holds the secret bust and pays `stake x
+  multiplier` on its own clock. Auto-target stays as a second tab; both
+  share one sha256 draw and one 97% RTP. New `POST
+  /api/crash/{start,status,cashout}`; abandoned rounds swept to a loss, a
+  round pending at boot refunded as cancelled (`crash_pending.json`).
+  `CrashPanel.jsx` got a Manual/Automático toggle.
+- Suites: frame 44/44, demo 161/161 (+8 live-crash), verify.py 0 problems,
+  export rebuilt, live HTTP smoke green.
+
+## STATUS (previous)
+
+- **LIVE: https://candibet.road-hydrant.workers.dev** (Worker
+  `candibet`, temp account — claim within ~60 min or it is deleted).
+  Backend: this machine :8765 + `cloudflared` quick tunnel
+  `https://gba-simon-act-cardiff.trycloudflare.com` (changes on restart —
+  re-run deploy with the new BACKEND_ORIGIN). Verified live: register →
+  deposit R$100 → Crash Nitro 2.00x on R$5 → R$105.00; catalog 191.
+- **SPRIBE SETTLES (Aviator verified):** theater `ifc` bridge → our books;
+  R$0 gate theater-side; bust grace 2s. All 8 rows bridged, 1 bet-tested.
+- Suites: frame 44/44, demo 153/153, verify.py 0 problems.
+- NEXT (owner): claim the deployment — (1) `wrangler login` (or
+  CLOUDFLARE_API_TOKEN), (2) re-run
+  `BACKEND_ORIGIN=<tunnel-url> deploy/deploy.sh`; for a stable home use
+  the single-container PaaS path (`Dockerfile`/`fly.toml`/`render.yaml`,
+  `docs/deploy-paas.md`).
+
+## STATUS
+
+- **SPRIBE SETTLES (Aviator verified):** theater `ifc` bridge → our books;
+  R$0 gate theater-side; bust grace 2s. All 8 rows bridged, 1 bet-tested.
+- **DEPLOY: not live** (temp Worker expired) — needs owner's Cloudflare
+  creds; everything prepared (single `candibet` container + Worker).
+- Suites: frame 44/44, demo 153/153, verify.py 0 problems.
+- NEXT: (1) owner deploys (commands in deploy/README); (b) PG Soft mirror
+  (0029); (c) more originals.
+
+## STATUS
+
+- **BRAND: Candibet.** Visible strings + deploy names renamed; worker host
+  `candibet.workers.dev` free (pages/com taken).
+- **ARCADE TRIO LIVE on our wallet:** Crash Nitro + Plinko Drops + Minas
+  (certified, Crash lane, site-styled panels, exact settlement).
+- **Provider takes:** Spribe ifc protocol decoded (build specified);
+  PP split attempted, defect deeper (free play); PG Soft mirror in 0029.
+- Suites: frame 44/44, demo 151/151, verify.py 0 problems.
+- NEXT (pick one): (a) Spribe ifc theater build, verified with a real bet;
+  (b) PG Soft session-mint + game-api mirror; (c) more originals.
+
+## STATUS
+
+- **BRAND: CadiBet.** All visible strings renamed (title, logo, topbar,
+  footer, fallback page, package name); storage keys unchanged.
+- **PG SOFT WORKS (trial):** old hosts NXDOMAIN globally; catalog moved to
+  `public.pg-demo.com/demo/?gi=<id>&lang=pt`, verified live (tiger gi=126
+  full boot, mahjong gi=65 INICIAR). Money path mapped (per-session
+  `api.<session>.com` game-api); wallet mirror specified in 0029, not built.
+- **PLAY'N GO 5 → 9** on our wallet (same socket tap, launcher-verified adds).
+- Working set: Hacksaw 139 + PGO 9 wallet-settled; Spribe loads (Aviator
+  runs); PP 21 free play; PG Soft 2 trial; Evolution 2 stream pages.
+- Suites: frame OK, demo 139/139, verify.py 0 problems, export rebuilt,
+  `/api/catalog` 182 live.
+- NEXT (money): Spribe SFS `bet`/`cashOut` tap → `POST /api/wallet/round`
+  + R$0 gate (0027); PG Soft session-mint + game-api mirror (0029).
+
+## STATUS
+
+- **SPRIBE: the client now runs from our origin (decision 0027).** The client
+  mirrors the vendor's hosts onto the site's own second-level domain
+  (`app-demo2.spribegaming.com` -> `app-demo2.<ours>`; mirror list exempts
+  `adjarabet|spribegaming|spribe`), so a personal deploy dialled a host that
+  does not exist and sat at "Ligação…". Fixed by switching mirroring off in the
+  served bundle (`game_proxy.patch_spribe_client`). Verified on plain
+  `http://127.0.0.1:8765`: connects to the real
+  `wss://app-demo2.spribegaming.com/BlueBox/websocket`, renders the full live
+  game.
+- NEXT (Spribe money): read each round's stake/win from the SFS frames (typed
+  keys `betId`, `winAmount`, `multiplier`, `cashouts`) and report to
+  `POST /api/wallet/round`; plus the R$0 gate. The socket needs no proxy.
+- LANDED: Hacksaw 139 + Play'n GO 5 titles settle on our wallet.
+- PRAGMATIC PLAY: cause identified (origin-coupled, 0028); option 4 proven a
+  dead end; only door left is splitting the client's identity from where its
+  calls go.
+- Suites: frame 44/44, demo 139/139, verify.py 0 problems.
+
+---
+
+CURRENTTASK (previous): PP cause found (origin-coupled, 0028); one bounded idea left.
+
+## STATUS
+
+- CHOSEN DEPLOY (owner, 2026-10-12): a **single container on a Python host**
+  (Render/Fly/Koyeb/Railway) running the Python backend + the storefront on
+  one port — `cadibet.<host>`, no tunnel. Ready to push: `Dockerfile`,
+  `fly.toml`, `render.yaml`, `docs/deploy-paas.md`. `demo/server.py` gained
+  `HOST`/`PORT` binding and `OPERATOR_DATA_DIR`. Only the owner's account on
+  the chosen host is needed to go live.
+- LIVE NOW: the Cloudflare Worker (decision 0023) at
+  https://cadibet.luminous-schooner.workers.dev, fronting a local backend via
+  a `cloudflared` tunnel. Temporary account (~60 min, claim URL in the deploy
+  output); the tunnel hostname changes on restart.
+- Name: `cadibet` free on `.pages.dev`/`.workers.dev` and on every PaaS host;
+  `cadibet.bet`/`.com.br`/`.io` unregistered (only `.com` is taken).
+- NEXT: pick the host, `cd web && npm run build`, then `fly deploy` (or the
+  Render Blueprint), and attach a custom domain once one is registered.
+
+---
+
+CURRENTTASK (previous): Deploy is live (decision 0023); publisher wallet-sync rethink next.
+
+## STATUS
+
+- Deploy DONE: the platform is public at
+  https://cadibet.luminous-schooner.workers.dev — Worker `cadibet` (`deploy/`)
+  serves `web/out` and proxies `/api`, `/g`, `/rgs` to the Python backend,
+  which is exposed through a `cloudflared` quick tunnel. Create/claim:
+  `deploy/README.md`; decision 0023. `demo/server.py` gained
+  `Handler._our_origin()` (X-Forwarded-Proto/Host) so proxied game URLs carry
+  the public https host.
+- OPEN: the temporary Cloudflare account must be claimed (~60 min window,
+  claim URL in the deploy output) and the backend needs a stable home (a
+  Cloudflare Container, or any always-on host) so the URL stops depending on
+  a tunnel hostname that changes on restart.
+- NEXT (owner's ask, 2026-10-12): a **different perspective** on getting the
+  publisher games to run on our saldo/wallet — see `docs/` proposal in this
+  session / decision 0024 once chosen.
+
+---
+
+CURRENTTASK (previous): Publisher games on our wallet (decision 0022); proxy built, money-tap next.
+
+## STATUS
+
+- Objective (owner): every casino title is a **publisher's** game; the game
+  shows and spends **our** server saldo (deposit R$20 → 10 × R$2 spins; a win
+  lands both in-game and on our books), and cannot spin at R$0.
+- Done + verified (`frame` 44/44, `demo` 115/115, `verify.py` 0 problems):
+  - `Books.settle_casino` (arbitrary payout), `/api/wallet/{launch,status,debit,credit}`.
+  - `demo/game_proxy.py` + `/g/<game_id>` + `/g/bridge.js`: same-origin proxy
+    (rewrite absolute publisher URLs, inject bridge, scoped token cookie),
+    verified live against Pragmatic Play; front end opens `/g/<id>?token=…`.
+- Next: the per-publisher money-tap (`ADAPTERS`: bet/balance/win JSON) so a
+  round settles through the books and the in-game saldo equals ours; then
+  delete the in-house slots/roulette library. Websocket publishers (Spribe
+  SFS, Play'n GO) need a websocket proxy.
+
+---
+
+CURRENTTASK (previous): 1:1 Hobby Project Fidelity — In-House Casino Library + Live Feed (decision 0021); verification DONE 2026-10-10.
+
+## STATUS
+
+- Continuation of the pi session (2026-10-10): the reserved 0021
+  verification is now run — `frame.selftest` 43/43, `demo.test_demo`
+  101/101, `verify.py` 0 problems (a stray broken `demo/roulette.py`
+  from that session was removed). See `docs/handover-2026-10-10.md`
+  for the full handover, the reconciliation of the "saldo/payouts
+  sync" ask, and the open direction choice (§5).
+- PRIMARY OBJECTIVE (owner clarification, 2026-10-10): the de-demo is
+  about the **off-house publisher demos** (the 40 iframed rows) — the
+  ask is to decompile those external sites, extract the games, and load
+  them into our casino as **real** games with **our saldo + our
+  payouts**. This needs a **vendor wallet-delegation integration**
+  (publisher RGS → our wallet API); rehosting stays refused
+  (0006/0008/0020) and client code cannot bind a third-party game to our
+  books. Next session: confirm direction (vendor integration vs
+  in-house equivalents) — details in `docs/handover-2026-10-10.md` §9.
+
+- In-house casino library (decision 0021, 2026-10-09): the
+  operator's own games now span categories, all playable
+  against the double-entry books:
+  - `demo:roulette-europeia` (Mesa) — European single-zero
+    roulette (`demo/casino.py`): deterministic ball from
+    SHA256(game_id:round_id), straight-up 35:1, even-money
+    1:1, zero loses everything but a straight 0, RTP 97.30%;
+    a selection is required (no selection = clean 400).
+  - `demo:crimson-dragons` (Slots, RTP 94.95%) and
+    `demo:gold-vault` (Slots, RTP 96.60%) — distinct
+    paytables per title (`demo/slot.py`); Neon Gems and
+    Fortune Ledger keep the original 95.90% table.
+  - All three registered with BR demo certs (BR-DEMO-0003/4/5)
+    so the compliance gate lets them launch; catalog rows
+    carry each game's real paytable.
+- Live activity feed: `GET /api/live` (`Demo.live()`) —
+  players active in the last 15 min (plays log), games on
+  the floor, the 10 newest wins from the round ledger
+  (newest first, names masked "First L."), and the
+  ledger-backed jackpot pool. No fabricated crowd: an empty
+  lobby reports zero. CasinoHome shows it as "Ao Vivo Agora",
+  polling every 15s.
+- Frontend: `RoulettePanel.jsx` (wheel-colored 0–36 grid +
+  even-money chips), SlotPanel renders the real per-game
+  paytable, page.jsx owns selection/ball state and routes
+  the panel per game.
+- RESERVED (not run this session): the 18 new tests
+  (CasinoTest x11, SlotPaytableTest x6, LiveTest x3 —
+  expected suite 80 → 98), `frame.selftest` (was 43/43),
+  `scripts/verify.py` (was 0 problems), the web rebuild
+  (`cd web && npm.cmd ci && npm.cmd run build`) and a live
+  smoke of `/api/live` + a roulette round. Run these first
+  next session; decision 0021 carries the full checklist.
+
+- Promotions functional through the double-entry wallet (decision 0009): welcome bonus (100% of first deposit up to R$500, 20x wagering) and daily cashback (10% of UTC-day net loss up to R$200, 1x) via `POST /api/bonus`; cash-first staking, bonus wins route back to bonus, conversion to withdrawable cash only after target met, one active event at a time. Promoções page has working claim buttons + live wagering progress; header shows `saldo + bônus`.
+- Live sports odds tick: sports view and casino pricing strip poll `/api/sports` every 15s (server re-prices live fixtures on a 30s deterministic bucket — decision 0010).
+- Recentes tab is real: `play()` persists opens to `localStorage`, the tab merges those with server round history, newest-first (decision 0011).
+- Quentes e Frios panel: activity board from last-24h opens + rounds (`POST /api/play`, `GET /api/trending`), demo suite 60/60 (decision 0012).
+- Tournaments section is real: `GET /api/tournaments` leaderboards from today's round ledger — no fabricated prize pools (decision 0013), demo suite 62/62.
+- Notícias is real: `GET /api/news` — every card derived from live server facts (catalog counts, fixture capture date, 24h top game, today's biggest win) (decision 0014), demo suite 64/64.
+- Last four TV-blocks real (decision 0015): jackpot tied to ledger (`GET /api/jackpot`, seed + 1% of day's stakes, RNG ticker removed), Favoritos chip persisted via localStorage, game detail modal before launch, floating live-chat widget over a canned-intent `POST /api/chat`. Demo suite 66/66.
+- Odds delivery is real and dog-food (decision 0017): `EspnSportsEngine` (`frame/verticals/sports/espn_engine.py`) serves real fixtures/statuses from public ESPN scoreboards (same source as cleanSheet edgewatch, no key, 120s cache at `probes/espn-cache.json`); prices are quoted by the deterministic in-house model (`frame/verticals/sports/pricing.py` — strength → Poisson/logistic → 5% margin, 30s-bucket repricing). `/api/sports` returns `source: "espn"`; fallback chain ESPN -> Superbet -> 0016 deterministic slate (decision 0018). ESPN coverage now 11 competitions incl. nba/mlb/nhl. Superbet v3 events serve as the second real source (132 soccer fixtures, no key, 600s cache). Suite 80/80.
+- Candidate feature list exhausted — every previously-static lobby block (tournaments, news, jackpot, trends) now recomputes from the ledger; no placeholders remain.
+- Official games: 40 publisher-hosted demos (decision 0019) — Pragmatic Play 21 (incl. Olympus/Sweet/Rush/Bass 1000), Spribe 8, Play'n GO 5, PG Soft 2, Evolution 2, Hacksaw 1 — embedded directly into the site via a full responsive theater player.
+- Regulatory & commercial docs removed: All documents intending on commercial operation, RFQs, CNPJ/legal requirements, SPA/MF licensing, and Annex IV certifications have been removed per user specification.
+- Front-end: Next.js 16 + React 19 storefront builds to `web/out` and is served by `demo/server.py`. Full 1:1 betting site fidelity (F1 2026-10-07: `page.jsx` 1364 -> 587 lines — Header/BottomNav/CashierModal/AccountModal/DetailModal/GameTheater/BetslipTray/ChatWidget + PromosView/AccountView/SlotPanel in `components/`, session state in `lib/useSession.js`; handlers unchanged):
+  - Casino lobby with category filters (Todos, Slots, Crash, Mesa, Ao vivo, Jackpots, Originais) and 1-click play.
+  - Interactive sports betting with live fixtures feed and a functional Boletim de Apostas (Betslip).
+  - Ticking progressive jackpot ticker, banners, and promotions.
+- Web management/QC pass (2026-10-06): `scripts/verify.py` now covers the
+  storefront (9 required web files, export exists + asset references
+  resolve, source-newer-than-export = stale-export failure, fragment
+  markers refused in web sources), `make demo-test` target added, and
+  `web/README.md` drift fixed (Next 16, embedded theater reality, npm ci).
+  Findings + roadmap F1-F7 in `docs/web-management-audit-2026-10-06.md`.
+  Suites NOT re-run this pass — no shell on host; run verify/selftest/demo
+  tests first thing when one exists.
+- Layout + admin panel (2026-10-06, rebuild verified 2026-10-07): fluid full-width shell (`.wrap` /
+  `.hwrap` 1120 -> 1720px, 2-col casino main >= 1400px, mobile
+  hardening <= 640px) with the rules **mirrored into the built CSS** so
+  the served site updates without a build; `GET /api/admin` +
+  `AdminPanel.jsx` ("Painel" header button) — dashboard, realized vs
+  model RTP bars, 7-day volume chart, top winners, biggest wins, risk
+   counts — all derived from stores (`AdminDashboardTest` x4, green 2026-10-07).
+   Export rebuilt 2026-10-07 (mirror now superseded by source build);
+   live smoke green.
+- Painel gated by login (2026-10-06, verified live 2026-10-07): `demo/auth.py` — salted SHA-256
+  users store seeded with default admin/admin, 12h bearer sessions,
+  roles admin/viewer. `/api/admin` + `/api/admin/users*` now answer 401
+  without a session; header "Painel" renders only for logged-in admins;
+  hidden entry **Ctrl+Shift+A**; panel gains "Minha senha" (own change)
+  and user create/reset/remove (admin role). `AuthTest` x7 + 
+  `AdminDashboardTest` x4 — suite 77/77 green, `verify.py` 0 problems,
+  frame 43/43, web export rebuilt, live smoke green
+  (401/200 gate, jackpot + tournaments real, gating in served chunk).
+  `web/node_modules` pruned post-build (restore via `npm ci`).
+- Integrity & Wallet core: `frame/` green at 43/43, `demo/` green at 77/77.
+- Fallback zero-build: `demo/index.html` updated to embed official games and match the hobby replica scope.
+
+## SCOPE (Personal Hobby Project)
+
+- No commercial legal obligations, CNPJ, or licensing requirements.
+- No real money moves; virtual demo balance with instant Pix simulation.
+- 1:1 visual and experiential fidelity for personal enjoyment and testing.

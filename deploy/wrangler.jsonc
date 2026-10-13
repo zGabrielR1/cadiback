@@ -1,0 +1,27 @@
+{
+  // candibet — Cloudflare Workers deploy of the hobby platform.
+  // The Worker serves the static Next.js export (web/out) and proxies the
+  // dynamic surface (/api, /g, /rgs) to the Python operator backend.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "candibet",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "../web/out",
+    "binding": "ASSETS",
+    // The export is a single page with no client router, so it needs no SPA
+    // fallback. Leaving one on made every unmatched path — including a game
+    // client's root-level request — answer with the whole storefront, which
+    // the game frame then rendered (the "game opens the site" loop). A miss
+    // is now a real 404, and the Worker routes a game-session miss to the
+    // backend (src/index.js).
+    "not_found_handling": "none"
+  },
+  "vars": {
+    // Public origin of the Python operator backend. Empty => the dynamic
+    // surface answers 503 with a clear message instead of HTML.
+    // Set at deploy time:  --var BACKEND_ORIGIN:https://<tunnel-or-host>
+    "BACKEND_ORIGIN": ""
+  },
+  "observability": { "enabled": true }
+}

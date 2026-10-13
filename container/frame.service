@@ -1,0 +1,12 @@
+[Unit]
+Description=operator frame selftest + scheduler (fallback when podman is unavailable)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/data/ppp/pentesting/betting/operator
+ExecStart=/usr/bin/python3 -m frame.selftest
+Restart=no
+
+[Install]
+WantedBy=default.target

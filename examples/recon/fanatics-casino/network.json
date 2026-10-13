@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://casino.fanatics.com/",
+    "method": "GET",
+    "type": "document",
+    "status": 403,
+    "mime": "text/html"
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "game_id": "pp:big-bass-splash",
+  "provider": "pragmatic_play",
+  "title": "Big Bass Splash",
+  "url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbextreme&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+  "tech": {
+    "title": "Big Bass Amazon Xtreme",
+    "canvas": 1,
+    "webgl": true,
+    "wasm": true,
+    "workers": 0,
+    "iframes": 1,
+    "scripts": [
+      "(inline)",
+      "(inline)",
+      "https://demogamesfree.pragmaticplay.net/gs2c/common/js/html5-script-external.js",
+      "(inline)",
+      "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/operator_logos/logo_info.js",
+      "https://demogamesfree.pragmaticplay.net/gs2c/common/v3/games-html5/games/vs/vs10bbextreme/desktop/bootstrap.js?key=8a6e8",
+      "(inline)",
+      "(inline)",
+      "(inline)",
+      "https://www.google-analytics.com/analytics.js",
+      "https://www.googletagmanager.com/gtag/js?id=G-18F57V2EP0",
+      "https://unpkg.com/@grafana/faro-web-sdk@%5E1.0.0/dist/bundle/faro-web-sdk.iife.js"
+    ]
+  },
+  "websockets": [],
+  "byType": {
+    "document": 3,
+    "script": 7,
+    "xhr": 61,
+    "stylesheet": 1,
+    "image": 106,
+    "ping": 1,
+    "fetch": 6
+  },
+  "exts": {
+    "do": 8,
+    "js": 7,
+    "json": 44,
+    "info": 1,
+    "css": 1,
+    "html": 1,
+    "png": 6,
+    "jpg": 1
+  },
+  "totalRequests": 185
+}

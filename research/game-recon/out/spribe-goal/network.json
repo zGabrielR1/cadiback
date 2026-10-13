@@ -1,0 +1,191 @@
+[
+  {
+    "url": "https://demo.spribe.io/launch/goal?currency=BRL&lang=pt",
+    "method": "GET",
+    "type": "document",
+    "status": 302,
+    "mime": "",
+    "bytes": -1,
+    "urlhash": "78e06bc0de2b3937"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/goal?currency=BRL&operator=demo&jurisdiction=CW&lang=pt&user=36473&token=WTj4oB9KxSLZAIWp5P3UfCT5zESNEepY",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 32183,
+    "urlhash": "3b9e9657d3e5928e"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/runtime.d7fbbe4996d52709.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 3146,
+    "urlhash": "84a50a24362564dc"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/polyfills.fb62d3a6cb5e05eb.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 46409,
+    "urlhash": "9b19a114857134a7"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/styles.e2c2740430deb09f.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 173150,
+    "urlhash": "e0baa21bb18ee896"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/main.83049351279711d9.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 1374063,
+    "urlhash": "cddb2cd3afc952e3"
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBHMdazQ.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2",
+    "bytes": 37520,
+    "urlhash": "5fac139c681d1a0c"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/i18n/pt.json?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 24096,
+    "urlhash": "dc0f62342f97fb12"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/i18n/en.json?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 22175,
+    "urlhash": "29f903429dd397c3"
+  },
+  {
+    "url": "https://app-config.spribegaming.com/turbo/demo?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 950,
+    "urlhash": "e2b45d371289c510"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/314.948741d4223b7e17.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 631216,
+    "urlhash": "5e39dc583a11a7d3"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/383.0e6c53e33545d1a8.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 45573,
+    "urlhash": "5962ae16da303cc8"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/common.02cd294d4ec0ada7.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 4383,
+    "urlhash": "e4cf7d72a992cb9b"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/8.21c0e4a99ee9f1fd.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 67728,
+    "urlhash": "fed9c6d09846e1db"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/icons/screen-too-small.svg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/svg+xml",
+    "bytes": 729,
+    "urlhash": "17ef911827eaa9d1"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/sounds/goalSound.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 65244,
+    "urlhash": "5ae2fb5c20e22ded"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/sounds/commonSound.mp3?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 193140,
+    "urlhash": "b1c046378d7e32c1"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/resources/dist/goal/goal.json?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 4470,
+    "urlhash": "3970c5920f8da1c1"
+  },
+  {
+    "url": "blob:https://turbo.spribegaming.com/7c64f63e-5b93-4132-a9e6-2b8075e9cf89",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 587,
+    "urlhash": "53bc01ece54c1a19"
+  },
+  {
+    "url": "blob:https://turbo.spribegaming.com/d16398da-475f-42b6-883c-b118a826da9d",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 747,
+    "urlhash": "7f10dba5eee8c985"
+  },
+  {
+    "url": "https://turbo.spribegaming.com/assets/resources/dist/goal/goal.png?v=2.1.50-hotfix",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 0,
+    "urlhash": "fa116db1c6529eb9"
+  }
+]

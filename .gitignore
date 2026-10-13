@@ -1,0 +1,34 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# node — deliberately pruned between sessions; `npm ci` restores it
+node_modules/
+.next/
+npm-debug.log*
+
+# build output: the image builds it from web/ (Dockerfile stage 1)
+web/out/
+
+# deploy scratch: wrangler/miniflare local state, never credentials, but never
+# belongs in a deployable tree either
+.wrangler/
+deploy/.wrangler/
+
+# the live ledger, profiles, rounds and admin sessions — a deployment starts
+# with its own (OPERATOR_DATA_DIR), and this is someone's play money history
+demo/data/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# local env
+.env
+.env.local

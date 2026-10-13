@@ -1,0 +1,767 @@
+[
+  {
+    "url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=pt&practice=1&channel=desktop&demo=2",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 747,
+    "urlhash": "cb46ec1314713ffe"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/hera/hera-1.46.0.29/container-launcher/ContainerLauncher_bundle.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 361857,
+    "urlhash": "c5cfeded0661911d"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/games/getgamebygid/bookofdead",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 289,
+    "urlhash": "cf112e02bfa2eab8"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/configuration/prelaunchconfiguration?gameId=310&language=pt_BR&productGroup=2&gapTime=&brand=&ctx=&practice=1&channel=desktop",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 3305,
+    "urlhash": "a932e69607186c7b"
+  },
+  {
+    "url": "https://ascflyp.playngonetwork.com/",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 23,
+    "urlhash": "a699c61ef54e0563"
+  },
+  {
+    "url": "https://ascflyp.playngonetwork.com/",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 98,
+    "urlhash": "a699c61ef54e0563"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/configuration/v2?pid=2&gameid=310&lang=pt_BR&practice=1&brand=&ctx=&channel=desktop&jurisdiction=ZZ&platform=megaton&currency=DEMO&country=&region=&resourceRoot=&_r=bf74b416-6420-4454-9d09-46e156e1d8c5",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 9893,
+    "urlhash": "6da279169451a7f9"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/games/bookofdead/bookofdead_desktop.bundle.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 1838706,
+    "urlhash": "e0bfcc1ab9f0ac4b"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/help.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 2624,
+    "urlhash": "941c0fec9569f361"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/css/game_history_styles.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 9166,
+    "urlhash": "a3f310511044f6dd"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/template2.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 7121,
+    "urlhash": "0b521d4e75454e69"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 40524,
+    "urlhash": "792c71e1ab38fc23"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/template.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 47460,
+    "urlhash": "60f7e222d1bcfe07"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 537692,
+    "urlhash": "6cd8f6e949d2eb29"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/.vite/manifest.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1350,
+    "urlhash": "0e0b991fc3bd4982"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/assets/main-Ixdi7DHJ.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 72705,
+    "urlhash": "4d8d71cf52be424d"
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 22264,
+    "urlhash": "69031142d37ff312"
+  },
+  {
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 89220,
+    "urlhash": "9693203622602734"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/promotions/player/available?lang=pt",
+    "method": "GET",
+    "type": "xhr",
+    "status": 401,
+    "mime": "",
+    "bytes": 0,
+    "urlhash": "0d8c03ccf9848429"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/config_desktop.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 80834,
+    "urlhash": "96db2c399663bd5f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/png_mini.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 140,
+    "urlhash": "b4835887777cdf82"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/oswald_regular.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 154,
+    "urlhash": "7db4fe2fcdec3892"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/oswald_medium.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 152,
+    "urlhash": "906c810512e97842"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ROBOTO_CONDENSED_REGULAR.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 175,
+    "urlhash": "c3923ac26e4191ac"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/FLANKER_GRIFFO.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 129,
+    "urlhash": "ea1b059a0ed711df"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/PNG_VNTH.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 117,
+    "urlhash": "10cc771b92a7d445"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ARIAL_ROUNDED_BOLD.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 163,
+    "urlhash": "a2166b2c9fe4a243"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ROBOTO_CONDENSED_BOLD.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 169,
+    "urlhash": "b25001e80de27372"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/POPPINS_REGULAR.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 157,
+    "urlhash": "fd84d5dd765a80a5"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/BRITANNIC_BOLD.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 157,
+    "urlhash": "8289c436c83a7542"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/OSWALD-REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 151733,
+    "urlhash": "5f48ae022c3a6c4f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/PNG-MINI.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 114732,
+    "urlhash": "3513cd71279d2d49"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/OSWALD-MEDIUM.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 107945,
+    "urlhash": "ce6935111ba974c7"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/FLANKER_GRIFFO.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 195501,
+    "urlhash": "6dcfb05761710116"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/BRITANNIC_BOLD.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 23605,
+    "urlhash": "2955e8cdbf32b543"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ROBOTO_CONDENSED_REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 109929,
+    "urlhash": "98173e2b1ceb3a51"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ROBOTO_CONDENSED_BOLD.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 109277,
+    "urlhash": "5b3fc9827b90ebaa"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/ARIAL_ROUNDED_BOLD.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 27300,
+    "urlhash": "b5d81b0ef53e8bfd"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/POPPINS_REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 73600,
+    "urlhash": "2ab5e85ed66b5ed4"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/fonts/PNG_VNTH.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 184481,
+    "urlhash": "89374a8ec09d0c30"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/featurepreview_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 5956,
+    "urlhash": "f7314a79d1568c73"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/game_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 71,
+    "urlhash": "2579b776148b9230"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/game_desktop_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 239943,
+    "urlhash": "9de0efe7e9f7e513"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/ui_desktop_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 105139,
+    "urlhash": "b715cef12a158038"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/lang/pt_BR/locale.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1333663,
+    "urlhash": "6d0c01317f14a78f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/features/features_texture1_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 3942,
+    "urlhash": "e31ac8985041ad3b"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/features/features_texture4_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 26608,
+    "urlhash": "271c8b212ebac0ee"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/79ddcd40-d99e-4808-8f0d-3ddd753377f2",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 3942,
+    "urlhash": "219f0a489157729d"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/features/features_texture2_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 367401,
+    "urlhash": "f28eef9731388cdf"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/d8b84d82-6a6a-4670-9789-adc1fa02fa2d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 26608,
+    "urlhash": "b500deaaa507f71a"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/127204d0-07e1-4f5a-9988-e719b70f9225",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 367401,
+    "urlhash": "c4101f5fdebb8fc6"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/logo/logo_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 85788,
+    "urlhash": "15efe120db342e8c"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/f861d78e-8202-4291-993e-9b14534fcbb9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 85788,
+    "urlhash": "017c22e1f19cda66"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/feature_preview/feature_preview_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 472889,
+    "urlhash": "d892239973ef5303"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/sounds/common_sounds_desktop.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 34119,
+    "urlhash": "5dbe55053e364da8"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/ddab1828-5618-48ea-a03d-3445ea81778f",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 472889,
+    "urlhash": "227afbf0b2a2a26f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/features/features_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 810744,
+    "urlhash": "0808904af1640a8a"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/7af46158-858d-49ac-8ab9-2d820e03b3cd",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 810744,
+    "urlhash": "45a8506814feb33a"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/background/background_texture0_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 2522362,
+    "urlhash": "d307ce14af20ea16"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/8e9c7886-7cfb-40f9-a69f-9a97cdce388a",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 2522362,
+    "urlhash": "b8512d33ed966b9f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/sounds/sounds_desktop.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 4340401,
+    "urlhash": "0c033df2e28b63c6"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/hyperspineffect/hyperspineffect_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 4543,
+    "urlhash": "5b0fce01c914d552"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture5_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 2756,
+    "urlhash": "5e2b41febfff397a"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/3111844d-ab3a-4636-8c94-130f113ae2fb",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 4543,
+    "urlhash": "ea3da3e13ed932ce"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/menu/menu_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 89045,
+    "urlhash": "b725ac7109b08e09"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/8eb94070-e28b-49d5-a19c-76fddbdedb42",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 2756,
+    "urlhash": "86873d817c9d0c27"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/bmpfonts/bmpfonts_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 194876,
+    "urlhash": "10cb0bb656a77f3f"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/84aa3374-baad-4440-a3d3-b4eccea9d0ad",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 89045,
+    "urlhash": "13234b18c296608f"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/a40d2912-3295-4e59-bde3-4714a5471379",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 194876,
+    "urlhash": "fafe109b698e7d70"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/7d33fa6a-f363-4eca-8260-cc5665b2f103",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 10003,
+    "urlhash": "18a608f2fc9af42a"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/447fd2df-a607-461a-b3de-73a451776abc",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 5206,
+    "urlhash": "5996f13be1efec95"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/gamelibs/videoslot/desktop/videoslot_popup/avif/videoslot_popup_texture0_level1.avif",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/avif",
+    "bytes": 10003,
+    "urlhash": "37c64f2cdb0611dd"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/common/ui/desktop/statusbar/avif/statusbar_texture0_level1.avif",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/avif",
+    "bytes": 5206,
+    "urlhash": "bbc65c5e0cdcbbdb"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/menu/menu_texture1_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1281328,
+    "urlhash": "6fdcd70ebe396f1c"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/870a3d3e-2776-47b1-a7fc-f81d18ab62f5",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 1281328,
+    "urlhash": "50153329b774ec5f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 547283,
+    "urlhash": "41fea19fe770e640"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture4_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 288270,
+    "urlhash": "fa9916a2b30be530"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/6bb2b533-6005-4610-a68f-c3d6cdb5d6f9",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 547283,
+    "urlhash": "674f84d69324da93"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/133f3b20-c163-44ff-bf65-2276e97e97f4",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 288270,
+    "urlhash": "30ed0debf0b3cdf5"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture3_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 982359,
+    "urlhash": "c0615cac27a3356a"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/13bdfe18-9d6a-415a-934d-444bd043e3ae",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 982359,
+    "urlhash": "1dc83dc055d12726"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture1_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 951702,
+    "urlhash": "bcac6ffde99abb36"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/dbfddb67-46ef-4616-892f-5de7fb260439",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 951702,
+    "urlhash": "e4d61e68917fd7d2"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/10.8.0-bookofdead.910/resources/games/videoslot/bookofdead/skin/skin_texture2_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1750529,
+    "urlhash": "114066dbbcf31a48"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/982a2496-94b6-45f0-81a8-c89e48971ebd",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 1750529,
+    "urlhash": "9c57b3b8f34c8a26"
+  }
+]

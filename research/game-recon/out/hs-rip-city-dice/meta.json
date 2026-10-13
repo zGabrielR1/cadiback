@@ -1,0 +1,57 @@
+{
+  "game_id": "hs:rip-city-dice",
+  "provider": "hacksaw_gaming",
+  "title": "RIP City",
+  "url": "https://static-live.hacksawgaming.com/2725/1.0.2/index.html?language=pt&channel=desktop&gameid=2725&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+  "tech": {
+    "title": "RIP City Dice",
+    "canvas": 1,
+    "webgl": true,
+    "wasm": true,
+    "workers": 0,
+    "iframes": 1,
+    "scripts": [
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/promise-polyfill.min.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/array-find-polyfill.min.js",
+      "(inline)",
+      "https://www.googletagmanager.com/gtag/js?id=G-NMCHCT8T04",
+      "(inline)",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/casino/hacksaw-casino.min.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/ui/hacksaw-ui.min.js",
+      "https://static-live.hacksawgaming.com/integrations/integration.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/main.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/needles.umd.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/nosleep.min.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/analytics.min.js",
+      "https://static-live.hacksawgaming.com/2725/1.0.2/vendor/reporter.min.js",
+      "(inline)",
+      "https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920"
+    ]
+  },
+  "websockets": [],
+  "byType": {
+    "document": 1,
+    "script": 18,
+    "image": 23,
+    "stylesheet": 1,
+    "font": 3,
+    "xhr": 101,
+    "fetch": 3
+  },
+  "exts": {
+    "html": 2,
+    "js": 13,
+    "png": 26,
+    "css": 1,
+    "woff2": 1,
+    "json": 10,
+    "gif": 1,
+    "webm": 53,
+    "fnt": 1,
+    "atlas": 14,
+    "ktx2": 11,
+    "wasm": 1,
+    "ttf": 2
+  },
+  "totalRequests": 150
+}

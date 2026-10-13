@@ -1,0 +1,44 @@
+{
+  "game_id": "pgo:legacy-of-dead",
+  "provider": "play_n_go",
+  "title": "Legacy of Dead",
+  "url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=legacyofdead&lang=pt&practice=1&channel=desktop&demo=2",
+  "tech": {
+    "title": "",
+    "canvas": 1,
+    "webgl": true,
+    "wasm": true,
+    "workers": 0,
+    "iframes": 0,
+    "scripts": [
+      "https://cdn.playngonetwork.com/9.8.0-legacyofdead.533/games/legacyofdead/legacyofdead_desktop.bundle.js",
+      "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/main.js",
+      "https://pc-prod-eu.playngonetwork.com/PlayerUI/main.js",
+      "(inline)",
+      "https://cdn.playngonetwork.com/hera/hera-1.46.0.29/container-launcher/ContainerLauncher_bundle.js"
+    ]
+  },
+  "websockets": [
+    "wss://ascflyp.playngonetwork.com//gamehub",
+    "wss://pc-prod-eu.playngonetwork.com/player-events"
+  ],
+  "byType": {
+    "document": 1,
+    "script": 4,
+    "xhr": 32,
+    "stylesheet": 16,
+    "font": 9,
+    "image": 18
+  },
+  "exts": {
+    "js": 4,
+    "css": 15,
+    "json": 6,
+    "woff": 9,
+    "mp3": 2,
+    "png": 14,
+    "jpg": 1,
+    "avif": 3
+  },
+  "totalRequests": 80
+}

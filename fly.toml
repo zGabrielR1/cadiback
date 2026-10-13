@@ -1,0 +1,40 @@
+# Fly.io deploy — candibet. Gives https://candibet.fly.dev (or a custom domain).
+#
+#   cd web && npm run build          # the storefront export the image serves
+#   fly launch --copy-config --no-deploy   # creates the app + a volume
+#   fly deploy
+#
+# The volume keeps the ledger/profiles across deploys; without it the
+# filesystem is reset on every release.
+
+app = "candibet"
+primary_region = "gru"   # São Paulo — closest to the players
+
+[build]
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "8080"
+  OPERATOR_DATA_DIR = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[[mounts]]
+  source = "candibet_data"
+  destination = "/data"

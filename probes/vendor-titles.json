@@ -1,0 +1,67 @@
+{
+  "provenance": {
+    "fetched_from": "https://www.pragmaticplay.com/en/games/",
+    "method": "single GET; titles from the provider's own image alt text, urls from its own hrefs",
+    "scope": "SAMPLE: the 7 titles server-rendered on the first listing page, not the provider's full catalog",
+    "license": "titles + urls are facts with source; no artwork, no code, no RTP taken (RTP null: not published on the listing page)",
+    "vendor_status": "no contract, no credentials, no BR certs: every row is non-launchable by construction"
+  },
+  "titles": [
+    {
+      "game_id": "pp:forever-split-megaways",
+      "provider": "pragmatic_play",
+      "title": "Forever Split Megaways™",
+      "source_url": "https://www.pragmaticplay.com/en/games/forever-split-megaways/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:big-bass-vegas-1000",
+      "provider": "pragmatic_play",
+      "title": "Big Bass Vegas 1000",
+      "source_url": "https://www.pragmaticplay.com/en/games/big-bass-vegas-1000/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:freya-1000",
+      "provider": "pragmatic_play",
+      "title": "Freya 1000",
+      "source_url": "https://www.pragmaticplay.com/en/games/freya-1000/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:coven-rising",
+      "provider": "pragmatic_play",
+      "title": "Coven Rising",
+      "source_url": "https://www.pragmaticplay.com/en/games/coven-rising/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:gates-of-olympus-2500",
+      "provider": "pragmatic_play",
+      "title": "Gates of Olympus 2500",
+      "source_url": "https://www.pragmaticplay.com/en/games/gates-of-olympus-2500/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:triple-hop-pots",
+      "provider": "pragmatic_play",
+      "title": "Triple Hop Pots",
+      "source_url": "https://www.pragmaticplay.com/en/games/triple-hop-pots/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    },
+    {
+      "game_id": "pp:helios-triple-sun",
+      "provider": "pragmatic_play",
+      "title": "Helios – Triple Sun",
+      "source_url": "https://www.pragmaticplay.com/en/games/helios-triple-sun/",
+      "rtp": null,
+      "fetched_at": "2026-10-04T23:27:08+00:00"
+    }
+  ]
+}

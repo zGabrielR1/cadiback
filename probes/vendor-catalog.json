@@ -1,0 +1,80 @@
+{
+  "probed_at": "2026-10-04T23:23:35+00:00",
+  "note": "single GET each, no auth, no bypass; HTML shells noted, not crawled",
+  "results": {
+    "pragmatic-games": {
+      "url": "https://www.pragmaticplay.com/en/games/",
+      "status": 200,
+      "final_url": "https://www.pragmaticplay.com/en/games/",
+      "bytes": 154904,
+      "content_type": "text/html; charset=UTF-8",
+      "json_ok": false,
+      "title": "Pragmatic Play Software Provider - Slot Demo",
+      "looks_js_shell": false,
+      "figure_hits": {
+        "Gates of Olympus": 4
+      },
+      "ok": true
+    },
+    "pragmatic-demo-lobby": {
+      "url": "https://demogamesfree.pragmaticplay.net/",
+      "ok": false,
+      "error": "HTTPError: HTTP Error 440: "
+    },
+    "evolution-lightning-roulette": {
+      "url": "https://www.evolution.com/games/lightning-roulette/",
+      "ok": false,
+      "error": "URLError: <urlopen error timed out>"
+    },
+    "pgsoft-games": {
+      "url": "https://www.pgsoft.com/en/games/",
+      "status": 200,
+      "final_url": "https://www.pgsoft.com/en/games/",
+      "bytes": 183244,
+      "content_type": "text/html; charset=UTF-8",
+      "json_ok": false,
+      "title": null,
+      "looks_js_shell": true,
+      "figure_hits": {},
+      "ok": true
+    },
+    "everymatrix-casinoengine": {
+      "url": "https://everymatrix.com/casinoengine/",
+      "status": 200,
+      "final_url": "https://everymatrix.com/casinoengine/",
+      "bytes": 184263,
+      "content_type": "text/html; charset=UTF-8",
+      "json_ok": false,
+      "title": "Turnkey Casino Online Platform &amp; Software Provider",
+      "looks_js_shell": false,
+      "figure_hits": {},
+      "ok": true
+    },
+    "softswiss-aggregator": {
+      "url": "https://www.softswiss.com/game-aggregator/",
+      "status": 200,
+      "final_url": "https://www.softswiss.com/game-aggregator/",
+      "bytes": 180275,
+      "content_type": "text/html; charset=UTF-8",
+      "json_ok": false,
+      "title": "Online Casino Games API Integration – Game Aggregator | SOFTSWISS",
+      "looks_js_shell": false,
+      "figure_hits": {
+        "RTP": 2
+      },
+      "ok": true
+    },
+    "hub88": {
+      "url": "https://hub88.io/",
+      "status": 200,
+      "final_url": "https://hub88.io/",
+      "bytes": 313269,
+      "content_type": "text/html; charset=UTF-8",
+      "json_ok": false,
+      "title": "Online Casino &amp; iGaming Aggregator - Hub88",
+      "looks_js_shell": false,
+      "figure_hits": {},
+      "ok": true
+    }
+  }
+}

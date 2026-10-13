@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candibet — Réplica 1:1 Cassino e Esporte</title>
+<style>
+  :root, [data-theme="dark"] {
+    --paper:#0a0e0c; --card:#111714; --card2:#0d1310; --ink:#f2f5f1; --mut:#9aa79e;
+    --line:#1f2a23; --acc:#2bff88; --acc-dim:#0d3b22; --acc-soft:#0e2417;
+    --gold:#ffbf3f; --gold-soft:#2a2111; --bad:#ff6b6b; --bad-soft:#2a1414;
+    --night:#070a08; --glow:0 0 24px rgba(43,255,136,.35);
+    --tile-text:#fff; --field:#0a0e0c; --chip:#182019;
+  }
+  [data-theme="light"] {
+    --paper:#fafaf9; --card:#fff; --card2:#f5f5f4; --ink:#1c1917; --mut:#78716c;
+    --line:#e7e5e4; --acc:#15803d; --acc-dim:#15803d; --acc-soft:#f0fdf4;
+    --gold:#b45309; --gold-soft:#fef3c7; --bad:#b91c1c; --bad-soft:#fef2f2;
+    --night:#1c1917; --glow:none; --tile-text:#fff; --field:#fafaf9; --chip:#f5f5f4;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+         -webkit-font-smoothing:antialiased; padding-bottom:76px; }
+  .topbar { background:var(--night); color:#d6d3d1; font-size:11.5px; letter-spacing:.06em;
+            padding:7px 16px; display:flex; justify-content:space-between; text-transform:uppercase; }
+  .topbar b { color:var(--acc); }
+  header.sticky { position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--card) 88%, transparent);
+                  backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .hwrap { max-width:1120px; margin:0 auto; padding:10px 16px;
+           display:flex; align-items:center; gap:12px; }
+  .logo { font-size:21px; font-weight:850; letter-spacing:-.02em; white-space:nowrap; cursor:pointer; }
+  .logo span { color:var(--acc); text-shadow:var(--glow); }
+  nav.main { display:flex; gap:2px; }
+  nav.main button { background:none; border:none; font-size:14.5px; font-weight:600;
+                    color:var(--mut); padding:10px 12px; cursor:pointer; border-radius:8px; width:auto; margin:0; }
+  nav.main button.on { color:var(--acc); background:var(--acc-soft); }
+  .spacer { flex:1; }
+  #search { width:170px; padding:8px 12px; border:1px solid var(--line); border-radius:999px;
+            background:var(--field); color:var(--ink); font-size:13.5px; }
+  .bal { font-weight:800; font-size:15px; background:var(--acc-soft); color:var(--acc);
+         border:1px solid var(--acc); padding:8px 14px; border-radius:999px; white-space:nowrap; }
+  #btnTheme { padding:8px 10px; font-size:13px; }
+  button { padding:10px 16px; border-radius:9px; border:none; background:var(--acc);
+           color:#052012; font-size:14px; font-weight:750; cursor:pointer; }
+  [data-theme="light"] button { color:#fff; }
+  #spin { box-shadow:var(--glow); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--ink); box-shadow:none; }
+  button.danger { background:transparent; border:1px solid var(--bad); color:var(--bad); box-shadow:none; }
+  button:disabled { opacity:.45; cursor:default; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 16px 40px; }
+  .hero { margin-top:16px; padding:40px 30px; border-radius:20px; color:#fff;
+          background:radial-gradient(1200px 300px at 15% -10%, rgba(43,255,136,.22), transparent),
+                     radial-gradient(900px 320px at 90% 110%, rgba(255,191,63,.16), transparent),
+                     linear-gradient(160deg,#0c1f14,#070a08 70%);
+          border:1px solid #1f2a23; display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+  [data-theme="light"] .hero { background:linear-gradient(160deg,#052e16,#1c1917); }
+  .hero h1 { margin:0; font-size:32px; letter-spacing:-.02em; }
+  .hero h1 em { font-style:normal; color:var(--acc); }
+  .hero p { color:#c9d4cc; margin:10px 0 0; max-width:54ch; font-size:14.5px; }
+  .hero .cta { display:flex; gap:10px; margin-top:18px; }
+  .hero .cta .ghost { color:#fff; border-color:#3f4a42; }
+  .promos { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:12px; }
+  .promo { border:1px solid var(--line); background:var(--card); border-radius:12px; padding:14px; font-size:13px; }
+  .promo b { display:block; font-size:13.5px; margin-bottom:4px; color:var(--gold); }
+  .promo span { color:var(--mut); }
+  .chips { display:flex; gap:8px; margin:22px 0 12px; flex-wrap:wrap; }
+  .chips button { width:auto; margin:0; background:var(--chip); color:var(--mut); font-weight:600; }
+  .chips button.on { background:var(--acc); color:#052012; }
+  #lobby { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  .gcard { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+           transition:transform .12s ease, border-color .12s ease; cursor:pointer; }
+  .gcard:hover { transform:translateY(-3px); border-color:var(--acc); }
+  .tile { position:relative; overflow:hidden; height:118px; display:flex; align-items:center; justify-content:center;
+          font-size:38px; font-weight:900; color:var(--tile-text); letter-spacing:.02em; }
+  .t-neon { background:linear-gradient(135deg,#065f46,#22c55e 60%,#a7f3d0); }
+  .t-fort { background:linear-gradient(135deg,#451a03,#f59e0b 60%,#fde68a); }
+  .t-roy { background:linear-gradient(135deg,#27272a,#71717a 60%,#d4d4d8); }
+  .gbody { padding:12px; }
+  .gbody b { font-size:14.5px; }
+  .gmeta { font-size:12px; color:var(--mut); margin:3px 0 8px; text-transform:capitalize; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .b-ok { background:var(--acc-soft); color:var(--acc); border:1px solid var(--acc); }
+  .b-no { background:var(--bad-soft); color:var(--bad); border:1px solid var(--bad); }
+  .gbody button { width:100%; margin-top:8px; }
+  #gameview { margin-top:16px; background:var(--card); border:1px solid var(--line);
+              border-radius:16px; padding:22px; display:none; }
+  #gameview.open { display:block; border-color:var(--acc-dim); }
+  #gameview h2 { margin:0; font-size:22px; letter-spacing:-.01em; }
+  #cert { font-size:12.5px; color:var(--mut); margin-top:4px; }
+  .reels { display:flex; gap:10px; justify-content:center; margin:18px auto; max-width:420px; }
+  .reel { flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+          border:1px solid var(--line); border-radius:12px; background:var(--card2);
+          font-size:12px; font-weight:800; }
+  .reel.win { border:2px solid var(--acc); background:var(--acc-soft); box-shadow:var(--glow); }
+  .stakeRow { display:flex; gap:8px; justify-content:center; margin:6px 0 4px; }
+  .stakeRow button { width:auto; margin:0; background:var(--chip); color:var(--ink); }
+  #spin { width:100%; max-width:420px; display:block; margin:12px auto 0; padding:14px; font-size:16px; }
+  #msg { text-align:center; min-height:22px; margin-top:10px; font-size:14px; }
+  .ok { color:var(--acc); font-weight:700; } .err { color:var(--bad); }
+  .paytab { width:100%; max-width:420px; margin:14px auto 0; border-collapse:collapse; font-size:12.5px; }
+  .paytab td { border-bottom:1px solid var(--line); padding:6px 4px; color:var(--mut); }
+  .paytab td:last-child { text-align:right; font-weight:700; color:var(--gold); }
+  section.panel { background:var(--card); border:1px solid var(--line); border-radius:14px;
+                  padding:20px; margin-top:16px; }
+  section.panel h2 { margin:0 0 6px; font-size:16px; }
+  section.panel p.sub { font-size:13px; color:var(--mut); margin:0 0 6px; }
+  .fix { border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:10px; background:var(--card2); }
+  .fix .teams { font-size:17px; font-weight:750; }
+  .fix .mk { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .fix .odd { border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:13px;
+              background:var(--field); }
+  .fix .odd b { color:var(--acc); }
+  table.hist { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  table.hist th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+                  color:var(--mut); padding:8px 6px; border-bottom:1px solid var(--line); }
+  table.hist td { padding:8px 6px; border-bottom:1px solid var(--line); }
+  details.faq { border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; background:var(--card); }
+  details.faq summary { cursor:pointer; font-weight:700; font-size:14px; }
+  details.faq p { font-size:13px; color:var(--mut); margin:8px 0 0; line-height:1.6; }
+  label { display:block; font-size:12.5px; color:var(--mut); margin:12px 0 5px; }
+  input,select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:9px;
+                 background:var(--field); color:var(--ink); font-size:15px; }
+  input:focus,select:focus { outline:2px solid var(--acc); outline-offset:-1px; border-color:var(--acc); }
+  .modal { display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.6);
+           align-items:flex-end; justify-content:center; }
+  .modal.open { display:flex; }
+  .sheet { background:var(--card); color:var(--ink); width:100%; max-width:480px; border-radius:18px 18px 0 0;
+           padding:22px 20px 30px; max-height:88vh; overflow:auto; border:1px solid var(--line); }
+  .sheet h3 { margin:0 0 4px; font-size:19px; }
+  .tabs { display:flex; gap:8px; margin:12px 0; }
+  .tabs button { flex:1; margin:0; background:var(--chip); color:var(--mut); box-shadow:none; }
+  .tabs button.on { background:var(--acc); color:#052012; }
+  .bottomnav { display:flex; position:fixed; bottom:0; left:0; right:0; z-index:30;
+               background:var(--card); border-top:1px solid var(--line); }
+  .bottomnav button { flex:1; background:none; color:var(--mut); font-size:11.5px; font-weight:650;
+                      padding:10px 0 12px; border-radius:0; margin:0; box-shadow:none; }
+  .bottomnav button.on { color:var(--acc); }
+  @media(min-width:760px){ .bottomnav{ display:none; } body{ padding-bottom:0; } #search{ width:220px; } }
+  @media(max-width:640px){ nav.main{ display:none; } #search{ display:none; } .hero h1{ font-size:25px; } }
+  footer { margin-top:28px; padding-top:16px; border-top:1px solid var(--line);
+           color:var(--mut); font-size:12px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="topbar"><span>18+ · Jogue com responsabilidade</span><span>Candibet — <b>Réplica 1:1 de Alta Fidelidade</b></span></div>
+<header class="sticky"><div class="hwrap">
+  <div class="logo" onclick="show('casino')">Casa<span>Bet</span></div>
+  <nav class="main" id="nav">
+    <button data-view="casino" class="on">Cassino</button>
+    <button data-view="sport">Esportes</button>
+    <button data-view="promos">Promoções</button>
+    <button data-view="account">Minha conta</button>
+  </nav>
+  <div class="spacer"></div>
+  <input id="search" placeholder="Buscar jogo…" autocomplete="off">
+  <span class="bal" id="balPill" style="display:none">R$ 0,00</span>
+  <button id="btnTheme" class="ghost" title="Alternar tema">Claro</button>
+  <button id="btnCash" class="ghost">Caixa</button>
+  <button id="btnAccount">Entrar</button>
+</div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <div><h1>Jogos Oficiais em <em>Alta Fidelidade.</em></h1>
+    <p>Gates of Olympus, Aviator, Sweet Bonanza, Spaceman e dezenas de sucessos mundiais incorporados com 100% de fidelidade para uso pessoal.</p>
+    <div class="cta"><button id="ctaStart">Entrar na Conta</button><button id="ctaLobby" class="ghost">Explorar Catálogo</button></div></div>
+  </div>
+  <div class="promos">
+    <div class="promo"><b>Jogos Oficiais Incorporados</b><span>Pragmatic Play, Spribe, Hacksaw e Play'n GO diretamente no site.</span></div>
+    <div class="promo"><b>Simulação Pix Instantânea</b><span>Depósitos e saques demonstrativos para testar todos os fluxos.</span></div>
+    <div class="promo"><b>Super Odds em Tempo Real</b><span>Cotações dos principais campeonatos atualizadas ao vivo.</span></div>
+  </div>
+
+  <div id="view-casino">
+    <div class="chips" id="chips">
+      <button data-f="all" class="on">Todos</button>
+      <button data-f="slots">Slots</button>
+      <button data-f="crash">Crash</button>
+      <button data-f="live">Ao Vivo & Mesas</button>
+    </div>
+    <div id="lobby"></div>
+
+    <!-- Embedded Player View -->
+    <div id="gameview">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="gTitle">—</h2>
+        <button class="ghost" style="width:auto" onclick="$('gameview').classList.remove('open');if($('extframe'))$('extframe').src='';">✕ Fechar Jogo</button>
+      </div>
+      <div id="cert"></div>
+      
+      <!-- Official Iframe Player -->
+      <div id="extdemo" style="display:none;margin-top:12px">
+        <iframe id="extframe" title="Jogo Oficial Incorporado" style="width:100%;height:680px;border:1px solid var(--line);border-radius:12px;background:#000" allow="autoplay; fullscreen; screen-wake-lock"></iframe>
+      </div>
+
+      <!-- In-house Reel Player -->
+      <div id="slot-container">
+        <div class="reels"><div class="reel" id="r0">—</div><div class="reel" id="r1">—</div><div class="reel" id="r2">—</div></div>
+        <div class="stakeRow" id="stakes"></div>
+        <button id="spin">Girar</button>
+        <div id="msg"></div>
+        <table class="paytab">
+          <tr><td>Trinca 7 (jackpot)</td><td>100x</td></tr>
+          <tr><td>Trinca DIAMOND</td><td>15x</td></tr>
+          <tr><td>Trinca BAR</td><td>5x</td></tr>
+          <tr><td>Trinca LEMON</td><td>2x</td></tr>
+          <tr><td>Trinca CHERRY</td><td>1,2x</td></tr>
+          <tr><td>RTP do modelo demo</td><td>95,90% ilustrativo</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-sport" style="display:none">
+    <section class="panel"><h2>Apostas Esportivas — Vitrine de Odds</h2>
+      <p class="sub">Cotações das principais competições atualizadas ao vivo.</p>
+      <div id="fixture"></div>
+    </section>
+  </div>
+
+  <div id="view-promos" style="display:none">
+    <section class="panel"><h2>Promoções & Bônus</h2>
+      <div class="promos">
+        <div class="promo"><b>Bônus de Boas-Vindas Demo</b><span>100% de bônus até R$ 500 no seu primeiro depósito simulado.</span></div>
+        <div class="promo"><b>Cashback Diário de 10%</b><span>Receba de volta parte das perdas em créditos demonstrativos todos os dias.</span></div>
+      </div>
+    </section>
+    <section class="panel"><h2>Dúvidas Frequentes</h2>
+      <details class="faq" open><summary>Como funcionam os jogos oficiais?</summary>
+        <p>Todos os jogos oficiais (Pragmatic Play, Spribe Aviator, Hacksaw Gaming, Play'n GO, Evolution) estão incorporados diretamente no site. É só clicar em Jogar para iniciar a partida imediatamente.</p></details>
+      <details class="faq"><summary>Como funciona o saldo e pagamentos?</summary>
+        <p>Esta é uma plataforma de demonstração desenvolvida para fins de hobby e uso pessoal. Todos os depósitos e saques utilizam saldo virtual demonstrativo com liquidação instantânea via simulação Pix.</p></details>
+    </section>
+  </div>
+
+  <div id="view-account" style="display:none">
+    <section class="panel"><h2>Minha Conta</h2><div id="profileBox" style="font-size:13.5px"></div>
+      <button id="excl" class="danger" style="width:auto;margin-top:12px">Autoexcluir-me (Jogo Responsável)</button></section>
+    <section class="panel"><h2>Histórico de Rodadas</h2>
+      <div id="health" style="font-size:12.5px;color:var(--mut)">status: online</div>
+      <table class="hist"><thead><tr><th>Rodada</th><th>Jogo</th><th>Aposta</th><th>Retorno</th><th>Resultado</th></tr></thead>
+      <tbody id="hist"></tbody></table></section>
+  </div>
+
+  <footer>
+    Candibet · Plataforma de demonstração e réplica 1:1 de alta fidelidade para uso pessoal e hobby · Nenhum dinheiro real envolvido · Jogos oficiais incorporados diretamente dos provedores · 18+.
+  </footer>
+</div>
+
+<div class="modal" id="cashModal"><div class="sheet">
+  <h3>Caixa da Conta</h3>
+  <div class="tabs"><button id="tabDep" class="on">Depositar</button><button id="tabWd">Sacar via Pix</button></div>
+  <div id="paneDep">
+    <label for="method">Método</label>
+    <select id="method"><option value="pix">Pix Instantâneo</option><option value="ted">TED</option><option value="debit">Débito</option></select>
+    <label for="dep">Valor (R$)</label><input id="dep" value="100.00" inputmode="decimal">
+    <button id="goDep" style="margin-top:12px">Confirmar Depósito Demo</button>
+  </div>
+  <div id="paneWd" style="display:none">
+    <label for="wd">Valor (R$)</label><input id="wd" value="20.00" inputmode="decimal">
+    <div style="font-size:12px;color:var(--mut);margin-top:6px">
+      Saque apenas para a chave Pix cadastrada em sua conta.</div>
+    <button id="goWd" style="margin-top:12px">Sacar agora via Pix</button>
+    <div id="eta" style="font-size:12.5px;color:var(--acc);margin-top:8px"></div>
+  </div>
+  <button id="cashClose" class="ghost" style="width:100%;margin-top:12px">Fechar</button>
+</div></div>
+
+<div class="modal" id="acctModal"><div class="sheet">
+  <h3>Sua Conta Demo</h3>
+  <p style="font-size:12.5px;color:var(--mut)">Dados de teste para simulação completa dos fluxos.</p>
+  <label for="name">Nome completo</label><input id="name" value="Ana Souza" autocomplete="off">
+  <label for="cpf">CPF</label><input id="cpf" value="529.982.247-25" autocomplete="off" inputmode="numeric">
+  <label for="pix">Chave Pix</label><input id="pix" value="ana.souza@example.com" autocomplete="off">
+  <label for="bank">Banco / Agência / Conta</label>
+  <div style="display:flex;gap:8px"><input id="bank" value="001" style="max-width:80px"><input id="agency" value="1234"><input id="account" value="56789-0"></div>
+  <label for="holder">Titular da Conta</label><input id="holder" value="Ana Souza" autocomplete="off">
+  <button id="save" style="margin-top:12px">Salvar e entrar</button>
+  <button id="acctClose" class="ghost" style="width:100%;margin-top:8px">Fechar</button>
+</div></div>
+
+<nav class="bottomnav" id="bottomnav">
+  <button data-view="casino" class="on">Cassino</button>
+  <button data-view="sport">Esportes</button>
+  <button data-cash="1">Caixa</button>
+  <button data-view="account">Conta</button>
+</nav>
+
+<script>
+const $ = id => document.getElementById(id);
+const BRL = c => (c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+let PID = null, STAKE = 500, GAMES = [], FILTER = 'all', CUR = null;
+const STAKES = [[200,'R$2'],[500,'R$5'],[1000,'R$10'],[2500,'R$25']];
+const TILES = {
+  'pp:gates-of-olympus': ['t-fort', '⚡'],
+  'pp:sweet-bonanza': ['t-fort', '🍬'],
+  'pp:sugar-rush': ['t-fort', '🍭'],
+  'spribe:aviator': ['t-neon', '✈️'],
+  'pp:spaceman': ['t-neon', '🚀'],
+  'demo:neon-gems': ['t-neon', '💎'],
+  'demo:fortune-ledger': ['t-fort', '🪙'],
+  'demo:royale-roulette': ['t-roy', '🎯'],
+};
+try{ const t=localStorage.getItem('casa-theme'); if(t) document.documentElement.dataset.theme=t; }catch(e){}
+function paintTheme(){ $('btnTheme').textContent = document.documentElement.dataset.theme==='light'?'Escuro':'Claro'; }
+$('btnTheme').onclick=()=>{ const h=document.documentElement;
+  h.dataset.theme = h.dataset.theme==='light'?'dark':'light';
+  try{ localStorage.setItem('casa-theme',h.dataset.theme); }catch(e){} paintTheme(); };
+paintTheme();
+async function api(m,p,b){ const r=await fetch(p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});
+  const j=await r.json(); if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }
+function show(v){ ['casino','sport','promos','account'].forEach(x=>$('view-'+x).style.display = x===v?'':'none');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  document.querySelectorAll('#bottomnav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  if(v==='sport') loadSports(); if(v==='account') refresh(); window.scrollTo(0,0); }
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>show(b.dataset.view));
+document.querySelectorAll('#bottomnav button').forEach(b=>b.onclick=()=>{ b.dataset.cash?openCash():show(b.dataset.view); });
+document.querySelectorAll('#chips button').forEach(b=>b.onclick=()=>{ FILTER=b.dataset.f;
+  document.querySelectorAll('#chips button').forEach(x=>x.classList.toggle('on',x===b)); renderLobby(); });
+$('search').oninput = renderLobby;
+STAKES.forEach(([v,l])=>{ const b=document.createElement('button'); b.textContent=l;
+  const paint=()=>{ const on=STAKE===v;
+    b.style.background=on?'var(--acc)':''; b.style.color=on?(document.documentElement.dataset.theme==='light'?'#fff':'#052012'):''; };
+  b.onclick=()=>{STAKE=v;[...$('stakes').children].forEach(x=>{x.style.background='';x.style.color='';});paint();};
+  b._paint=paint; if(v===STAKE)paint(); $('stakes').appendChild(b); });
+function renderLobby(){ const q=($('search').value||'').toLowerCase();
+  const list=GAMES.filter(g=>{
+    if (q && !g.title.toLowerCase().includes(q)) return false;
+    if (FILTER === 'all') return true;
+    if (FILTER === 'slots') return (g.category === 'Slots' || !g.category);
+    if (FILTER === 'crash') return g.category === 'Crash';
+    if (FILTER === 'live') return g.category === 'Ao vivo' || g.category === 'Mesa';
+    return true;
+  });
+  $('lobby').innerHTML=list.map(g=>{ const t=TILES[g.game_id]||['t-neon', g.title.slice(0,2).toUpperCase()];
+    const slug=g.game_id.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'');
+    const cover=g.cover||('/games/'+slug+'.svg');
+    return '<div class="gcard" onclick="play(\''+g.game_id+'\')"><div class="tile '+t[0]+'"><img src="'+cover+'" data-fallback="/games/'+slug+'.svg" alt="'+g.title+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=\'\'}else{this.outerHTML=\''+t[1]+'\'}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div><div class="gbody"><b>'+g.title+'</b>'+
+    '<div class="gmeta">'+(g.provider||'').replace(/_/g,' ')+'</div>'+
+    '<button onclick="event.stopPropagation();play(\''+g.game_id+'\')">Jogar Agora</button></div></div>'; }).join('')||'<p style="color:var(--mut)">Nenhum jogo.</p>'; }
+function play(id){ CUR=id; const g=GAMES.find(x=>x.game_id===id); if(!g) return;
+  $('gameview').classList.add('open'); $('gTitle').textContent=g.title;
+  if(g.demo_url){
+    $('extdemo').style.display='';
+    $('extframe').src=g.demo_url;
+    $('slot-container').style.display='none';
+    $('cert').textContent=(g.provider||'').replace(/_/g,' ').toUpperCase()+' · Jogo Oficial Incorporado';
+    $('extdemo').scrollIntoView({behavior:'smooth',block:'center'});
+  } else {
+    $('extdemo').style.display='none';
+    $('slot-container').style.display='';
+    $('cert').textContent='Slot Original da Casa · RTP '+(g.rtp||'95.90')+'%';
+    $('msg').textContent='';
+    $('gameview').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+}
+$('spin').onclick=async()=>{ $('spin').disabled=true; try{
+  if(!PID){ openAcct(); throw new Error('crie sua conta demo primeiro'); }
+  if(!CUR) throw new Error('escolha um jogo no lobby');
+  const r=await api('POST','/api/spin',{player:PID,game_id:CUR,stake_minor:STAKE});
+  ['r0','r1','r2'].forEach((id,i)=>{ const el=$(id); el.textContent=r.symbols[i]; el.className='reel'+(r.payout_minor>0?' win':''); });
+  $('msg').innerHTML=(r.payout_minor>0?'<span class="ok">Prêmio '+BRL(r.payout_minor)+' · '+r.tier+' '+r.multiplier+'x</span>':'<span class="err">Sem prêmio · '+r.tier+'</span>');
+  await refresh(); }catch(e){ $('msg').innerHTML='<span class="err">'+e.message+'</span>'; } $('spin').disabled=false; };
+function openCash(){ if(!PID){ openAcct(); return; } $('cashModal').classList.add('open'); }
+function openAcct(){ $('acctModal').classList.add('open'); }
+$('btnCash').onclick=openCash; $('cashClose').onclick=()=>$('cashModal').classList.remove('open');
+$('btnAccount').onclick=()=>{ PID?show('account'):openAcct(); };
+$('acctClose').onclick=()=>$('acctModal').classList.remove('open');
+$('ctaStart').onclick=openAcct; $('ctaLobby').onclick=()=>$('lobby').scrollIntoView({behavior:'smooth'});
+$('tabDep').onclick=()=>{ $('tabDep').classList.add('on'); $('tabWd').classList.remove('on'); $('paneDep').style.display=''; $('paneWd').style.display='none'; };
+$('tabWd').onclick=()=>{ $('tabWd').classList.add('on'); $('tabDep').classList.remove('on'); $('paneWd').style.display=''; $('paneDep').style.display='none'; };
+$('save').onclick=async()=>{ try{ const p=await api('POST','/api/player',{name:$('name').value,cpf:$('cpf').value,pix_key:$('pix').value,
+  bank:{bank_code:$('bank').value,agency:$('agency').value,account:$('account').value,holder_name:$('holder').value}});
+  PID=p.player_id; $('acctModal').classList.remove('open');
+  $('btnAccount').textContent='Minha conta'; await refresh(); }catch(e){ alert('Conta: '+e.message); } };
+$('goDep').onclick=async()=>{ $('goDep').disabled=true; try{ if(!PID) throw new Error('salve o jogador primeiro');
+  const v=Math.round(parseFloat($('dep').value.replace(',','.'))*100);
+  await api('POST','/api/deposit',{player:PID,amount_minor:v,method:$('method').value,deposit_id:crypto.randomUUID()});
+  $('cashModal').classList.remove('open'); await refresh(); }catch(e){ alert('Depósito: '+e.message); } $('goDep').disabled=false; };
+$('goWd').onclick=async()=>{ $('goWd').disabled=true; try{ if(!PID) throw new Error('salve o jogador primeiro');
+  const v=Math.round(parseFloat($('wd').value.replace(',','.'))*100);
+  const r=await api('POST','/api/withdraw',{player:PID,amount_minor:v,payout_id:crypto.randomUUID()});
+  $('eta').textContent='Saque '+BRL(v)+' → Pix '+r.pix_masked+' · '+r.status; await refresh(); }catch(e){ alert('Saque: '+e.message); } $('goWd').disabled=false; };
+$('excl').onclick=async()=>{ try{ await api('POST','/api/self-exclude',{player:PID,until:'2027-01-01'});
+  alert('Autoexclusão ativada no ambiente de demonstração.'); }catch(e){ alert(e.message); } };
+async function loadSports(){ try{ const s=await api('GET','/api/sports');
+  $('fixture').innerHTML=s.fixtures.map(f=>'<div class="fix"><div class="teams">'+f.home+' × '+f.away+'</div>'+
+    '<div style="font-size:12px;color:var(--mut)">'+f.competition+' · '+f.kickoff+'</div>'+
+    f.markets.map(m=>'<div style="margin-top:8px;font-size:12.5px">'+m.kind+': '+m.selections.map((sel,i)=>'<span class="odd">'+sel+' <b>'+m.prices[i].toFixed(2)+'</b></span>').join(' ')+'</div>').join('')+
+    '</div>').join('')+'<p style="font-size:12px;color:var(--mut)">'+s.note+'</p>'; }catch(e){ $('fixture').textContent=e.message; } }
+async function refresh(){ if(!PID) return;
+  const p=await api('GET','/api/player?id='+encodeURIComponent(PID));
+  $('balPill').style.display=''; $('balPill').textContent=BRL(p.available_minor);
+  $('profileBox').innerHTML='<b>'+p.name+'</b> · '+p.player_id+'<br>Chave Pix: '+p.pix_masked+' · saldo '+BRL(p.available_minor);
+  const h=await api('GET','/api/history?player='+encodeURIComponent(PID));
+  $('hist').innerHTML=h.rounds.slice().reverse().map(r=>'<tr><td>'+r.round_id.slice(0,8)+'</td><td>'+r.game_id+'</td><td>'+BRL(r.stake_minor)+'</td><td>'+BRL(r.payout_minor)+'</td><td>'+r.tier+' '+r.multiplier+'x</td></tr>').join('');
+  const hl=await api('GET','/api/health'); $('health').textContent='status: '+hl.status; }
+async function loadGames(){
+  const c=await api('GET','/api/catalog');
+  const demos = (c.provider_demos && c.provider_demos.demos) ? c.provider_demos.demos : [];
+  GAMES = [...demos, ...c.games];
+  renderLobby();
+}
+loadGames();
+</script>
+</body>
+</html>

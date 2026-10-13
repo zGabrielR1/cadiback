@@ -1,0 +1,142 @@
+[
+  {
+    "url": "https://www.draftkingscasino.com/",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.draftkingscasino.com/lander",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://img1.wsimg.com/parking-lander/static/css/main.4276ff80.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css"
+  },
+  {
+    "url": "https://img1.wsimg.com/signals/js/clients/scc-c2/scc-c2.min.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://img1.wsimg.com/parking-lander/static/js/main.5f35036b.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://img1.wsimg.com/parking-lander/px.js?ch=1&abp=1&gdabp=true",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://img1.wsimg.com/parking-lander/px.js?ch=2&abp=2&gdabp=true",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://csp.secureserver.net/eventbus/web?clientid=b18ef4f046435b64a469b32c3c1c20a3",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://csp.secureserver.net/eventbus/web?clientid=8da2217409854bee82e12dc4ca0b39fb",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://api.aws.parking.godaddy.com/v1/parking/landers/www.draftkingscasino.com?trafficTarget=gd&abp=1&gdabp=true",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://widget.trustpilot.com/trustboxes/5419b637fa0340045cd0c936/index.html?templateId=5419b637fa0340045cd0c936&businessunitId=483fd2b90000640005029919",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://widget.trustpilot.com/trustboxes/5419b637fa0340045cd0c936/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://widget.trustpilot.com/trustbox-data/5419b637fa0340045cd0c936?businessUnitId=483fd2b90000640005029919&locale=en-US",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://widget.trustpilot.com/fonts/ubuntu.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css"
+  },
+  {
+    "url": "https://widget.trustpilot.com/fonts/ubuntu/4iCs6KVjbNBYlgoKfw72.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "binary/octet-stream"
+  },
+  {
+    "url": "https://widget.trustpilot.com/fonts/ubuntu/4iCv6KVjbNBYlgoCjC3jsGyN.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "binary/octet-stream"
+  },
+  {
+    "url": "https://api.aws.parking.godaddy.com/v1/parkingEvents?abp=1&gdabp=true",
+    "method": "POST",
+    "type": "fetch",
+    "status": 200,
+    "mime": "text/plain"
+  },
+  {
+    "url": "https://widget.trustpilot.com/stats/TrustboxView?locale=en-US&styleHeight=20px&styleWidth=fit-content&theme=light&fontFamily=Ubuntu&url=https%3A%2F%2Fwww.draftkingscasino.com%2Flander&referrer=https%3A%2F%2Fwww.draftkingscasino.com%2F&userAgent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F124.0%20Safari%2F537.36&language=pt-BR&platform=Win32&nosettings=1&businessUnitId=483fd2b90000640005029919&widgetId=5419b637fa0340045cd0c936",
+    "method": "GET",
+    "type": "xhr",
+    "status": 204,
+    "mime": ""
+  },
+  {
+    "url": "https://widget.trustpilot.com/stats/TrustboxImpression?locale=en-US&styleHeight=20px&styleWidth=fit-content&theme=light&fontFamily=Ubuntu&url=https%3A%2F%2Fwww.draftkingscasino.com%2Flander&referrer=https%3A%2F%2Fwww.draftkingscasino.com%2F&userAgent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F124.0%20Safari%2F537.36&language=pt-BR&platform=Win32&nosettings=1&businessUnitId=483fd2b90000640005029919&widgetId=5419b637fa0340045cd0c936",
+    "method": "GET",
+    "type": "xhr",
+    "status": 204,
+    "mime": ""
+  }
+]

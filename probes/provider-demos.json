@@ -1,0 +1,1853 @@
+{
+ "provenance": {
+  "purpose": "Real official provider games for personal hobby simulation: publishers' official free-play demos embedded directly in the site.",
+  "method": "official publisher demo URLs with direct responsive iframe embedding",
+  "license": "personal hobby simulation for personal usage; game bytes, artwork and RNG served by publishers",
+  "wallet": "wallet-isolated: free-play demo mode directly in-site",
+  "verified_at": "2026-10-12",
+  "note": "direct iframe embedded official games (Pragmatic Play, Spribe, Hacksaw, Play'n GO, Evolution, PG Soft); Hacksaw expanded 2026-10-12 from the publisher's own games page + version.json; PG Soft moved 2026-10-12 to public.pg-demo.com trial launcher (old m.pgsoft-games.com NXDOMAIN globally)"
+ },
+ "demos": [
+  {
+   "game_id": "pp:gates-of-olympus",
+   "provider": "pragmatic_play",
+   "title": "Gates of Olympus",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympgate&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher; embedded iframe player",
+   "note": "official slot demo",
+   "cover": "/games/pp-gates-of-olympus.png"
+  },
+  {
+   "game_id": "pp:sweet-bonanza",
+   "provider": "pragmatic_play",
+   "title": "Sweet Bonanza",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitsw&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-sweet-bonanza.png"
+  },
+  {
+   "game_id": "pp:sugar-rush",
+   "provider": "pragmatic_play",
+   "title": "Sugar Rush",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20sugarrush&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-sugar-rush.png"
+  },
+  {
+   "game_id": "pp:big-bass-bonanza",
+   "provider": "pragmatic_play",
+   "title": "Big Bass Bonanza",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbbonanza&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-big-bass-bonanza.png"
+  },
+  {
+   "game_id": "pp:starlight-princess",
+   "provider": "pragmatic_play",
+   "title": "Starlight Princess",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20starlight&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-starlight-princess.png"
+  },
+  {
+   "game_id": "pp:dog-house-megaways",
+   "provider": "pragmatic_play",
+   "title": "The Dog House Megaways",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vswaysdogs&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-dog-house-megaways.png"
+  },
+  {
+   "game_id": "pp:wolf-gold",
+   "provider": "pragmatic_play",
+   "title": "Wolf Gold",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs25wolfgold&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-wolf-gold.png"
+  },
+  {
+   "game_id": "pp:fruit-party",
+   "provider": "pragmatic_play",
+   "title": "Fruit Party",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitparty&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-fruit-party.png"
+  },
+  {
+   "game_id": "pp:big-bass-splash",
+   "provider": "pragmatic_play",
+   "title": "Big Bass Amazon Xtreme",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbextreme&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-big-bass-splash.png"
+  },
+  {
+   "game_id": "pp:cleocatra",
+   "provider": "pragmatic_play",
+   "title": "Cleocatra",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20cleocatra&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-cleocatra.png"
+  },
+  {
+   "game_id": "pp:wild-west-gold",
+   "provider": "pragmatic_play",
+   "title": "Wild West Gold",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20wildwest&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play demo launcher",
+   "note": "official slot demo",
+   "cover": "/games/pp-wild-west-gold.png"
+  },
+  {
+   "game_id": "spribe:aviator",
+   "provider": "spribe",
+   "title": "Aviator",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/aviator?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "confirmed Spribe official demo launcher",
+   "note": "official crash demo"
+  },
+  {
+   "game_id": "pp:spaceman",
+   "provider": "pragmatic_play",
+   "title": "Spaceman",
+   "category": "Crash",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=spaceman&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "confirmed Pragmatic Play crash demo launcher",
+   "note": "official crash demo",
+   "cover": "/games/pp-spaceman.png"
+  },
+  {
+   "game_id": "hs:rip-city-dice",
+   "provider": "hacksaw_gaming",
+   "title": "RIP City",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2725/1.0.2/index.html?language=pt&channel=desktop&gameid=2725&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2725 and build 1.0.2 free-play mode",
+   "note": "official Hacksaw demo",
+   "cover": "/games/hs-rip-city-dice.png"
+  },
+  {
+   "game_id": "pgo:book-of-dead",
+   "provider": "play_n_go",
+   "title": "Rich Wilde and the Book of Dead",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "Play'n GO demo launcher",
+   "note": "official Play'n GO demo",
+   "cover": "/games/pgo-book-of-dead.webp"
+  },
+  {
+   "game_id": "pp:roulette",
+   "provider": "pragmatic_play",
+   "title": "Roleta Europeia",
+   "category": "Mesa",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=roulette&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "Pragmatic Play European Roulette demo launcher",
+   "note": "official table demo",
+   "cover": "/games/pp-roulette.png"
+  },
+  {
+   "game_id": "pp:blackjack",
+   "provider": "pragmatic_play",
+   "title": "Multihand Blackjack",
+   "category": "Mesa",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs1multihandbj&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "Pragmatic Play Blackjack demo launcher",
+   "note": "official table demo",
+   "cover": "/games/pp-blackjack.png"
+  },
+  {
+   "game_id": "pp:baccarat",
+   "provider": "pragmatic_play",
+   "title": "Baccarat",
+   "category": "Mesa",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs1baccarat&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "Pragmatic Play Baccarat demo launcher",
+   "note": "official table demo",
+   "cover": "/games/pp-baccarat.png"
+  },
+  {
+   "game_id": "ev:lightning-roulette",
+   "provider": "evolution",
+   "title": "Lightning Roulette",
+   "category": "Ao vivo",
+   "demo_url": "https://games.evolution.com/live-casino/live-roulette/lightning-roulette/",
+   "host": "games.evolution.com",
+   "verification": "Evolution free-play site path",
+   "note": "live table stream demo",
+   "cover": "/games/ev-lightning-roulette.jpg"
+  },
+  {
+   "game_id": "ev:crazy-time",
+   "provider": "evolution",
+   "title": "Crazy Time",
+   "category": "Ao vivo",
+   "demo_url": "https://games.evolution.com/live-casino/game-shows/crazy-time/",
+   "host": "games.evolution.com",
+   "verification": "Evolution free-play site path",
+   "note": "live game show stream demo",
+   "cover": "/games/ev-crazy-time.jpg"
+  },
+  {
+   "game_id": "pg:fortune-tiger",
+   "provider": "pg_soft",
+   "title": "Fortune Tiger",
+   "category": "Slots",
+   "demo_url": "https://public.pg-demo.com/demo/?gi=126&lang=pt",
+   "host": "public.pg-demo.com",
+   "verification": "game id 126: loader 200, trial session mints, game doc boots with ot= token (verified 2026-10-12)",
+   "note": "official PG Soft trial",
+   "cover": "/games/pg-fortune-tiger.png"
+  },
+  {
+   "game_id": "pg:mahjong-ways",
+   "provider": "pg_soft",
+   "title": "Mahjong Ways",
+   "category": "Slots",
+   "demo_url": "https://public.pg-demo.com/demo/?gi=65&lang=pt",
+   "host": "public.pg-demo.com",
+   "verification": "game id 65: loader 200, game doc boots with ot= token, INICIAR start (verified 2026-10-12)",
+   "note": "official PG Soft trial",
+   "cover": "/games/pg-mahjong-ways.png"
+  },
+  {
+   "game_id": "pp:gates-of-olympus-1000",
+   "provider": "pragmatic_play",
+   "title": "Gates of Olympus 1000",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20olympx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Gates of Olympus 1000 client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:sweet-bonanza-1000",
+   "provider": "pragmatic_play",
+   "title": "Sweet Bonanza 1000",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20fruitswx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Sweet Bonanza 1000 client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:sugar-rush-1000",
+   "provider": "pragmatic_play",
+   "title": "Sugar Rush 1000",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20sugarrushx&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Sugar Rush 1000 client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:big-bass-bonanza-1000",
+   "provider": "pragmatic_play",
+   "title": "Big Bass Bonanza 1000",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs10bbbnz1000&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Big Bass Bonanza 1000 client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:zeus-vs-hades",
+   "provider": "pragmatic_play",
+   "title": "Zeus vs Hades — Gods of War",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs15godsofwar&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Zeus vs Hades client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:jokers-jewels",
+   "provider": "pragmatic_play",
+   "title": "Joker's Jewels",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs5joker&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Joker's Jewels client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "pp:bonanza-gold",
+   "provider": "pragmatic_play",
+   "title": "Bonanza Gold",
+   "category": "Slots",
+   "demo_url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs20bonzgold&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+   "host": "demogamesfree.pragmaticplay.net",
+   "verification": "launcher returns the Bonanza Gold client (verified 2026-10-08)",
+   "note": "official slot demo"
+  },
+  {
+   "game_id": "spribe:mines",
+   "provider": "spribe",
+   "title": "Mines",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/mines?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug; unknown slugs answer 404 Game not found (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:plinko",
+   "provider": "spribe",
+   "title": "Plinko",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/plinko?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:dice",
+   "provider": "spribe",
+   "title": "Dice",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/dice?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:keno",
+   "provider": "spribe",
+   "title": "Keno",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/keno?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:goal",
+   "provider": "spribe",
+   "title": "Goal",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/goal?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:mini-roulette",
+   "provider": "spribe",
+   "title": "Mini Roulette",
+   "category": "Mesa",
+   "demo_url": "https://demo.spribe.io/launch/mini-roulette?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "spribe:hotline",
+   "provider": "spribe",
+   "title": "Hotline",
+   "category": "Crash",
+   "demo_url": "https://demo.spribe.io/launch/hotline?currency=BRL&lang=pt",
+   "host": "demo.spribe.io",
+   "verification": "valid launch slug (verified 2026-10-08)",
+   "note": "official mini-game demo"
+  },
+  {
+   "game_id": "pgo:reactoonz",
+   "provider": "play_n_go",
+   "title": "Reactoonz",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=reactoonz&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts the gid (unknown gids answer HTTP 400; verified 2026-10-08)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:fire-joker",
+   "provider": "play_n_go",
+   "title": "Fire Joker",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=firejoker&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts the gid (verified 2026-10-08)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:moon-princess",
+   "provider": "play_n_go",
+   "title": "Moon Princess",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=moonprincess&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts the gid (verified 2026-10-08)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:legacy-of-dead",
+   "provider": "play_n_go",
+   "title": "Legacy of Dead",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=legacyofdead&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts the gid (verified 2026-10-08)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "hs:2-wild-2-die",
+   "provider": "hacksaw_gaming",
+   "title": "2 Wild 2 Die",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1400/1.34.1/index.html?language=pt&channel=desktop&gameid=1400&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1400 and build 1.34.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:3-cursed-chests-hold-win",
+   "provider": "hacksaw_gaming",
+   "title": "3 Cursed Chests: Hold & Win",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2296/1.25.0/index.html?language=pt&channel=desktop&gameid=2296&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2296 and build 1.25.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:aiko-and-the-wind-spirit",
+   "provider": "hacksaw_gaming",
+   "title": "Aiko and the Wind Spirit",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1756/1.11.7/index.html?language=pt&channel=desktop&gameid=1756&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1756 and build 1.11.7 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:arizona-james-and-the-lost-relics",
+   "provider": "hacksaw_gaming",
+   "title": "Arizona James and The Lost Relics",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2492/1.32.4/index.html?language=pt&channel=desktop&gameid=2492&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2492 and build 1.32.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:army-of-ares",
+   "provider": "hacksaw_gaming",
+   "title": "Army of Ares",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1977/1.22.3/index.html?language=pt&channel=desktop&gameid=1977&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1977 and build 1.22.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:bash-bros",
+   "provider": "hacksaw_gaming",
+   "title": "Bash Bros",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1928/1.16.1/index.html?language=pt&channel=desktop&gameid=1928&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1928 and build 1.16.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:beam-boys",
+   "provider": "hacksaw_gaming",
+   "title": "Beam Boys",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1426/1.38.0/index.html?language=pt&channel=desktop&gameid=1426&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1426 and build 1.38.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:beast-below",
+   "provider": "hacksaw_gaming",
+   "title": "Beast Below",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1279/1.23.2/index.html?language=pt&channel=desktop&gameid=1279&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1279 and build 1.23.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:benny-the-beer",
+   "provider": "hacksaw_gaming",
+   "title": "Benny the Beer",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1356/1.26.2/index.html?language=pt&channel=desktop&gameid=1356&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1356 and build 1.26.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:booze-bash",
+   "provider": "hacksaw_gaming",
+   "title": "Booze Bash",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1783/1.27.0/index.html?language=pt&channel=desktop&gameid=1783&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1783 and build 1.27.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:bouncy-bombs",
+   "provider": "hacksaw_gaming",
+   "title": "Bouncy Bombs",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1422/1.47.3/index.html?language=pt&channel=desktop&gameid=1422&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1422 and build 1.47.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:bullets-and-bounty",
+   "provider": "hacksaw_gaming",
+   "title": "Bullets and Bounty",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1799/1.18.5/index.html?language=pt&channel=desktop&gameid=1799&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1799 and build 1.18.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:cash-crew",
+   "provider": "hacksaw_gaming",
+   "title": "Cash Crew",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1456/1.30.3/index.html?language=pt&channel=desktop&gameid=1456&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1456 and build 1.30.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:chaos-crew",
+   "provider": "hacksaw_gaming",
+   "title": "Chaos Crew",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1059/1.67.1/index.html?language=pt&channel=desktop&gameid=1059&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1059 and build 1.67.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:chaos-crew-2",
+   "provider": "hacksaw_gaming",
+   "title": "Chaos Crew 2",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1352/1.24.0/index.html?language=pt&channel=desktop&gameid=1352&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1352 and build 1.24.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:chaos-crew-3",
+   "provider": "hacksaw_gaming",
+   "title": "Chaos Crew 3",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1867/1.32.0/index.html?language=pt&channel=desktop&gameid=1867&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1867 and build 1.32.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:circle-of-life",
+   "provider": "hacksaw_gaming",
+   "title": "Circle of Life",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2019/1.22.2/index.html?language=pt&channel=desktop&gameid=2019&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2019 and build 1.22.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:cloud-princess",
+   "provider": "hacksaw_gaming",
+   "title": "Cloud Princess",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1602/1.46.2/index.html?language=pt&channel=desktop&gameid=1602&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1602 and build 1.46.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:cursed-crypt",
+   "provider": "hacksaw_gaming",
+   "title": "Cursed Crypt",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1434/1.28.6/index.html?language=pt&channel=desktop&gameid=1434&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1434 and build 1.28.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dandy-diamonds",
+   "provider": "hacksaw_gaming",
+   "title": "Dandy Diamonds",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2334/1.18.3/index.html?language=pt&channel=desktop&gameid=2334&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2334 and build 1.18.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:danny-dollar",
+   "provider": "hacksaw_gaming",
+   "title": "Danny Dollar",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1685/1.37.1/index.html?language=pt&channel=desktop&gameid=1685&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1685 and build 1.37.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dark-spiral",
+   "provider": "hacksaw_gaming",
+   "title": "Dark Spiral",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2143/1.13.4/index.html?language=pt&channel=desktop&gameid=2143&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2143 and build 1.13.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dark-summoning",
+   "provider": "hacksaw_gaming",
+   "title": "Dark Summoning",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1392/1.29.3/index.html?language=pt&channel=desktop&gameid=1392&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1392 and build 1.29.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dawn-of-kings",
+   "provider": "hacksaw_gaming",
+   "title": "Dawn of Kings",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1442/1.26.2/index.html?language=pt&channel=desktop&gameid=1442&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1442 and build 1.26.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:deal-with-death",
+   "provider": "hacksaw_gaming",
+   "title": "Deal With Death",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2000/1.29.5/index.html?language=pt&channel=desktop&gameid=2000&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2000 and build 1.29.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:death-becomes-you",
+   "provider": "hacksaw_gaming",
+   "title": "Death Becomes You",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2319/1.17.0/index.html?language=pt&channel=desktop&gameid=2319&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2319 and build 1.17.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:densho",
+   "provider": "hacksaw_gaming",
+   "title": "Densho",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1348/1.26.1/index.html?language=pt&channel=desktop&gameid=1348&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1348 and build 1.26.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:divine-drop",
+   "provider": "hacksaw_gaming",
+   "title": "Divine Drop",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1490/1.24.4/index.html?language=pt&channel=desktop&gameid=1490&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1490 and build 1.24.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:donny-dough",
+   "provider": "hacksaw_gaming",
+   "title": "Donny Dough",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1530/1.38.0/index.html?language=pt&channel=desktop&gameid=1530&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1530 and build 1.38.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:donny-and-danny",
+   "provider": "hacksaw_gaming",
+   "title": "Donny and Danny",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2004/1.21.0/index.html?language=pt&channel=desktop&gameid=2004&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2004 and build 1.21.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:donut-division",
+   "provider": "hacksaw_gaming",
+   "title": "Donut Division",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1608/1.39.5/index.html?language=pt&channel=desktop&gameid=1608&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1608 and build 1.39.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dorks-of-the-deep",
+   "provider": "hacksaw_gaming",
+   "title": "Dorks of the Deep",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1430/1.10.5/index.html?language=pt&channel=desktop&gameid=1430&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1430 and build 1.10.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dr-zappo",
+   "provider": "hacksaw_gaming",
+   "title": "Dr Zappo",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2253/1.49.1/index.html?language=pt&channel=desktop&gameid=2253&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2253 and build 1.49.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dragon-s-domain",
+   "provider": "hacksaw_gaming",
+   "title": "Dragon's Domain",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1360/1.18.2/index.html?language=pt&channel=desktop&gameid=1360&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1360 and build 1.18.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:drop-em",
+   "provider": "hacksaw_gaming",
+   "title": "Drop'em",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1314/1.19.2/index.html?language=pt&channel=desktop&gameid=1314&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1314 and build 1.19.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:duel-at-dawn",
+   "provider": "hacksaw_gaming",
+   "title": "Duel at Dawn",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1620/1.40.0/index.html?language=pt&channel=desktop&gameid=1620&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1620 and build 1.40.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dusk-princess",
+   "provider": "hacksaw_gaming",
+   "title": "Dusk Princess",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2190/1.11.2/index.html?language=pt&channel=desktop&gameid=2190&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2190 and build 1.11.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:dynasty-of-death",
+   "provider": "hacksaw_gaming",
+   "title": "Dynasty of Death",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2082/1.16.5/index.html?language=pt&channel=desktop&gameid=2082&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2082 and build 1.16.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:epic-bullets-and-bounty",
+   "provider": "hacksaw_gaming",
+   "title": "Epic Bullets and Bounty",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2185/1.2.3/index.html?language=pt&channel=desktop&gameid=2185&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2185 and build 1.2.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:epic-ze-zeus",
+   "provider": "hacksaw_gaming",
+   "title": "Epic Ze Zeus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2408/1.3.3/index.html?language=pt&channel=desktop&gameid=2408&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2408 and build 1.3.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:eternal-duel",
+   "provider": "hacksaw_gaming",
+   "title": "Eternal Duel",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2148/1.16.0/index.html?language=pt&channel=desktop&gameid=2148&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2148 and build 1.16.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:evil-eyes",
+   "provider": "hacksaw_gaming",
+   "title": "Evil Eyes",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1570/1.17.2/index.html?language=pt&channel=desktop&gameid=1570&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1570 and build 1.17.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:eye-of-medusa",
+   "provider": "hacksaw_gaming",
+   "title": "Eye of Medusa",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1740/1.10.4/index.html?language=pt&channel=desktop&gameid=1740&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1740 and build 1.10.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:eye-of-the-panda",
+   "provider": "hacksaw_gaming",
+   "title": "Eye of the Panda",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1344/1.17.2/index.html?language=pt&channel=desktop&gameid=1344&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1344 and build 1.17.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:frkn-bananas",
+   "provider": "hacksaw_gaming",
+   "title": "FRKN Bananas",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1693/1.33.1/index.html?language=pt&channel=desktop&gameid=1693&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1693 and build 1.33.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:feel-the-beat",
+   "provider": "hacksaw_gaming",
+   "title": "Feel the Beat",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1372/1.17.4/index.html?language=pt&channel=desktop&gameid=1372&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1372 and build 1.17.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:fighter-pit",
+   "provider": "hacksaw_gaming",
+   "title": "Fighter Pit",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1715/1.18.0/index.html?language=pt&channel=desktop&gameid=1715&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1715 and build 1.18.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:fire-my-laser",
+   "provider": "hacksaw_gaming",
+   "title": "Fire my Laser",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1640/1.24.4/index.html?language=pt&channel=desktop&gameid=1640&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1640 and build 1.24.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:fist-of-destruction",
+   "provider": "hacksaw_gaming",
+   "title": "Fist of Destruction",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1408/1.61.0/index.html?language=pt&channel=desktop&gameid=1408&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1408 and build 1.61.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:fist-of-destruction-megamultiplier",
+   "provider": "hacksaw_gaming",
+   "title": "Fist of Destruction Megamultiplier",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2536/1.12.3/index.html?language=pt&channel=desktop&gameid=2536&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2536 and build 1.12.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:freds-food-truck",
+   "provider": "hacksaw_gaming",
+   "title": "Freds Food Truck",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1229/1.25.3/index.html?language=pt&channel=desktop&gameid=1229&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1229 and build 1.25.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:get-the-cheese",
+   "provider": "hacksaw_gaming",
+   "title": "Get the CHEESE",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1580/1.32.2/index.html?language=pt&channel=desktop&gameid=1580&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1580 and build 1.32.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:great-game-rockies",
+   "provider": "hacksaw_gaming",
+   "title": "Great Game Rockies",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2303/1.25.4/index.html?language=pt&channel=desktop&gameid=2303&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2303 and build 1.25.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:great-game-serengeti",
+   "provider": "hacksaw_gaming",
+   "title": "Great Game Serengeti",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2620/1.26.2/index.html?language=pt&channel=desktop&gameid=2620&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2620 and build 1.26.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:grug-make-fire",
+   "provider": "hacksaw_gaming",
+   "title": "Grug Make Fire",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2166/1.23.3/index.html?language=pt&channel=desktop&gameid=2166&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2166 and build 1.23.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:hot-ross",
+   "provider": "hacksaw_gaming",
+   "title": "Hot Ross",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2062/1.16.0/index.html?language=pt&channel=desktop&gameid=2062&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2062 and build 1.16.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:hounds-of-hell",
+   "provider": "hacksaw_gaming",
+   "title": "Hounds of Hell",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1666/1.28.3/index.html?language=pt&channel=desktop&gameid=1666&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1666 and build 1.28.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:immortal-desire",
+   "provider": "hacksaw_gaming",
+   "title": "Immortal Desire",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1364/1.17.2/index.html?language=pt&channel=desktop&gameid=1364&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1364 and build 1.17.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:invictus",
+   "provider": "hacksaw_gaming",
+   "title": "Invictus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1791/1.25.3/index.html?language=pt&channel=desktop&gameid=1791&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1791 and build 1.25.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:jaws-of-justice",
+   "provider": "hacksaw_gaming",
+   "title": "Jaws of Justice",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1946/1.11.3/index.html?language=pt&channel=desktop&gameid=1946&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1946 and build 1.11.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:jelly-slice",
+   "provider": "hacksaw_gaming",
+   "title": "Jelly Slice",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1452/1.63.2/index.html?language=pt&channel=desktop&gameid=1452&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1452 and build 1.63.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:keep-em",
+   "provider": "hacksaw_gaming",
+   "title": "Keep'em",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1494/1.19.1/index.html?language=pt&channel=desktop&gameid=1494&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1494 and build 1.19.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:klowns",
+   "provider": "hacksaw_gaming",
+   "title": "Klowns",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1438/1.31.2/index.html?language=pt&channel=desktop&gameid=1438&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1438 and build 1.31.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-bandit",
+   "provider": "hacksaw_gaming",
+   "title": "Le Bandit",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1309/1.25.0/index.html?language=pt&channel=desktop&gameid=1309&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1309 and build 1.25.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-bandit-hold-win",
+   "provider": "hacksaw_gaming",
+   "title": "Le Bandit Hold & Win",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2465/1.5.0/index.html?language=pt&channel=desktop&gameid=2465&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2465 and build 1.5.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-bunny",
+   "provider": "hacksaw_gaming",
+   "title": "Le Bunny",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2195/1.9.0/index.html?language=pt&channel=desktop&gameid=2195&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2195 and build 1.9.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-cowboy",
+   "provider": "hacksaw_gaming",
+   "title": "Le Cowboy",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1924/2.1.2/index.html?language=pt&channel=desktop&gameid=1924&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1924 and build 2.1.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-digger",
+   "provider": "hacksaw_gaming",
+   "title": "Le Digger",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2229/1.32.0/index.html?language=pt&channel=desktop&gameid=2229&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2229 and build 1.32.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-fisherman",
+   "provider": "hacksaw_gaming",
+   "title": "Le Fisherman",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2057/1.22.2/index.html?language=pt&channel=desktop&gameid=2057&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2057 and build 1.22.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-football-fan",
+   "provider": "hacksaw_gaming",
+   "title": "Le Football Fan",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2438/1.10.0/index.html?language=pt&channel=desktop&gameid=2438&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2438 and build 1.10.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-hooligan",
+   "provider": "hacksaw_gaming",
+   "title": "Le Hooligan",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2470/1.1.5/index.html?language=pt&channel=desktop&gameid=2470&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2470 and build 1.1.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-king",
+   "provider": "hacksaw_gaming",
+   "title": "Le King",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1787/1.24.0/index.html?language=pt&channel=desktop&gameid=1787&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1787 and build 1.24.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-pharaoh",
+   "provider": "hacksaw_gaming",
+   "title": "Le Pharaoh",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1562/1.50.1/index.html?language=pt&channel=desktop&gameid=1562&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1562 and build 1.50.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-prechaun",
+   "provider": "hacksaw_gaming",
+   "title": "Le Prechaun",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2413/1.17.0/index.html?language=pt&channel=desktop&gameid=2413&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2413 and build 1.17.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-santa",
+   "provider": "hacksaw_gaming",
+   "title": "Le Santa",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1965/1.10.1/index.html?language=pt&channel=desktop&gameid=1965&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1965 and build 1.10.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-sortudo",
+   "provider": "hacksaw_gaming",
+   "title": "Le Sortudo",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2613/1.2.4/index.html?language=pt&channel=desktop&gameid=2613&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2613 and build 1.2.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-vampire",
+   "provider": "hacksaw_gaming",
+   "title": "Le Vampire",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2582/1.35.0/index.html?language=pt&channel=desktop&gameid=2582&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2582 and build 1.35.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-viking",
+   "provider": "hacksaw_gaming",
+   "title": "Le Viking",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1689/1.32.0/index.html?language=pt&channel=desktop&gameid=1689&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1689 and build 1.32.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:le-zeus",
+   "provider": "hacksaw_gaming",
+   "title": "Le Zeus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1830/1.18.1/index.html?language=pt&channel=desktop&gameid=1830&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1830 and build 1.18.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:life-and-death",
+   "provider": "hacksaw_gaming",
+   "title": "Life and Death",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1460/1.18.0/index.html?language=pt&channel=desktop&gameid=1460&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1460 and build 1.18.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:magic-piggy-og",
+   "provider": "hacksaw_gaming",
+   "title": "Magic Piggy OG",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2258/1.1.8/index.html?language=pt&channel=desktop&gameid=2258&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2258 and build 1.1.8 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:marlin-masters",
+   "provider": "hacksaw_gaming",
+   "title": "Marlin Masters",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1681/1.28.0/index.html?language=pt&channel=desktop&gameid=1681&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1681 and build 1.28.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:marlin-masters-atlantis",
+   "provider": "hacksaw_gaming",
+   "title": "Marlin Masters Atlantis",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2108/1.15.6/index.html?language=pt&channel=desktop&gameid=2108&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2108 and build 1.15.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:marlin-masters-og",
+   "provider": "hacksaw_gaming",
+   "title": "Marlin Masters OG",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2378/1.4.6/index.html?language=pt&channel=desktop&gameid=2378&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2378 and build 1.4.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:marlin-masters-the-big-haul",
+   "provider": "hacksaw_gaming",
+   "title": "Marlin Masters: The Big Haul",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1811/1.10.0/index.html?language=pt&channel=desktop&gameid=1811&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1811 and build 1.10.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:max-win-machine",
+   "provider": "hacksaw_gaming",
+   "title": "Max Win Machine",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2356/1.18.0/index.html?language=pt&channel=desktop&gameid=2356&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2356 and build 1.18.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:mayan-stackways",
+   "provider": "hacksaw_gaming",
+   "title": "Mayan Stackways",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1275/1.21.4/index.html?language=pt&channel=desktop&gameid=1275&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1275 and build 1.21.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:miami-mayhem",
+   "provider": "hacksaw_gaming",
+   "title": "Miami Mayhem",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1824/1.24.0/index.html?language=pt&channel=desktop&gameid=1824&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1824 and build 1.24.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:mighty-masks",
+   "provider": "hacksaw_gaming",
+   "title": "Mighty Masks",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1305/1.22.6/index.html?language=pt&channel=desktop&gameid=1305&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1305 and build 1.22.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:minted-mike",
+   "provider": "hacksaw_gaming",
+   "title": "Minted Mike",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2248/1.53.3/index.html?language=pt&channel=desktop&gameid=2248&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2248 and build 1.53.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:munchy-milo",
+   "provider": "hacksaw_gaming",
+   "title": "Munchy Milo",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2219/1.6.3/index.html?language=pt&channel=desktop&gameid=2219&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2219 and build 1.6.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:nitro-nights",
+   "provider": "hacksaw_gaming",
+   "title": "Nitro Nights",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2328/1.19.1/index.html?language=pt&channel=desktop&gameid=2328&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2328 and build 1.19.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:octo-attack",
+   "provider": "hacksaw_gaming",
+   "title": "Octo Attack",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1584/1.28.9/index.html?language=pt&channel=desktop&gameid=1584&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1584 and build 1.28.9 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:orb-of-destiny",
+   "provider": "hacksaw_gaming",
+   "title": "Orb of Destiny",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1474/1.15.0/index.html?language=pt&channel=desktop&gameid=1474&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1474 and build 1.15.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:phoenix-duelreels",
+   "provider": "hacksaw_gaming",
+   "title": "Phoenix DuelReels",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1675/1.40.2/index.html?language=pt&channel=desktop&gameid=1675&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1675 and build 1.40.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:power-of-ten",
+   "provider": "hacksaw_gaming",
+   "title": "Power of Ten",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2234/1.0.3/index.html?language=pt&channel=desktop&gameid=2234&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2234 and build 1.0.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:pray-for-six",
+   "provider": "hacksaw_gaming",
+   "title": "Pray for Six",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2115/1.12.6/index.html?language=pt&channel=desktop&gameid=2115&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2115 and build 1.12.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:pray-for-three",
+   "provider": "hacksaw_gaming",
+   "title": "Pray for Three",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1736/1.47.2/index.html?language=pt&channel=desktop&gameid=1736&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1736 and build 1.47.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rad-maxx",
+   "provider": "hacksaw_gaming",
+   "title": "Rad Maxx",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1732/1.18.1/index.html?language=pt&channel=desktop&gameid=1732&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1732 and build 1.18.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rainbow-princess",
+   "provider": "hacksaw_gaming",
+   "title": "Rainbow Princess",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1817/1.13.2/index.html?language=pt&channel=desktop&gameid=1817&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1817 and build 1.13.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:red-rascal",
+   "provider": "hacksaw_gaming",
+   "title": "Red Rascal",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2274/1.20.3/index.html?language=pt&channel=desktop&gameid=2274&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2274 and build 1.20.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:reign-of-rome",
+   "provider": "hacksaw_gaming",
+   "title": "Reign of Rome",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1728/1.27.2/index.html?language=pt&channel=desktop&gameid=1728&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1728 and build 1.27.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rip-city",
+   "provider": "hacksaw_gaming",
+   "title": "Rip City",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1233/1.34.7/index.html?language=pt&channel=desktop&gameid=1233&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1233 and build 1.34.7 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rise-of-fortuna",
+   "provider": "hacksaw_gaming",
+   "title": "Rise of Fortuna",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2213/1.21.2/index.html?language=pt&channel=desktop&gameid=2213&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2213 and build 1.21.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rise-of-ymir",
+   "provider": "hacksaw_gaming",
+   "title": "Rise of Ymir",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1616/1.27.9/index.html?language=pt&channel=desktop&gameid=1616&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1616 and build 1.27.9 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:ronin-stackways",
+   "provider": "hacksaw_gaming",
+   "title": "Ronin Stackways",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1267/1.10.3/index.html?language=pt&channel=desktop&gameid=1267&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1267 and build 1.10.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:rusty-curly",
+   "provider": "hacksaw_gaming",
+   "title": "Rusty & Curly",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1404/1.18.7/index.html?language=pt&channel=desktop&gameid=1404&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1404 and build 1.18.7 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:sand-and-ashes",
+   "provider": "hacksaw_gaming",
+   "title": "Sand and Ashes",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2243/1.29.3/index.html?language=pt&channel=desktop&gameid=2243&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2243 and build 1.29.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:shaolin-master",
+   "provider": "hacksaw_gaming",
+   "title": "Shaolin Master",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1554/1.10.6/index.html?language=pt&channel=desktop&gameid=1554&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1554 and build 1.10.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:sixsixsix",
+   "provider": "hacksaw_gaming",
+   "title": "SixSixSix",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1534/1.0.5/index.html?language=pt&channel=desktop&gameid=1534&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1534 and build 1.0.5 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:slayers-inc",
+   "provider": "hacksaw_gaming",
+   "title": "Slayers Inc",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1482/1.45.0/index.html?language=pt&channel=desktop&gameid=1482&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1482 and build 1.45.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:smoking-dragon",
+   "provider": "hacksaw_gaming",
+   "title": "Smoking Dragon",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1981/1.17.1/index.html?language=pt&channel=desktop&gameid=1981&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1981 and build 1.17.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:snow-slingers",
+   "provider": "hacksaw_gaming",
+   "title": "Snow Slingers",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1558/1.28.3/index.html?language=pt&channel=desktop&gameid=1558&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1558 and build 1.28.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:spear-of-athena",
+   "provider": "hacksaw_gaming",
+   "title": "Spear of Athena",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1938/1.23.2/index.html?language=pt&channel=desktop&gameid=1938&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1938 and build 1.23.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:spinman",
+   "provider": "hacksaw_gaming",
+   "title": "Spinman",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1752/1.11.3/index.html?language=pt&channel=desktop&gameid=1752&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1752 and build 1.11.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:steamrunners",
+   "provider": "hacksaw_gaming",
+   "title": "Steamrunners",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1871/1.9.3/index.html?language=pt&channel=desktop&gameid=1871&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1871 and build 1.9.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:stormborn",
+   "provider": "hacksaw_gaming",
+   "title": "Stormborn",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1875/1.26.7/index.html?language=pt&channel=desktop&gameid=1875&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1875 and build 1.26.7 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:strength-of-hercules",
+   "provider": "hacksaw_gaming",
+   "title": "Strength of Hercules",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1697/1.23.1/index.html?language=pt&channel=desktop&gameid=1697&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1697 and build 1.23.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:sun-princess",
+   "provider": "hacksaw_gaming",
+   "title": "Sun Princess",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1914/1.19.2/index.html?language=pt&channel=desktop&gameid=1914&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1914 and build 1.19.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:superstar-sevens",
+   "provider": "hacksaw_gaming",
+   "title": "Superstar Sevens",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2138/1.15.4/index.html?language=pt&channel=desktop&gameid=2138&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2138 and build 1.15.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:supreme-zeus",
+   "provider": "hacksaw_gaming",
+   "title": "Supreme Zeus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2458/1.21.3/index.html?language=pt&channel=desktop&gameid=2458&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2458 and build 1.21.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:tai-the-toad",
+   "provider": "hacksaw_gaming",
+   "title": "Tai the Toad",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1478/1.23.6/index.html?language=pt&channel=desktop&gameid=1478&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1478 and build 1.23.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:temple-of-torment",
+   "provider": "hacksaw_gaming",
+   "title": "Temple of Torment",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1237/1.20.3/index.html?language=pt&channel=desktop&gameid=1237&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1237 and build 1.20.3 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:the-count",
+   "provider": "hacksaw_gaming",
+   "title": "The Count",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1803/1.14.0/index.html?language=pt&channel=desktop&gameid=1803&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1803 and build 1.14.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:the-luxe",
+   "provider": "hacksaw_gaming",
+   "title": "The Luxe",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1897/1.5.1/index.html?language=pt&channel=desktop&gameid=1897&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1897 and build 1.5.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:the-wildwood-curse",
+   "provider": "hacksaw_gaming",
+   "title": "The Wildwood Curse",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1891/1.16.4/index.html?language=pt&channel=desktop&gameid=1891&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1891 and build 1.16.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:tiger-legends",
+   "provider": "hacksaw_gaming",
+   "title": "Tiger Legends",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1744/1.11.1/index.html?language=pt&channel=desktop&gameid=1744&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1744 and build 1.11.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:toshi-ways-club",
+   "provider": "hacksaw_gaming",
+   "title": "Toshi Ways Club",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1971/1.15.4/index.html?language=pt&channel=desktop&gameid=1971&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1971 and build 1.15.4 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:twisted-lab",
+   "provider": "hacksaw_gaming",
+   "title": "Twisted Lab",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1514/1.17.1/index.html?language=pt&channel=desktop&gameid=1514&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1514 and build 1.17.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:ultimate-slot-of-america",
+   "provider": "hacksaw_gaming",
+   "title": "Ultimate Slot of America",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1760/1.15.2/index.html?language=pt&channel=desktop&gameid=1760&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1760 and build 1.15.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:vending-machine",
+   "provider": "hacksaw_gaming",
+   "title": "Vending Machine",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1340/1.14.2/index.html?language=pt&channel=desktop&gameid=1340&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1340 and build 1.14.2 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:wanted-dead-or-a-wild",
+   "provider": "hacksaw_gaming",
+   "title": "Wanted Dead Or a Wild",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1067/1.74.0/index.html?language=pt&channel=desktop&gameid=1067&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1067 and build 1.74.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:wicked-grin",
+   "provider": "hacksaw_gaming",
+   "title": "Wicked Grin",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2347/1.43.1/index.html?language=pt&channel=desktop&gameid=2347&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2347 and build 1.43.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:wings-of-horus",
+   "provider": "hacksaw_gaming",
+   "title": "Wings of Horus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1612/1.24.6/index.html?language=pt&channel=desktop&gameid=1612&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1612 and build 1.24.6 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:wishbringer",
+   "provider": "hacksaw_gaming",
+   "title": "Wishbringer",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1711/1.23.1/index.html?language=pt&channel=desktop&gameid=1711&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1711 and build 1.23.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:xmas-drop",
+   "provider": "hacksaw_gaming",
+   "title": "Xmas Drop",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1396/1.21.0/index.html?language=pt&channel=desktop&gameid=1396&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1396 and build 1.21.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:ze-zeus",
+   "provider": "hacksaw_gaming",
+   "title": "Ze Zeus",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/1508/1.32.1/index.html?language=pt&channel=desktop&gameid=1508&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 1508 and build 1.32.1 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "hs:zeus-ze-zecond",
+   "provider": "hacksaw_gaming",
+   "title": "Zeus Ze Zecond",
+   "category": "Slots",
+   "demo_url": "https://static-live.hacksawgaming.com/2077/1.15.0/index.html?language=pt&channel=desktop&gameid=2077&mode=2&token=demo&lobbyurl=&env=https://rgs-demo.hacksawgaming.com/api&alwaysredirect=true",
+   "host": "static-live.hacksawgaming.com",
+   "verification": "product id 2077 and build 1.15.0 free-play mode",
+   "note": "official Hacksaw demo"
+  },
+  {
+   "game_id": "pgo:rise-of-olympus",
+   "provider": "play_n_go",
+   "title": "Rise of Olympus",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=riseofolympus&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts gid riseofolympus (HTTP 200; verified 2026-10-12); settles via the wallet socket tap (decision 0026)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:moon-princess-100",
+   "provider": "play_n_go",
+   "title": "Moon Princess 100",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=moonprincess100&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts gid moonprincess100 (HTTP 200; verified 2026-10-12); settles via the wallet socket tap (decision 0026)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:sweet-alchemy",
+   "provider": "play_n_go",
+   "title": "Sweet Alchemy",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=sweetalchemy&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts gid sweetalchemy (HTTP 200; verified 2026-10-12); settles via the wallet socket tap (decision 0026)",
+   "note": "official Play'n GO demo"
+  },
+  {
+   "game_id": "pgo:golden-osiris",
+   "provider": "play_n_go",
+   "title": "Golden Osiris",
+   "category": "Slots",
+   "demo_url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=goldenosiris&lang=pt&practice=1&channel=desktop&demo=2",
+   "host": "asccw.playngonetwork.com",
+   "verification": "launcher accepts gid goldenosiris (HTTP 200; verified 2026-10-12); settles via the wallet socket tap (decision 0026)",
+   "note": "official Play'n GO demo"
+  }
+ ]
+}

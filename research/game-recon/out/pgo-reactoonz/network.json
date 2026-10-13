@@ -1,0 +1,731 @@
+[
+  {
+    "url": "https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=reactoonz&lang=pt&practice=1&channel=desktop&demo=2",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 747,
+    "urlhash": "1ad0863af34077a3"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/hera/hera-1.46.0.29/container-launcher/ContainerLauncher_bundle.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 361857,
+    "urlhash": "c5cfeded0661911d"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/games/getgamebygid/reactoonz",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 262,
+    "urlhash": "18698a5ec33d1d58"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/configuration/prelaunchconfiguration?gameId=333&language=pt_BR&productGroup=2&gapTime=&brand=&ctx=&practice=1&channel=desktop",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 3305,
+    "urlhash": "95a42b5bca314d49"
+  },
+  {
+    "url": "https://ascflyp.playngonetwork.com/",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 23,
+    "urlhash": "a699c61ef54e0563"
+  },
+  {
+    "url": "https://ascflyp.playngonetwork.com/",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "mime": "text/plain",
+    "bytes": 98,
+    "urlhash": "a699c61ef54e0563"
+  },
+  {
+    "url": "https://asccw.playngonetwork.com/configuration/v2?pid=2&gameid=333&lang=pt_BR&practice=1&brand=&ctx=&channel=desktop&jurisdiction=ZZ&platform=megaton&currency=DEMO&country=&region=&resourceRoot=&_r=00570809-e2a2-41dd-8e4c-fdfa84c5b6f3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 10004,
+    "urlhash": "3d6ff942f88adf7e"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/games/reactoonz/reactoonz_desktop.bundle.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 2128662,
+    "urlhash": "9168e89faf2d85e2"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/help.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 2624,
+    "urlhash": "941c0fec9569f361"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/css/game_history_styles.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 9166,
+    "urlhash": "a3f310511044f6dd"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/template3.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 2554,
+    "urlhash": "f8a42f0586133944"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/gamehelp/4774/styles/template.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 47460,
+    "urlhash": "60f7e222d1bcfe07"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/megaton_modules/game-history_2.4.11.1/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript",
+    "bytes": 40524,
+    "urlhash": "792c71e1ab38fc23"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript",
+    "bytes": 537692,
+    "urlhash": "6cd8f6e949d2eb29"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/.vite/manifest.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1350,
+    "urlhash": "0e0b991fc3bd4982"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/PlayerUI/assets/main-Ixdi7DHJ.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 72705,
+    "urlhash": "4d8d71cf52be424d"
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 22264,
+    "urlhash": "69031142d37ff312"
+  },
+  {
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 89220,
+    "urlhash": "9693203622602734"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/config_desktop.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 49666,
+    "urlhash": "b4ca4483b22ba320"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ROBOTO_CONDENSED_BOLD.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 169,
+    "urlhash": "b7a864cba7611890"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ANJA_ELAINE_ACCENT.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 165,
+    "urlhash": "22305acd03f1a035"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ROBOTO_CONDENSED_REGULAR.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 175,
+    "urlhash": "53d4b378b2629395"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/oswald_medium.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 152,
+    "urlhash": "0d0c360b79f541c8"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/FranklinGothicMedium.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 169,
+    "urlhash": "c598a5fa7613ab59"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/oswald_regular.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 154,
+    "urlhash": "fdc6277b9563f4c3"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/png_mini.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 140,
+    "urlhash": "87a4d2d048dbd450"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/PNG_VNTH.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 117,
+    "urlhash": "7cd1d8bba4440834"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ARIAL_ROUNDED_BOLD.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 163,
+    "urlhash": "1e0d11d86b234ce2"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/POPPINS_REGULAR.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 157,
+    "urlhash": "253d37dc3198ac02"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ROBOTO_CONDENSED_BOLD.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 109277,
+    "urlhash": "4f1c66e3aa83bf8a"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/OSWALD-REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 151733,
+    "urlhash": "23a90a360c6d9024"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ANJA_ELAINE_ACCENT.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 34720,
+    "urlhash": "6616df5d8507d59d"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ARIAL_ROUNDED_BOLD.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 27300,
+    "urlhash": "8d53ec3a38ebe895"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/FranklinGothicMedium.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 85568,
+    "urlhash": "e4a81ce903043eed"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/PNG_VNTH.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 184481,
+    "urlhash": "588ded95d27736f5"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/OSWALD-MEDIUM.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 107945,
+    "urlhash": "6eef9234bb1e549f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/ROBOTO_CONDENSED_REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 109929,
+    "urlhash": "710343c34e9859e5"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/POPPINS_REGULAR.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 73600,
+    "urlhash": "65068e71daccd92c"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/fonts/PNG-MINI.woff",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff",
+    "bytes": 114732,
+    "urlhash": "10ba1c4d39d37683"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/featurepreview_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 337760,
+    "urlhash": "09c643ad81234e0f"
+  },
+  {
+    "url": "https://pc-prod-eu.playngonetwork.com/promotions/player/available?lang=pt",
+    "method": "GET",
+    "type": "xhr",
+    "status": 401,
+    "mime": "",
+    "bytes": 0,
+    "urlhash": "0d8c03ccf9848429"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/feature_preview/feature_preview_layout_desktop.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 3274,
+    "urlhash": "f195a50333bb0637"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/game_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1234603,
+    "urlhash": "497194a11d32ac6d"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/sounds/common_sounds_desktop.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 651,
+    "urlhash": "718cea7a44981889"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/sounds/sounds_desktop.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 8660,
+    "urlhash": "3fd5aaa086636370"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/ui_desktop_bundle.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 289086,
+    "urlhash": "511c4c3ae9dc226a"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/lang/pt_BR/locale.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json",
+    "bytes": 1333663,
+    "urlhash": "da4da8884581301e"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/feature_preview/feature_preview_texture2_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 48722,
+    "urlhash": "cf6e67aecc4d14e4"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/feature_preview/feature_preview_texture1_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 48254,
+    "urlhash": "1f08d1e8b08fed8d"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/c87dba96-1ef8-4c93-bb50-beaa39ff1629",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 48722,
+    "urlhash": "309ac5f13a9ed7df"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/90d54d8e-08bc-465f-aed2-e40e58c945b6",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 48254,
+    "urlhash": "3e315450c9e63ffa"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/feature_preview/feature_preview_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 488547,
+    "urlhash": "ae76962a9d7d6e21"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/c62dcafa-7122-45ee-9df7-1e3fa950336e",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 488547,
+    "urlhash": "93e723811b1b6907"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/bmpfonts/bmpfonts_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1004449,
+    "urlhash": "e98b70979e9a079b"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/d07a3019-6012-4b67-9b03-2e3ea2a02362",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 1004449,
+    "urlhash": "4af3d3a5912d0cd5"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture6_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 176698,
+    "urlhash": "dfd72c00af59d8b5"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/604bda76-1cb0-4fd6-8323-30fa733a5f58",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 176698,
+    "urlhash": "b864f08370ffc306"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture3_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 240968,
+    "urlhash": "8ac51527c316eaad"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/7d07687f-10b7-4ca5-8841-bfd477f95941",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 240968,
+    "urlhash": "d310ddfb810ab74b"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/sounds/common_sounds_desktop.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 34119,
+    "urlhash": "9a1dd9dad3c70a75"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture2_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 582297,
+    "urlhash": "37fc546279fc68c8"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/1e3e85d7-0e98-46cd-9724-ee7856a3f99d",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 582297,
+    "urlhash": "25a7295ed88035a5"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/97dc254a-2b2a-466a-85c9-1215bc389c95",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 5206,
+    "urlhash": "fbc5347aa02f3287"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/d5a226e3-a4cf-4f80-8317-c2894a2d24c1",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 10003,
+    "urlhash": "66fd17efcc7278ab"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture4_level1.jpg",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/jpeg",
+    "bytes": 332348,
+    "urlhash": "be36ced9a462b515"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/5bae5812-6eef-4bc4-84b5-484961b8d3f3",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 332348,
+    "urlhash": "3c7bfa197389694e"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/menu/menu_texture1_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 501160,
+    "urlhash": "c465724789a3080d"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/2bccf147-0bcc-403a-8415-36d2f548d8f8",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 501160,
+    "urlhash": "418dc87260d5c210"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 479785,
+    "urlhash": "8e209a27e3e38275"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/659f6fda-5018-45f6-88cc-309ed0aeac91",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 479785,
+    "urlhash": "08f45330bc01414f"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture1_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 609752,
+    "urlhash": "116ac1117a767047"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/skin/skin_texture5_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 342635,
+    "urlhash": "006f5325fbfbd8ca"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/6d4cbc87-4c6a-4953-881d-78f64fe6e3eb",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 609752,
+    "urlhash": "8f05790e2e9aac43"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/8673be9c-14e8-4347-be41-9efc58f289cb",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 342635,
+    "urlhash": "53b3572e70393df6"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/common/ui/desktop/statusbar/avif/statusbar_texture0_level1.avif",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/avif",
+    "bytes": 5206,
+    "urlhash": "d1c5eec38212a102"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/gamelibs/videoslot/desktop/videoslot_popup/avif/videoslot_popup_texture0_level1.avif",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/avif",
+    "bytes": 10003,
+    "urlhash": "bf7fe956e4d8a4e4"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/menu/menu_texture0_level1.png",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 1791674,
+    "urlhash": "ffa8917c9a171d4b"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/a2e8d00d-15ea-4ea6-bb92-88c61b381d11",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 1791674,
+    "urlhash": "0eff39f6859c9ea7"
+  },
+  {
+    "url": "blob:https://asccw.playngonetwork.com/817cf79f-e575-4b3c-a78f-0ec9331ea3ff",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "",
+    "bytes": 705958,
+    "urlhash": "ef54e8c16036cd4a"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/hyperspineffect/avif/hyperspineffect_texture0_level1.avif",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "image/avif",
+    "bytes": 705958,
+    "urlhash": "0a96d7c17cc3c9ae"
+  },
+  {
+    "url": "https://cdn.playngonetwork.com/9.4.0-reactoonz.444/resources/games/gridslot/reactoonz/sounds/sounds_desktop.mp3",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "audio/mpeg",
+    "bytes": 5426166,
+    "urlhash": "237cc42cc7575286"
+  }
+]

@@ -1,0 +1,34 @@
+# Build context for the container image.
+#
+# The image builds the storefront from `web/` (the Dockerfile's first stage),
+# so the app sources and the lockfile must be IN here — they used to be
+# excluded, back when the image expected a pre-built `web/out` copied in from
+# the build machine. What stays out is what the container never runs:
+# host-built `node_modules`, the dev server's `.next`, the live data dir, and
+# the decision/capture/docs material that is not code.
+.git
+.gitignore
+.commandcode
+container
+decisions
+deploy
+docs
+examples
+games
+p2
+p3
+research
+scripts
+
+# the provider catalog ships; its fetch caches are machine state
+probes/*cache*.json
+
+web/node_modules
+web/.next
+web/out
+web/README.md
+demo/data
+
+**/__pycache__
+**/*.pyc
+*.md

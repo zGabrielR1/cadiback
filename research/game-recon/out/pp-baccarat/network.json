@@ -1,0 +1,20 @@
+[
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?gameSymbol=vs1baccarat&websiteUrl=https%3A%2F%2Fdemogamesfree.pragmaticplay.net&jurisdiction=99&lang=pt&cur=BRL",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html",
+    "bytes": 552,
+    "urlhash": "3b811b414f5c2711"
+  },
+  {
+    "url": "https://demogamesfree.pragmaticplay.net/gs2c/common/css/unlogged.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css",
+    "bytes": 918,
+    "urlhash": "b10d12b141c25448"
+  }
+]

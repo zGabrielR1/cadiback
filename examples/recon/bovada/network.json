@@ -1,0 +1,877 @@
+[
+  {
+    "url": "https://www.bovada.lv/",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/rubik/rubikRegular.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/rubik/rubikMedium.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/thalia-0eef35f38e27550a.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/montserrat/montserratRegular.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/montserrat/montserratExtraBoldItalic.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/js/gtmCustom-v4.min.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/js/elastic-apm-rum.umd-5.16.0.min.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/sports/content/runtime/sports_vendor.7812451c.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/webpack-232a354d5ca5e5ef.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/036e1105-5c6e8a56060001ea.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/840-cf048f0c874a781c.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/fq9hMcUGR5WCr3kTmh312g//FTV-SiteDesktopBanner_2520x1080-3.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/app/global-error-fa9d6f9820552c49.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/NUrR28NtQl2KbiQolow//BVD_ftv_card_363x206.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/DOipY2AjQ2GMzic4mE5cQA//casino-card.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/fIox8jPfRWKusTeNX0MbnQ//hdjp-card.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/i71E4lzkSASXmpz29NxG+g//live-casino-card.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/+YDLqLK4QOyPFtgwL+QWHA//Litecoin.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://bovada.lv/cms/BVD/FptRWU0CTCSwV1lZOGWeTA/crypto-banner.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 301,
+    "mime": ""
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/mzvHSYM9RZaqDBYb6Q9mQ//Bitcoin%20Cash.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/P3UzBv9FSqGvm14AC60stg//Tether.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/mdTRToQFS6G2eRzmFNw//Bitcoin.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/qpoab5lRQ1mE3shDv8mDJw//Ethereum.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/SeUWAPacRgqHxWPI2XX7zQ//Icon-Desktop.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/wEmwduX3QeWHGdGJ6T8EJg//VISA.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/4SXIfF4DSvaK4eXB2b100A//Mastercard.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/poWIw7BySPyk08nCqkqSig//Youtube.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/uaLBarCTRoSyvo6ywuDIMg//Tiktok.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/c4mja70RH+eYKoR8Czgdg//X.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/r6P1vvm6RAy5bVgpxcpWQ//Telegram.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/nH5LisEzQrS7FNaIcU8acA//Instagram.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/W9HZS+8jRg6qYdMGVyIzTg//Facebook.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/JXxDizMQSiUtZinaE8Gpg//Discord%20Logo38.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/main-app-31967e0cf95655af.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/FptRWU0CTCSwV1lZOGWeTA/crypto-banner.webp",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/webp"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/pantheon-modules-b7a8adb9aa61573a.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/cookies-next-5e1a06f9fd804a02.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/wretch-e10db311788badad.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/7299-2d1e5718c27e9d75.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9153-b23f3f0eb656aa4d.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/8558-3496e1d07054a6d8.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/7962-1e78769ef7ecd02d.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/8808-236abfd636a8c586.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9956-bec9b813025cc81a.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/6465-9f89dcbd259aeb26.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/5830-6dba763a1d43a52c.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9537-d29c0f6f2c92408c.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9937-739d87ce670ce287.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9886-204ed267c7deb7e4.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/app/%5Blocale%5D/layout-5654a5f39b6693fc.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/1110-5f721fca1599c8ea.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/app/%5Blocale%5D/dynamic-layouts/%5BlayoutSegment%5D/%5Bchannel%5D/%5B%5B...slug%5D%5D/page-8f552e307a1e12dd.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/89.af78c46d7ffbded1.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/app/%5Blocale%5D/error-b0ed345d088e96e8.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/8436.665aa5bdaf2d5f9b.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9086-6c1318e76744598b.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/6509-3e40fc64af7471cb.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.googletagmanager.com/gtm.js?id=GTM-NFQR49R",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/8146.60c68f5222daf5bc.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/6540.92f4b5033bb5a73f.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/3938.7598bb6b96247b9d.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/9063.e512de3e4d0a0893.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=gtm.js&eid=3&u=AAAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html.0__html&ht=p__html.p__html.p__html&tr=1paused.1lcl.1lcl.1lcl.1lcl.1lcl.1lcl.1lcl.1lcl.1lcl.1cl.1cl.1evl.1cl.1evl.1evl.1evl.1evl.1evl.1evl.1evl.1evl.1tg.1hl.1evl.1tg.1hl.1evl.1evl.1evl.1evl.1tg.1evl.1lcl.1html.1html.1html&ti=2paused.2lcl.2lcl.2lcl.2lcl.2lcl.2lcl.2lcl.2lcl.2lcl.2cl.2cl.2evl.2cl.2evl.2evl.2evl.2evl.2evl.2evl.2evl.2evl.2tg.2hl.2evl.2tg.2hl.2evl.2evl.2evl.2evl.2tg.2evl.2lcl.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=gtm.init&eid=2&u=AAAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html.0__html.0__html.0__html.0__html&ht=p__html.p__html.p__html.p__html.p__html.p__html&tr=1html.1html.1html.1html.1html.1html&ti=2html.2html.2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=*&eid=232&u=AAAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html.0__html.0__html.0__html.0__html.0__html&ht=p__html.p__html.p__html.p__html.p__html.p__html.p__html&tr=1html.1html.1html.1html.1html.1html.1html&ti=2html.2html.2html.2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&e=gtm.init&eid=2&u=AAAAAAAAAAAAAACA&h=Ag&tr=5html.5html.5html.5html.5html.5html&ti=2html.2html.2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=gtm.dom&eid=431&u=AAAAAAAAAAAAAACA&h=Ag&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://services.bovada.lv/assets/apps/cross-messaging-app/receiver.html",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://ad.doubleclick.net/ddm/activity/src=16593353;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:09.254Z",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://ad.doubleclick.net/ddm/activity/src=16593353;dc_pre=CPaH9Pb1pZcDFe2BYQYdQ1cYgQ;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:09.254Z",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://ssbsync.smartadserver.com/api/sync?callerId=97&redirectUri=https%3A%2F%2Ft.us1.dyntrk.com%2Fpt.php%3Fdynk%3DMTAMzI106329%26dynt%3D28%26dyncp%3D141611%26dynf%3Dimg%26eqtvid%3D[ssb_sync_pid]%26evt%3Dbovada-home-page",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": ""
+  },
+  {
+    "url": "https://trk.osdrtb.net/u?c=d3d707f2-96c1-4af4-8549-7fe5650c693f&ev=SiteVisits&osrnd=595798135",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://services.bovada.lv/services/jurisdiction/v2/access",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://www.bovada.lv/login?_rsc=nav",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "text/x-component"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/7103.af8638fcc63824de.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/1953.c509ef30060e0c12.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/content/images/zeus/icons/icon-arrow-back.svg",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/chunks/3742.64b51b95fc7ea9be.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/content/images/zeus/icons/icon-hide-password.svg",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml"
+  },
+  {
+    "url": "https://www.bovada.lv/content/images/zeus/icons/icon-warning.svg",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml"
+  },
+  {
+    "url": "https://www.bovada.lv/content/images/zeus/icons/icon-info.svg",
+    "method": "GET",
+    "type": "fetch",
+    "status": 200,
+    "mime": "image/svg+xml"
+  },
+  {
+    "url": "https://www.google.com/gmp/conversion/_dc_unique_id=6639987646440905393;_dc_ptd=ChEI8LiS1gYQnJnDjozGuYyGARIfAG-KpMhsWHSjEY6yGqAxx8j-ouGJXKfqWFG1E8OaVw;_dc_time=1791307896;src=16593353;dc_pre=CPaH9Pb1pZcDFe2BYQYdQ1cYgQ;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:09.254Z",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://t.us1.dyntrk.com/pt.php?dynk=MTAMzI106329&dynt=28&dyncp=141611&dynf=img&eqtvid=1497169812966202338&evt=bovada-home-page",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://cdn.n.dynstc.com/spacer.gif",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://www.bovada.lv/outage",
+    "method": "GET",
+    "type": "other",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/rubik/rubikRegular.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/IL3F7SReRaenmisKmFf6ew/seotracking-v8_31.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/rubik/rubikMedium.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/cms/BVD/Qx1qFA5USqSwe920KQbAPg/bvdProChat_v7.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/montserrat/montserratRegular.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.bovada.lv/assets/_next/static/css/fonts/montserrat/montserratExtraBoldItalic.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://ad.doubleclick.net/ddm/activity/src=16593353;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:10.486Z",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&e=gtm.load&eid=663&u=AgAAAAAAAAAAAACA&h=Ag&tr=5html.5html&ti=2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=*&eid=549&u=AgAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html&ht=p__html.p__html&tr=1html.1html.5html.5html&ti=2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=*&eid=698&u=AgAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html.0__html.0__html.0__html.0__html.0__html&ht=p__html.p__html.p__html.p__html.p__html.p__html.p__html&tr=1html.1html.1html.1html.1html.1html.1html&ti=2html.2html.2html.2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&es=1&e=gtm.load&eid=663&u=AgAAAAAAAAAAAACA&h=Ag&hf=0__html.0__html&ht=p__html.p__html&tr=1html.1html&ti=2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://policy.app.cookieinformation.com/uc.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://ssbsync.smartadserver.com/api/sync?callerId=97&redirectUri=https%3A%2F%2Ft.us1.dyntrk.com%2Fpt.php%3Fdynk%3DMTAMzI106329%26dynt%3D28%26dyncp%3D141611%26dynf%3Dimg%26eqtvid%3D[ssb_sync_pid]%26evt%3Dbovada-home-page",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": ""
+  },
+  {
+    "url": "https://trk.osdrtb.net/u?c=d3d707f2-96c1-4af4-8549-7fe5650c693f&ev=SiteVisits&osrnd=914920223",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://policy.app.cookieinformation.com/cookiesharingiframe.html",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://policy.app.cookieinformation.com/latest/bovada.lv/en.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://ad.doubleclick.net/ddm/activity/src=16593353;dc_pre=CLuUuff1pZcDFbOEYQYdnKYWzg;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:10.486Z",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://policy.app.cookieinformation.com/cookie-data/bovada.lv/cabl.json",
+    "method": "GET",
+    "type": "xhr",
+    "status": 200,
+    "mime": "application/json"
+  },
+  {
+    "url": "https://www.recaptcha.net/recaptcha/api.js?render=6Lfw8dwkAAAAAH_qxNriYRah9b6-o-f2yW_fICDo&hl=en",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://t.us1.dyntrk.com/pt.php?dynk=MTAMzI106329&dynt=28&dyncp=141611&dynf=img&eqtvid=1497169812966202338&evt=bovada-home-page",
+    "method": "GET",
+    "type": "image",
+    "status": 302,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.googletagmanager.com/a?id=GTM-NFQR49R&v=3&t=t&pid=573420842&gtm=45He6a50h1v840026904za200zd840026904xf1&cv=84&rv=6a50&tc=148&x=1&tag_exp=115938465~115938468~118012009~118897920~118897930~120385422~120469145~120469153~121046263~121046271&e=*&eid=698&u=AgAAAAAAAAAAAACA&h=Ag&tr=5html.5html.5html.5html.5html.5html.5html&ti=2html.2html.2html.2html.2html.2html.2html&z=0",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://cdn.n.dynstc.com/spacer.gif",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://static.hotjar.com/c/hotjar-510373.js?sv=6",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://script.hotjar.com/modules.ac003456795fba9e297a.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://script.hotjar.com/browser-perf.8417c6bba72228fa2e29.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://www.gstatic.com/recaptcha/releases/guXhH0v-XMxlzmbTwqkaT4i5/recaptcha__en.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://www.google.com/gmp/conversion/_dc_unique_id=2814943543415411859;_dc_ptd=ChEI8LiS1gYQnJnDjozGuYyGARIfAG-KpMg-rA3m1L5hY2vS_XIV68mtq6NKKSUcSQl8hQ;_dc_time=1791307897;cid=CAQS4gEAQM4h3I-ORRVXQEEOTgLjC6FGGQ32nmloWzVN45mCOjYC4En8kFnBlhcd9T1CCpqBa9gBAZ10w5oyjvgzmzeAFOKhC_ApLgsfnlcWoQzhC9LPyEMjVB_0XEt1QmM_ImpQ-80LmUTUEfmhuzTnHMBHGXT3fhhq7rqZzWhVJ3iJTQoYdwmqLOwUpD5Enqd3GDcCKQD8-EJUDDH0joiBG7H5MsclEOe9MP3R0kzlTctlsRIhrhM93ueDZoOtrXi6LOGf5-kFfgFAi1vmQTPYmfshaGl3kCrwUad0dX9HruyDkOOz;eps=AHas8cCPFIgePRNxi3pdvUoPX5HIwhcgTlnaqdLRshgs-uCyfUdZrgUDI_Z_mcFJwEOGBWzRyuMXINXo7afkrJNSM6FikrhMcEVstYAeMtbAeb8xDw;src=16593353;dc_pre=CLuUuff1pZcDFbOEYQYdnKYWzg;type=bvdtr0;cat=bvd_s0;u1=eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c;u2=ef46b6fe2085dbb5b0501eb6fc4a557982c42de8008af9506f55787cb2dc256c;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=$%7BGDPR%7D;gdpr_consent=$%7BGDPR_CONSENT_755%7D;ord=2026-10-06T17:31:10.486Z",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/gif"
+  },
+  {
+    "url": "https://www.recaptcha.net/recaptcha/api2/anchor?ar=1&k=6Lfw8dwkAAAAAH_qxNriYRah9b6-o-f2yW_fICDo&co=aHR0cHM6Ly93d3cuYm92YWRhLmx2OjQ0Mw..&hl=en&v=guXhH0v-XMxlzmbTwqkaT4i5&size=invisible&anchor-ms=20000&execute-ms=30000&cb=36gtpxrqiwn1",
+    "method": "GET",
+    "type": "document",
+    "status": 200,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://www.gstatic.com/recaptcha/releases/guXhH0v-XMxlzmbTwqkaT4i5/styles__ltr.css",
+    "method": "GET",
+    "type": "stylesheet",
+    "status": 200,
+    "mime": "text/css"
+  },
+  {
+    "url": "https://www.gstatic.com/recaptcha/releases/guXhH0v-XMxlzmbTwqkaT4i5/recaptcha__en.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://www.gstatic.com/recaptcha/api2/logo_48.png",
+    "method": "GET",
+    "type": "image",
+    "status": 200,
+    "mime": "image/png"
+  },
+  {
+    "url": "https://www.recaptcha.net/recaptcha/api2/webworker.js?hl=en&v=guXhH0v-XMxlzmbTwqkaT4i5",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2",
+    "method": "GET",
+    "type": "font",
+    "status": 200,
+    "mime": "font/woff2"
+  },
+  {
+    "url": "https://www.gstatic.com/recaptcha/releases/guXhH0v-XMxlzmbTwqkaT4i5/recaptcha__en.js",
+    "method": "GET",
+    "type": "other",
+    "status": 200,
+    "mime": "text/javascript"
+  },
+  {
+    "url": "https://www.bovada.lv/common/static/matomo.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "mime": "application/javascript"
+  },
+  {
+    "url": "https://idg.bovada.lv/matomo.php?action_name=bvd%3Ahome%3Aunlogged&idsite=7&rec=1&r=970563&h=14&m=31&s=12&url=https%3A%2F%2Fwww.bovada.lv%2F&_id=1d1433d781f7197f&_idn=1&send_image=0&_refts=0&dimension1=www.bovada.lv&dimension2=www.bovada.lv&dimension3=10&dimension6=bvd&dimension12=bvd%3Ahome%3Aunlogged&dimension13=notlogged&dimension18=bvd&dimension19=undefined&dimension20=undefined&dimension21=undefined&dimension22=open&dimension23=Direct&pv_id=fEomJE&pf_net=125&pf_srv=42&pf_tfr=84&pf_dm1=259&pf_dm2=1638&pf_onl=1&uadata=%7B%22formFactors%22%3A%5B%22Desktop%22%5D%2C%22fullVersionList%22%3A%5B%7B%22brand%22%3A%22HeadlessChrome%22%2C%22version%22%3A%22153.0.8010.12%22%7D%2C%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%228.0.0.0%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22153.0.8010.12%22%7D%5D%2C%22mobile%22%3Afalse%2C%22model%22%3A%22%22%2C%22platform%22%3A%22Windows%22%2C%22platformVersion%22%3A%2210.0%22%7D&cookie=1&res=1440x900",
+    "method": "POST",
+    "type": "ping",
+    "status": 204,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://idg.bovada.lv/matomo.php?action_name=bvd%3Ahome%3Aunlogged&idsite=7&rec=1&r=354076&h=14&m=31&s=12&url=https%3A%2F%2Fwww.bovada.lv%2Flogin&_id=1d1433d781f7197f&_idn=0&send_image=0&_refts=0&dimension1=www.bovada.lv&dimension2=www.bovada.lv&dimension3=10&dimension6=bvd&dimension7=not_set&dimension11=not_set&dimension12=bvd%3Ahome%3Aunlogged&dimension13=notlogged&dimension18=bvd&dimension19=undefined&dimension20=undefined&dimension21=undefined&dimension22=open&dimension23=Direct&pv_id=ydqy77&pf_net=125&pf_srv=42&pf_tfr=84&pf_dm1=259&pf_dm2=1638&pf_onl=1&uadata=%7B%22formFactors%22%3A%5B%22Desktop%22%5D%2C%22fullVersionList%22%3A%5B%7B%22brand%22%3A%22HeadlessChrome%22%2C%22version%22%3A%22153.0.8010.12%22%7D%2C%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%228.0.0.0%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22153.0.8010.12%22%7D%5D%2C%22mobile%22%3Afalse%2C%22model%22%3A%22%22%2C%22platform%22%3A%22Windows%22%2C%22platformVersion%22%3A%2210.0%22%7D&cookie=1&res=1440x900",
+    "method": "POST",
+    "type": "ping",
+    "status": 204,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://idg.bovada.lv/matomo.php?e_c=front-end&e_a=load_operator&e_n=interval_load&ca=1&idsite=7&rec=1&r=005582&h=14&m=31&s=12&url=https%3A%2F%2Fwww.bovada.lv%2Flogin&_id=1d1433d781f7197f&_idn=0&send_image=0&_refts=0&dimension1=www.bovada.lv&dimension2=www.bovada.lv&dimension3=10&dimension6=bvd&dimension7=not_set&dimension11=not_set&dimension12=bvd%3Ahome%3Aunlogged&dimension13=&dimension18=bvd&dimension19=undefined&dimension20=undefined&dimension21=undefined&dimension22=open&dimension23=Direct&pv_id=ydqy77&uadata=%7B%22formFactors%22%3A%5B%22Desktop%22%5D%2C%22fullVersionList%22%3A%5B%7B%22brand%22%3A%22HeadlessChrome%22%2C%22version%22%3A%22153.0.8010.12%22%7D%2C%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%228.0.0.0%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22153.0.8010.12%22%7D%5D%2C%22mobile%22%3Afalse%2C%22model%22%3A%22%22%2C%22platform%22%3A%22Windows%22%2C%22platformVersion%22%3A%2210.0%22%7D&cookie=1&res=1440x900",
+    "method": "POST",
+    "type": "ping",
+    "status": 204,
+    "mime": "text/html"
+  },
+  {
+    "url": "https://api.wicket-keeper.com/intake/v2/rum/events",
+    "method": "POST",
+    "type": "fetch",
+    "status": 202,
+    "mime": "application/json"
+  }
+]

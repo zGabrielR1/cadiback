@@ -1,0 +1,7 @@
+FROM python:3.14-slim
+
+RUN useradd --create-home --shell /bin/false watcher
+WORKDIR /app
+COPY frame/ ./frame/
+USER watcher
+CMD ["python3", "-m", "frame.selftest"]

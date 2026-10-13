@@ -1,0 +1,717 @@
+{
+  "provenance": "public ESPN site.api scoreboard, read-only, no key",
+  "licensed_feed": false,
+  "note": "public aggregation endpoint; NOT a commercial sports data rights licence (Portaria 722/2024 requires official data rights)",
+  "fetched_at": "2026-10-01T19:22:45+00:00",
+  "fixtures": [
+    {
+      "fixture": {
+        "key": "401841169",
+        "competition": "bra.1",
+        "home": "São Paulo",
+        "away": "Santos",
+        "kickoff": "2026-10-02T23:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "São Paulo",
+            "Draw",
+            "Santos"
+          ],
+          "prices": [
+            2.05,
+            3.35,
+            3.55
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 2.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401874947",
+        "competition": "ita.1",
+        "home": "Genoa",
+        "away": "Fiorentina",
+        "kickoff": "2026-10-10T13:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Genoa",
+            "Draw",
+            "Fiorentina"
+          ],
+          "prices": [
+            3.0,
+            3.15,
+            2.2
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 2.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401875021",
+        "competition": "ita.1",
+        "home": "Internazionale",
+        "away": "Parma",
+        "kickoff": "2026-10-10T16:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Internazionale",
+            "Draw",
+            "Parma"
+          ],
+          "prices": [
+            1.125,
+            7.5,
+            12.0
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 3.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401874754",
+        "competition": "ita.1",
+        "home": "Napoli",
+        "away": "Frosinone",
+        "kickoff": "2026-10-10T18:45Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Napoli",
+            "Draw",
+            "Frosinone"
+          ],
+          "prices": [
+            1.4167,
+            4.5,
+            5.75
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 3.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872964",
+        "competition": "nfl",
+        "home": "Cleveland Browns",
+        "away": "Pittsburgh Steelers",
+        "kickoff": "2026-10-02T00:15Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Cleveland Browns",
+            "Pittsburgh Steelers"
+          ],
+          "prices": [
+            2.24,
+            1.6757
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 38.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872965",
+        "competition": "nfl",
+        "home": "Washington Commanders",
+        "away": "Indianapolis Colts",
+        "kickoff": "2026-10-04T13:30Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Washington Commanders",
+            "Indianapolis Colts"
+          ],
+          "prices": [
+            2.6,
+            1.5208
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 47.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872971",
+        "competition": "nfl",
+        "home": "Buffalo Bills",
+        "away": "New England Patriots",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Buffalo Bills",
+            "New England Patriots"
+          ],
+          "prices": [
+            1.3356,
+            3.4
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 48.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872972",
+        "competition": "nfl",
+        "home": "Chicago Bears",
+        "away": "New York Jets",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Chicago Bears",
+            "New York Jets"
+          ],
+          "prices": [
+            1.5714,
+            2.45
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 43.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872969",
+        "competition": "nfl",
+        "home": "Cincinnati Bengals",
+        "away": "Jacksonville Jaguars",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Cincinnati Bengals",
+            "Jacksonville Jaguars"
+          ],
+          "prices": [
+            1.7042,
+            2.2
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 51.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872966",
+        "competition": "nfl",
+        "home": "New York Giants",
+        "away": "Arizona Cardinals",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "New York Giants",
+            "Arizona Cardinals"
+          ],
+          "prices": [
+            2.2,
+            1.7042
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 44.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872970",
+        "competition": "nfl",
+        "home": "Philadelphia Eagles",
+        "away": "Los Angeles Rams",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Philadelphia Eagles",
+            "Los Angeles Rams"
+          ],
+          "prices": [
+            2.36,
+            1.6173
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 43.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872968",
+        "competition": "nfl",
+        "home": "Tampa Bay Buccaneers",
+        "away": "Green Bay Packers",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Tampa Bay Buccaneers",
+            "Green Bay Packers"
+          ],
+          "prices": [
+            2.54,
+            1.5405
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 38.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872973",
+        "competition": "nfl",
+        "home": "Baltimore Ravens",
+        "away": "Tennessee Titans",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Baltimore Ravens",
+            "Tennessee Titans"
+          ],
+          "prices": [
+            1.1481,
+            5.9
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 42.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872967",
+        "competition": "nfl",
+        "home": "Houston Texans",
+        "away": "Dallas Cowboys",
+        "kickoff": "2026-10-04T17:00Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Houston Texans",
+            "Dallas Cowboys"
+          ],
+          "prices": [
+            1.6173,
+            2.36
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 48.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872974",
+        "competition": "nfl",
+        "home": "Minnesota Vikings",
+        "away": "Miami Dolphins",
+        "kickoff": "2026-10-04T20:05Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Minnesota Vikings",
+            "Miami Dolphins"
+          ],
+          "prices": [
+            1.1667,
+            5.4
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 38.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872976",
+        "competition": "nfl",
+        "home": "Las Vegas Raiders",
+        "away": "Kansas City Chiefs",
+        "kickoff": "2026-10-04T20:25Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Las Vegas Raiders",
+            "Kansas City Chiefs"
+          ],
+          "prices": [
+            2.8,
+            1.4587
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 47.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872975",
+        "competition": "nfl",
+        "home": "San Francisco 49ers",
+        "away": "Denver Broncos",
+        "kickoff": "2026-10-04T20:25Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "San Francisco 49ers",
+            "Denver Broncos"
+          ],
+          "prices": [
+            1.6757,
+            2.24
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 47.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872977",
+        "competition": "nfl",
+        "home": "Seattle Seahawks",
+        "away": "Los Angeles Chargers",
+        "kickoff": "2026-10-04T20:25Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Seattle Seahawks",
+            "Los Angeles Chargers"
+          ],
+          "prices": [
+            1.2632,
+            4.0
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 42.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872978",
+        "competition": "nfl",
+        "home": "Carolina Panthers",
+        "away": "Detroit Lions",
+        "kickoff": "2026-10-05T00:20Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "Carolina Panthers",
+            "Detroit Lions"
+          ],
+          "prices": [
+            2.5,
+            1.5556
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 51.5,
+          "provider": "DraftKings"
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "key": "401872979",
+        "competition": "nfl",
+        "home": "New Orleans Saints",
+        "away": "Atlanta Falcons",
+        "kickoff": "2026-10-06T00:15Z",
+        "status": "STATUS_SCHEDULED"
+      },
+      "markets": [
+        {
+          "kind": "1x2",
+          "selections": [
+            "New Orleans Saints",
+            "Atlanta Falcons"
+          ],
+          "prices": [
+            1.6757,
+            2.24
+          ],
+          "line": null,
+          "provider": "DraftKings"
+        },
+        {
+          "kind": "total",
+          "selections": [
+            "Over",
+            "Under"
+          ],
+          "prices": [],
+          "line": 47.5,
+          "provider": "DraftKings"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

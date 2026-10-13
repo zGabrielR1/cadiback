@@ -1,0 +1,32 @@
+# Render deploy — candibet. Gives https://candibet.onrender.com.
+#
+#   New > Blueprint, point Render at this repo, Apply. Render reads this file
+#   and builds the image itself: the Dockerfile builds the storefront from
+#   web/, so nothing has to be built or committed from your machine first.
+#
+# Render injects $PORT itself, so PORT is not set here.
+#
+# On the free plan: no persistent disk (the ledger, player profiles and rounds
+# live in $OPERATOR_DATA_DIR and are lost when the instance is redeployed or
+# spun down — Render recycles idle free instances after ~15 min). Uncomment
+# `disk` on a paid instance to keep them, and the demo comes back as it was.
+services:
+  - type: web
+    name: candibet
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # the ledger is JSONL under a single lock: one instance, never two
+    numInstances: 1
+    healthCheckPath: /api/health
+    # Render routes to 0.0.0.0:$PORT; without HOST the server would bind
+    # 127.0.0.1 and the deploy would answer "connection refused" forever
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: OPERATOR_DATA_DIR
+        value: /data
+    # disk:            # paid plans only
+    #   name: candibet-data
+    #   mountPath: /data
+    #   sizeGB: 1

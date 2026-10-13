@@ -1,0 +1,111 @@
+{
+  "probed_at": "2026-10-01T16:44:33+00:00",
+  "results": {
+    "espn-scoreboard-soccer": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard?dates=20261003",
+      "status": 200,
+      "bytes": 16567,
+      "content_type": "application/json;charset=UTF-8",
+      "json_ok": true,
+      "top_keys": [
+        "events",
+        "leagues",
+        "provider"
+      ],
+      "events": 1,
+      "first_fixture": {
+        "name": "Red Bull Bragantino at Atlético-MG",
+        "date": "2026-10-03T21:30Z",
+        "teams": [
+          "Atlético-MG",
+          "Red Bull Bragantino"
+        ],
+        "odds_present": true,
+        "status": "STATUS_SCHEDULED"
+      },
+      "ok": true
+    },
+    "espn-scoreboard-football": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+      "status": 200,
+      "bytes": 284070,
+      "content_type": "application/json;charset=UTF-8",
+      "json_ok": true,
+      "top_keys": [
+        "events",
+        "leagues",
+        "provider",
+        "season",
+        "week"
+      ],
+      "events": 16,
+      "first_fixture": {
+        "name": "Pittsburgh Steelers at Cleveland Browns",
+        "date": "2026-10-02T00:15Z",
+        "teams": [
+          "Cleveland Browns",
+          "Pittsburgh Steelers"
+        ],
+        "odds_present": true,
+        "status": "STATUS_SCHEDULED"
+      },
+      "ok": true
+    },
+    "espn-core-soccer": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard",
+      "status": 200,
+      "bytes": 16545,
+      "content_type": "application/json;charset=UTF-8",
+      "json_ok": true,
+      "top_keys": [
+        "day",
+        "events",
+        "leagues",
+        "provider",
+        "season"
+      ],
+      "events": 1,
+      "first_fixture": {
+        "name": "Santos at São Paulo",
+        "date": "2026-10-02T23:00Z",
+        "teams": [
+          "São Paulo",
+          "Santos"
+        ],
+        "odds_present": true,
+        "status": "STATUS_SCHEDULED"
+      },
+      "ok": true
+    },
+    "football-data-org": {
+      "url": "https://api.football-data.org/v4/competitions/BRA1/matches",
+      "ok": false,
+      "error": "HTTPError: HTTP Error 404: "
+    },
+    "openligadb": {
+      "url": "https://api.openligadb.de/getmatchdata/bla1",
+      "status": 200,
+      "bytes": 2,
+      "content_type": "application/json; charset=utf-8",
+      "json_ok": true,
+      "list_len": 0,
+      "ok": true
+    },
+    "thesportsdb": {
+      "url": "https://www.thesportsdb.com/api/v1/json/3/all_leagues.php",
+      "status": 200,
+      "bytes": 392,
+      "content_type": "application/json; charset=utf-8",
+      "json_ok": true,
+      "top_keys": [
+        "leagues"
+      ],
+      "ok": true
+    },
+    "pix-api-ping": {
+      "url": "https://api.bcb.gov.br/pix/",
+      "ok": false,
+      "error": "HTTPError: HTTP Error 404: Not Found"
+    }
+  }
+}
