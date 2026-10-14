@@ -4,14 +4,16 @@ The platform is one Python process plus a Next.js export it builds itself.
 `demo/server.py` serves both, so there is **no reverse proxy and no tunnel** —
 the whole platform is one container that runs anywhere Docker runs.
 
-## Where this is today (2026-10-13)
+## Where this is today (2026-10-14)
 
-The tree is **deploy-ready and verified**: it is a git repository on `main`
+**It is live: <https://cadiback.onrender.com>.** Storefront, API, catalog
+(10 in-house + 182 publisher games) and the publisher proxy, all from one
+container that Render built from this repository. Decision 0039.
+
+The tree is also deploy-ready and verified: it is a git repository on `main`
 with a Dockerfile that builds the storefront from `web/` inside the image, so
 a deploy is *the repository plus the Dockerfile* and needs nothing from the
 machine that last ran a build.
-
-Checked, in this order:
 
 | Check | Result |
 | --- | --- |
@@ -19,12 +21,8 @@ Checked, in this order:
 | runtime file set alone (no docs, no sources) | boots, health ok, store 200 |
 | `/api/catalog` from that tree | 10 in-house + 182 publisher rows |
 | `/g/pp:gates-of-olympus/` from that tree | 200 live, through the proxy |
-| a fresh `git clone` | 701 files, no `web/out`, no `demo/data` |
 | `python scripts/render_deploy.py --check` | 0 problems |
-
-What is **not** done: the repository has no remote, and there is no Render
-account configured on this machine. Both need one credential from you — see
-[Going live on Render](#going-live-on-render).
+| **live service** | `/api/health`, `/api/catalog`, `/` and `/g/…` all 200 |
 
 ## Running it locally
 
@@ -56,8 +54,7 @@ push and no artifact to upload. Two ways in — pick one.
 
 ### A. Dashboard (one click, no credentials in code)
 
-1. Push this repository to a **public** GitHub repo (or connect a private one
-   in Render's dashboard).
+1. Point Render at this repository (already done: `cadiback`).
 2. Render → **New → Blueprint** → pick the repo → **Apply**.
 3. `render.yaml` is the contract; Render reads the service name, plan, health
    check and env vars from it.
@@ -65,34 +62,43 @@ push and no artifact to upload. Two ways in — pick one.
 ### B. API (fully scripted — what I run for you)
 
 ```bash
-python scripts/render_deploy.py      # create-or-find, deploy, watch to live
+python scripts/render_deploy.py            # create-or-find, deploy, watch
+python scripts/render_deploy.py --yes      # redeploy the current commit
+python scripts/render_deploy.py --url-only # where is it
 ```
 
-Credentials come from the environment, or — so nothing lands in a transcript —
-from two files in your home:
+**The credentials are already found automatically** (decision 0039):
 
-| File | One line |
+| What | Where it comes from |
 | --- | --- |
-| `~/.render_api_key` | the key from Render → Account → API Keys |
-| `~/.render_repo` | `https://github.com/<you>/<repo>` |
+| API key | `RENDER_API_KEY`, else `.env.render` in the repo root, else `~/.render_api_key` |
+| Repository | `RENDER_REPO`, else `.env.render`, else `~/.render_repo`, else **the git remote `origin`** |
 
-```powershell
-notepad $HOME\.render_api_key     # paste, save
-notepad $HOME\.render_repo        # paste the repo URL, save
-```
+`.env.render` is gitignored and holds one line (the bare key), or
+`RENDER_API_KEY=…` / `RENDER_REPO=…` pairs. Nothing to set up.
 
-(`setx` does not work here: a child process inherits its parent's
-environment, not the registry, so the variable never reaches the script.)
+The script mirrors `render.yaml` in `SERVICE`, refuses to deploy a tree that
+fails the preflight, and prints the live URL. **A failed build now prints what
+the build said** — `build_failed` from the API carries no reason, and the
+reason lives only in the log stream, so the driver reads it itself.
 
-The script mirrors `render.yaml` in `SERVICE` (one place, so the two cannot
-drift), refuses to deploy a tree that fails the preflight, and prints the live
-URL. Re-running it after a push is the whole update cycle; `--yes` redeploys
-an existing service, `--url-only` just prints where it is.
+### Two things that will bite you again
+
+- **A service created in the dashboard builds with Render's Python
+  buildpack**, not your Dockerfile: it runs `pip install -r requirements.txt`
+  and fails with `Could not open requirements file`. The API still *reports*
+  `"runtime": "docker"`. The switch is the `env` field; `runtime` alone does
+  not do it. `configure()` sends both.
+- **`python:3.14-slim` ships an `operator` group**, so `useradd operator`
+  fails with exit 9. The Dockerfile uses `groupadd -f` + `useradd -g` now.
+
+Both are written up in [`decisions/0039`](../decisions/0039-deploy-live-on-render.md).
 
 ### What the deploy gives you
 
-- `https://candibet.onrender.com` — Render assigns the name; if it is taken
-  the service still builds, under `candibet-xxxx`.
+- **`https://cadiback.onrender.com`** — the service already existed under the
+  repository's name, so that is the URL. A new service would get
+  `candibet.onrender.com` unless the name is taken.
 - The storefront from the edge of Render's own instance — no tunnel, nothing
   on your machine, nothing that expires.
 
@@ -112,7 +118,7 @@ block is a one-line uncomment plus a paid plan.
 ## After the deploy: four smoke checks
 
 ```bash
-BASE=https://candibet.onrender.com
+BASE=https://cadiback.onrender.com
 
 curl -s $BASE/api/health              # {"status":"ok", ..., "proxy":{...}}
 curl -s $BASE/api/catalog | head -c 200
@@ -161,8 +167,9 @@ looking at the browser console:
 The Worker path exists and works (`deploy/README.md`, decision 0023). Its
 quick-tunnel hostname changes on every `cloudflared` restart and a
 `--temporary` Cloudflare account is deleted about an hour after it is created
-unless claimed. Both are gone as of this writing: the last deploy,
-`candibet.road-hydrant.workers.dev`, no longer resolves. Details in
+unless claimed. It is retired: the Worker
+`candibet.road-hydrant.workers.dev` no longer resolves and nothing needs it
+now that Render holds the same tree. Details in
 [`deploy-paas.md`](deploy-paas.md) (Fly/Koyeb/Railway) and
 `deploy/README.md`.
 
@@ -176,11 +183,13 @@ unless claimed. Both are gone as of this writing: the last deploy,
 | `wrangler` | the Worker path only | not needed on Render |
 | `cloudflared` | the Worker path only | not needed on Render |
 
-State of this machine as of 2026-10-13: `git`, `node`, `npm` and `python3`
-present; **`docker`, `wrangler`, `cloudflared` and `gh` are not**, and there
-are no Render or GitHub credentials anywhere. That is why the deploy is a
-repository plus a Render account, and why nothing above needed this machine
-at the far end.
+**`docker` is still not installed on this machine, and that is what let
+`useradd` (0039) reach Render unfixed.** The image build cannot be verified
+locally; it can only be verified by deploying. What is verified locally is
+everything up to it: `npm ci && npm run build` from a clean clone, and the
+runtime file set booting and serving. When a Dockerfile change is not
+reproducible on Windows — a Linux-only user, group, permission or syscall —
+deploy it and read the build log rather than trusting the review.
 
 ## Keeping the ledger
 
