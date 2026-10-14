@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, BRL } from "../../lib/api";
+import { readRecent } from "../../lib/localCache";
 
 const QUICK_LINKS = [
   { label: "Todos", icon: "◆", category: "Todos" },
@@ -297,34 +298,60 @@ export default function CasinoHome({
   const lsRecents = useMemo(() => {
     // re-read on every category switch: picking the Recentes tab re-renders,
     // so plays from another view (or tab) surface without a full reload
-    try {
-      return JSON.parse(window.localStorage.getItem("casa-recent") || "[]").filter((r) => r && r.game_id);
-    } catch (e) {
-      return [];
-    }
+    return readRecent();
   }, [category]);
 
-  const recentOrder = useMemo(() => {
-    // newest first: localStorage opens (incl. official iframe games, which
-    // leave no server round), then in-house rounds in history order
+  // The catalog is the truth about a game, but it arrives over the network
+  // and may not have arrived at all (cold instance, one bar of signal). A
+  // game opened earlier is already on this machine, so the Recentes tab is
+  // built from the catalog where they overlap and from the local cache
+  // where the catalog is silent — the tab you open in order to play
+  // something never being the tab that is still loading.
+  const recentGames = useMemo(() => {
     const seen = new Set();
     const out = [];
     for (const r of lsRecents) {
-      if (!seen.has(r.game_id)) {
-        seen.add(r.game_id);
-        out.push(r.game_id);
-      }
+      if (seen.has(r.game_id)) continue;
+      seen.add(r.game_id);
+      const live = byId.get(r.game_id);
+      if (live) out.push(live);
+      else if (r.game) out.push({ ...r.game, from_local_cache: true });
     }
     const rounds = history && history.rounds ? history.rounds : [];
     for (let i = rounds.length - 1; i >= 0; i--) {
       const id = rounds[i] && rounds[i].game_id;
-      if (id && !seen.has(id)) {
+      const live = id && byId.get(id);
+      if (live && !seen.has(id)) {
         seen.add(id);
-        out.push(id);
+        out.push(live);
       }
     }
     return out;
-  }, [lsRecents, history]);
+  }, [lsRecents, byId, history]);
+
+  // the cached rows have to be playable too, and a cached row is played by
+  // the same handler as any other — it only lacks a few catalog fields, so
+  // they are filled in from the cache rather than guarded against
+  const playableRecent = useMemo(() => {
+    const out = [];
+    for (const g of recentGames) {
+      if (!g.demo_url && !byId.has(g.game_id)) continue; // in-house rows need the catalog
+      out.push(g);
+    }
+    return out;
+  }, [recentGames, byId]);
+
+  const recentOrder = useMemo(
+    () => recentGames.map((g) => g.game_id),
+    [recentGames]
+  );
+
+  // how many of the recents are being served from this machine rather than
+  // from the catalog that just arrived
+  const cachedCount = useMemo(
+    () => recentGames.filter((g) => g.from_local_cache).length,
+    [recentGames]
+  );
 
   const favIds = useMemo(() => {
     // same re-read discipline as lsRecents: switching the tab re-reads
@@ -338,7 +365,10 @@ export default function CasinoHome({
 
   const recentIds = useMemo(() => new Set(recentOrder), [recentOrder]);
 
-  const matches = (game) => {
+  // The search box and the provider chip apply to every tab, including the
+  // one served from the local cache — so they are separated from the
+  // category switch, which is what decides the pool in the first place.
+  const matchesScope = (game) => {
     if (query) {
       const q = query.toLowerCase();
       const matchTitle = (game.title || "").toLowerCase().includes(q);
@@ -346,6 +376,10 @@ export default function CasinoHome({
       if (!matchTitle && !matchProvider) return false;
     }
     if (provider && provider !== "Todos" && game.provider !== provider) return false;
+    return true;
+  };
+
+  const matchesCategory = (game) => {
     switch (category) {
       case "Todos":
         return true;
@@ -377,7 +411,14 @@ export default function CasinoHome({
     }
   };
 
-  const filtered = all.filter(matches);
+  const matches = (game) => matchesScope(game) && matchesCategory(game);
+
+  const filtered =
+    // Recentes is served from the cache-merged list, so it is the only tab
+    // that can show a game the catalog has not delivered yet
+    category === "Recentes"
+      ? playableRecent.filter(matchesScope)
+      : all.filter(matches);
   const visible =
     category === "Recentes"
       ? [...filtered].sort(
@@ -538,11 +579,26 @@ export default function CasinoHome({
           >
             <div id="lobby">
               {visible.length === 0 ? (
-                <Empty>Nenhum jogo encontrado para “{query || category}”.</Empty>
+                <Empty>
+                  {category === "Recentes"
+                    ? "Você ainda não abriu nenhum jogo neste dispositivo — jogue um e ele fica aqui."
+                    : `Nenhum jogo encontrado para “${query || category}”.`}
+                </Empty>
               ) : (
-                visible.map((g) => (
-                  <GameCard key={g.game_id} game={g} onPlay={onPlay} onDetails={onDetails} />
-                ))
+                <>
+                  {/* say where the list came from: a row served from this
+                      machine's cache is not a fresh catalog row, and the
+                      player should not have to guess which one they got */}
+                  {category === "Recentes" && cachedCount > 0 ? (
+                    <div className="gmeta" style={{ marginBottom: 10 }}>
+                      {cachedCount} deste(s) veio do cache deste dispositivo
+                      {catalog ? "" : " — o catálogo ainda não respondeu"}.
+                    </div>
+                  ) : null}
+                  {visible.map((g) => (
+                    <GameCard key={g.game_id} game={g} onPlay={onPlay} onDetails={onDetails} />
+                  ))}
+                </>
               )}
             </div>
           </Section>

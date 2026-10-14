@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, BRL, newDepositId, getAdminSession, setAdminSession } from "../lib/api";
+import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import CasinoHome from "./components/CasinoHome";
 import SportsHome from "./components/SportsHome";
@@ -203,13 +204,9 @@ export default function Page() {
   }, [catalog]);
 
   const play = (game) => {
-    try {
-      const seen = JSON.parse(window.localStorage.getItem("casa-recent") || "[]");
-      const next = [{ game_id: game.game_id, ts: Date.now() }, ...seen.filter((r) => r && r.game_id !== game.game_id)].slice(0, 30);
-      window.localStorage.setItem("casa-recent", JSON.stringify(next));
-    } catch (e) {
-      /* localStorage unavailable (private mode): recents degrade to session history */
-    }
+    // the game itself is cached on this machine, not just its id: Recentes
+    // then has something to show before (or without) /api/catalog
+    rememberGame(game);
     api("POST", "/api/play", { player: player || "", game_id: game.game_id }).catch(() => {});
     setBall(null);
     setLastRow(null);

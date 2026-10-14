@@ -1,5 +1,42 @@
 # PROGRESS
 
+## DONE (2026-10-14 — PG Soft through our own origin, the local cache, and the deploy is LIVE, decisions 0039/0040/0041)
+
+- **The site is live: <https://cadiback.onrender.com>.** Every deploy had
+  been failing silently and neither the API, the deploy object nor the
+  service object said why. Two faults: a service created in the dashboard
+  keeps Render's **Python buildpack** and ignores the Dockerfile (the switch
+  is `env`, not `runtime`), and `python:3.14-slim` ships an `operator`
+  **group**, so `useradd operator` died with exit 9 after the storefront had
+  already built. Both fixed; the deploy driver now reads Render's log stream
+  and prints why a build failed, finds `.env.render` on its own, and takes the
+  repository from the git remote.
+- **PG Soft boots from our origin** with the wallet bridge — the half that
+  was buildable. `demo/pg_proxy.py` mints the trial session server-side and
+  binds the hosts it names; the session id travels in our own path, which is
+  what makes the per-session hosts resolvable without a standing rule about
+  somebody else's domain. Both PG titles now serve through `/g/` (1.0 MB /
+  0.98 MB real documents, bridge injected, no wallet token upstream, signed
+  asset URLs intact). **The money tap is not built**: the client is a
+  obfuscated 1 MB bundle whose `#GameCanvas` is `0x0` in any browser we can
+  drive, so it never reaches its lobby and the spin shape is unknown.
+- **The games you opened are cached on the machine** — full game rows, not
+  ids, so Recentes works with no catalog, no network and no cold start, and
+  says when it is showing cached rows.
+- **A general proxy bug found and fixed:** `rewritable()` read an empty last
+  path segment as "not a document", so any document served at a
+  trailing-slash path got no `<base>` repair and **no wallet bridge** — the
+  game booted with nothing in front of it and looked fine from our side.
+- New: `scripts/capture_session.mjs` — drives the browser already on the
+  machine over CDP (tap/click/eval/websocket/viewport) to capture what a
+  publisher game says on the wire. The recon the older captures were built on,
+  made repeatable.
+- **Provider sweep: 12/12** — one real launcher per provider through `/g/`
+  (`demo/_sweep.py`), including both PG rows, which previously could not be
+  served through `/g/` at all.
+- `frame` 45/45, `demo` 203/203 (+12 PG), `verify.py` 0 problems, `localCache`
+  21 checks, live smoke on all of the above.
+
 ## DONE (2026-10-13 — the deploy stopped depending on the build machine, decision 0038)
 
 - **The image builds the storefront itself** (node stage → `web/out` → python

@@ -32,8 +32,9 @@ import re
 import threading
 import urllib.error
 import urllib.request
-from urllib.parse import quote, unquote, urljoin, urlparse
+from urllib.parse import quote, unquote, urljoin, urlparse, urlsplit
 
+from . import pg_proxy
 from . import provider_demos
 
 GAME_PREFIX = "/g"
@@ -140,17 +141,26 @@ class ProxyError(RuntimeError):
 
 
 def _allowed_host(host: str) -> bool:
-    """A publisher host we may proxy: an exact catalog host, or any subdomain
-    of a publisher's own domain.
+    """A publisher host we may proxy: an exact catalog host, any subdomain
+    of a publisher's own domain, or a host this process minted a session for.
 
     The exact list cannot cover every launcher a publisher mints per game
     (Spribe serves each game from `<game>-demo.spribegaming.com`), so a
     publisher's own domain is allowed by suffix. The leading dot is required,
     so `evil-spribegaming.com` never matches.
+
+    PG Soft is the third case and the reason this is not a constant: it mints
+    its hosts per session (`m.<label>.com`, `api.<label>.com`), so no suffix
+    rule covers them and no static list survives a week. Those hosts are
+    allowed because *this process* asked PG for them and bound the exact
+    strings in the answer, which is the only grant here that is not a
+    standing rule about somebody else's domain.
     """
     if host in (provider_demos.DEMO_HOSTS | EXTRA_HOSTS):
         return True
-    return host.endswith(ALLOWED_SUFFIXES)
+    if host.endswith(ALLOWED_SUFFIXES):
+        return True
+    return pg_proxy.allowed_host(host)
 
 
 def allowed_host(host: str) -> bool:
@@ -201,6 +211,8 @@ def checked_url(url: str) -> str:
 
 def target_url(game: dict, sub: str, query: str) -> str:
     """Map a /g/<id>/… sub-path onto a publisher URL."""
+    if sub.startswith(PG_PREFIX):
+        return pg_target(game, sub, query)
     base = game["demo_url"]
     if sub.startswith("_abs/"):
         host, _, tail = sub[len("_abs/"):].partition("/")
@@ -215,6 +227,66 @@ def target_url(game: dict, sub: str, query: str) -> str:
     if query:
         url += ("&" if "?" in url else "?") + query
     return checked_url(url)
+
+
+# PG Soft sub-path marker: `/g/<id>/pg/<session>/…`. The session id is ours,
+# not the publisher's, and it is what makes the per-session hosts resolvable
+# without a standing rule about somebody else's domain.
+PG_PREFIX = "pg/"
+
+
+def pg_target(game: dict, sub: str, query: str) -> str:
+    """Resolve a PG Soft sub-path through the session we minted for it.
+
+    PG will not boot a page we did not mint: the game document carries an
+    operator token issued at mint time and every asset URL is signed. So the
+    session id travels in our own path, the minted `game_url` is the root,
+    and the client's query — the wallet token among it — is dropped exactly
+    as it is for every other publisher. A path naming a session we did not
+    mint is refused rather than guessed at.
+    """
+    rest = sub[len(PG_PREFIX):]
+    session_id, _, tail = rest.partition("/")
+    session = pg_proxy.session_for(session_id)
+    if session is None:
+        raise ProxyError("no PG session for this launch; open the game again")
+    root = urlsplit(session.game_url)
+    path = tail if tail.startswith("/") else f"/{tail}" if tail else ""
+    # the document itself carries the minted query (ot/l/btt); a sub-request
+    # carries whatever the client sent, signatures included, untouched
+    if path in ("", "/"):
+        return checked_url(session.game_url)
+    url = f"https://{root.hostname}{path}"
+    if query:
+        url += f"?{query}"
+    return checked_url(url)
+
+
+def pg_document(sub: str) -> bool:
+    """Is this sub-path the minted PG document itself (not an asset)?
+
+    `pg/<session>` with nothing after it: the session is the document root,
+    so this is the request that must get the `<base>` repair and the bridge.
+    """
+    if not sub.startswith(PG_PREFIX):
+        return False
+    session_id, _, tail = sub[len(PG_PREFIX):].partition("/")
+    return bool(session_id) and tail.strip("/") == ""
+
+
+def pg_doc_host(sub: str) -> str:
+    """The host a PG document actually came from.
+
+    The catalog says `public.pg-demo.com` — that is the *launcher*, not the
+    game. The document is served from the minted session's own host, and the
+    cookies that bind the session to that host have to name it, or a
+    root-level follow-up would be fetched from the wrong origin.
+    """
+    if not sub.startswith(PG_PREFIX):
+        return ""
+    session_id, _, _tail = sub[len(PG_PREFIX):].partition("/")
+    session = pg_proxy.session_for(session_id)
+    return session.game_host if session else ""
 
 
 def publisher_query(query: str, keep: tuple[str, ...] = ()) -> str:
@@ -242,6 +314,13 @@ def rewritable(sub: str) -> bool:
     if not sub:
         return True  # the game document: bridge + base href
     tail = sub.rsplit("?", 1)[0].rsplit("/", 1)[-1]
+    if not tail:
+        # a sub-path that ends in "/" is a document request, not an asset —
+        # and that is exactly the shape every PG launch takes, because the
+        # session id lives in our path: `/g/pg:fortune-tiger/pg/<session>/`.
+        # Without this the PG document was passed through untouched, so the
+        # game booted with no `<base>` repair and no bridge in front of it.
+        return True
     if "." not in tail:
         return False
     return tail[tail.rfind("."):].lower() in _SCRIPT_EXTENSIONS

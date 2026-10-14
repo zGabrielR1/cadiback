@@ -21,6 +21,8 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |
 | `probes/` | Provider demo catalog (182 official games) & live sports fixtures |
+| `demo/_sweep.py`, `demo/_pgsmoke.py` | Throwaway live checks: every provider through `/g/`, one PG launch |
+| `scripts/capture_session.mjs` | Drive a real browser over CDP to see what a game says on the wire |
 | `archive/` | Retired deploy paths and old specs — code only, never deployed |
 
 ## Workflow
@@ -32,3 +34,5 @@ No real money moves; no commercial legal or regulatory obligations.
 5. Rebuild the frontend (`cd web; npm.cmd run build`) whenever modifying `web/app`.
    `web/node_modules` is deliberately pruned between sessions to keep
    backups small — restore it with `cd web; npm.cmd ci` before building.
+6. Deploy: `python scripts/render_deploy.py --yes` (reads `.env.render` and the
+   git remote on its own, and prints the build log if the build fails).

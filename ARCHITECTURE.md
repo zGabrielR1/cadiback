@@ -41,8 +41,9 @@ demo/
     ├── vendor.py            official-content seam: https-only, gated titles
     ├── provider_demos.py    publisher-hosted demos: https + host allowlist
     ├── game_proxy.py        same-origin front for publisher games: wallet sync, /g/<game_id>
+    ├── pg_proxy.py          PG Soft: a minted trial session and the hosts it binds
     ├── index.html           zero-build fallback storefront
-    └── test_demo.py         191 execution checks
+    └── test_demo.py         203 execution checks
 
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier
@@ -65,7 +66,15 @@ bytes we cannot describe.** A body the proxy rewrites (document, money answer,
 client bundle) is not revalidated against the publisher's validator, in either
 direction; a body it passes through unchanged keeps the publisher's `ETag`
 and answers 304. `GET /api/health` reports what the proxy did — a game that
-does not load otherwise leaves no trace on the server.
+does not load otherwise leaves no trace on the server — beside the PG mint
+counters, so "the game did not open" is answerable as *the mint failed* or
+*the proxy failed*, which are not visible in each other.
+
+One publisher does not fit a suffix allowlist. PG Soft mints its hosts per
+session (`m.<label>.com`, `api.<label>.com`) and signs every asset URL, so
+the host binding is made by the process that asked for it: `pg_proxy.mint`
+binds the exact strings the answer names, the session id travels in our own
+path, and a host that is not `<prefix>.<label>.com` is never bound.
 
 In-house originals (decision 0021): every launchable demo
 game draws from `SHA256(game_id:round_id)` — slots through

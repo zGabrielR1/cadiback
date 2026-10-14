@@ -67,6 +67,7 @@ from .arcade import (ARCADE_GAME_IDS, CRASH_GAME_ID, CRASH_GROWTH_PER_SEC,
                      arcade_theoretical_rtp)
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
+from . import pg_proxy
 from . import rgs_proxy
 from .risk import RiskPolicy, evaluate_player
 from .vendor import AggregatorError, VendorAggregator, VendorConfig
@@ -2161,6 +2162,8 @@ class Demo:
         if not game:
             return ""
         provider = game.get("provider") or ""
+        if provider == "pg_soft":
+            return self.pg_launch(game, origin, token)
         if provider not in rgs_proxy.UPSTREAMS:
             return ""
         from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -2168,6 +2171,44 @@ class Demo:
         query["env"] = rgs_proxy.env_url(origin, provider)
         query["token"] = token
         return f"{origin}{game_proxy.GAME_PREFIX}/{game_id}/?{urlencode(query)}"
+
+    def pg_launch(self, game: dict, origin: str, token: str = "") -> str:
+        """A PG Soft launch that goes through a session we minted ourselves.
+
+        PG's client only boots a page the publisher minted: the document
+        carries an operator token and every asset URL is signed, so pointing
+        a browser at the catalog's own `demo_url` (or at our `/g/` root with
+        nothing minted) yields a game that never draws a reel.
+
+        So the launch mints first and hands the browser our own path, with
+        the session id inside it — that id is what lets `game_proxy` resolve
+        the per-session hosts the mint named. A mint that fails falls back to
+        the publisher's own launcher rather than a broken frame, because a
+        trial game the player cannot open is worse than one that is clearly
+        not on our books.
+        """
+        gi = ""
+        from urllib.parse import parse_qsl, urlsplit
+        for name, value in parse_qsl(urlsplit(game.get("demo_url") or "").query):
+            if name == "gi" and value.strip().isdigit():
+                gi = value.strip()
+        if not gi:
+            return ""
+        try:
+            session = pg_proxy.mint(gi)
+        except pg_proxy.PgError:
+            return ""
+        url = (f"{origin}{game_proxy.GAME_PREFIX}/{game['game_id']}/"
+               f"{game_proxy.PG_PREFIX}{session.session_id}/")
+        # the wallet token rides our own query and is stripped again before
+        # the request leaves (`pg_target` sends the minted URL verbatim, so
+        # nothing of ours reaches PG). It is what binds the bridge to a
+        # player: without it the document is served with no wallet in front
+        # of it and PG quietly becomes what it was — free play.
+        if token:
+            from urllib.parse import quote as _quote
+            url += f"?token={_quote(str(token), safe='')}"
+        return url
 
     def wallet_status(self, token: str) -> dict:
         session = self._wallet_session(token)
@@ -2463,7 +2504,7 @@ class Handler(BaseHTTPRequestHandler):
         money = game_proxy.MONEY_PATHS.get(provider, ())
         is_money = bool(money) and any(
             _re.search(pattern, sub) for pattern in money)
-        is_document = sub == ""
+        is_document = sub == "" or game_proxy.pg_document(sub)
         passthrough = provider in game_proxy.REDIRECT_PROVIDERS
         # We rewrite the body of a document, a money answer and every script
         # bundle. A body like that cannot be revalidated against the
@@ -2536,6 +2577,10 @@ class Handler(BaseHTTPRequestHandler):
             doc_host = game["host"]
             if sub.startswith("_abs/"):
                 doc_host = sub[len("_abs/"):].split("/", 1)[0]
+            elif game_proxy.pg_document(sub):
+                # PG's game is served from the host its session minted, not
+                # from the launcher host the catalog row carries
+                doc_host = game_proxy.pg_doc_host(sub) or doc_host
             extra["Set-Cookie"] = [
                 f"proxy_host={doc_host}; Path=/; SameSite=Lax",
                 f"proxy_provider={provider}; Path=/; SameSite=Lax",
@@ -2883,8 +2928,13 @@ class Handler(BaseHTTPRequestHandler):
                                  "provider_demos": DEMO.provider_demos(),
                                  "external_demo_url": external_demo_url()})
             elif parsed.path == "/api/health":
+                # PG mints its own sessions outside the publisher fetch, so
+                # its counters sit beside the proxy's: "the game did not
+                # open" has to be answerable as "the mint failed" or "the
+                # proxy failed", and neither is visible in the other.
                 self._send(200, {**DEMO.health_report(),
-                                 "proxy": game_proxy.stats()})
+                                 "proxy": game_proxy.stats(),
+                                 "pg_soft": pg_proxy.stats()})
             elif parsed.path == "/api/player":
                 from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)

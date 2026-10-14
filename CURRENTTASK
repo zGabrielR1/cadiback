@@ -1,4 +1,58 @@
-CURRENTTASK: Dados Relâmpago (whitelabel dice original) shipped (0034); PG Soft
+CURRENTTASK: LIVE on Render (https://cadiback.onrender.com, decision 0039).
+PG Soft boots from our own origin with the wallet bridge (0040: mint + the
+per-session host binding 0035 called for; the money tap is NOT built — the
+client's canvas is 0x0 outside a real browser, so the spin shape is unknown
+and a guessed one would settle nothing). The games you opened are cached on
+the machine (0041). One general proxy bug fixed: a document at a
+trailing-slash path was served with no bridge at all. Suites frame 45/45,
+demo 203/203, verify 0, provider sweep 12/12.
+
+## STATUS
+
+- **LIVE: https://cadiback.onrender.com** — storefront, API, catalog (10
+  in-house + 182 publisher) and the publisher proxy, from one container that
+  Render builds from this repository. Every deploy had been failing; two
+  faults, neither visible from outside (0039): the service was on Render's
+  Python buildpack, which ignores our Dockerfile (the switch is `env`, not
+  `runtime`), and `useradd operator` dies on `python:3.14-slim` because
+  Debian already owns an `operator` group. The deploy driver now prints the
+  build log on failure instead of saying "check the dashboard".
+- **PG Soft is served from our origin** (0040). `demo/pg_proxy.py` mints the
+  trial session server-side; the session id travels in our own path so the
+  hosts the mint named (`m.<label>.com`, `static.<label>.com`,
+  `api.<label>.com`) can be bound without a suffix rule. 0035 was right that
+  a dynamic host binding was the one new mechanism PG needed, and wrong that
+  all the hosts move: every mint ships a **stable** triple that is now
+  preferred, so the allowlist does not churn. A minted host must be
+  `<prefix>.<label>.com` or it is not bound — that check is the SSRF
+  boundary.
+- **THE PG MONEY TAP IS THE OPEN FRONTIER.** The spin and balance shapes are
+  unknown: `scripts/capture_session.mjs` boots the game through the DevTools
+  Protocol, taps it, and the engine's `#GameCanvas` measures `0x0@0,0` even
+  with a 1280x800 viewport — no lobby, no lobby request, only
+  `/healthcheck` against the money host. The blocker is environment gating,
+  not reverse engineering. **One capture from a real browser with a human
+  pressing start once** would settle it, and the machinery to carry it
+  already exists. PG stays `wallet_isolated` until then, which is honest.
+- **Recently opened games live on the machine** (0041): `web/lib/localCache.js`
+  stores the game row, not the id, so Recentes renders with no catalog, no
+  network and no cold start, and labels when it is showing cached rows.
+  Order comes from `ts`, not array position; both storage shapes read; a
+  quota error drops the metadata and keeps the ids.
+- **A proxy bug that had been hiding in plain sight** (0040 §6):
+  `rewritable()` treated an empty last path segment as "not a document", so
+  every document served at a trailing-slash path got no `<base>` repair and
+  **no wallet bridge** — and looked perfectly healthy from our side. PG was
+  the first launch shape that exposed it; every provider on such a path was
+  un-bridged.
+- Suites: frame 45/45, demo 203/203 (+12 PG, offline canned mints),
+  `verify.py` 0 problems, `localCache` 21 checks, `demo/_sweep.py` 12/12
+  providers, live smoke green.
+- NEXT: the PG money tap, if a real-browser capture is ever possible;
+  otherwise spend the time on PP, whose client is origin-coupled for the
+  same class of reason (0028/0036).
+
+CURRENTTASK (previous): Dados Relâmpago (whitelabel dice original) shipped (0034); PG Soft
 wallet path documented (0035, not built). Proxy hardened (0037: token leak,
   silent truncation, error leak, a real cache, health counters) and the deploy
   made independent of this machine (0038: the image builds the storefront,

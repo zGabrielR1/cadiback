@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import os
@@ -11,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer
 from urllib.parse import quote
 
-from demo import game_proxy, provider_demos
+from demo import game_proxy, pg_proxy, provider_demos
 from demo.auth import AuthError
 from demo.payments import (
     PaymentError,
@@ -2927,6 +2928,168 @@ class ProxyHttpTest(unittest.TestCase):
         status, headers, _body = self._call(f"{self.game_path}/index.html")
         self.assertEqual(status, 200)
         self.assertEqual(headers["Content-Type"], "text/html; charset=UTF-8")
+
+
+class PgSoftTest(unittest.TestCase):
+    """PG Soft: a minted session, and the hosts it binds.
+
+    Every answer here is a canned mint. The live path is exercised by
+    `demo/_pgsmoke.py`, which does mint for real; a suite that reached out to
+    PG would be a suite that fails on PG's schedule rather than on ours.
+    """
+
+    # a real mint's shape: the stable triple plus the two per-session
+    # alternates it ships alongside. Padded past the length the decoder
+    # insists on, so this exercises the real path rather than the fallback.
+    def _launcher(self, gi="126", stable=True):
+        triples = [
+            ("pg-demo", "api.f26xzzc7c.com", "api.8jkxzybcq.com"),
+            ("rhzzzvqpd", "api.9zzzzz9q9.com", "api.7aaaaa7a.com"),
+        ]
+        if not stable:
+            triples = triples[1:]
+        parts = []
+        for label, api1, api2 in triples:
+            parts.append(f"https://m.{label}.com/GI/index.html?ot=ot123&l=pt&btt=2")
+            parts.append(f"static.{label}.com")
+            parts.append(f"https://static.{label}.com/x.gif?rand=abc")
+            parts.append(api1)
+            parts.append(api2)
+        payload = "".join(parts) + "padding-to-clear-the-decoder-threshold-" * 8
+        b64 = base64.b64encode(payload.replace("GI", gi).encode()).decode()
+        return "<html><script type=module>(function(){/*%s*/})()</script>" % b64
+
+    def setUp(self):
+        pg_proxy._SESSIONS.clear()
+
+    def test_the_stable_triple_is_preferred_over_the_rolling_ones(self):
+        url, game_host, static_host, apis = pg_proxy.parse_session(
+            self._launcher(), "126")
+        self.assertEqual(game_host, "m.pg-demo.com")
+        self.assertEqual(static_host, "static.pg-demo.com")
+        # Every money host the answer named is bound, not only the chosen
+        # triple's: the client health-checks both of them before it commits
+        # to one, so binding a single host would break its own failover.
+        # They are all hosts this publisher just named in this answer.
+        self.assertEqual(apis[:2], ("api.f26xzzc7c.com", "api.8jkxzybcq.com"))
+        self.assertIn("ot=ot123", url)
+
+    def test_the_rolling_triple_is_used_when_the_stable_one_is_absent(self):
+        url, game_host, static_host, apis = pg_proxy.parse_session(
+            self._launcher(stable=False), "126")
+        self.assertEqual(game_host, "m.rhzzzvqpd.com")
+        self.assertEqual(static_host, "static.rhzzzvqpd.com")
+        self.assertEqual(apis, ("api.9zzzzz9q9.com", "api.7aaaaa7a.com"))
+        self.assertIn("/126/index.html", url)
+
+    def test_a_mint_for_another_game_is_refused(self):
+        with self.assertRaises(pg_proxy.PgError):
+            pg_proxy.parse_session(self._launcher("65"), "126")
+
+    def test_a_launcher_with_no_session_is_refused(self):
+        with self.assertRaises(pg_proxy.PgError):
+            pg_proxy.parse_session("<html><body>nothing here</body></html>", "126")
+
+    def test_a_host_that_is_not_prefix_label_com_is_never_bound(self):
+        """Binding a host is permission to fetch it server-side, so the shape
+        is checked where the name comes out of a publisher's answer."""
+        for bad in ("m.evil.example.com", "m.127.0.0.1", "m.a.b.c",
+                    "m.attacker.com.evil.net", "m..com"):
+            with self.assertRaises(pg_proxy.PgError, msg=bad):
+                pg_proxy.Session("s", "126", "ot", "https://m.x.com/1",
+                                 bad, "static.x.com", ())
+
+    def test_a_bound_host_is_allowed_and_an_unbound_one_is_not(self):
+        session = pg_proxy.Session("s1", "126", "ot",
+                                   "https://m.pg-demo.com/126/index.html",
+                                   "m.pg-demo.com", "static.pg-demo.com",
+                                   ("api.f26xzzc7c.com",))
+        pg_proxy.bind(session)
+        self.assertTrue(pg_proxy.allowed_host("m.pg-demo.com"))
+        self.assertTrue(pg_proxy.allowed_host("api.f26xzzc7c.com"))
+        # the rolling alternate this process never minted stays closed
+        self.assertFalse(pg_proxy.allowed_host("m.rhzzzvqpd.com"))
+        self.assertFalse(pg_proxy.allowed_host("evil.com"))
+
+    def test_a_binding_expires(self):
+        session = pg_proxy.Session("s2", "126", "ot", "https://m.pg-demo.com/x",
+                                   "m.pg-demo.com", "static.pg-demo.com", ())
+        pg_proxy.bind(session)
+        self.assertTrue(pg_proxy.allowed_host("m.pg-demo.com"))
+        session.expires_at = time.time() - 1
+        self.assertIsNone(pg_proxy.session_for("s2"))
+        self.assertFalse(pg_proxy.allowed_host("m.pg-demo.com"))
+
+    def test_a_sub_path_naming_a_session_we_never_minted_is_refused(self):
+        game = {"game_id": "pg:fortune-tiger", "demo_url":
+                "https://public.pg-demo.com/demo/?gi=126&lang=pt"}
+        with self.assertRaises(game_proxy.ProxyError):
+            game_proxy.target_url(game, "pg/never-minted/", "")
+
+    def test_the_minted_document_is_sent_verbatim_and_assets_keep_their_signature(self):
+        session = pg_proxy.Session("s3", "126", "ot",
+                                   "https://m.pg-demo.com/126/index.html?ot=ot123&l=pt&btt=2",
+                                   "m.pg-demo.com", "static.pg-demo.com", ())
+        pg_proxy.bind(session)
+        game = {"game_id": "pg:fortune-tiger", "demo_url":
+                "https://public.pg-demo.com/demo/?gi=126&lang=pt"}
+        document = game_proxy.target_url(game, "pg/s3/", "token=player-secret")
+        # the document is the publisher's, minted by the publisher: our own
+        # parameters are not merged into it, and a player's wallet token can
+        # never reach PG this way
+        self.assertEqual(document, session.game_url)
+        self.assertNotIn("player-secret", document)
+        asset = game_proxy.target_url(game, "pg/s3/loader/06.js",
+                                      "verify=123-abc%3D")
+        # every asset URL is signed; dropping the signature would 403
+        self.assertTrue(asset.endswith("/loader/06.js?verify=123-abc%3D"))
+
+    def test_the_document_is_recognised_as_a_document_and_names_its_own_host(self):
+        session = pg_proxy.Session("s4", "126", "ot",
+                                   "https://m.pg-demo.com/126/index.html?ot=ot",
+                                   "m.pg-demo.com", "static.pg-demo.com", ())
+        pg_proxy.bind(session)
+        # the catalog host is the *launcher*; the game came from the session's
+        # own host, and the cookie that binds the session has to say so
+        self.assertTrue(game_proxy.pg_document("pg/s4/"))
+        self.assertTrue(game_proxy.pg_document("pg/s4"))
+        self.assertFalse(game_proxy.pg_document("pg/s4/loader/06.js"))
+        self.assertFalse(game_proxy.pg_document(""))
+        self.assertEqual(game_proxy.pg_doc_host("pg/s4/"), "m.pg-demo.com")
+
+    def test_a_trailing_slash_sub_path_is_treated_as_a_document(self):
+        """Not PG-specific in intent: a sub-path that ends in `/` names a
+        document, so it is the one that earns the `<base>` repair and the
+        bridge. PG just happens to be the one that always looks like this."""
+        self.assertTrue(game_proxy.rewritable("pg/abc/"))
+        self.assertTrue(game_proxy.rewritable("anything/"))
+        # an image is not something we rewrite, so it revalidates normally
+        self.assertFalse(game_proxy.rewritable("logo.png"))
+
+    def test_the_launch_mints_and_hides_the_wallet_token_from_pg(self):
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        game = game_proxy.game_for("pg:fortune-tiger")
+        self.assertIsNotNone(game)
+        minted = pg_proxy.Session("minted-1", "126", "ot",
+                                  "https://m.pg-demo.com/126/index.html?ot=ot",
+                                  "m.pg-demo.com", "static.pg-demo.com", ())
+        pg_proxy.bind(minted)
+
+        def _mint(gi, lang="pt", session_id=""):
+            return minted
+
+        original, pg_proxy.mint = pg_proxy.mint, _mint
+        try:
+            url = demo.interposed_launch("pg:fortune-tiger", "tok-abc",
+                                         "https://ours.example")
+        finally:
+            pg_proxy.mint = original
+        # our own path carries the session, so the per-session hosts resolve;
+        # the token rides for us and is stripped again before the request leaves
+        self.assertEqual(url,
+                         "https://ours.example/g/pg:fortune-tiger/pg/minted-1/?token=tok-abc")
+        game_query = game_proxy.target_url(game, "pg/minted-1/", "token=tok-abc")
+        self.assertNotIn("tok-abc", game_query)
 
 
 if __name__ == "__main__":
