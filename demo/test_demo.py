@@ -3092,5 +3092,36 @@ class PgSoftTest(unittest.TestCase):
         self.assertNotIn("tok-abc", game_query)
 
 
+    def test_the_money_endpoints_are_named_where_they_were_measured(self):
+        """The paths are written down because they were measured, not guessed.
+
+        Every one of these was read off a real capture; a tap that builds a
+        URL from them is building it from evidence. If PG moves them, this
+        is the list that has to change.
+        """
+        self.assertEqual(pg_proxy.SESSION_PATH,
+                         "/web-api/auth/session/v2/verifySession")
+        self.assertEqual(pg_proxy.WALLET_PATH,
+                         "/web-api/game-proxy/v2/GameWallet/Get")
+        self.assertEqual(pg_proxy.NAME_PATH,
+                         "/web-api/game-proxy/v2/GameName/Get")
+        # `cb` is what the game shows, and it comes first for a reason
+        self.assertEqual(pg_proxy.WALLET_BALANCE_KEYS[0], "cb")
+        self.assertIn("tb", pg_proxy.WALLET_BALANCE_KEYS)
+
+    def test_a_slug_becomes_the_title_the_lobby_shows(self):
+        """`GameName/Get`'s "31" is a localization key — it answers "Baccarat
+        Deluxe" for every title — so the name comes from the slug, which is
+        the one per-game identifier the handshake hands over."""
+        from scripts.discover_pgsoft_demos import title_from_slug
+        self.assertEqual(title_from_slug("dragon-tiger-luck"), "Dragon Tiger Luck")
+        self.assertEqual(title_from_slug("fortune-tiger"), "Fortune Tiger")
+        self.assertEqual(title_from_slug("mahjong-ways"), "Mahjong Ways")
+        # acronyms stay uppercase, and an empty slug is not a title
+        self.assertEqual(title_from_slug("lgd-monkey-kg"), "Lgd Monkey Kg")
+        self.assertEqual(title_from_slug("win-win-fpc"), "Win Win Fpc")
+        self.assertEqual(title_from_slug(""), "")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

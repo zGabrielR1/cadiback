@@ -1,14 +1,35 @@
 CURRENTTASK: LIVE on Render (https://cadiback.onrender.com, decision 0039).
-PG Soft boots from our own origin with the wallet bridge (0040: mint + the
-per-session host binding 0035 called for; the money tap is NOT built — the
-client's canvas is 0x0 outside a real browser, so the spin shape is unknown
-and a guessed one would settle nothing). The games you opened are cached on
-the machine (0041). One general proxy bug fixed: a document at a
-trailing-slash path was served with no bridge at all. Suites frame 45/45,
-demo 203/203, verify 0, provider sweep 12/12.
+PG Soft: 92 titles (was 2) served from our own origin with the wallet
+bridge, and the money API fully captured — 0040. The blocker was the
+HEADLESS USER-AGENT, not a real browser: with an ordinary Chrome UA the
+engine lays out (canvas 450x800 vs 0x0) and the whole money sequence
+appears. Balance is JSON (`GameWallet/Get`), spin is binary. The money tap
+is not built; that is the open frontier. The games you opened are cached on
+the machine (0041). Suites frame 45/45, demo 205/205, verify 0, sweep 16/16,
+catalog 272 demos.
 
 ## STATUS
 
+- **PG SOFT: THE INVESTIGATION IS DONE (0040).** Everything 0035 called an
+  open frontier is now measured. The mint, the three candidate host triples,
+  the stable one we prefer, the signed asset URLs, and the money sequence:
+  `verifySession` → `tk` + `geu` slug + *"You are playing Demo."* →
+  `GameName/Get` → `Resources/GetByResourcesTypeIds` → `GameInfo/Get`
+  (binary) → `GameWallet/Get` (JSON `tb`/`cb`/`pb`/`ch`). Two corrections to
+  the earlier record: the hosts do NOT all move (every mint ships a stable
+  `m.pg-demo.com` triple), and the client was never unbootable — it refuses
+  a `HeadlessChrome` User-Agent, which is what made the canvas 0x0 and every
+  earlier capture empty.
+- **92 PG TITLES, up from 2.** `scripts/discover_pgsoft_demos.py` mints each
+  candidate and reads its slug from `geu`. Numbering is gi 1–135; 92 live,
+  43 dead ids (re-probed serially to prove they were dead, not throttled).
+  Catalog 182 → **272**. Note `GameName/Get`'s `"31"` is a localization key
+  that answers "Baccarat Deluxe" for everything — the slug is the real id.
+- **THE MONEY TAP IS STILL THE FRONTIER, and it now has a known shape.** The
+  balance side is easy and `rewrite_balance` already fits it. The spin side
+  is **binary** (`GameInfo/Get` is protobuf-ish), so a tap that re-encodes a
+  spin is a different job from one that rewrites a number. Next capture:
+  tap the spin button on the now-working canvas.
 - **LIVE: https://cadiback.onrender.com** — storefront, API, catalog (10
   in-house + 182 publisher) and the publisher proxy, from one container that
   Render builds from this repository. Every deploy had been failing; two
@@ -43,14 +64,12 @@ demo 203/203, verify 0, provider sweep 12/12.
   `rewritable()` treated an empty last path segment as "not a document", so
   every document served at a trailing-slash path got no `<base>` repair and
   **no wallet bridge** — and looked perfectly healthy from our side. PG was
-  the first launch shape that exposed it; every provider on such a path was
+  the first launch shape to show it; every provider on such a path was
   un-bridged.
-- Suites: frame 45/45, demo 203/203 (+12 PG, offline canned mints),
-  `verify.py` 0 problems, `localCache` 21 checks, `demo/_sweep.py` 12/12
-  providers, live smoke green.
-- NEXT: the PG money tap, if a real-browser capture is ever possible;
-  otherwise spend the time on PP, whose client is origin-coupled for the
-  same class of reason (0028/0036).
+- Suites: frame 45/45, demo 205/205 (+14 PG), `verify.py` 0, `localCache` 21
+  checks, `demo/_sweep.py` 16/16, live smoke green.
+- NEXT: capture one spin on the PG canvas and build the tap; or PP, whose
+  client is origin-coupled for the same class of reason (0028/0036).
 
 CURRENTTASK (previous): Dados Relâmpago (whitelabel dice original) shipped (0034); PG Soft
 wallet path documented (0035, not built). Proxy hardened (0037: token leak,

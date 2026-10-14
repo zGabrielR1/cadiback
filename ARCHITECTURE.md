@@ -41,9 +41,10 @@ demo/
     ├── vendor.py            official-content seam: https-only, gated titles
     ├── provider_demos.py    publisher-hosted demos: https + host allowlist
     ├── game_proxy.py        same-origin front for publisher games: wallet sync, /g/<game_id>
-    ├── pg_proxy.py          PG Soft: a minted trial session and the hosts it binds
+    ├── pg_proxy.py          PG Soft: a minted trial session, the hosts it
+    │                        binds, and the measured money-API endpoints
     ├── index.html           zero-build fallback storefront
-    └── test_demo.py         203 execution checks
+    └── test_demo.py         205 execution checks
 
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier

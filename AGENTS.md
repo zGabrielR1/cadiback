@@ -20,7 +20,8 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |
-| `probes/` | Provider demo catalog (182 official games) & live sports fixtures |
+| `probes/` | Provider demo catalog (272 official games) & live sports fixtures |
+| `scripts/discover_pgsoft_demos.py` | Find live PG Soft titles: mint each candidate, read its slug |
 | `demo/_sweep.py`, `demo/_pgsmoke.py` | Throwaway live checks: every provider through `/g/`, one PG launch |
 | `scripts/capture_session.mjs` | Drive a real browser over CDP to see what a game says on the wire |
 | `archive/` | Retired deploy paths and old specs — code only, never deployed |

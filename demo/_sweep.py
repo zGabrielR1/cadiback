@@ -54,7 +54,7 @@ launch = S.DEMO.wallet_launch({"player": player, "game_id": "pg:fortune-tiger"})
 
 results = []
 for provider, rows in sorted(by_provider.items()):
-    sample = rows[:2]
+    sample = rows[:2] if provider != "pg_soft" else rows[:6]
     for row in sample:
         gid = row["game_id"]
         if provider == "pg_soft":

@@ -84,6 +84,49 @@ USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 MINT_TIMEOUT = 20
 
+# --- the money API, as measured -------------------------------------------
+#
+# Captured 2026-10-14 with `scripts/capture_session.mjs` (devtools.protocol),
+# after the one thing that was making every capture fail turned out to be the
+# browser's own User-Agent: headless advertises `HeadlessChrome`, PG's engine
+# refuses to lay out under it (`#GameCanvas` measured 0x0), so it never opened
+# its lobby and never made a money call. With an ordinary UA the same code
+# reaches the whole sequence.
+#
+#   POST <api>/web-api/auth/session/v2/verifySession
+#        btt=2&vc=2&pf=1&l=pt&gi=<gi>&tk=null&otk=<ot>
+#        -> {"dt": {"tk": "<access token>", "geu": "game-api/<slug>/",
+#                    "bau": "web-api/game-proxy/", "occ": {"tcm": "You are
+#                    playing Demo."}, ...}}
+#   POST <api>/web-api/game-proxy/v2/GameName/Get
+#        lang=pt&atk=<tk>&btt=2&pf=1&gid=<gi>
+#        -> {"dt": {"31": "…"}}   — "31" is a LOCALIZATION KEY, not the name;
+#                                   it answers "Baccarat Deluxe" for every
+#                                   title probed. The slug from `geu` is the
+#                                   only per-game identifier here.
+#   POST <api>/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds
+#   POST <api>/game-api/<slug>/v4/GameInfo/Get      (BINARY — protobuf-ish)
+#   POST <api>/web-api/game-proxy/v2/GameWallet/Get
+#        isagw=true&btt=2&wk=0_C&atk=<tk>&pf=1&gid=<gi>
+#        -> {"dt": {"tb": 100000.00, "cb": 100000.00, "pb": 0.00,
+#                    "ch": {"cb": 100000.00, "k": "0_C"}, ...}}
+#
+# The wallet is the good news and the spin is the hard part: balances are
+# plain JSON in minor-unit-friendly decimals, so `rewrite_balance` and the
+# Hacksaw-shaped money tap apply as-is — but `GameInfo/Get` and therefore
+# almost certainly the spin are a **binary** protocol, so a tap that has to
+# re-encode a spin is a different job from one that has to rewrite a number.
+SESSION_PATH = "/web-api/auth/session/v2/verifySession"
+NAME_PATH = "/web-api/game-proxy/v2/GameName/Get"
+RESOURCES_PATH = "/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds"
+WALLET_PATH = "/web-api/game-proxy/v2/GameWallet/Get"
+HEALTH_PATH = "/healthcheck"
+
+# The balance keys in a `GameWallet/Get` answer, in the order they matter:
+# `cb` is what the client shows, `tb` the account total, `pb` the previous
+# value (a delta of `cb - pb` is the round's net) and `ch` the change record.
+WALLET_BALANCE_KEYS = ("cb", "tb", "ch", "pb", "tbb", "tfgb")
+
 
 class PgError(RuntimeError):
     """PG refused the mint, or the answer carried no usable session."""

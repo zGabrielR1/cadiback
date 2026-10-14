@@ -1,6 +1,37 @@
 # PROGRESS
 
-## DONE (2026-10-14 — PG Soft through our own origin, the local cache, and the deploy is LIVE, decisions 0039/0040/0041)
+## DONE (2026-10-14 — PG Soft's money API captured, 2 titles → 92, decision 0040)
+
+- **The PG investigation finished, and the blocker was one flag.** 0035
+  recorded that PG's client "will not boot outside a real browser". It does —
+  it will not boot with a **headless User-Agent**. Same code, same 1280x800
+  viewport: `HeadlessChrome` gives `#GameCanvas` = `0x0` and 56 requests;
+  an ordinary Chrome UA gives `450x800` and 332 requests, with the money host
+  going from 3 calls to 13. `capture_session.mjs` now sets a real UA by
+  default. This is the same trap as 0028's "the importer is not
+  order-sensitive" — a conclusion drawn from a probe that was itself broken.
+- **The money API is mapped.** `verifySession` (→ `tk`, `geu` = the game's
+  slug, `occ.tcm` = *"You are playing Demo."*) → `GameName/Get` →
+  `Resources/GetByResourcesTypeIds` → `GameInfo/Get` (**binary**) →
+  `GameWallet/Get` (**JSON**: `tb`/`cb`/`pb`/`ch`). The balance is the easy
+  half and `rewrite_balance` already fits it; the spin is a binary protocol,
+  which is real work rather than a wall. Paths and shapes are now constants
+  in `pg_proxy` with the measurement beside them.
+- **`GameName/Get`'s `"31"` is a localization key, not the name** — it answers
+  "Baccarat Deluxe" for every title. It nearly produced a wrong catalog; the
+  only per-game identifier is the slug from `geu`.
+- **92 PG Soft titles, up from 2.** `scripts/discover_pgsoft_demos.py` mints
+  each candidate and reads its slug. The numbering is **gi 1–135** (nothing
+  above answers; 92 live, 43 dead ids — re-probed serially to prove they were
+  dead, not throttled). Catalog 182 → **272** demos. `gi=126` → `fortune-tiger`
+  → "Fortune Tiger", which is what the catalog already said.
+- Provider sweep **16/16**, six PG titles each serving its real ~1 MB
+  document through `/g/` with the bridge.
+- `frame` 45/45, `demo` 205/205 (+14), `verify.py` 0.
+
+## DONE (2026-10-14 — PG Soft through our own origin + the local cache, decisions 0040/0041)
+
+## DONE (2026-10-14 — the deploy is LIVE on Render, decision 0039)
 
 - **The site is live: <https://cadiback.onrender.com>.** Every deploy had
   been failing silently and neither the API, the deploy object nor the

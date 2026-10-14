@@ -72,6 +72,15 @@ if (!BROWSER) {
 const PORT = 9222 + Math.floor(Math.random() * 400);
 const PROFILE = resolve(tmpdir(), "candibet-cdp-" + PORT);
 
+// A headless browser advertises itself as "HeadlessChrome" in the User-Agent,
+// and that string is the first thing any environment check looks for. PG
+// Soft's engine refuses to lay out under it: its #GameCanvas measures 0x0 and
+// it never opens the lobby, so no money request is ever made and there is
+// nothing to capture. Identical code, identical viewport, ordinary UA — the
+// game boots. `--ua none` keeps the browser's real string instead.
+const UA = flag("--ua", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+  + "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const child = spawn(BROWSER, [
@@ -82,10 +91,12 @@ const child = spawn(BROWSER, [
   "--disable-extensions",
   "--disable-background-networking",
   "--mute-audio",
-  // a publisher client that checks the clock against its own assets gets a
-  // normal one; a frozen clock reads as tampering
+  // the two anti-bot tells a default headless profile gives itself away with
+  ...(UA === "none" ? [] : ["--user-agent=" + UA]),
+  "--disable-blink-features=AutomationControlled",
   `--user-data-dir=${PROFILE}`,
   `--remote-debugging-port=${PORT}`,
+  "--window-size=1280,800",
   "about:blank",
 ], { stdio: "ignore" });
 
@@ -149,6 +160,7 @@ async function main() {
 
   const records = new Map();     // requestId -> record
   const order = [];
+  const bodies = [];             // requestIds worth asking DevTools to replay
   const console_ = [];
 
   client.on((msg) => {
@@ -174,6 +186,13 @@ async function main() {
     } else if (method === "Network.loadingFinished") {
       const rec = records.get(params.requestId);
       if (rec) rec.bytes = params.encodedDataLength;
+      // the answer matters as much as the question: a request list says which
+      // endpoint exists, only the body says what it returns. Queued here and
+      // fetched after the run, while DevTools still has it buffered.
+      if (rec && rec.method !== "OPTIONS" && !rec.failed
+          && rec.status && rec.status < 400 && rec.bytes) {
+        bodies.push(params.requestId);
+      }
     } else if (method === "Network.loadingFailed") {
       const rec = records.get(params.requestId);
       if (rec) rec.failed = params.errorText;
@@ -265,6 +284,22 @@ async function main() {
   }
 
   const list = order.map((id) => records.get(id)).filter(Boolean);
+
+  // Pull the answers. DevTools keeps them until the frame goes away, so this
+  // is why the bodies are read at the end and not inline: an inline read at
+  // `loadingFinished` races the buffer.
+  for (const id of bodies) {
+    const rec = records.get(id);
+    if (!rec) continue;
+    try {
+      const r = await client.send("Network.getResponseBody", { requestId: id }, sessionId);
+      if (!r.base64Encoded) rec.respBody = (r.body || "").slice(0, 8000);
+      else rec.respBodyBase64 = (r.body || "").slice(0, 8000);
+    } catch (e) {
+      rec.respBodyUnavailable = e.message.slice(0, 80);
+    }
+  }
+
   // hosts the page touched, with a request count: the shape of the provider
   // in one glance, which is what a human actually wants from this
   const hosts = {};

@@ -1,12 +1,13 @@
-# 0040 — PG Soft through our own origin: the boot half
+# 0040 — PG Soft through our own origin: boot, catalog, and the money API
 
 **Date:** 2026-10-14
-**Status:** accepted — PG Soft serves from our origin with the wallet bridge.
-The money tap is **not** built, and §4 says why not.
+**Status:** accepted — 92 PG Soft titles serve from our origin with the wallet
+bridge, and the money API is now mapped. The money **tap** is not built; §5
+says exactly why and what is left.
 
-Decision 0035 assessed PG Soft and recommended leaving it trial-only. Two
-things it did not know, both found by capturing a real session rather than by
-reading anything, changed the answer for the boot half.
+Decision 0035 assessed PG Soft and recommended leaving it trial-only. Four
+things it did not know, all found by capturing a real session rather than by
+reading anything, changed the answer.
 
 ## 1. The mint, exactly
 
@@ -45,28 +46,83 @@ A second, harder constraint: **every asset URL is signed**
 covers the path, so the proxy forwards the query byte-for-byte and cannot
 cache a signed URL under a key that drops it.
 
-## 3. What ships
+## 3. The headless User-Agent was the blocker (§4 of 0035, revised)
 
-`demo/pg_proxy.py` mints and binds; `game_proxy` consults it in
-`_allowed_host`; `Demo.pg_launch` builds the launch.
+0035's open frontier said the client was "origin-coupled" by an environment
+check and that capturing it needed a real browser. **It did not need a real
+browser. It needed a real User-Agent.**
 
-* **The session id lives in our path** — `/g/pg:fortune-tiger/pg/<session>/`.
-  That is what makes the per-session hosts resolvable without a standing rule
-  about somebody else's domain, and it is the one genuinely new mechanism PG
-  needed (0035 §2.2). The binding is only ever added by *this process* asking
-  PG for it.
-* **A minted host is `<prefix>.<label>.com` or nothing.** Binding a host is
-  permission to fetch it server-side, so the shape is checked where the name
-  leaves a publisher's answer — which also refuses
-  `m.attacker.com.evil.net`, that a suffix check would wave through.
-* **The document is sent verbatim.** `pg_target` returns the minted URL
-  unchanged rather than merging the client's query into it, so a player's
-  wallet token cannot reach PG by that path. The token rides our own query
-  and is stripped on the way out.
-* **The money hosts all get bound**, not just the chosen triple's: the client
-  health-checks both of them before committing to one, so binding a single
-  host would break its own failover. They are all hosts this publisher named
-  in this answer.
+Headless advertises `HeadlessChrome`, and PG's engine refuses to lay out
+under it. Measured, same code, same 1280x800 viewport:
+
+| | `#GameCanvas` | requests | money-host calls |
+|---|---|---|---|
+| default headless UA | `0x0@0,0` | 56 | 3 (all `/healthcheck`) |
+| ordinary Chrome UA | `450x800@415,0` | 332 | 13 |
+
+One `--user-agent=` flag took the capture from "the engine never starts" to
+"the whole money sequence". `capture_session.mjs` now sets it by default and
+keeps `--ua none` for the comparison. This is the same class of mistake as
+decision 0028's "the importer is not order-sensitive" — a conclusion drawn
+from a probe that was broken in a way nobody had checked.
+
+## 4. The money API, in full
+
+With the engine running, the sequence is short, form-encoded, and returns
+JSON — except the game config, which is binary:
+
+```
+POST <api>/web-api/auth/session/v2/verifySession
+     btt=2&vc=2&pf=1&l=pt&gi=126&tk=null&otk=<ot>
+  -> {"dt":{"tk":"<access token>","geu":"game-api/fortune-tiger/",
+            "bau":"web-api/game-proxy/","occ":{"tcm":"You are playing Demo."}}}
+POST <api>/web-api/game-proxy/v2/GameName/Get
+     lang=pt&atk=<tk>&btt=2&pf=1&gid=126
+  -> {"dt":{"31":"Baccarat Deluxe"}}          <-- "31" is a LOCALIZATION KEY
+POST <api>/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds
+POST <api>/game-api/fortune-tiger/v4/GameInfo/Get      (BINARY)
+POST <api>/web-api/game-proxy/v2/GameWallet/Get
+     isagw=true&btt=2&wk=0_C&atk=<tk>&pf=1&gid=126
+  -> {"dt":{"tb":100000.00,"pb":0.00,"cb":100000.00,"ch":{"cb":100000.00,"k":"0_C"},...}}
+```
+
+`occ.tcm` = *"You are playing Demo."* — the session is a trial session, so
+the 100 000 is the publisher's, not ours. That is the thing to change, and
+it is a balance, not an RNG.
+
+**`GameName/Get`'s `"31"` is not the game name.** It answers "Baccarat
+Deluxe" for *every* title probed — it is a localization key that falls back
+to a default. This nearly caused a wrong catalog: the only real per-game
+identifier in the handshake is the slug from `geu`.
+
+## 5. What ships
+
+* **92 PG Soft titles** (from 2), discovered by
+  `scripts/discover_pgsoft_demos.py`: mint → `verifySession` → read `geu`'s
+  slug. The full numbering is **gi 1–135** (nothing above 135 answers; 92
+  live, 43 dead ids — re-probed serially to confirm they were dead and not
+  throttled). Titles are derived from the slug, which is what PG's own lobby
+  does, because the localized title lives inside the binary `GameInfo/Get`.
+  `gi=126` → slug `fortune-tiger` → "Fortune Tiger", which is what the
+  catalog already said.
+* `demo/pg_proxy.py` mints and binds; `game_proxy` consults it in
+  `_allowed_host`; `Demo.pg_launch` builds the launch.
+  * **The session id lives in our path** — `/g/pg:fortune-tiger/pg/<session>/`.
+    That is what makes the per-session hosts resolvable without a standing
+    rule about somebody else's domain, and it is the one genuinely new
+    mechanism PG needed (0035 §2.2).
+  * **A minted host is `<prefix>.<label>.com` or nothing.** Binding a host is
+    permission to fetch it server-side, so the shape is checked where the
+    name leaves a publisher's answer — which also refuses
+    `m.attacker.com.evil.net`, that a suffix check would wave through.
+  * **The document is sent verbatim.** `pg_target` returns the minted URL
+    unchanged rather than merging the client's query into it, so a player's
+    wallet token cannot reach PG by that path.
+  * **All the money hosts get bound**, not just the chosen triple's: the
+    client health-checks both before committing, so binding one would break
+    its own failover.
+* The measured endpoints are written into `pg_proxy` as constants with the
+  shapes beside them, so the tap builds URLs from evidence.
 
 Verified live through `/g/`, spying on what leaves the process:
 
@@ -77,44 +133,31 @@ wallet token sent to PG: False
 asset signature preserved: True
 ```
 
-And the provider sweep (`demo/_sweep.py`, one real launcher per provider
-through `/g/`): **12/12**. Before this, both PG rows answered `no-launch` —
-they were never served through `/g/` at all.
+Provider sweep (`demo/_sweep.py`, real launchers through `/g/`): **16/16**,
+six different PG titles included. Before this, both PG rows answered
+`no-launch` — they were never served through `/g/` at all.
 
-## 4. Why there is no money tap
+## 6. Why there is still no money tap
 
-The client is a 1 MB string-array-obfuscated bundle. Its endpoints are built
-at runtime — the document contains no `api.`, no `spin`, no `balance`, and no
-`web-api` string at all.
+Two reasons, one of them real work rather than a wall:
 
-The capture tool (`scripts/capture_session.mjs`, built here: DevTools
-Protocol over the browser already on the machine, because playwright-core is
-deliberately not in the tree) boots it and drives it — tap, click, eval,
-viewport, websocket frames. The result is decisive:
+1. **The spin is a binary protocol.** `GameInfo/Get` is protobuf-ish, so a
+   tap that has to *re-encode a spin* is a different job from one that has to
+   rewrite a number. The **balance** side is the easy half — plain JSON in
+   `GameWallet/Get`, and `rewrite_balance` already exists for exactly this
+   shape. Nobody has captured a spin yet: reaching one needs a tap on the
+   spin button's canvas coordinates, which is now plausible (§3 fixed the
+   engine) but is the next capture, not a fact.
+2. **We do not hold a session.** `verifySession` issues the `atk` that every
+   later call carries, and PG ties it to the trial session it just minted.
+   Settling through our books means either running the RGS ourselves (which
+   decisions 0006/0008/0020 refuse) or mirroring the publisher's outcome,
+   which is the Hacksaw pattern and needs step 1 first.
 
-* the game document loads, `loader/06.js` loads, assets load, blobs render;
-* **only** `/healthcheck` ever reaches a money host;
-* `#GameCanvas` measures **`0x0@0,0` even with a 1280x800 viewport override**.
+PG Soft therefore stays `wallet_isolated` — honest trial play, now served
+from our origin with our bridge, our HUD and our catalog.
 
-The engine never lays out, so there is no lobby, so there is no spin to
-capture. The boot is gated on something in the environment, the same class of
-blocker decision 0028/0036 hit with Pragmatic Play.
-
-So the spin and balance request shapes are **not known**. A money tap written
-against a guessed shape would be worse than none: it would look right, settle
-nothing, and cost the next person a day to discover which. PG Soft therefore
-stays `wallet_isolated` — it is honest trial play, now served from our origin
-with our bridge and our HUD instead of an iframe of somebody else's page.
-
-## 5. What would unblock it
-
-A capture taken from a real, non-automated browser session — one where a
-human pressed start once. `scripts/capture_session.mjs` would then have the
-answer in one run, and §3's machinery is already in place to carry it. That
-is a ten-minute job for a person at a keyboard and an unbounded one for a
-headless one.
-
-## 6. The one general proxy bug this found
+## 7. The one general proxy bug this found
 
 `rewritable()` decided "is this a document?" from the last path segment, and
 an empty segment — which is what **every** sub-path ending in `/` produces —
@@ -124,4 +167,4 @@ booted with nothing in front of it and, from our side, looked fine. Every
 provider that launches on such a path had been silently un-bridged; PG is
 just the first one whose URL shape exposed it.
 
-`frame` 45/45, `demo` 203/203 (+12 PG), `verify.py` 0 problems.
+`frame` 45/45, `demo` 205/205 (+14 PG), `verify.py` 0 problems, sweep 16/16.
