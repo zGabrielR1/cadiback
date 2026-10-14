@@ -60,8 +60,8 @@ from .auth import AuthError, SessionBook, SessionStore, UserStore
 from .slot import DEMO_RTP_STR, spin, tiers_for
 from .casino import ROULETTE_GAME_ID, roulette_spin
 from .arcade import (ARCADE_GAME_IDS, CRASH_GAME_ID, CRASH_GROWTH_PER_SEC,
-                     CRASH_LIVE_MAX, MINES_GAME_ID, PLINKO_GAME_ID,
-                     arcade_round, crash_bust_multiplier,
+                     CRASH_LIVE_MAX, KENO_GAME_ID, MINES_GAME_ID,
+                     PLINKO_GAME_ID, arcade_round, crash_bust_multiplier,
                      crash_elapsed_for, crash_live_round,
                      crash_multiplier_at, theoretical_rtp as
                      arcade_theoretical_rtp)
@@ -169,6 +169,7 @@ DEMO_CATEGORY = {
     "demo:plinko-drops": "Crash",
     "demo:minas": "Crash",
     "demo:dados": "Originais",
+    KENO_GAME_ID: "Originais",
 }
 
 
@@ -321,6 +322,21 @@ def demo_registry() -> GameRegistry:
             status="certified",
             sigap_submission="submitted",
             certified_on="2026-10-12",
+            rtp="97.00",
+        )
+    )
+    registry.register(
+        GameCertification(
+            game_id=KENO_GAME_ID,
+            provider="demo_studio",
+            title="Keno Relâmpago",
+            rng_reference="demo-sha256-v1",
+            certificate_id="BR-DEMO-0010",
+            lab="DEMO-LAB",
+            issued_for=BRAZIL,
+            status="certified",
+            sigap_submission="submitted",
+            certified_on="2026-10-14",
             rtp="97.00",
         )
     )

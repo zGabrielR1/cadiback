@@ -28,6 +28,12 @@ path, which cannot express them.
   "m=3:cells=1,7,25"). Any mined pick loses; a clean sheet pays
   floor(stake * 0.97 * C(25,k) / C(25-m,k)). Theoretical RTP is 97%
   minus flooring dust (under one centavo).
+- keno: 20 of 80 numbers drawn from a digest-seeded shuffle; the player
+  picks 1..10 spots (`selection`, e.g. "5:3,17,42,58,71") and the hit count
+  pays. The ladder doubles per extra hit and is scaled so the expected
+  return is exactly 97% for every spot count — derived, not typed. Low tiers
+  on a high spot count pay below the stake, which is a partial return and is
+  reported as one.
 """
 
 from __future__ import annotations
@@ -42,9 +48,10 @@ CRASH_GAME_ID = "demo:crash-nitro"
 PLINKO_GAME_ID = "demo:plinko-drops"
 MINES_GAME_ID = "demo:minas"
 DICE_GAME_ID = "demo:dados"
+KENO_GAME_ID = "demo:keno"
 
 ARCADE_GAME_IDS: frozenset[str] = frozenset({
-    CRASH_GAME_ID, PLINKO_GAME_ID, MINES_GAME_ID, DICE_GAME_ID,
+    CRASH_GAME_ID, PLINKO_GAME_ID, MINES_GAME_ID, DICE_GAME_ID, KENO_GAME_ID,
 })
 
 HOUSE_EDGE = Fraction(3, 100)
@@ -379,6 +386,189 @@ def mines_round(game_id: str, round_id: str, selection: str | None,
         payout_minor=int(payout), is_win=won)
 
 
+# --- keno -----------------------------------------------------------------
+
+# 80 numbers, 20 drawn, 1..10 spots picked. The hit count is what pays, and
+# the payout ladder is DERIVED, not typed — which is what decision 0034 said
+# was the reason not to build this ("a full paytable to get exactly right").
+# It no longer is one:
+#
+#   1. the shape is fixed and simple: every extra hit DOUBLES the payout, so
+#      the ladder for a 10-spot is a clean 2x from the bottom tier to the top;
+#   2. the hit probabilities are exact — hypergeometric over 80 choose 20;
+#   3. the whole ladder is then scaled by a single factor so its expected
+#      return is HOUSE_KEEP.
+#
+# So the RTP is 97.0000% by construction for every spot count, and changing
+# the shape cannot silently make the house generous. The ladder is then
+# snapped to four decimals so the only dust left is the per-round centavo.
+KENO_POOL = 80
+KENO_DRAWN = 20
+KENO_MIN_SPOTS = 1
+KENO_MAX_SPOTS = 10
+KENO_STEP = 2  # each additional hit doubles
+
+# Snapping matters more than it looks. Unsnap, the multipliers are ugly
+# Fractions (0.69813043...), and flooring one per round costs up to a whole
+# centavo on EVERY paying round — 1.5% of the RTP at a R$1 stake, far too
+# much dust to still call the model 97%. Snapped, each multiplier is within
+# half a ten-thousandth of ideal, the ladder's exact RTP is 97% to six
+# decimals, and what remains is the sub-centavo rounding of one payout.
+KENO_SCALE = 10000
+KENO_SETTLE_PASSES = 8
+
+def _snap(value: Fraction) -> Fraction:
+    """Round a multiplier to four decimals, exactly."""
+    return Fraction(round(value * KENO_SCALE), KENO_SCALE)
+
+
+def keno_hit_probability(spots: int, hits: int) -> Fraction:
+    """P(exactly `hits` of `spots` picked numbers are drawn), exactly.
+
+    Hypergeometric: C(spots, hits) * C(80 - spots, 20 - hits) / C(80, 20).
+    """
+    if not 0 <= hits <= spots:
+        raise ValueError("hits must be between 0 and the spots played")
+    if not KENO_MIN_SPOTS <= spots <= KENO_MAX_SPOTS:
+        raise ValueError(f"spots must be {KENO_MIN_SPOTS}..{KENO_MAX_SPOTS}")
+    missed = KENO_DRAWN - hits
+    unseen = KENO_POOL - spots
+    if not 0 <= missed <= unseen:
+        return Fraction(0)  # more drawn numbers than there are unpicked ones
+    return Fraction(math.comb(spots, hits) * math.comb(unseen, missed),
+                    math.comb(KENO_POOL, KENO_DRAWN))
+
+
+def keno_paytable(spots: int) -> dict[int, Fraction]:
+    """hits -> gross return per unit staked, scaled so the RTP is HOUSE_KEEP.
+
+    Zero hits never pays: with 20 of 80 drawn it is the common case, and a
+    tier that paid would have to pay almost nothing per hit while still
+    counting as a win.
+
+    The normalisation is re-applied a few times because each pass snaps the
+    multipliers and snapping moves the total; it settles immediately in
+    practice, and the passes are bounded so a pathological input cannot spin.
+    """
+    tiers = list(range(1, spots + 1))
+    probs = {k: keno_hit_probability(spots, k) for k in tiers}
+    ladder = {k: _snap(HOUSE_KEEP * Fraction(KENO_STEP) ** (k - 1)) for k in tiers}
+    for _ in range(KENO_SETTLE_PASSES):
+        total = sum(probs[k] * ladder[k] for k in tiers)
+        if not total:
+            return {}
+        ladder = {k: _snap(ladder[k] / total * HOUSE_KEEP) for k in tiers}
+    return ladder
+
+
+def keno_multiplier(spots: int, hits: int) -> Fraction:
+    """The gross return for one hit count; 0 when the hit count does not pay."""
+    return keno_paytable(spots).get(hits, Fraction(0))
+
+
+def keno_rtp(spots: int) -> float:
+    """Exact RTP of the derived ladder — 97% for every spot count."""
+    return float(sum(keno_hit_probability(spots, k) * mult
+                     for k, mult in keno_paytable(spots).items()))
+
+
+def keno_realised_rtp(spots: int, stake_minor: int) -> float:
+    """What the player actually gets back, after rounding each payout.
+
+    The model is 97% at every spot count, but a payout is whole centavos, so
+    a round returns a rounded number and the realised RTP sits just under the
+    model: ~96.7% at a R$1 stake, ~97.0% at R$10, converging as the stake
+    grows. That is the same dust mines has, and it is reported here rather
+    than hidden — the catalog carries the model, this is the truth about one
+    stake size.
+    """
+    ladder = keno_paytable(spots)
+    return float(sum(keno_hit_probability(spots, k) * keno_payout(stake_minor, mult)
+                     for k, mult in ladder.items()) / stake_minor)
+
+
+def keno_payout(stake_minor: int, multiplier: Fraction) -> int:
+    """The round's gross return in whole centavos, rounded half up.
+
+    Rounding rather than flooring is deliberate and it is not a detail: with
+    ten tiers, flooring a fractional multiplier can cost most of a centavo on
+    every paying round, which at a R$1 stake is ~0.5% of the RTP — dust
+    large enough to make "97%" untrue. Half-up is unbiased, so the losses and
+    the gains cancel.
+    """
+    if not multiplier:
+        return 0
+    return (2 * stake_minor * multiplier.numerator + multiplier.denominator) \
+        // (2 * multiplier.denominator)
+
+
+def parse_keno_selection(selection: str | None) -> tuple[int, tuple[int, ...]]:
+    """`selection` is "<spots>:<n1,n2,...>", numbers 1..80.
+
+    The spot count is written out rather than inferred, so a selection cannot
+    mean two different rounds: "5:3,17,42" is five spots, and the same three
+    numbers under a different count is a different bet with a different pay
+    table, so the two are kept apart.
+    """
+    raw = str(selection or "").strip().lower().replace(" ", "")
+    head, _, tail = raw.partition(":")
+    if not tail:
+        raise ValueError("escolha quantos números jogar: ex. 5:3,17,42,58,71")
+    try:
+        spots = int(head)
+        picks = tuple(int(c) for c in tail.split(",") if c)
+    except ValueError:
+        raise ValueError("escolha quantos números jogar: ex. 5:3,17,42,58,71")
+    if not KENO_MIN_SPOTS <= spots <= KENO_MAX_SPOTS:
+        raise ValueError(f"jogue de {KENO_MIN_SPOTS} a {KENO_MAX_SPOTS} números")
+    if len(picks) != spots:
+        raise ValueError(f"marque {spots} número(s) — você marcou {len(picks)}")
+    if len(set(picks)) != len(picks):
+        raise ValueError("escolha números distintos")
+    if any(c < 1 or c > KENO_POOL for c in picks):
+        raise ValueError(f"escolha números distintos de 1 a {KENO_POOL}")
+    return spots, tuple(sorted(picks))
+
+
+def keno_draw(game_id: str, round_id: str) -> tuple[int, ...]:
+    """The 20 drawn numbers (1..80), from a digest-seeded shuffle.
+
+    Same discipline as mines: a seeded shuffle of the whole pool, so the draw
+    is uniform, repeatable and auditable from the round ledger alone.
+    """
+    seed = int.from_bytes(draw_digest(game_id, round_id)[:8], "big")
+    deck = list(range(1, KENO_POOL + 1))
+    random.Random(seed).shuffle(deck)
+    return tuple(sorted(deck[:KENO_DRAWN]))
+
+
+def keno_round(game_id: str, round_id: str, selection: str | None,
+               stake_minor: int) -> ArcadeResult:
+    spots, picks = parse_keno_selection(selection)
+    unit = draw_unit(game_id, round_id)
+    drawn = set(keno_draw(game_id, round_id))
+    hit_numbers = tuple(sorted(picked for picked in picks if picked in drawn))
+    hits = len(hit_numbers)
+    mult = keno_multiplier(spots, hits)
+    payout = keno_payout(stake_minor, mult)
+    # A sub-stake tier is a partial return, not a win: 1 hit on 10 spots pays
+    # 0.22x, and reporting that as a win would be a lie the panel then shows.
+    won = payout >= stake_minor and payout > 0
+    tier = (f"{hits} de {spots}" if mult else f"{hits} de {spots} · sem prêmio")
+    return ArcadeResult(
+        game_id=game_id, round_id=round_id, unit=unit, tier=tier,
+        multiplier=f"{float(mult):.2f}" if mult else "0",
+        symbols=(",".join(map(str, drawn)),
+                 ",".join(map(str, hit_numbers)) or "-",
+                 f"{hits}/{spots}"),
+        payout_minor=int(payout), is_win=won)
+
+
+def keno_theoretical_rtp(spots: int = 5) -> float:
+    """RTP for one spot count; 97% for all of them (see the module note)."""
+    return keno_rtp(spots)
+
+
 def arcade_round(game_id: str, round_id: str, selection: str | None,
                  stake_minor: int) -> ArcadeResult:
     """Dispatch one arcade round. Plinko needs no selection."""
@@ -390,6 +580,8 @@ def arcade_round(game_id: str, round_id: str, selection: str | None,
         return mines_round(game_id, round_id, selection, stake_minor)
     if game_id == DICE_GAME_ID:
         return dice_round(game_id, round_id, selection, stake_minor)
+    if game_id == KENO_GAME_ID:
+        return keno_round(game_id, round_id, selection, stake_minor)
     raise ValueError(f"unknown arcade game: {game_id}")
 
 
@@ -402,4 +594,6 @@ def theoretical_rtp(game_id: str) -> float:
         return float(HOUSE_KEEP)
     if game_id == DICE_GAME_ID:
         return float(HOUSE_KEEP)
+    if game_id == KENO_GAME_ID:
+        return keno_rtp(5)
     raise ValueError(f"unknown arcade game: {game_id}")

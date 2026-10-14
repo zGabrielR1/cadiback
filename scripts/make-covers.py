@@ -32,6 +32,7 @@ DEMO_GAMES = [
     {"game_id": "demo:plinko-drops", "provider": "demo_studio", "title": "Plinko Drops"},
     {"game_id": "demo:minas", "provider": "demo_studio", "title": "Minas"},
     {"game_id": "demo:dados", "provider": "demo_studio", "title": "Dados Relâmpago"},
+    {"game_id": "demo:keno", "provider": "demo_studio", "title": "Keno Relâmpago"},
 ]
 
 

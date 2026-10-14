@@ -8,11 +8,20 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+from fractions import Fraction
 from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer
 from urllib.parse import quote
 
 from demo import game_proxy, pg_proxy, provider_demos
+from demo.arcade import (ARCADE_GAME_IDS, KENO_DRAWN, KENO_MAX_SPOTS,
+                         KENO_MIN_SPOTS, KENO_POOL, KENO_GAME_ID,
+                         keno_draw, keno_multiplier, keno_paytable,
+                         keno_hit_probability, keno_payout,
+                         keno_realised_rtp, keno_rtp,
+                         keno_round, parse_keno_selection)
+from demo.arcade import theoretical_rtp as arcade_theoretical_rtp
+from demo.server import DEMO_CATEGORY
 from demo.auth import AuthError
 from demo.payments import (
     PaymentError,
@@ -3121,6 +3130,206 @@ class PgSoftTest(unittest.TestCase):
         self.assertEqual(title_from_slug("lgd-monkey-kg"), "Lgd Monkey Kg")
         self.assertEqual(title_from_slug("win-win-fpc"), "Win Win Fpc")
         self.assertEqual(title_from_slug(""), "")
+
+
+class KenoTest(unittest.TestCase):
+    """Keno: 20 of 80, the hit count pays, and the ladder is derived.
+
+    The reason this game exists at all is in decision 0034: Keno was set
+    aside because it "needs a full paytable to get exactly right". These
+    checks are the answer to that — the ladder is computed from the exact
+    hit distribution and scaled to the house keep, so it cannot be subtly
+    wrong, and the RTP is asserted rather than asserted-in-a-comment.
+    """
+
+    PICK5 = "5:3,17,42,58,71"
+    PICK10 = "10:3,17,42,58,71,4,19,9,12,77"
+
+    # --- the paytable is derived, not typed ------------------------------
+
+    def test_the_ladder_rtp_is_97_percent_at_every_spot_count(self):
+        for spots in range(KENO_MIN_SPOTS, KENO_MAX_SPOTS + 1):
+            self.assertAlmostEqual(
+                keno_rtp(spots), 0.97, places=4,
+                msg=f"{spots} spots pays {keno_rtp(spots):.6f}")
+
+    def test_the_catalog_rtp_is_the_model(self):
+        self.assertAlmostEqual(arcade_theoretical_rtp(KENO_GAME_ID),
+                               0.97, places=4)
+
+    def test_every_extra_hit_doubles_the_payout(self):
+        """The shape is the design: a clean ladder, 2x per extra hit."""
+        for spots in range(2, KENO_MAX_SPOTS + 1):
+            table = keno_paytable(spots)
+            for hits in range(1, spots):
+                self.assertAlmostEqual(
+                    float(table[hits + 1]) / float(table[hits]), 2.0,
+                    places=2,
+                    msg=f"{spots} spots, tier {hits}")
+
+    def test_zero_hits_never_pays(self):
+        """It is the common case, and a tier that paid would have to be
+        worthless per hit while still reading as a win."""
+        for spots in range(KENO_MIN_SPOTS, KENO_MAX_SPOTS + 1):
+            self.assertEqual(keno_multiplier(spots, 0), Fraction(0))
+
+    def test_hit_probabilities_are_exact_and_add_up_to_one(self):
+        for spots in range(1, KENO_MAX_SPOTS + 1):
+            total = sum(keno_hit_probability(spots, k) for k in range(spots + 1))
+            self.assertEqual(total, 1, msg=f"{spots} spots")
+            # the expectation is the textbook one: s * D / N
+            expected = Fraction(spots * KENO_DRAWN, KENO_POOL)
+            got = sum(Fraction(k) * keno_hit_probability(spots, k)
+                      for k in range(spots + 1))
+            self.assertEqual(got, expected, msg=f"{spots} spots")
+
+    def test_one_spot_pays_the_odds_of_one_number(self):
+        """20 of 80 drawn: a single pick lands a quarter of the time."""
+        self.assertEqual(keno_hit_probability(1, 1), Fraction(20, 80))
+        self.assertAlmostEqual(float(keno_multiplier(1, 1)), 3.88, places=2)
+
+    def test_the_realised_rtp_is_reported_and_close_to_the_model(self):
+        """The model is 97%; what a player collects is rounded to the centavo
+        per round, so it sits just under it. Reported, not hidden."""
+        for spots in (1, 5, 10):
+            for stake in (100, 1000):
+                realised = keno_realised_rtp(spots, stake)
+                # round-half-up is unbiased, so this lands on EITHER side of
+                # the model; what must hold is that it is close to it
+                self.assertAlmostEqual(realised, 0.97, delta=0.003,
+                                       msg=f"{spots} spots at {stake}")
+
+    # --- the selection ---------------------------------------------------
+
+    def test_the_selection_parses(self):
+        self.assertEqual(parse_keno_selection(self.PICK5), (5, (3, 17, 42, 58, 71)))
+        # the order the player clicked does not change the round
+        self.assertEqual(parse_keno_selection("5:71,42,17,58,3"), (5, (3, 17, 42, 58, 71)))
+
+    def test_a_bad_selection_is_refused(self):
+        for bad in ("", "garbage", "5:1,2", "5:1,2,3,4,81", "5:1,2,3,4,4",
+                    "0:1", "11:1,2,3,4,5,6,7,8,9,10,11", "5"):
+            with self.assertRaises(ValueError, msg=repr(bad)):
+                parse_keno_selection(bad)
+
+    # --- the draw --------------------------------------------------------
+
+    def test_the_draw_is_deterministic_and_well_formed(self):
+        for round_id in ("a", "b", "c"):
+            drawn = keno_draw(KENO_GAME_ID, round_id)
+            self.assertEqual(len(drawn), KENO_DRAWN)
+            self.assertEqual(len(set(drawn)), KENO_DRAWN)
+            self.assertTrue(all(1 <= n <= KENO_POOL for n in drawn))
+            self.assertEqual(list(drawn), sorted(drawn))
+        self.assertEqual(keno_draw(KENO_GAME_ID, "a"),
+                         keno_draw(KENO_GAME_ID, "a"))
+        self.assertNotEqual(keno_draw(KENO_GAME_ID, "a"),
+                            keno_draw(KENO_GAME_ID, "b"))
+
+    def test_the_round_is_repeatable_from_the_ledger_alone(self):
+        one = keno_round(KENO_GAME_ID, "fixed", self.PICK5, 1000)
+        two = keno_round(KENO_GAME_ID, "fixed", self.PICK5, 1000)
+        self.assertEqual(one, two)
+
+    # --- settlement ------------------------------------------------------
+
+    def test_every_hit_count_pays_exactly_the_ladder(self):
+        """Forced through every tier: the payout is the ladder, not a
+        round-number near it."""
+        base = "5:3,17,42,58,71"
+        paid = {}
+        for i in range(400):
+            result = keno_round(KENO_GAME_ID, f"tier{i}", base, 1000)
+            hits = int(result.symbols[2].split("/")[0])
+            paid.setdefault(hits, result)
+        table = keno_paytable(5)
+        for hits, result in paid.items():
+            expected = keno_payout(1000, table.get(hits, Fraction(0)))
+            self.assertEqual(result.payout_minor, expected,
+                             msg=f"{hits} hits should pay {expected}")
+
+    def test_a_sub_stake_tier_is_a_partial_return_not_a_win(self):
+        """1 hit on 10 spots pays 0.22x. Reporting that as a win would be a
+        lie the panel then displays."""
+        result = keno_round(KENO_GAME_ID, "partial", self.PICK10, 1000)
+        found = False
+        for i in range(600):
+            r = keno_round(KENO_GAME_ID, f"p{i}", self.PICK10, 1000)
+            if r.multiplier not in ("0",) and float(r.multiplier) < 1:
+                self.assertFalse(r.is_win, msg=f"{r.tier} pays {r.multiplier}x")
+                self.assertGreater(r.payout_minor, 0)
+                found = True
+        self.assertTrue(found, "no sub-stake tier appeared; the case is untested")
+
+    def test_a_round_settles_through_the_books(self):
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        player = demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        demo.deposit({"player": player, "amount_minor": 100000, "method": "pix"})
+        before = demo.profile(player)["available_minor"]
+        demo.spin({"player": player, "game_id": KENO_GAME_ID,
+                   "stake_minor": 1000, "selection": self.PICK10,
+                   "round_id": "settle-1"})
+        after = demo.profile(player)["available_minor"]
+        # 1000 staked, and whatever the ladder paid came back
+        self.assertLessEqual(after, before - 1000 + 1000 * 115)
+        self.assertGreaterEqual(after, before - 1000)
+        demo.books.assert_balanced()
+
+    def test_a_missing_selection_is_refused_and_moves_no_money(self):
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        player = demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        demo.deposit({"player": player, "amount_minor": 100000, "method": "pix"})
+        before = demo.profile(player)["available_minor"]
+        with self.assertRaises(Exception):
+            demo.spin({"player": player, "game_id": KENO_GAME_ID,
+                       "stake_minor": 1000, "round_id": "no-sel"})
+        self.assertEqual(demo.profile(player)["available_minor"], before)
+        demo.books.assert_balanced()
+
+    def test_a_round_lands_in_history(self):
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        player = demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        demo.deposit({"player": player, "amount_minor": 100000, "method": "pix"})
+        demo.spin({"player": player, "game_id": KENO_GAME_ID,
+                   "stake_minor": 1000, "selection": self.PICK5,
+                   "round_id": "hist-1"})
+        rounds = demo.history(player)
+        keno = [r for r in rounds if r["game_id"] == KENO_GAME_ID]
+        self.assertEqual(len(keno), 1)
+        self.assertEqual(keno[0]["unit"], keno_round(
+            KENO_GAME_ID, "hist-1", self.PICK5, 1000).unit)
+
+    # --- the catalog row -------------------------------------------------
+
+    def test_it_is_certified_and_listed_under_originais(self):
+        self.assertIn(KENO_GAME_ID, ARCADE_GAME_IDS)
+        self.assertEqual(DEMO_CATEGORY.get(KENO_GAME_ID), "Originais")
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        catalogue = demo.catalog()
+        rows = catalogue["games"] if isinstance(catalogue, dict) else catalogue
+        row = next(r for r in rows if r["game_id"] == KENO_GAME_ID)
+        self.assertEqual(row["provider"], "demo_studio")
+        self.assertEqual(row["rtp"], "97.00")
+        # the cert gate must let it launch, like the other originals
+        self.assertEqual(demo.registry.get(KENO_GAME_ID).status, "certified")
+        # and the cert gate lets it through
+        self.assertIn(KENO_GAME_ID, demo.registry.launchable_ids())
+
 
 
 if __name__ == "__main__":

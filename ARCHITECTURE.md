@@ -33,6 +33,7 @@ operator/
 
 demo/
     ├── server.py            HTTP+JSON API, static serve (web/out → index.html)
+    ├── arcade.py            crash, plinko, mines, dice, keno — sha256 draws, derived ladders
     ├── slot.py              6-tier paytable engine, SHA256 draw; one paytable per title (95.90 / 94.95 / 96.60)
     ├── casino.py            European single-zero roulette: deterministic ball, 35:1 straight, 1:1 even-money, RTP 97.30%
     ├── payments.py          CPF/CNPJ, Pix key, own-name bank, payout, allowlist
@@ -44,7 +45,7 @@ demo/
     ├── pg_proxy.py          PG Soft: a minted trial session, the hosts it
     │                        binds, and the measured money-API endpoints
     ├── index.html           zero-build fallback storefront
-    └── test_demo.py         205 execution checks
+    └── test_demo.py         222 execution checks
 
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier

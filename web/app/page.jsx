@@ -23,6 +23,7 @@ import CrashPanel from "./components/CrashPanel";
 import PlinkoPanel from "./components/PlinkoPanel";
 import MinesPanel from "./components/MinesPanel";
 import DicePanel from "./components/DicePanel";
+import KenoPanel from "./components/KenoPanel";
 
 /** Page shell (F1): owns view routing, view-local UI state and the wallet
  * action handlers; every visual block lives in components/ and shared
@@ -59,6 +60,8 @@ export default function Page() {
   const [minesPicks, setMinesPicks] = useState([]);
   const [diceTarget, setDiceTarget] = useState("50");
   const [diceOver, setDiceOver] = useState(false);
+  const [kenoSpots, setKenoSpots] = useState(5);
+  const [kenoPicks, setKenoPicks] = useState([]);
   const [detailGame, setDetailGame] = useState(null);
   const [favTick, setFavTick] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
@@ -351,7 +354,9 @@ export default function Page() {
           ? `m=${minesCount}:cells=${minesPicks.join(",")}`
           : current === "demo:dados"
             ? `${diceOver ? "over" : "under"}:${diceTarget}`
-            : selection;
+            : current === "demo:keno"
+              ? `${kenoSpots}:${kenoPicks.join(",")}`
+              : selection;
       const row = await api("POST", "/api/spin", {
         player,
         game_id: current,
@@ -567,6 +572,22 @@ export default function Page() {
                   onTarget={setDiceTarget}
                   over={diceOver}
                   onOver={setDiceOver}
+                  lastRow={lastRow}
+                  win={win}
+                  message={message}
+                  stake={stake}
+                  busy={busy}
+                  onStake={setStake}
+                  onSpin={spin}
+                  onClose={() => setCurrent(null)}
+                />
+              ) : currentGame.game_id === "demo:keno" ? (
+                <KenoPanel
+                  game={currentGame}
+                  spots={kenoSpots}
+                  onSpots={setKenoSpots}
+                  picks={kenoPicks}
+                  onPicks={setKenoPicks}
                   lastRow={lastRow}
                   win={win}
                   message={message}

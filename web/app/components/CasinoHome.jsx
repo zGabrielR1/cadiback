@@ -58,6 +58,7 @@ function tone(gameId) {
   if (gameId.includes("roulette") || gameId.includes("blackjack") || gameId.includes("baccarat")) return "t-roy";
   if (gameId.includes("city") || gameId.includes("dead")) return "t-roy";
   if (gameId.includes("dados") || gameId.includes("dice")) return "t-roy";
+  if (gameId.includes("keno")) return "t-neon";
   return "t-neon";
 }
 

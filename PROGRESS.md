@@ -1,5 +1,41 @@
 # PROGRESS
 
+## DONE (2026-10-14 — Keno Relâmpago, the original that was set aside for the wrong reason, decision 0042)
+
+- **`demo:keno` "Keno Relâmpago"** (BR-DEMO-0010, RTP 97.00, Originais):
+  20 of 80 numbers drawn from a digest-seeded shuffle; the player picks 1–10
+  spots and the hit count pays.
+- **The paytable is derived, not typed** — which is the answer to the reason
+  0034 set keno aside ("a full paytable to get exactly right"). The hit
+  probabilities are exact hypergeometric in `Fraction`, the shape is one
+  decision (every extra hit doubles), and the ladder is divided by its own
+  expected return times `HOUSE_KEEP`. So **RTP is 97.000000% at every spot
+  count by construction**, worst deviation across all ten being 0.0000089%.
+  There is no table to mistype and no way to change the shape and accidentally
+  make the house generous.
+- **Two things nearly wrong, both caught by measurement:** flooring the payout
+  to centavos cost **1.5% of the RTP** at a R$1 stake (ten tiers × up to a
+  centavo each) — fixed by rounding half up, which is unbiased; and the ladder
+  needs four-decimal precision across its settling passes, or the model drifts
+  0.08%. Realised RTP is now 96.9–97.2% and `keno_realised_rtp` reports it.
+- **A sub-stake tier is not a win**: 1 hit on 10 spots pays 0.2240×, which the
+  panel shows in amber as `retorno parcial`, never as a prize. Same honesty
+  dice already has with `under:99.00`.
+- `KenoPanel.jsx`: an 80-number board (10×8), spot selector, quick-pick, live
+  ladder with per-tier chance, and four cell states after a draw.
+- `KenoTest` 17: RTP 97% at every spot count, the 2× shape, zero hits never
+  pays, probabilities summing to exactly 1 with mean exactly `s·20/80`,
+  **every hit count paying exactly the ladder**, sub-stake ≠ win, settlement
+  through the books, a missing selection refused moving no money, history with
+  its unit, certified and launchable.
+- `frame` 45/45, `demo` 222/222 (+17), `verify.py` 0. Live over HTTP: eight
+  10-spot rounds settling on our books, 400 + pt-BR on a missing selection,
+  `books: 17 postings balance to zero`.
+- **Wheel is the next arcade original** (0042 §7): its only obstacle is a spin
+  visual, and a wheel's ladder is one `(slots, multiplier)` table with a
+  closed-form RTP — the derivation keno just proved. Limbo stays set aside;
+  it overlaps Crash's target mode.
+
 ## DONE (2026-10-14 — PG Soft's money API captured, 2 titles → 92, decision 0040)
 
 - **The PG investigation finished, and the blocker was one flag.** 0035

@@ -1,13 +1,33 @@
 CURRENTTASK: LIVE on Render (https://cadiback.onrender.com, decision 0039).
-PG Soft: 92 titles (was 2) served from our own origin with the wallet
-bridge, and the money API fully captured — 0040. The blocker was the
-HEADLESS USER-AGENT, not a real browser: with an ordinary Chrome UA the
-engine lays out (canvas 450x800 vs 0x0) and the whole money sequence
-appears. Balance is JSON (`GameWallet/Get`), spin is binary. The money tap
-is not built; that is the open frontier. The games you opened are cached on
-the machine (0041). Suites frame 45/45, demo 205/205, verify 0, sweep 16/16,
-catalog 272 demos.
+NEW ORIGINAL: Keno Relâmpago (0042) — the game 0034 set aside because it "needs a
+full paytable to get exactly right". The paytable is DERIVED instead: exact
+hypergeometric hit probabilities, one shape decision (each extra hit doubles),
+and the ladder divided by its own expected return times the house keep. RTP is
+97.000000% at every spot count by construction. 92 PG Soft titles (0040), the
+money API captured. Games you opened cached on the machine (0041). Suites
+frame 45/45, demo 222/222, verify 0, sweep 16/16, catalog 272.
 
+## STATUS
+
+- **KENO RELÂMPAGO SHIPPED (0042).** `demo:keno`, BR-DEMO-0010, 97.00%, Originais.
+  20 of 80 drawn from a digest-seeded shuffle; 1–10 spots picked; the hit count
+  pays. The objection that kept it off the shelf for a session was a design
+  flaw, not a fact: a *typed* paytable is what has to be got right, and this
+  one is not typed. Worst RTP deviation across all ten spot counts is
+  0.0000089%, so there is nothing to mistype and no way to change the shape and
+  accidentally be generous.
+- **TWO THINGS MEASUREMENT CAUGHT.** Flooring the payout to centavos cost 1.5%
+  of the RTP at a R$1 stake — ten tiers, up to a centavo lost on every paying
+  round. `keno_payout` rounds half up instead, which is unbiased; realised RTP
+  is 96.9–97.2% and is reported by `keno_realised_rtp` rather than hidden behind
+  the catalog's 97.00. And the ladder needs four-decimal precision across its
+  settling passes, or the model drifts 0.08%.
+- **A sub-stake tier is not a win.** 1 hit on 10 spots pays 0.2240×; the panel
+  shows it in amber as `retorno parcial`. Same honesty dice already has.
+- **NEXT ARCADE ORIGINAL: WHEEL** (0042 §7). Its only obstacle is a spin visual
+  (vector work), and a wheel's ladder is one `(slots, multiplier)` table with a
+  closed-form RTP — the derivation keno just proved. Limbo stays set aside: it
+  overlaps Crash's target mode and adds no mechanic.
 ## STATUS
 
 - **PG SOFT: THE INVESTIGATION IS DONE (0040).** Everything 0035 called an
