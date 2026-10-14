@@ -51,8 +51,15 @@ COPY --from=storefront /build/out/ ./web/out/
 # run unprivileged; /data is where the ledger, profiles and rounds live. The
 # backend creates it if the host gives it no volume (free plan), which is why
 # the ledger resets on each deploy there.
-RUN useradd --create-home --shell /bin/false operator \
- && mkdir -p /data && chown -R operator /data /app
+#
+# `groupadd -f` first: Debian ships an `operator` GROUP (systemd's, GID 37), so
+# `useradd operator` on python:3.14-slim fails with "group operator exists"
+# and exit code 9 — the image died at exactly this line on Render, after the
+# storefront had already built. `-f` makes the groupadd idempotent, and `-g`
+# points the user at that group instead of trying to create it again.
+RUN groupadd -f operator \
+ && useradd --create-home --shell /bin/false -g operator operator \
+ && mkdir -p /data && chown -R operator:operator /data /app
 USER operator
 
 EXPOSE 8080

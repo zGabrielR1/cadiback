@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -58,6 +59,14 @@ SERVICE = {
         {"key": "OPERATOR_DATA_DIR", "value": "/data"},
     ],
 }
+
+# The fields that actually decide WHICH builder runs. A service created in the
+# dashboard arrives as Render's Python default — it reads `requirements.txt`,
+# ignores the Dockerfile entirely, and every build dies in seconds with
+# "Could not open requirements file". `runtime` alone does not switch it: the
+# switch is `env`, and the two Dockerfile paths sit beside it.
+DOCKER_BUILD = {"env": "docker", "dockerContext": ".", "dockerfilePath":
+                SERVICE["dockerfilePath"]}
 
 # Files the image must be able to build and run without anything else.
 REQUIRED = ["Dockerfile", ".dockerignore", "render.yaml",
@@ -139,8 +148,14 @@ def check_tree() -> int:
 # of a chat transcript and out of the repository. `setx` is deliberately not
 # offered: a child process inherits its parent's environment, not the
 # registry, so a variable set there never reaches this script.
+#
+# `.env.render` in the repository root is read too, because that is where this
+# machine already keeps it. It is a single line holding the raw key (no
+# `KEY=` prefix), and `.gitignore` excludes it; a `KEY=value` pair is accepted
+# as well so the same file works either way.
 KEY_FILE = os.path.join(os.path.expanduser("~"), ".render_api_key")
 REPO_FILE = os.path.join(os.path.expanduser("~"), ".render_repo")
+ENV_FILE = os.path.join(ROOT, ".env.render")
 
 
 def _first_line(path: str) -> str:
@@ -148,20 +163,64 @@ def _first_line(path: str) -> str:
         return handle.read().strip().splitlines()[0].strip()
 
 
+def _from_env_file(*, want_key: bool) -> str:
+    """The key or the repo out of the repository's own `.env.render`.
+
+    Holds either a bare line or a `NAME=value` pair; the last matching pair
+    wins so the file can carry both credentials and neither can shadow the
+    other by position.
+    """
+    if not os.path.isfile(ENV_FILE):
+        return ""
+    names = ("RENDER_API_KEY",) if want_key else ("RENDER_REPO",)
+    found = ""
+    for line in open(ENV_FILE, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, _, value = line.partition("=")
+        if name.strip() in names and value.strip():
+            found = value.strip()
+    if not found and want_key:
+        # a bare line: the key on its own, which is how this file started
+        line = _first_line(ENV_FILE)
+        found = line if line.startswith("rnd_") else ""
+    return found
+
+
 def read_key() -> str:
-    """The Render API key: environment first, then `~/.render_api_key`."""
-    key = os.environ.get("RENDER_API_KEY", "").strip()
-    if key:
-        return key
-    return _first_line(KEY_FILE) if os.path.isfile(KEY_FILE) else ""
+    """The Render API key: environment, then `.env.render`, then the home file."""
+    for value in (os.environ.get("RENDER_API_KEY", "").strip(),
+                  _from_env_file(want_key=True),
+                  _first_line(KEY_FILE) if os.path.isfile(KEY_FILE) else ""):
+        if value:
+            return value
+    return ""
 
 
 def read_repo() -> str:
-    """The repository Render builds from: environment, or `~/.render_repo`."""
-    repo = os.environ.get("RENDER_REPO", "").strip()
-    if repo:
-        return repo
-    return _first_line(REPO_FILE) if os.path.isfile(REPO_FILE) else ""
+    """The repository Render builds from.
+
+    The git remote this tree already has is the answer far more often than a
+    typed-in URL, so it is consulted before either credential store: a
+    deployment should never disagree with where the code actually lives.
+    """
+    try:
+        result = subprocess.run(["git", "-C", ROOT, "remote", "get-url", "origin"],
+                                capture_output=True, text=True, timeout=20)
+        remote = result.stdout.strip()
+        if result.returncode == 0 and remote.startswith(("https://", "http://",
+                                                        "git@")):
+            return remote.removesuffix(".git").replace("git@github.com:",
+                                                       "https://github.com/")
+    except (OSError, subprocess.SubprocessError):
+        pass
+    for value in (os.environ.get("RENDER_REPO", "").strip(),
+                  _from_env_file(want_key=False),
+                  _first_line(REPO_FILE) if os.path.isfile(REPO_FILE) else ""):
+        if value:
+            return value
+    return ""
 
 
 class RenderError(RuntimeError):
@@ -295,10 +354,10 @@ def configure(service_id: str, key: str) -> dict:
     """
     body = {
         "serviceDetails": {
+            **DOCKER_BUILD,
             "runtime": SERVICE["runtime"],
             "plan": SERVICE["plan"],
             "healthCheckPath": SERVICE["healthCheckPath"],
-            "dockerfilePath": SERVICE["dockerfilePath"],
             "numInstances": 1,
         },
         "envVars": [{"key": item["key"], "value": item["value"]}
@@ -309,7 +368,7 @@ def configure(service_id: str, key: str) -> dict:
 
 
 def create_service(key: str, repo: str, owner: dict) -> dict:
-    body = dict(SERVICE, repo=repo, ownerID=owner["id"])
+    body = {**SERVICE, **DOCKER_BUILD, "repo": repo, "ownerID": owner["id"]}
     body["envVars"] = [{"key": item["key"], "value": item["value"]}
                        for item in SERVICE["envVars"]]
     try:
@@ -318,6 +377,45 @@ def create_service(key: str, repo: str, owner: dict) -> dict:
         raise RenderError(
             f"{exc}\n  Most common cause: the repository must be public, or "
             "connected to this account, and `main` must exist in it.") from exc
+
+
+ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def build_log(service_id: str, key: str, since: str,
+              owner_id: str = "", limit: int = 400) -> list[str]:
+    """The build output of one deploy, newest last, as printable lines.
+
+    A failed build says nothing at all through the API's deploy object — the
+    status is `build_failed` and that is all. The reason is only in the log
+    stream, and reading it here is the difference between "check the
+    dashboard" (needs a browser session) and a deploy report you can read
+    where you are. Only the lines that matter are kept: BuildKit's per-layer
+    churn buries the one line that explains the failure.
+    """
+    if not owner_id:
+        owners = entities(_call("/owners", key), "owner")
+        if not owners:
+            return []
+        owner_id = owners[0]["id"]
+    path = (f"/logs?ownerId={owner_id}&startTime={since}"
+            f"&endTime={_now()}&limit={limit}&direction=forward"
+            f"&resource={service_id}")
+    try:
+        entries = _call(path, key).get("logs", [])
+    except RenderError:
+        return []
+    lines = []
+    for entry in entries:
+        text = ANSI.sub("", entry.get("message", "")).strip()
+        if text and ("ERROR" in text or text.startswith("#") or "error:" in text
+                     or "==>" in text or "DONE" not in text):
+            lines.append(text)
+    return lines
+
+
+def _now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def deploy(service_id: str, key: str) -> str:
@@ -347,8 +445,22 @@ def deploy(service_id: str, key: str) -> str:
             seen = state
         if status.get("status") in ("live", "build_failed", "update_failed",
                                     "canceled", "pre_deploy_in_progress"):
+            if status.get("status") != "live":
+                print_build_failure(service_id, key, trigger.get("createdAt", ""))
             return status["status"]
     return "timeout"
+
+
+def print_build_failure(service_id: str, key: str, since: str) -> None:
+    """Say what the build actually said, not just that it failed."""
+    lines = build_log(service_id, key, since)
+    if not lines:
+        print("build failed and Render returned no build log to explain it "
+              "(read it in the dashboard)")
+        return
+    print("the build said:")
+    for line in lines[-25:]:
+        print("   ", line.encode("ascii", "replace").decode()[:200])
 
 
 def run(key: str, repo: str, force: bool) -> int:
