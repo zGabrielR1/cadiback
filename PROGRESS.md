@@ -1,5 +1,15 @@
 # PROGRESS
 
+## DOING (2026-10-15 — Supabase Postgres + Vercel, decision 0049)
+
+- Schema (`supabase/migrations/`) + seam (`demo/db.py`, `demo/models.py`,
+  `requirements.txt`) landed with files still the default; `DbSeamTest` x4
+  green on scratch SQLite. `web/next.config.js` is env-driven (export by
+  default, proxying server app on Vercel).
+- Blocked on the operator: fill `.env.supabase`, apply the migration, create
+  the Vercel project with `BACKEND_URL`. Then: port stores → Vercel deploy →
+  flip + live-verify. Runbook `docs/supabase.md`.
+
 ## DONE (2026-10-15 — Turnstile on player login and signup, decision 0048)
 
 - **The bot gate (Cloudflare Turnstile).** `POST /api/player/login` and

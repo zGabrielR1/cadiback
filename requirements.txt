@@ -1,0 +1,5 @@
+# Decision 0049: the operator outgrows stdlib-only for persistence.
+# Supabase Postgres via SQLAlchemy (the same seam wall-e already uses);
+# psycopg 3 as the driver. Pinned floors, not ceilings.
+sqlalchemy>=2
+psycopg[binary]>=3

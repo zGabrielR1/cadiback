@@ -1,4 +1,28 @@
-CURRENTTASK: Turnstile (Cloudflare) on the player login and signup surfaces (decision
+CURRENTTASK: Backend state to Supabase Postgres, storefront to Vercel (decision
+0049) — the Python backend and frame/ stay; Postgres becomes their disk and the
+Next.js app moves to Vercel as a proxying server app. Fresh start, no data
+migration (Render free is ephemeral).
+
+## STATUS
+
+- **SCHEMA + SEAM, FILES STILL DEFAULT.** `supabase/migrations/` holds the
+  fourteen tables (one per OPERATOR_DATA_DIR file; ids stay TEXT, money stays
+  BIGINT, idempotency is a PRIMARY KEY). `demo/db.py` (engine/session, wall-e's
+  shape) + `demo/models.py` mirror it; `DbSeamTest` fails if SQL and models
+  drift. `DATABASE_URL` unset means files — nothing reads Postgres yet.
+  Needs: `.env.supabase` filled (`SUPABASE_URL`, keys, `DATABASE_URL`), then
+  apply the migration in the dashboard SQL editor.
+- **VERCEL DESIGN SETTLED.** `web/next.config.js` is env-driven: `output:
+  "export"` stays default (local/Docker/verify untouched); on Vercel it serves
+  as a Node app with `rewrites()` proxying `/api`, `/g`, `/rgs` to
+  `BACKEND_URL` — same-origin preserved, no api.js/CORS/cookie surgery.
+  Needs: Vercel project with `BACKEND_URL`, then the Vercel host joins the
+  Turnstile allowlist + widget Domains. Runbook `docs/supabase.md`.
+- NEXT: port stores one at a time behind `DATABASE_URL`; then Vercel deploy;
+  then flip + live-verify. `requirements.txt` (sqlalchemy, psycopg) ends the
+  stdlib-only container at the cutover — Dockerfile pip step then.
+
+CURRENTTASK (previous): Turnstile (Cloudflare) on the player login and signup surfaces (decision
 0048) — the foundry kit gains a `turnstile` module (the canonical siteverify
 check, stdlib, injected transport) plus a `templates/turnstile/` snippet, and the
 operator gates `POST /api/player/login` and `POST /api/player` on it, with the

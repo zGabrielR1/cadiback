@@ -1935,6 +1935,85 @@ class TurnstileHttpTest(unittest.TestCase):
         self.assertNotIn("anti-bot", body.get("error", ""))
 
 
+class DbSeamTest(unittest.TestCase):
+    """The Postgres seam (decision 0049): env selection plus models that match
+    the migration, proved on a scratch SQLite file — no credentials, no
+    network. Nothing in server.py reads this yet; the seam lands before the
+    first ported store so the shape is proven while files are still default."""
+
+    TABLES = ("players", "users", "sessions", "settings", "promos", "plays",
+              "rounds", "books_postings", "crash_pending", "asaas_charges",
+              "exclusions", "sched_receipts", "sched_counters", "ledger")
+
+    def _scratch(self):
+        from demo.db import make_engine, make_session_factory
+        from demo.models import Base
+        engine = make_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        return make_session_factory(engine)
+
+    def test_postgres_is_opt_in_never_ambient(self):
+        from demo.db import database_url, using_postgres
+        self.assertFalse(using_postgres({}))
+        self.assertFalse(using_postgres({"DATABASE_URL": ""}))
+        self.assertFalse(using_postgres(
+            {"DATABASE_URL": "sqlite:///./dev.db"}))
+        self.assertTrue(using_postgres(
+            {"DATABASE_URL": "postgresql+psycopg://u:p@db.x.co:5432/postgres"}))
+        self.assertEqual(database_url({"DATABASE_URL": "  x  "}), "x")
+
+    def test_models_and_migration_describe_the_same_tables(self):
+        from demo.models import Base
+        self.assertEqual(set(Base.metadata.tables), set(self.TABLES))
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(
+                root, "supabase", "migrations",
+                "20261015000000_operator_schema.sql"),
+                "r", encoding="utf-8") as handle:
+            migration = handle.read()
+        for table in self.TABLES:
+            self.assertIn(f"CREATE TABLE IF NOT EXISTS {table}", migration,
+                          f"migration is missing {table}")
+
+    def test_money_stays_integer_and_idempotency_is_a_constraint(self):
+        from sqlalchemy.exc import IntegrityError
+        from demo.models import BooksPosting, Player
+        session_factory = self._scratch()
+        with session_factory() as session:
+            session.add(Player(
+                player_id="player-1", name="Ana Souza",
+                email="ana.souza@example.com", pw_hash="h", pw_salt="s"))
+            session.add(BooksPosting(
+                key="bet:r1", kind="stake", seq=1,
+                legs=[{"account": "player:balance:player-1",
+                       "amount_minor": -500},
+                      {"account": "bet:staked", "amount_minor": 500}]))
+            session.commit()
+            # the legs still sum to zero — the invariant survives the move
+            row = session.get(BooksPosting, "bet:r1")
+            self.assertEqual(
+                sum(leg["amount_minor"] for leg in row.legs), 0)
+            # a retried POST is a constraint conflict, not a second posting
+            session.add(BooksPosting(
+                key="bet:r1", kind="stake", seq=2, legs=[]))
+            with self.assertRaises(IntegrityError):
+                session.commit()
+
+    def test_rounds_allow_two_rows_per_round_id(self):
+        from demo.models import Round
+        session_factory = self._scratch()
+        with session_factory() as session:
+            session.add(Round(round_id="r1", player="player-1",
+                              game_id="demo:dados", stake_minor=500,
+                              payout_minor=0, tier="pendente", type="sports"))
+            session.add(Round(round_id="r1", player="player-1",
+                              game_id="demo:dados", stake_minor=500,
+                              payout_minor=1000, tier="ganho", type="sports"))
+            session.commit()
+            rows = session.query(Round).filter_by(round_id="r1").all()
+            self.assertEqual(len(rows), 2)
+
+
 class AdminDashboardTest(unittest.TestCase):
     """Painel administrativo: every figure must derive from the stores —
     books for money, round ledger for RTP/leaderboards/series, players

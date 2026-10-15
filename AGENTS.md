@@ -24,6 +24,8 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/asaas.md` | Real Pix via Asaas: credentials, webhook registration, production swap |
 | `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
+| `docs/supabase.md` | Supabase Postgres + Vercel: credentials, env vars, cutover checklist |
+| `supabase/` | Postgres schema as migrations (decision 0049); applied in the dashboard, mirrored by `demo/models.py` |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |
 | `probes/` | Provider demo catalog (272 official games) & live sports fixtures |
 | `scripts/discover_pgsoft_demos.py` | Find live PG Soft titles: mint each candidate, read its slug |
