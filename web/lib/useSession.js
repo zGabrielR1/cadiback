@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 
 /** Shared player-session state (F1): player id, profile, history, health
@@ -16,10 +16,32 @@ export function useSession() {
   // opens a real charge and waits for confirmation; when it does not, the
   // instant demo credit is the honest fallback.
   const [asaasAvailable, setAsaasAvailable] = useState(false);
+  // Public operator settings the storefront adapts to: whether signup
+  // demands the payout account, and whether hidden test accounts may log
+  // in. Fetched on boot so the account modal knows the rules before a
+  // single player logs in.
+  const [serverConfig, setServerConfig] = useState({
+    require_bank_at_signup: false,
+    test_accounts_enabled: true,
+  });
   const [refreshError, setRefreshError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const refreshSeq = useRef(0);
+
+  useEffect(() => {
+    let alive = true;
+    api("GET", "/api/config")
+      .then((cfg) => {
+        if (alive && cfg) setServerConfig(cfg);
+      })
+      .catch(() => {
+        /* keep the safe defaults: bank optional, test accounts on */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!player) return;
@@ -52,6 +74,7 @@ export function useSession() {
     health,
     setHealth,
     asaasAvailable,
+    serverConfig,
     refreshError,
     setRefreshError,
     busy,

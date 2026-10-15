@@ -1,5 +1,38 @@
 # PROGRESS
 
+## DONE (2026-10-15 — Signup without the payout account + hidden test accounts, decision 0046)
+
+- **Signup no longer demands bank/agência/conta.** The Pix key is the payout
+  destination, so the account fields were vestigial friction. `register_player`
+  now treats them as optional, and a new operator setting
+  `require_bank_at_signup` (painel → Configurações do cadastro) restores the old
+  strict behaviour. A *half*-filled account is still validated as a whole the
+  moment any field is touched — worse than none.
+- **Test accounts are invisible and painel-managed.** The visible "Usar conta de
+  teste" button is gone. A test account is an ordinary player row flagged
+  `is_test`; it logs in through the normal email + password door, and the
+  built-in identity is reachable on the storefront only through **Ctrl+Shift+T**
+  while the account modal is open. A second setting `test_accounts_enabled` turns
+  them off entirely (a disabled test account cannot log in — same message, same
+  delay). The painel gains "Contas de teste": list, create, reset password,
+  delete, never exposing salt/hash.
+- **Settings store + public config.** Settings live in a JSON store
+  (`settings.json`), defaults in `SETTINGS_DEFAULTS`; `GET /api/config` (public)
+  and `GET|POST /api/admin/settings` (admin-only, role-gated). `/api/health` also
+  carries `config`.
+- **No auto-fetch from the Pix key** (the owner's ideal): Asaas exposes no DICT
+  lookup for an arbitrary key, and a bank account is not derivable from an
+  email/CPF/EVP key. The honest resolution is that the account is optional,
+  because the payout already follows the key.
+- **`SignupSettingsTest` x6**: defaults; optional-vs-required; a partial account
+  refused; settings admin-only and persistent across a restart; test accounts
+  flagged, listed without secrets, blocked when disabled, reset, deleted;
+  test accounts exempt from the signup rule; the test-account doors are
+  admin-only. `frame` 45/45, `demo` 258/258, `verify.py` 0. The HTTP routes were
+  smoked live too (config, a settings flip reflected publicly, signup with and
+  without the account, create/list/login/reset/delete test account, viewer
+  refusal).
+
 ## DONE (2026-10-15 — Asaas Pix rail: a real charge, confirmed before a centavo posts, decision 0045)
 
 - **Real Pix, or the instant demo credit — never both halves of each.** When

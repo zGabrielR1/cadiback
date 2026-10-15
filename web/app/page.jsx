@@ -33,7 +33,8 @@ export default function Page() {
   const session = useSession();
   const {
     player, setPlayer, profile,
-    history, health, asaasAvailable, refreshError, busy, setBusy, refresh,
+    history, health, asaasAvailable, serverConfig,
+    refreshError, busy, setBusy, refresh,
   } = session;
 
   const [theme, setTheme] = useState("dark");
@@ -76,7 +77,8 @@ export default function Page() {
   const [cashTab, setCashTab] = useState("dep");
   const [acctOpen, setAcctOpen] = useState(false);
   // No pre-filled credentials: the form starts empty and both sides
-  // validate. The Ana test identity lives behind "Usar conta de teste".
+  // validate. The built-in test identity is invisible on the storefront
+  // and reachable only through the Ctrl+Shift+T shortcut in the modal.
   const [authMode, setAuthMode] = useState("login");
   const [authErrors, setAuthErrors] = useState({});
   const [form, setForm] = useState({
@@ -335,9 +337,11 @@ export default function Page() {
     if (player) refresh();
   }, [player, refresh]);
 
-  // Test identity for development: one click fills the Ana account
-  // (email ana.souza@example.com, CPF 529.982.247-25, senha ana1234).
-  // Register it once and it persists in the players store afterwards.
+  // Test identity for development, behind the Ctrl+Shift+T shortcut in
+  // the account modal (invisible to normal users). One press fills the Ana
+  // account (email ana.souza@example.com, CPF 529.982.247-25, senha
+  // ana1234). Register it once and it persists in the players store; the
+  // painel can also create and reset test accounts.
   const fillTestAccount = () => {
     setAuthErrors({});
     if (authMode === "login") {
@@ -386,14 +390,21 @@ export default function Page() {
       if (p) errs.password = p;
       if (!String(form.pix_key || "").trim())
         errs.pix_key = "informe sua chave Pix";
-      if (
-        !String(form.bank_code || "").trim() ||
-        !String(form.agency || "").trim() ||
-        !String(form.account || "").trim()
-      )
-        errs.bank = "informe banco, agência e conta";
-      if (!String(form.holder_name || "").trim())
-        errs.holder_name = "informe o titular da conta";
+      // the payout account is optional unless the operator demands it, but
+      // a half-filled account is worse than none: validate it as a whole
+      // the moment any field is touched
+      const bankFields = ["bank_code", "agency", "account", "holder_name"];
+      const anyBank = bankFields.some((k) => String(form[k] || "").trim());
+      if (serverConfig.require_bank_at_signup || anyBank) {
+        if (
+          !String(form.bank_code || "").trim() ||
+          !String(form.agency || "").trim() ||
+          !String(form.account || "").trim()
+        )
+          errs.bank = "informe banco, agência e conta";
+        if (!String(form.holder_name || "").trim())
+          errs.holder_name = "informe o titular da conta";
+      }
     }
     setAuthErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -849,6 +860,8 @@ export default function Page() {
         form={form}
         errors={authErrors}
         busy={busy}
+        requireBank={!!serverConfig.require_bank_at_signup}
+        testAccountsEnabled={!!serverConfig.test_accounts_enabled}
         onForm={(next) => {
           setForm(next);
           setAuthErrors({});

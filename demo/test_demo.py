@@ -1535,6 +1535,164 @@ class PlayerAuthTest(unittest.TestCase):
                                     "password": "qualquer1"})
 
 
+class SignupSettingsTest(unittest.TestCase):
+    """The payout account at signup is an operator setting, and test
+    accounts are hidden player rows the painel manages. Both live in the
+    settings store and are admin-only to flip."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+        }
+        body.update(over)
+        return body
+
+    def _admin(self):
+        return self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+
+    def _viewer(self):
+        admin = self._admin()
+        self.demo.admin_create_user(admin, {"username": "ana",
+                                            "password": "segura42",
+                                            "role": "viewer"})
+        return self.demo.auth_login(
+            {"username": "ana", "password": "segura42"})["token"]
+
+    def test_defaults_are_no_bank_and_test_accounts_on(self):
+        view = self.demo.settings_view()
+        self.assertFalse(view["require_bank_at_signup"])
+        self.assertTrue(view["test_accounts_enabled"])
+
+    def test_bank_optional_unless_the_operator_requires_it(self):
+        # default: signup without the payout account succeeds
+        profile = self.demo.register_player(self._payload())
+        self.assertEqual(profile["email"], "ana.souza@example.com")
+        with open(self.demo.players.path, "r", encoding="utf-8") as fh:
+            stored = json.load(fh)[profile["player_id"]]
+        self.assertFalse(any(stored["bank"].values()))
+
+        # a supplied-but-incomplete account is still refused
+        with self.assertRaises((ValueError, PaymentError)):
+            self.demo.register_player(self._payload(
+                email="outro@example.com", cpf="111.444.777-35",
+                bank={"bank_code": "001", "agency": "1234"}))
+
+        # flip the setting on: signup now demands a complete account
+        self.demo.admin_update_settings(
+            self._admin(), {"require_bank_at_signup": True})
+        with self.assertRaises(PaymentError):
+            self.demo.register_player(self._payload(
+                email="outro@example.com", cpf="111.444.777-35"))
+        ok = self.demo.register_player(self._payload(
+            email="outro@example.com", cpf="111.444.777-35",
+            bank={"bank_code": "001", "agency": "1234",
+                  "account": "56789-0", "holder_name": "Ana Souza"}))
+        self.assertEqual(ok["email"], "outro@example.com")
+
+    def test_settings_are_admin_only_and_persist(self):
+        admin = self._admin()
+        viewer = self._viewer()
+        with self.assertRaises(AuthError):
+            self.demo.admin_settings(viewer)
+        with self.assertRaises(AuthError):
+            self.demo.admin_update_settings(
+                viewer, {"test_accounts_enabled": False})
+        out = self.demo.admin_update_settings(
+            admin, {"test_accounts_enabled": False})
+        self.assertFalse(out["settings"]["test_accounts_enabled"])
+        with self.assertRaises(ValueError):
+            self.demo.admin_update_settings(admin, {})
+        # a fresh Demo over the same dir reads the flip back
+        again = Demo(data_dir=self.tmp)
+        self.assertFalse(again.settings_view()["test_accounts_enabled"])
+
+    def test_test_accounts_are_hidden_flagged_rows(self):
+        admin = self._admin()
+        # a regular account is never a test account
+        real = self.demo.register_player(self._payload(
+            email="real@example.com", cpf="111.444.777-35"))
+        self.assertFalse(real.get("is_test"))
+        self.assertTrue(real.get("created_at"))
+        self.assertEqual(self.demo.admin_test_accounts(admin)["test_accounts"],
+                         [])
+        with self.assertRaises(ValueError):
+            self.demo.admin_delete_test_account(
+                admin, {"player_id": real["player_id"]})
+
+        # a created test account is flagged, listed without secrets, and
+        # cannot log in while test accounts are disabled
+        self.demo.admin_update_settings(admin, {"test_accounts_enabled": False})
+        self.demo.admin_create_test_account(admin, self._payload())
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "ana1234"})
+        self.demo.admin_update_settings(admin, {"test_accounts_enabled": True})
+        out = self.demo.login_player({"identifier": "529.982.247-25",
+                                      "password": "ana1234"})
+        self.assertTrue(out.get("is_test"))
+        listing = self.demo.admin_test_accounts(admin)["test_accounts"]
+        self.assertEqual(len(listing), 1)
+        self.assertEqual(listing[0]["email"], "ana.souza@example.com")
+        self.assertTrue(all("pw_hash" not in r and "pw_salt" not in r
+                            for r in listing))
+
+        # reset the credential: the old one dies, the new one works
+        pid = listing[0]["player_id"]
+        self.demo.admin_reset_test_password(
+            admin, {"player_id": pid, "password": "nova1234"})
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "ana1234"})
+        self.demo.login_player({"identifier": "ana.souza@example.com",
+                                "password": "nova1234"})
+
+        # delete it: gone from the store, gone from login
+        self.demo.admin_delete_test_account(admin, {"player_id": pid})
+        self.assertEqual(self.demo.admin_test_accounts(admin)["test_accounts"],
+                         [])
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "nova1234"})
+        with self.assertRaises(ValueError):
+            self.demo.admin_reset_test_password(
+                admin, {"player_id": "player-nope", "password": "nova1234"})
+
+    def test_test_accounts_are_exempt_from_the_signup_bank_rule(self):
+        admin = self._admin()
+        self.demo.admin_update_settings(
+            admin, {"require_bank_at_signup": True})
+        # the public door now demands the account...
+        with self.assertRaises(PaymentError):
+            self.demo.register_player(self._payload(
+                email="pub@example.com", cpf="111.444.777-35"))
+        # ...but the painel can still mint a test account without one
+        out = self.demo.admin_create_test_account(admin, self._payload())
+        self.assertTrue(out["created"]["player_id"])
+        self.assertEqual(
+            len(self.demo.admin_test_accounts(admin)["test_accounts"]), 1)
+
+    def test_test_account_doors_are_admin_only(self):
+        viewer = self._viewer()
+        with self.assertRaises(AuthError):
+            self.demo.admin_test_accounts(viewer)
+        with self.assertRaises(AuthError):
+            self.demo.admin_create_test_account(viewer, self._payload())
+        with self.assertRaises(AuthError):
+            self.demo.admin_reset_test_password(
+                viewer, {"player_id": "x", "password": "nova1234"})
+        with self.assertRaises(AuthError):
+            self.demo.admin_delete_test_account(viewer, {"player_id": "x"})
+
+
 class AdminDashboardTest(unittest.TestCase):
     """Painel administrativo: every figure must derive from the stores —
     books for money, round ledger for RTP/leaderboards/series, players

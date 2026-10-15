@@ -1,4 +1,32 @@
-CURRENTTASK: Asaas Pix rail landed in the operator (decision 0045) — real Pix
+CURRENTTASK: Signup friction removed + test accounts hidden (decision 0046) — a
+player signs up without bank/agência/conta (Pix settles to the key), the
+operator can demand it again with a painel toggle, and the visible test-account
+button became a Ctrl+Shift+T secret plus painel-managed test accounts. Shipped
+and deployed to Render.
+
+## STATUS
+
+- **SIGNUP: THE PAYOUT ACCOUNT IS OPTIONAL (0046).** `register_player(payload,
+  *, is_test=False)` requires the account only while the operator's
+  `require_bank_at_signup` is on; any supplied account is still fully validated
+  (own-name rule). New JSON settings store (`settings.json`,
+  `SETTINGS_DEFAULTS`), public `GET /api/config`, admin-only
+  `GET|POST /api/admin/settings`, and `config` on `/api/health`. The storefront
+  reads the flag at boot and the account modal adapts.
+- **TEST ACCOUNTS ARE INVISIBLE (0046).** The "Usar conta de teste" button is
+  gone. A test account is a player row flagged `is_test`, logs in normally, and
+  is reachable on the storefront only through Ctrl+Shift+T in the account modal.
+  `test_accounts_enabled` turns them off entirely. The painel manages them:
+  list / create / reset password / delete, no secrets exposed. Test accounts are
+  exempt from the signup bank rule.
+- **No auto-fetch from the Pix key** (the owner's ideal): Asaas has no DICT
+  lookup and a bank account cannot be derived from an email/CPF/EVP key — so the
+  account is optional instead, because the payout already follows the key.
+- Suites frame 45/45, demo 258/258 (+6), verify 0. The live HTTP routes were
+  smoked (config, settings flip, signup with/without bank, create/list/login/
+  reset/delete test account, viewer refusal). Deployed to Render.
+
+CURRENTTASK (previous): Asaas Pix rail landed in the operator (decision 0045) — real Pix
 when configured, provider-confirmed before any centavo posts, instant demo
 credit otherwise. Sandbox; the webhook is registered after the deploy.
 

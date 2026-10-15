@@ -94,6 +94,31 @@ export default function AdminPanel({ session, onSession }) {
   const [userMsg, setUserMsg] = useState("");
   const [userError, setUserError] = useState("");
 
+  // operator settings + test accounts (admin)
+  const [settings, setSettings] = useState(null);
+  const [settingsMsg, setSettingsMsg] = useState("");
+  const [settingsError, setSettingsError] = useState("");
+  const [testAccounts, setTestAccounts] = useState(null);
+  const [tName, setTName] = useState("");
+  const [tEmail, setTEmail] = useState("");
+  const [tCpf, setTCpf] = useState("");
+  const [tPix, setTPix] = useState("");
+  const [tPass, setTPass] = useState("");
+  const [resetTest, setResetTest] = useState("");
+  const [resetTestPass, setResetTestPass] = useState("");
+  const [testMsg, setTestMsg] = useState("");
+  const [testError, setTestError] = useState("");
+
+  const refreshTestAccounts = async () => {
+    try {
+      const list = await api("GET", "/api/admin/test-accounts");
+      setTestAccounts(list.test_accounts);
+      setTestError("");
+    } catch (e) {
+      setTestError(e.message);
+    }
+  };
+
   const refreshUsers = async () => {
     try {
       const list = await api("GET", "/api/admin/users");
@@ -108,6 +133,8 @@ export default function AdminPanel({ session, onSession }) {
     if (!session) {
       setData(null);
       setUsers(null);
+      setSettings(null);
+      setTestAccounts(null);
       return undefined;
     }
     let alive = true;
@@ -124,6 +151,18 @@ export default function AdminPanel({ session, onSession }) {
             if (alive) setUsers(list.users);
           } catch (e) {
             if (alive) setUserError(e.message);
+          }
+          try {
+            const cfg = await api("GET", "/api/admin/settings");
+            if (alive) setSettings(cfg.settings);
+          } catch (e) {
+            if (alive) setSettingsError(e.message);
+          }
+          try {
+            const accs = await api("GET", "/api/admin/test-accounts");
+            if (alive) setTestAccounts(accs.test_accounts);
+          } catch (e) {
+            if (alive) setTestError(e.message);
           }
         }
       } catch (e) {
@@ -252,6 +291,89 @@ export default function AdminPanel({ session, onSession }) {
       await refreshUsers();
     } catch (e) {
       setUserError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveSetting = async (key, value) => {
+    setSettingsMsg("");
+    setSettingsError("");
+    setBusy(true);
+    try {
+      const out = await api("POST", "/api/admin/settings", { [key]: value });
+      setSettings(out.settings);
+      setSettingsMsg("Configuração salva.");
+    } catch (e) {
+      setSettingsError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doCreateTestAccount = async () => {
+    setTestMsg("");
+    setTestError("");
+    setBusy(true);
+    try {
+      await api("POST", "/api/admin/test-accounts", {
+        name: tName.trim(),
+        email: tEmail.trim(),
+        cpf: tCpf.trim(),
+        password: tPass,
+        pix_key: tPix.trim(),
+      });
+      setTestMsg(`Conta de teste ${tEmail.trim()} criada.`);
+      setTName("");
+      setTEmail("");
+      setTCpf("");
+      setTPix("");
+      setTPass("");
+      await refreshTestAccounts();
+    } catch (e) {
+      setTestError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doResetTestPassword = async () => {
+    setTestMsg("");
+    setTestError("");
+    if (!resetTest) {
+      setTestError("escolha uma conta de teste");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api("POST", "/api/admin/test-accounts/reset", {
+        player_id: resetTest,
+        password: resetTestPass,
+      });
+      setTestMsg("Senha da conta de teste redefinida.");
+      setResetTest("");
+      setResetTestPass("");
+      await refreshTestAccounts();
+    } catch (e) {
+      setTestError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doDeleteTestAccount = async (playerId, email) => {
+    setTestMsg("");
+    setTestError("");
+    if (!window.confirm(`Remover a conta de teste ${email}?`)) return;
+    setBusy(true);
+    try {
+      await api("POST", "/api/admin/test-accounts/delete", {
+        player_id: playerId,
+      });
+      setTestMsg(`Conta de teste ${email} removida.`);
+      await refreshTestAccounts();
+    } catch (e) {
+      setTestError(e.message);
     } finally {
       setBusy(false);
     }
@@ -860,6 +982,228 @@ export default function AdminPanel({ session, onSession }) {
           {userError ? (
             <p className="err" style={{ fontSize: 13, marginTop: 10 }}>
               {userError}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* operator settings — admins only */}
+      {session.role === "admin" ? (
+        <section className="panel" style={{ marginTop: 16 }}>
+          <h2>Configurações do cadastro</h2>
+          <p className="sub">
+            Regras do cadastro de jogadores. O saque cai na chave Pix, então
+            os dados bancários são opcionais por padrão.
+          </p>
+          <label
+            style={{ display: "flex", gap: 8, alignItems: "flex-start" }}
+          >
+            <input
+              type="checkbox"
+              checked={!!(settings && settings.require_bank_at_signup)}
+              disabled={busy || !settings}
+              onChange={(e) =>
+                saveSetting("require_bank_at_signup", e.target.checked)
+              }
+              style={{ width: "auto", marginTop: 3 }}
+            />
+            <span>
+              Exigir banco / agência / conta no cadastro
+              <br />
+              <span className="sub" style={{ fontSize: 12 }}>
+                Desligado: o jogador entra só com nome, email, CPF, senha e
+                chave Pix, e pode completar os dados depois.
+              </span>
+            </span>
+          </label>
+          <label
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-start",
+              marginTop: 12,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={!!(settings && settings.test_accounts_enabled)}
+              disabled={busy || !settings}
+              onChange={(e) =>
+                saveSetting("test_accounts_enabled", e.target.checked)
+              }
+              style={{ width: "auto", marginTop: 3 }}
+            />
+            <span>
+              Habilitar contas de teste
+              <br />
+              <span className="sub" style={{ fontSize: 12 }}>
+                Desligado: contas de teste não entram, mesmo com a senha
+                certa.
+              </span>
+            </span>
+          </label>
+          {settingsMsg ? (
+            <p className="ok" style={{ fontSize: 13, marginTop: 10 }}>
+              {settingsMsg}
+            </p>
+          ) : null}
+          {settingsError ? (
+            <p className="err" style={{ fontSize: 13, marginTop: 10 }}>
+              {settingsError}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* test accounts — admins only */}
+      {session.role === "admin" ? (
+        <section className="panel" style={{ marginTop: 16 }}>
+          <h2>Contas de teste</h2>
+          <p className="sub">
+            Contas invisíveis no site, para testes. Entram pelo login normal
+            (email + senha). No site, com a janela de conta aberta,
+            Ctrl+Shift+T preenche a identidade de teste embutida.
+          </p>
+
+          <table className="hist">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>CPF</th>
+                <th>Pix</th>
+                <th>Criada</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(testAccounts || []).map((a) => (
+                <tr key={a.player_id}>
+                  <td>{a.name}</td>
+                  <td>{a.email}</td>
+                  <td>{a.cpf_masked}</td>
+                  <td>{a.pix_masked}</td>
+                  <td>{(a.created_at || "").slice(0, 10)}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <button
+                      className="ghost"
+                      style={{
+                        width: "auto",
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        marginRight: 6,
+                      }}
+                      onClick={() => {
+                        setResetTest(a.player_id);
+                        setResetTestPass("");
+                        setTestError("");
+                        setTestMsg("");
+                      }}
+                    >
+                      Redefinir
+                    </button>
+                    <button
+                      className="danger"
+                      style={{ width: "auto", padding: "4px 10px", fontSize: 12 }}
+                      onClick={() => doDeleteTestAccount(a.player_id, a.email)}
+                    >
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {(testAccounts || []).length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ color: "var(--mut)" }}>
+                    Nenhuma conta de teste.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+
+          <div className="admin-cols" style={{ marginTop: 14 }}>
+            <div>
+              <b style={{ fontSize: 13 }}>Criar conta de teste</b>
+              <Field
+                id="ta-name"
+                label="Nome completo"
+                value={tName}
+                onChange={(e) => setTName(e.target.value)}
+              />
+              <Field
+                id="ta-email"
+                label="Email"
+                value={tEmail}
+                onChange={(e) => setTEmail(e.target.value)}
+              />
+              <Field
+                id="ta-cpf"
+                label="CPF"
+                value={tCpf}
+                onChange={(e) => setTCpf(e.target.value)}
+              />
+              <Field
+                id="ta-pix"
+                label="Chave Pix"
+                value={tPix}
+                onChange={(e) => setTPix(e.target.value)}
+              />
+              <Field
+                id="ta-pass"
+                label="Senha"
+                type="password"
+                value={tPass}
+                onChange={(e) => setTPass(e.target.value)}
+              />
+              <button
+                disabled={busy}
+                style={{ marginTop: 12 }}
+                onClick={doCreateTestAccount}
+              >
+                Criar conta de teste
+              </button>
+            </div>
+            <div>
+              <b style={{ fontSize: 13 }}>Redefinir senha</b>
+              <label htmlFor="ta-reset">Conta</label>
+              <select
+                id="ta-reset"
+                value={resetTest}
+                onChange={(e) => setResetTest(e.target.value)}
+              >
+                <option value="">— escolha —</option>
+                {(testAccounts || []).map((a) => (
+                  <option key={a.player_id} value={a.player_id}>
+                    {a.email}
+                  </option>
+                ))}
+              </select>
+              <Field
+                id="ta-reset-pass"
+                label="Nova senha"
+                type="password"
+                value={resetTestPass}
+                onChange={(e) => setResetTestPass(e.target.value)}
+              />
+              <button
+                disabled={busy}
+                style={{ marginTop: 12 }}
+                onClick={doResetTestPassword}
+              >
+                Redefinir senha
+              </button>
+            </div>
+          </div>
+
+          {testMsg ? (
+            <p className="ok" style={{ fontSize: 13, marginTop: 10 }}>
+              {testMsg}
+            </p>
+          ) : null}
+          {testError ? (
+            <p className="err" style={{ fontSize: 13, marginTop: 10 }}>
+              {testError}
             </p>
           ) : null}
         </section>

@@ -1,22 +1,51 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 /** Player login + registration (Entrar / Criar conta). Real-site shape:
  * login takes email-or-CPF plus password; registration takes name, email,
- * CPF, password and the payout details. Every field is validated here and
- * again on the server (demo/payments.py + Demo.register_player); the page
- * owns the form state and the submit, this modal only renders. */
+ * CPF, password, the Pix key and — only when the operator requires it —
+ * the payout account. Every field is validated here and again on the
+ * server (demo/payments.py + Demo.register_player); the page owns the
+ * form state and the submit, this modal only renders.
+ *
+ * Test accounts are invisible: there is no button. Ctrl+Shift+T while the
+ * modal is open fills the built-in test identity, and only while the
+ * operator's test_accounts_enabled setting is on. */
 export default function AccountModal({
   open,
   mode,
   form,
   errors,
   busy,
+  requireBank = false,
+  testAccountsEnabled = false,
   onForm,
   onMode,
   onSubmit,
   onFillTest,
   onClose,
 }) {
+  const [secretFilled, setSecretFilled] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setSecretFilled(false);
+      return undefined;
+    }
+    const onKey = (event) => {
+      if (!testAccountsEnabled) return;
+      if (event.ctrlKey && event.shiftKey &&
+          (event.key === "T" || event.key === "t")) {
+        event.preventDefault();
+        onFillTest();
+        setSecretFilled(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, testAccountsEnabled, onFillTest]);
+
   if (!open) return null;
   const isLogin = mode !== "register";
   const field = (id, label, props, hint) => (
@@ -105,7 +134,9 @@ export default function AccountModal({
               autoComplete: "off",
               placeholder: "CPF, email, telefone ou EVP",
             })}
-            <label htmlFor="bank">Banco / Agência / Conta</label>
+            <label htmlFor="bank">
+              Banco / Agência / Conta{requireBank ? "" : " (opcional)"}
+            </label>
             <div className="tri">
               <input
                 id="bank"
@@ -133,12 +164,21 @@ export default function AccountModal({
               <p className="ferr" role="alert">
                 {errors.bank}
               </p>
-            ) : null}
-            {field("holder", "Titular da Conta", {
-              name: "holder_name",
-              autoComplete: "name",
-              placeholder: "Igual ao nome da conta",
-            })}
+            ) : requireBank ? null : (
+              <p className="fhint">
+                Opcional — o saque cai na sua chave Pix. Preencha só se
+                quiser (e o titular deve ser você).
+              </p>
+            )}
+            {field(
+              "holder",
+              requireBank ? "Titular da Conta" : "Titular da Conta (opcional)",
+              {
+                name: "holder_name",
+                autoComplete: "name",
+                placeholder: "Igual ao nome da conta",
+              }
+            )}
           </>
         )}
         {errors._ ? (
@@ -153,20 +193,19 @@ export default function AccountModal({
         >
           {busy ? "Aguarde…" : isLogin ? "Entrar" : "Criar conta e entrar"}
         </button>
+        {secretFilled ? (
+          <p className="fhint" style={{ marginTop: 8 }} role="status">
+            {isLogin
+              ? "Conta de teste preenchida — envie para entrar."
+              : "Conta de teste preenchida — crie a conta para entrar."}
+          </p>
+        ) : null}
         <button
           className="ghost"
           style={{ width: "100%", marginTop: 8 }}
           onClick={() => onMode(isLogin ? "register" : "login")}
         >
           {isLogin ? "Ainda não tenho conta — criar" : "Já tenho conta — entrar"}
-        </button>
-        <button
-          className="ghost"
-          style={{ width: "100%", marginTop: 8 }}
-          onClick={onFillTest}
-          title="Preenche a conta de teste (Ana) para desenvolvimento"
-        >
-          Usar conta de teste
         </button>
         <button
           className="ghost"

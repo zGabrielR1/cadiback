@@ -50,6 +50,7 @@ from frame.wallet.books import (
 )
 
 from .payments import (
+    PaymentError,
     check_deposit_method,
     classify_pix_key,
     mask_pix_key,
@@ -422,6 +423,20 @@ class Store:
             os.replace(tmp, self.path)
 
 
+# Operator settings the painel can flip. They are product decisions, not
+# code changes, so they live in their own JSON store with these defaults.
+SETTINGS_DEFAULTS = {
+    # With this off a player signs up with name/email/CPF/password/Pix key
+    # only; the payout bank account is optional (Pix settles to the key, so
+    # the account fields are for the operator's records, not the payout).
+    "require_bank_at_signup": False,
+    # Test accounts are ordinary player rows flagged is_test: invisible on
+    # the storefront and reachable only through a hidden shortcut. With this
+    # off they cannot log in at all.
+    "test_accounts_enabled": True,
+}
+
+
 class Demo:
     def __init__(self, data_dir: str = DATA) -> None:
         os.makedirs(data_dir, exist_ok=True)
@@ -445,6 +460,9 @@ class Demo:
         self.rounds_path = os.path.join(data_dir, "rounds.jsonl")
         self.ledger_path = os.path.join(data_dir, "ledger.jsonl")
         self.promos = Store(os.path.join(data_dir, "promos.json"))
+        # painel-flippable operator settings (require_bank_at_signup,
+        # test_accounts_enabled) — see SETTINGS_DEFAULTS
+        self.settings = Store(os.path.join(data_dir, "settings.json"))
         self.wallet_tokens: dict[str, dict] = {}
         # RGS session id -> our wallet token, per provider: only the
         # first call carries our token, later ones name the session
@@ -516,6 +534,26 @@ class Demo:
         self.pix_keys = {pid: row["pix_raw"] for pid, row
                          in self.players.read_all().items()
                          if row.get("pix_raw")}
+
+    # ---- operator settings (painel-flippable) ----
+    def settings_view(self) -> dict:
+        """Typed view of the operator settings, defaults filled in. The
+        store only holds what an admin flipped, so a fresh install reads
+        the defaults and a truncated file never crashes the server."""
+        row = self.settings.read_all()
+        out = dict(SETTINGS_DEFAULTS)
+        if isinstance(row, dict):
+            for key in SETTINGS_DEFAULTS:
+                if key in row:
+                    out[key] = bool(row[key])
+        return out
+
+    def _set_setting(self, key: str, value: bool) -> None:
+        data = self.settings.read_all()
+        if not isinstance(data, dict):
+            data = {}
+        data[key] = bool(value)
+        self.settings.write_all(data)
 
     def _exclusions_path(self) -> str:
         return os.path.join(os.path.dirname(self.players.path), "exclusions.json")
@@ -606,10 +644,18 @@ class Demo:
         profile["available_minor"] = self.books.available(player_id)
         return profile
 
-    def register_player(self, payload: dict) -> dict:
-        """Strict account creation: name + email + CPF + password + payout
-        details, every field validated. One wallet per CPF and one per
-        email — a duplicate is a login hint, not an overwrite."""
+    def register_player(self, payload: dict, *, is_test: bool = False) -> dict:
+        """Strict account creation: name + email + CPF + password + Pix
+        key, every field validated. One wallet per CPF and one per email —
+        a duplicate is a login hint, not an overwrite.
+
+        The payout bank account is optional: Pix settles to the key, so it
+        is demanded at signup only while the operator's
+        ``require_bank_at_signup`` is on. When any of the account fields is
+        supplied the whole account is validated (own-name rule included).
+        ``is_test`` marks a hidden test account; test accounts are exempt
+        from the signup requirement (the operator creates them) and are
+        refused at login while ``test_accounts_enabled`` is off."""
         name = (payload.get("name") or "").strip()
         if len(name) < 2:
             raise ValueError("informe seu nome completo")
@@ -618,10 +664,18 @@ class Demo:
         password = validate_player_password(payload.get("password") or "")
         pix = classify_pix_key(payload.get("pix_key") or "")
         bank = payload.get("bank") or {}
-        validate_bank_account(
-            bank.get("bank_code"), bank.get("agency"),
-            bank.get("account"), bank.get("holder_name"), name,
-        )
+        has_bank = any(str(bank.get(field) or "").strip()
+                       for field in ("bank_code", "agency", "account",
+                                     "holder_name"))
+        if has_bank:
+            validate_bank_account(
+                bank.get("bank_code"), bank.get("agency"),
+                bank.get("account"), bank.get("holder_name"), name,
+            )
+        elif not is_test and self.settings_view()["require_bank_at_signup"]:
+            # the requirement is about *public* signup friction; an account
+            # the operator creates in the painel is exempt from it
+            raise PaymentError("informe banco, agência, conta e titular")
         player_id = "player-" + slug("wallet", cpf)[:24]
         data = self.players.read_all()
         if player_id in data:
@@ -630,6 +684,7 @@ class Demo:
             if isinstance(other, dict) and str(other.get("email") or "") == email:
                 raise ValueError("este email já tem conta — entre com sua senha")
         salt = secrets.token_hex(16)
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         data[player_id] = {
             "player_id": player_id,
             "name": name,
@@ -644,8 +699,11 @@ class Demo:
                 "bank_code": bank.get("bank_code"),
                 "agency": bank.get("agency"),
                 "account": bank.get("account"),
+                "holder_name": bank.get("holder_name"),
             },
-            "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "is_test": bool(is_test),
+            "created_at": now,
+            "updated_at": now,
         }
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
@@ -682,6 +740,12 @@ class Demo:
             time.sleep(0.25)
             raise ValueError("email/CPF ou senha inválidos")
         self.exclusions.assert_playable(player_id)
+        if record.get("is_test") and \
+                not self.settings_view()["test_accounts_enabled"]:
+            # a disabled test account is just an account that cannot log in:
+            # same message, same delay, nothing special to probe
+            time.sleep(0.25)
+            raise ValueError("email/CPF ou senha inválidos")
         return self.profile(player_id)
 
     def _public_profile(self, player_id: str, row: dict) -> dict:
@@ -2054,6 +2118,74 @@ class Demo:
         self._save_sessions()
         return {"deleted": target}
 
+    # ---- operator settings & test accounts (painel) ----
+    def admin_settings(self, token: str) -> dict:
+        self._require_admin(token)
+        return {"settings": self.settings_view()}
+
+    def admin_update_settings(self, token: str, body: dict) -> dict:
+        admin = self._require_admin(token)
+        patch = {key: bool(body.get(key))
+                 for key in SETTINGS_DEFAULTS if key in (body or {})}
+        if not patch:
+            raise ValueError("nenhuma configuração informada")
+        for key, value in patch.items():
+            self._set_setting(key, value)
+        return {"settings": self.settings_view(), "by": admin["username"]}
+
+    def admin_test_accounts(self, token: str) -> dict:
+        """Test accounts are ordinary player rows flagged is_test. The
+        panel lists them without ever exposing salt/hash or plaintext."""
+        self._require_admin(token)
+        rows = []
+        for player_id, row in self.players.read_all().items():
+            if isinstance(row, dict) and row.get("is_test"):
+                rows.append({
+                    "player_id": player_id,
+                    "name": str(row.get("name") or ""),
+                    "email": str(row.get("email") or ""),
+                    "cpf_masked": str(row.get("cpf_masked") or ""),
+                    "pix_masked": str(row.get("pix_masked") or ""),
+                    "created_at": str(row.get("created_at") or ""),
+                })
+        rows.sort(key=lambda r: (r["name"], r["email"]))
+        return {"test_accounts": rows}
+
+    def admin_create_test_account(self, token: str, body: dict) -> dict:
+        admin = self._require_admin(token)
+        profile = self.register_player(body, is_test=True)
+        return {"created": {"player_id": profile["player_id"],
+                            "name": profile.get("name", "")},
+                "by": admin["username"]}
+
+    def admin_reset_test_password(self, token: str, body: dict) -> dict:
+        admin = self._require_admin(token)
+        player_id = str(body.get("player_id") or "")
+        data = self.players.read_all()
+        row = data.get(player_id)
+        if not isinstance(row, dict) or not row.get("is_test"):
+            raise ValueError("conta de teste não encontrada")
+        salt = secrets.token_hex(16)
+        row["pw_salt"] = salt
+        row["pw_hash"] = self._player_hash(
+            validate_player_password(body.get("password")), salt)
+        row["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        data[player_id] = row
+        self.players.write_all(data)
+        return {"reset": player_id, "by": admin["username"]}
+
+    def admin_delete_test_account(self, token: str, body: dict) -> dict:
+        admin = self._require_admin(token)
+        player_id = str(body.get("player_id") or "")
+        data = self.players.read_all()
+        row = data.get(player_id)
+        if not isinstance(row, dict) or not row.get("is_test"):
+            raise ValueError("conta de teste não encontrada")
+        del data[player_id]
+        self.players.write_all(data)
+        self.pix_keys.pop(player_id, None)
+        return {"deleted": player_id, "by": admin["username"]}
+
     def admin_player_dashboard(self, token: str, player_id: str) -> dict:
         """Per-player drill-down for the painel: a human-facing summary of
         one account drawn from the same stores the rest of the demo uses.
@@ -3346,7 +3478,8 @@ class Handler(BaseHTTPRequestHandler):
                                  "proxy": game_proxy.stats(),
                                  "pg_soft": pg_proxy.stats(),
                                  "asaas": {"configured": DEMO.asaas_available(),
-                                           "env": DEMO.asaas_env_name()}})
+                                           "env": DEMO.asaas_env_name()},
+                                 "config": DEMO.settings_view()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that
                 # answers 200 proves reachability without trusting anything.
@@ -3383,6 +3516,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.auth_me(self._bearer()))
             elif parsed.path == "/api/admin/users":
                 self._send(200, DEMO.admin_users(self._bearer()))
+            elif parsed.path == "/api/admin/settings":
+                self._send(200, DEMO.admin_settings(self._bearer()))
+            elif parsed.path == "/api/admin/test-accounts":
+                self._send(200, DEMO.admin_test_accounts(self._bearer()))
+            elif parsed.path == "/api/config":
+                # public, read-only operator settings the storefront adapts
+                # to (e.g. whether signup demands the payout account)
+                self._send(200, DEMO.settings_view())
             elif parsed.path == "/api/admin":
                 self._send(200, DEMO.admin_dashboard(self._bearer()))
             elif parsed.path == "/api/admin/player":
@@ -3549,6 +3690,18 @@ class Handler(BaseHTTPRequestHandler):
                     self._bearer(), self._body()))
             elif path == "/api/admin/users/delete":
                 self._send(200, DEMO.admin_delete_user(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/settings":
+                self._send(200, DEMO.admin_update_settings(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/test-accounts":
+                self._send(200, DEMO.admin_create_test_account(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/test-accounts/reset":
+                self._send(200, DEMO.admin_reset_test_password(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/test-accounts/delete":
+                self._send(200, DEMO.admin_delete_test_account(
                     self._bearer(), self._body()))
             else:
                 self._send(404, {"error": "not found"})
