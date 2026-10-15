@@ -398,6 +398,12 @@ def configure(service_id: str, key: str) -> dict:
     the repository holds — which cannot build this project. The runtime and
     the routing details are editable; `Dockerfile` at the repo root is Render's
     own default, which is where ours is.
+
+    Environment variables are deliberately NOT sent here: `PATCH /services/{id}`
+    does not own them, and a set smuggled into this request silently corrupts
+    the service's whole environment (observed: the set collapsed to one junk
+    variable and the app came up unconfigured). They go through
+    `set_env_vars()` instead.
     """
     body = {
         "serviceDetails": {
@@ -407,17 +413,23 @@ def configure(service_id: str, key: str) -> dict:
             "healthCheckPath": SERVICE["healthCheckPath"],
             "numInstances": 1,
         },
-        "envVars": [{"key": item["key"], "value": item["value"]}
-                    for item in runtime_env()],
     }
     _call(f"/services/{service_id}", key, body, "PATCH")
     return _call(f"/services/{service_id}", key)
 
 
+def set_env_vars(service_id: str, key: str, env_list: list[dict]) -> None:
+    """Write the service's environment through the endpoint that owns it.
+
+    `/services/{id}/env-vars` takes the array as the body and replaces the set.
+    It is the only place env vars are written; see `configure()` for why.
+    """
+    _call(f"/services/{service_id}/env-vars", key, env_list, "PUT")
+
+
 def create_service(key: str, repo: str, owner: dict) -> dict:
     body = {**SERVICE, **DOCKER_BUILD, "repo": repo, "ownerID": owner["id"]}
-    body["envVars"] = [{"key": item["key"], "value": item["value"]}
-                       for item in runtime_env()]
+    body.pop("envVars", None)  # set separately, via set_env_vars()
     try:
         return _call("/services", key, body, "POST")
     except RenderError as exc:
@@ -531,6 +543,8 @@ def run(key: str, repo: str, force: bool) -> int:
         print(f"owner:  {owner.get('name')} [{owner.get('id')}]")
         service = create_service(key, repo, owner)
     service_id = service["id"]
+    env_list = runtime_env()
+    set_env_vars(service_id, key, env_list)
     carried = read_asaas_env()
     if carried:
         print(f"carrying {len(carried)} Asaas setting(s) from "
