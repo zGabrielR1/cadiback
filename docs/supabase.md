@@ -51,6 +51,21 @@ Preview deployments get their own hosts: they exercise everything *except*
 bot-gated login/signup (exact-hostname Turnstile policy), or point at a
 backend with `turnstile_login` off.
 
+## Vercel deploy (done 2026-10-15)
+
+- Project `cadiback-web` (`web/` as root), production
+  `https://cadiback-web.vercel.app`. Linked via CLI; `web/.vercel/` is
+  gitignored (holds a CLI token).
+- `BACKEND_URL=https://cadiback.onrender.com` on production + preview +
+  development. Homepage public (200, no auth wall); `/api/health`,
+  `/api/config` and login POST all proxy correctly — a token-less login
+  through Vercel returns the backend's 403, proving same-origin end to end.
+- `TURNSTILE_HOSTNAMES` is now
+  `cadiback.onrender.com,cadiback-web.vercel.app` (carried by
+  `render_deploy.py`; backend health confirms both). The widget's Domains in
+  the Cloudflare dashboard must list the Vercel host too — that half is a
+  dashboard click, not code.
+
 ## Cutover checklist
 
 1. `.env.supabase` filled; apply `supabase/migrations/` in the dashboard SQL

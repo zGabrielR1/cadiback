@@ -17,6 +17,10 @@ web/out/
 # belongs in a deployable tree either
 .wrangler/
 deploy/.wrangler/
+# vercel link state (web/.vercel/): holds the project id and a CLI token —
+# a deploy credential, never committed
+.vercel/
+web/.vercel/
 
 # the live ledger, profiles, rounds and admin sessions — a deployment starts
 # with its own (OPERATOR_DATA_DIR), and this is someone's play money history

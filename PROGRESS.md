@@ -12,9 +12,10 @@
   at phase 3. Webhook verdict: Asaas stays on the Render backend, continue.
 - Foundry: render template carries `DATABASE_URL`/`SUPABASE_URL`; decision
   0004 records the stack + the ORM-stays-out rule; `docs/MODULES.md` notes it.
-- Blocked on the operator: apply the migration (dashboard SQL editor —
-  direct DNS unresolvable from here), create the Vercel project with
-  `BACKEND_URL`. Runbook `docs/supabase.md`.
+- Vercel: project `cadiback-web`, `https://cadiback-web.vercel.app`,
+  `BACKEND_URL` set on all envs; proxy verified (`/api/health`, `/api/config`,
+  gated login all answer through the Vercel origin); backend redeployed with
+  both Turnstile hostnames. Remaining: widget Domains click (dashboard).
 
 ## DONE (2026-10-15 — Turnstile on player login and signup, decision 0048)
 

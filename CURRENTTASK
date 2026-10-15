@@ -28,11 +28,13 @@ migration (Render free is ephemeral).
   triggers + account event webhooks (Pro-only), not inbound HTTP — and ours
   never touch Vercel anyway: Asaas posts to the Python backend (Render)
   directly, unchanged. Recorded in foundry decision 0004.
-- Needs: apply the migration in the dashboard SQL editor (direct DNS
-  unresolvable from here — verified), create the Vercel project with
-  `BACKEND_URL`. `render_deploy.py` now carries `DATABASE_URL` too.
+- Needs: migration applied (14/14 tables verified 2026-10-15).
+  `render_deploy.py` now carries `DATABASE_URL` too.
 - NEXT: port remaining stores (settings → sessions/users → players →
-  books/rounds → rest); then Vercel deploy; then flip + live-verify.
+  books/rounds → rest); verify the Supabase tables; then flip + live-verify.
+- VERCEL IS LIVE: `cadiback-web` → `https://cadiback-web.vercel.app` with
+  `BACKEND_URL=https://cadiback.onrender.com`; needs only the widget-Domains
+  click (Cloudflare dashboard) to finish bot-gated login through it.
 
 CURRENTTASK (previous): Turnstile (Cloudflare) on the player login and signup surfaces (decision
 0048) — the foundry kit gains a `turnstile` module (the canonical siteverify
