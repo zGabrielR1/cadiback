@@ -71,6 +71,36 @@ class PixKey:
     kind: str  # cpf | cnpj | email | phone | evp
 
 
+def validate_email(email: str) -> str:
+    """Player account email: BCB-shaped address, stored lowercase.
+
+    Raises PaymentError (client-safe message) on anything that is not
+    an deliverable-looking address.
+    """
+    value = (email or "").strip().lower()
+    if len(value) > 254 or not _EMAIL.match(value):
+        raise PaymentError("email inválido")
+    return value
+
+
+MIN_PLAYER_PASSWORD_LEN = 6
+
+
+def validate_player_password(password: object) -> str:
+    """Player password policy: at least 6 chars with letters and digits.
+
+    Deliberately separate from the panel's 4-char minimum: the player
+    login faces the open site, the panel lives behind a hidden shortcut.
+    """
+    pw = str(password or "")
+    if len(pw) < MIN_PLAYER_PASSWORD_LEN or len(pw) > 128:
+        raise PaymentError(
+            f"a senha precisa de ao menos {MIN_PLAYER_PASSWORD_LEN} caracteres")
+    if not re.search(r"[A-Za-z]", pw) or not re.search(r"[0-9]", pw):
+        raise PaymentError("a senha precisa de letras e números")
+    return pw
+
+
 def classify_pix_key(raw: str) -> PixKey:
     value = (raw or "").strip()
     if not value:

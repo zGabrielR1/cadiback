@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, BRL, newDepositId, getAdminSession, setAdminSession } from "../lib/api";
+import { api, BRL, newDepositId, getAdminSession, setAdminSession, getPlayerSession, setPlayerSession } from "../lib/api";
+import { validateCPF, validateEmail, validateName, validatePassword } from "../lib/validation";
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import CasinoHome from "./components/CasinoHome";
@@ -74,14 +75,21 @@ export default function Page() {
   const [cashOpen, setCashOpen] = useState(false);
   const [cashTab, setCashTab] = useState("dep");
   const [acctOpen, setAcctOpen] = useState(false);
+  // No pre-filled credentials: the form starts empty and both sides
+  // validate. The Ana test identity lives behind "Usar conta de teste".
+  const [authMode, setAuthMode] = useState("login");
+  const [authErrors, setAuthErrors] = useState({});
   const [form, setForm] = useState({
-    name: "Ana Souza",
-    cpf: "529.982.247-25",
-    pix_key: "ana.souza@example.com",
-    bank_code: "001",
-    agency: "1234",
-    account: "56789-0",
-    holder_name: "Ana Souza",
+    identifier: "",
+    name: "",
+    email: "",
+    cpf: "",
+    password: "",
+    pix_key: "",
+    bank_code: "",
+    agency: "",
+    account: "",
+    holder_name: "",
   });
   const [depositAmount, setDepositAmount] = useState("100.00");
   const [method, setMethod] = useState("pix");
@@ -113,6 +121,13 @@ export default function Page() {
       if (stored) setTheme(stored);
     } catch (e) {}
     setAdmin(getAdminSession());
+    // a stored player id logs the visitor back in without the form
+    const saved = getPlayerSession();
+    if (saved) {
+      api("GET", "/api/player?id=" + encodeURIComponent(saved.player_id))
+        .then((p) => setPlayer(p.player_id))
+        .catch(() => setPlayerSession(null));
+    }
     api("GET", "/api/catalog").then(setCatalog).catch(() => {});
   }, []);
 
@@ -280,24 +295,103 @@ export default function Page() {
     }
   };
 
-  const savePlayer = async () => {
+  // the profile follows the player id: login, register and the
+  // boot restore all land here instead of threading refresh() calls
+  useEffect(() => {
+    if (player) refresh();
+  }, [player, refresh]);
+
+  // Test identity for development: one click fills the Ana account
+  // (email ana.souza@example.com, CPF 529.982.247-25, senha ana1234).
+  // Register it once and it persists in the players store afterwards.
+  const fillTestAccount = () => {
+    setAuthErrors({});
+    if (authMode === "login") {
+      setForm((f) => ({
+        ...f,
+        identifier: "ana.souza@example.com",
+        password: "ana1234",
+      }));
+    } else {
+      setForm((f) => ({
+        ...f,
+        name: "Ana Souza",
+        email: "ana.souza@example.com",
+        cpf: "529.982.247-25",
+        password: "ana1234",
+        pix_key: "ana.souza@example.com",
+        bank_code: "001",
+        agency: "1234",
+        account: "56789-0",
+        holder_name: "Ana Souza",
+      }));
+    }
+  };
+
+  const submitAuth = async () => {
+    const errs = {};
+    if (authMode === "login") {
+      const id = String(form.identifier || "").trim();
+      if (!id) errs.identifier = "informe seu email ou CPF";
+      else if (id.includes("@")) {
+        const e = validateEmail(id);
+        if (e) errs.identifier = e;
+      } else {
+        const c = validateCPF(id);
+        if (c) errs.identifier = c;
+      }
+      if (!String(form.password || "")) errs.password = "informe sua senha";
+    } else {
+      const n = validateName(form.name);
+      if (n) errs.name = n;
+      const e = validateEmail(form.email);
+      if (e) errs.email = e;
+      const c = validateCPF(form.cpf);
+      if (c) errs.cpf = c;
+      const p = validatePassword(form.password);
+      if (p) errs.password = p;
+      if (!String(form.pix_key || "").trim())
+        errs.pix_key = "informe sua chave Pix";
+      if (
+        !String(form.bank_code || "").trim() ||
+        !String(form.agency || "").trim() ||
+        !String(form.account || "").trim()
+      )
+        errs.bank = "informe banco, agência e conta";
+      if (!String(form.holder_name || "").trim())
+        errs.holder_name = "informe o titular da conta";
+    }
+    setAuthErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    setBusy(true);
     try {
-      const profileRow = await api("POST", "/api/player", {
-        name: form.name,
-        cpf: form.cpf,
-        pix_key: form.pix_key,
-        bank: {
-          bank_code: form.bank_code,
-          agency: form.agency,
-          account: form.account,
-          holder_name: form.holder_name,
-        },
-      });
+      const profileRow =
+        authMode === "login"
+          ? await api("POST", "/api/player/login", {
+              identifier: String(form.identifier || "").trim(),
+              password: form.password,
+            })
+          : await api("POST", "/api/player", {
+              name: String(form.name || "").trim(),
+              email: String(form.email || "").trim(),
+              cpf: String(form.cpf || "").trim(),
+              password: form.password,
+              pix_key: String(form.pix_key || "").trim(),
+              bank: {
+                bank_code: String(form.bank_code || "").trim(),
+                agency: String(form.agency || "").trim(),
+                account: String(form.account || "").trim(),
+                holder_name: String(form.holder_name || "").trim(),
+              },
+            });
+      setPlayerSession({ player_id: profileRow.player_id });
       setPlayer(profileRow.player_id);
+      setAuthErrors({});
       setAcctOpen(false);
-      await refresh();
     } catch (e) {
-      window.alert("Conta: " + e.message);
+      setAuthErrors({ _: e.message });
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -345,7 +439,7 @@ export default function Page() {
     try {
       if (!player) {
         setAcctOpen(true);
-        throw new Error("crie sua conta demo primeiro");
+        throw new Error("entre ou crie sua conta primeiro");
       }
       if (!current) throw new Error("escolha um jogo no lobby");
       const sel = current === "demo:crash-nitro"
@@ -701,9 +795,17 @@ export default function Page() {
 
       <AccountModal
         open={acctOpen}
+        mode={authMode}
         form={form}
-        onForm={setForm}
-        onSave={savePlayer}
+        errors={authErrors}
+        busy={busy}
+        onForm={(next) => {
+          setForm(next);
+          setAuthErrors({});
+        }}
+        onMode={setAuthMode}
+        onSubmit={submitAuth}
+        onFillTest={fillTestAccount}
         onClose={() => setAcctOpen(false)}
       />
 

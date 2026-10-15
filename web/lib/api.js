@@ -10,6 +10,33 @@ export const newDepositId = () =>
 /** Millis before an in-flight request is abandoned. */
 export const REQUEST_TIMEOUT_MS = 8000;
 
+/** Player session: {player_id} in localStorage. The player stays logged
+ * in across reloads; a stored id the server no longer knows is dropped on
+ * the first refresh and the visitor logs in again. */
+export const PLAYER_KEY = "casa-player";
+
+export function getPlayerSession() {
+  try {
+    const raw = window.localStorage.getItem(PLAYER_KEY);
+    const session = raw ? JSON.parse(raw) : null;
+    return session && session.player_id ? session : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function setPlayerSession(session) {
+  try {
+    if (session && session.player_id) {
+      window.localStorage.setItem(PLAYER_KEY, JSON.stringify(session));
+    } else {
+      window.localStorage.removeItem(PLAYER_KEY);
+    }
+  } catch (e) {
+    /* private mode: the player simply logs in again next visit */
+  }
+}
+
 /** Painel administrativo session: {token, username, role} in localStorage.
  * Absent for normal players — their requests then carry no Authorization
  * header and every /api/admin* route answers 401. */

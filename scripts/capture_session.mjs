@@ -3,6 +3,7 @@
  *
  *     node scripts/capture_session.mjs <url> [--wait 30000] [--out probes/x.json]
  *                                       [--click "<css>"] [--eval "<js>"] [--steps ms]
+ *                                       [--headed]
  *
  * PG Soft's client is a 1 MB string-array-obfuscated bundle: the money host
  * and every endpoint are built at runtime, so reading the page tells you
@@ -84,8 +85,17 @@ const UA = flag("--ua", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/5
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const child = spawn(BROWSER, [
-  "--headless=new",
-  "--disable-gpu",
+  // --headed opens a visible window: a human presses the canvas start and
+  // spin buttons in it while the script records. Headless input is
+  // synthetic and PG's engine ignores it; a real press is the whole point.
+  ...(args.includes("--headed") ? [] : ["--headless=new"]),
+  // software GL only where no human watches: --disable-gpu also kills the
+  // SwiftShader fallback newer Chromes need for WebGL, and the engine
+  // refuses to draw without it. Headed keeps the GPU path plus the
+  // explicit software fallback for machines without one.
+  ...(args.includes("--headed")
+    ? ["--enable-unsafe-swiftshader", "--use-angle=swiftshader"]
+    : ["--disable-gpu"]),
   "--no-first-run",
   "--no-default-browser-check",
   "--disable-extensions",
@@ -104,6 +114,14 @@ function cleanup() {
   try { child.kill(); } catch {}
   try { rmSync(PROFILE, { recursive: true, force: true }); } catch {}
 }
+child.on("error", (e) => {
+  console.error(`cannot start the browser: ${e.message}`);
+  console.error("an AppImage needs exec permission first: chmod +x <file.AppImage>");
+  console.error("without FUSE, extract it instead: <file.AppImage> --appimage-extract,");
+  console.error("then pass --browser <dir>/squashfs-root/AppRun");
+  cleanup();
+  process.exit(1);
+});
 process.on("exit", cleanup);
 process.on("SIGINT", () => { cleanup(); process.exit(130); });
 

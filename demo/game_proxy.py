@@ -65,11 +65,12 @@ FORWARDED_HEADERS = frozenset({
 }) | CONDITIONAL_HEADERS | {"range"}
 
 # Query parameters that belong to us and must never reach a publisher: the
-# wallet token is a player's session credential, and a redirect we rewrite
-# puts it back on the way out (`Handler._pass_redirect`). `token` is ours on
-# a direct launch and the publisher's on a redirect — an interposed RGS still
-# has to receive it (see `publisher_query`).
-WALLET_PARAMS = frozenset({"wallet_token", "token"})
+# wallet token is a player's session credential, `pg` is our own PG Soft
+# session id, and a redirect we rewrite puts it back on the way out
+# (`Handler._pass_redirect`). `token` is ours on a direct launch and the
+# publisher's on a redirect — an interposed RGS still has to receive it
+# (see `publisher_query`).
+WALLET_PARAMS = frozenset({"wallet_token", "token", "pg"})
 
 # Path extensions whose body we rewrite before serving (the client patchers,
 # the money-URL rewrite, the bridge injection). A rewritten body cannot be
@@ -133,6 +134,17 @@ MONEY_PATHS: dict[str, tuple[str, ...]] = {
         r"/gs2c/replayGame\.do", r"/gs2c/replay/",
     ),
     "hacksaw_gaming": (r"/api/play/", r"/api/meta/"),
+    # PG Soft money, as measured (decision 0040): the session handshake,
+    # the game/wallet proxies and the binary game-api. Classifying them
+    # as money means no-store, no 304 pinning and withheld validators —
+    # a per-session balance must never be cached or revalidated.
+    "pg_soft": (
+        r"/web-api/auth/session/v2/verifySession",
+        r"/web-api/game-proxy/v2/GameName/Get",
+        r"/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds",
+        r"/web-api/game-proxy/v2/GameWallet/Get",
+        r"/game-api/",
+    ),
 }
 
 
@@ -171,6 +183,29 @@ def allowed_host(host: str) -> bool:
 def game_for(game_id: str) -> dict | None:
     for d in provider_demos.load().get("demos", []):
         if d["game_id"] == game_id:
+            return d
+    return None
+
+
+# PG Soft launches live at `/<gi>/…` (game_for_gi): the client builds its
+# per-game asset URLs off its own path, so the launch cannot live under
+# `/g/`. The dispatcher routes these here; `_serve_game` resolves the
+# catalog row (unknown numbers still 404).
+PG_GI_PATH = re.compile(r"^/\d+(?:/.*)?$")
+
+
+def game_for_gi(gi: str) -> dict | None:
+    """The catalog row whose launcher names this PG Soft game id.
+
+    A PG launch is served from `/<gi>/` (not `/g/<id>/…`) so the client
+    builds its per-game asset URLs exactly like on the publisher
+    (`<static>/<gi>/<file>`); the session id rides the query and a
+    cookie instead of the path.
+    """
+    from urllib.parse import parse_qsl, urlsplit
+    for d in provider_demos.load().get("demos", []):
+        query = dict(parse_qsl(urlsplit(d.get("demo_url") or "").query))
+        if query.get("gi") == str(gi):
             return d
     return None
 
@@ -256,7 +291,14 @@ def pg_target(game: dict, sub: str, query: str) -> str:
     # carries whatever the client sent, signatures included, untouched
     if path in ("", "/"):
         return checked_url(session.game_url)
-    url = f"https://{root.hostname}{path}"
+    host = root.hostname
+    if path.startswith(pg_proxy.MONEY_TAILS) and session.api_hosts:
+        # the money API lives on the api hosts, not the game host: the
+        # game host 404s /web-api/... (measured). Sticky to the first —
+        # the publisher's access token is session-scoped, so spreading
+        # one session's calls across both hosts would split it in two.
+        host = session.api_hosts[0]
+    url = f"https://{host}{path}"
     if query:
         url += f"?{query}"
     return checked_url(url)
@@ -1093,6 +1135,135 @@ _BRIDGE = r"""
   var SPIN = /(?:^|\r?\n)1 (-?\d+(?: -?\d+)+)/;
   var BALANCE = /(?:^|\r?\n)52 (-?\d+)/;
 
+  // --- PG Soft theater tap -------------------------------------------------
+  // game-api is fully encrypted: every Spin request and answer is opaque
+  // bytes, so there is no spin to re-encode and no win to read. But the
+  // handshake is plaintext, and the trial wallet answers plain JSON.
+  // Harvest the access token off the verifySession answer, and after every
+  // Spin reconcile the trial wallet through the publisher's own endpoint:
+  // its delta IS the round result, settled on our books through the same
+  // /wallet/round the socket tap uses. Stakes are learned from losses (a
+  // loss is exactly -stake); the settled BALANCE is always exact, the
+  // stake/payout split is bookkeeping around it. Without a login
+  // (cfg.token empty) the report 401s and is silently dropped: free play.
+  var pgAtk = null, pgApi = null, pgLast = null, pgStake = null, pgSeq = 0,
+      pgChain = Promise.resolve();
+
+  function pgHarvest(url, text) {
+    if (!url || url.indexOf("verifySession") < 0 || pgAtk) return;
+    try {
+      var tk = JSON.parse(text).dt.tk;
+      if (tk) {
+        pgAtk = tk;
+        pgApi = url.split("/web-api/")[0];
+        pgPoll().then(function (cb) { pgLast = cb; });
+      }
+    } catch (e) {}
+  }
+
+  function pgWalletUrl() {
+    return pgApi + "/web-api/game-proxy/v2/GameWallet/Get";
+  }
+
+  function pgPoll() {
+    if (!pgAtk || !pgApi) return Promise.resolve(null);
+    var body = "isagw=true&btt=2&wk=0_C&atk=" + encodeURIComponent(pgAtk) +
+      "&pf=1&gid=" + encodeURIComponent(cfg.pg_gi || "");
+    return fetch(pgWalletUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body,
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        return d && d.dt && typeof d.dt.cb === "number" ? d.dt.cb : null;
+      }).catch(function () { return null; });
+  }
+
+  function pgSettle(netUnits, first) {
+    var netMinor = Math.round(netUnits * 100);
+    var stake;
+    if (netMinor < 0 && (pgStake === null || -netMinor >= pgStake)) {
+      pgStake = -netMinor;
+      stake = pgStake;
+    } else {
+      stake = first ? (pgStake || 0) : 0;
+    }
+    var payout = Math.max(0, stake + netMinor);
+    if (!stake && !payout) return Promise.resolve();
+    return reportRound(stake, payout);
+  }
+
+  function pgWatch() {
+    // trailing wins (respin features) land after the spin resolves: watch
+    // until the wallet stills, settling the first move with the stake and
+    // every later move as a pure win. Serialized: a spin while one settles
+    // waits its turn instead of double-reading the same delta.
+    pgChain = pgChain.then(function () {
+      return pgPoll().then(function (base) {
+        if (base === null) return;
+        var first = true, calm = 0;
+        return new Promise(function (done) {
+          var timer = setInterval(function () {
+            pgPoll().then(function (cb) {
+              if (cb === null) { clearInterval(timer); done(); return; }
+              var net = cb - (first ? base : pgLast);
+              pgLast = cb;
+              if (net !== 0) {
+                calm = 0;
+                pgSettle(net, first).catch(function () {});
+                first = false;
+              } else if (++calm >= 4) {
+                clearInterval(timer);
+                done();
+              }
+            });
+          }, 800);
+          setTimeout(function () { clearInterval(timer); done(); }, 12000);
+        });
+      });
+    }).catch(function () {});
+  }
+
+  var _pgFetch = window.fetch;
+  window.fetch = function (input, init) {
+    var url = typeof input === "string" ? input : (input && input.url) || "";
+    var promise = _pgFetch.apply(this, arguments);
+    if (cfg.game_id && cfg.game_id.indexOf("pg:") === 0) {
+      if (url.indexOf("verifySession") >= 0) {
+        promise.then(function (r) {
+          var c = r.clone();
+          c.text().then(function (t) { pgHarvest(url, t); }).catch(function () {});
+          return r;
+        }).catch(function () {});
+      } else if (url.indexOf("/v4/Spin") >= 0 &&
+                 ((init && init.method) || "GET").toUpperCase() !== "GET") {
+        promise.catch(function () {}).then(function () { pgWatch(); });
+      }
+    }
+    return promise;
+  };
+
+  if (window.XMLHttpRequest) {
+    var _pgOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      this.__pgUrl = url;
+      return _pgOpen.apply(this, arguments);
+    };
+    var _pgSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function (body) {
+      if (cfg.game_id && cfg.game_id.indexOf("pg:") === 0 && this.__pgUrl) {
+        var self = this, url = this.__pgUrl;
+        this.addEventListener("load", function () {
+          try {
+            if (url.indexOf("verifySession") >= 0) pgHarvest(url, self.responseText);
+            else if (url.indexOf("/v4/Spin") >= 0) pgWatch();
+          } catch (e) {}
+        });
+      }
+      return _pgSend.apply(this, arguments);
+    };
+  }
+
   function reportRound(stake, payout) {
     roundSeq += 1;
     var roundId = 'ws-' + roundSeq + '-' + Date.now();
@@ -1185,6 +1356,12 @@ def inject_bridge(html: bytes, game_id: str, token: str, view: dict) -> bytes:
         query = dict(parse_qsl(urlsplit(game.get("demo_url") or "").query))
         cfg["pp_symbol"] = query.get("gameSymbol", "")
         cfg["pp_lang"] = query.get("lang", "en")
+    if game and (game.get("provider") or "") == "pg_soft":
+        # the theater tap's two facts: which spin endpoint the R$0 gate
+        # guards, and which game id the wallet poll names (decision 0044)
+        query = dict(parse_qsl(urlsplit(game.get("demo_url") or "").query))
+        cfg["bet_url"] = "/v4/Spin"
+        cfg["pg_gi"] = query.get("gi", "")
     tag = (f'<script>window.__WALLET__={_script_json(cfg)};</script>'
            f'<script src="{BRIDGE_PATH}"></script>').encode("utf-8")
     lower = html.lower()

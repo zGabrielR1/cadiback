@@ -13,9 +13,11 @@ stubs, the books are not.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import re
+import secrets
 import threading
 import time
 import uuid
@@ -54,6 +56,8 @@ from .payments import (
     process_withdrawal,
     validate_bank_account,
     validate_cpf,
+    validate_email,
+    validate_player_password,
 )
 from frame.core.ids import normalize, slug
 from .auth import AuthError, SessionBook, SessionStore, UserStore
@@ -536,6 +540,16 @@ class Demo:
                 "active": self.exclusions.active(player_id)}
 
     # -- players ------------------------------------------------------
+    # Credential material never leaves the store: profile() strips every
+    # secret field, so a new secret only needs to be added to
+    # _PLAYER_SECRETS to stay out of every API answer.
+    _PLAYER_SECRETS = ("pw_hash", "pw_salt")
+
+    @staticmethod
+    def _player_hash(password: str, salt: str) -> str:
+        return hashlib.sha256(
+            (salt + "\x00" + password).encode("utf-8")).hexdigest()
+
     def upsert_player(self, payload: dict) -> dict:
         name = (payload.get("name") or "").strip()
         if len(name) < 2:
@@ -549,7 +563,8 @@ class Demo:
         )
         player_id = "player-" + slug("wallet", cpf)[:24]  # one wallet per person
         data = self.players.read_all()
-        data[player_id] = {
+        row = dict(data.get(player_id) or {})
+        row.update({
             "player_id": player_id,
             "name": name,
             "cpf_masked": "***" + cpf[-4:],
@@ -562,18 +577,110 @@ class Demo:
                 "account": bank.get("account"),
             },
             "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        })
+        # optional credentials on the legacy path: the strict register
+        # route always sets them, and an upsert must never wipe them
+        if payload.get("email"):
+            row["email"] = validate_email(payload.get("email") or "")
+        if payload.get("password"):
+            salt = secrets.token_hex(16)
+            row["pw_salt"] = salt
+            row["pw_hash"] = self._player_hash(
+                validate_player_password(payload.get("password")), salt)
+        data[player_id] = row
+        self.players.write_all(data)
+        self.pix_keys[player_id] = pix.raw
+        profile = self._public_profile(player_id, row)
+        profile["available_minor"] = self.books.available(player_id)
+        return profile
+
+    def register_player(self, payload: dict) -> dict:
+        """Strict account creation: name + email + CPF + password + payout
+        details, every field validated. One wallet per CPF and one per
+        email — a duplicate is a login hint, not an overwrite."""
+        name = (payload.get("name") or "").strip()
+        if len(name) < 2:
+            raise ValueError("informe seu nome completo")
+        email = validate_email(payload.get("email") or "")
+        cpf = validate_cpf(payload.get("cpf") or "")
+        password = validate_player_password(payload.get("password") or "")
+        pix = classify_pix_key(payload.get("pix_key") or "")
+        bank = payload.get("bank") or {}
+        validate_bank_account(
+            bank.get("bank_code"), bank.get("agency"),
+            bank.get("account"), bank.get("holder_name"), name,
+        )
+        player_id = "player-" + slug("wallet", cpf)[:24]
+        data = self.players.read_all()
+        if player_id in data:
+            raise ValueError("este CPF já tem conta — entre com sua senha")
+        for other in data.values():
+            if isinstance(other, dict) and str(other.get("email") or "") == email:
+                raise ValueError("este email já tem conta — entre com sua senha")
+        salt = secrets.token_hex(16)
+        data[player_id] = {
+            "player_id": player_id,
+            "name": name,
+            "email": email,
+            "cpf_masked": "***" + cpf[-4:],
+            "pw_salt": salt,
+            "pw_hash": self._player_hash(password, salt),
+            "pix_kind": pix.kind,
+            "pix_masked": mask_pix_key(pix.raw),
+            "pix_raw": pix.raw,  # sole payout destination for this wallet
+            "bank": {
+                "bank_code": bank.get("bank_code"),
+                "agency": bank.get("agency"),
+                "account": bank.get("account"),
+            },
+            "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
-        profile = dict(data[player_id])
-        profile["available_minor"] = self.books.available(player_id)
-        return profile
+        return self.profile(player_id)
+
+    def login_player(self, payload: dict) -> dict:
+        """Email-or-CPF + password. Unknown account and wrong password are
+        the same message after the same fixed delay, so neither the
+        existence of an account nor its password can be probed cheaply."""
+        ident = str(payload.get("identifier")
+                    or payload.get("email") or "").strip().lower()
+        password = str(payload.get("password") or "")
+        data = self.players.read_all()
+        player_id = None
+        if "@" in ident:
+            for pid, row in data.items():
+                if isinstance(row, dict) and str(row.get("email") or "") == ident:
+                    player_id = pid
+                    break
+        else:
+            try:
+                cpf = validate_cpf(ident)
+            except ValueError:
+                cpf = ""
+            if cpf:
+                candidate = "player-" + slug("wallet", cpf)[:24]
+                if candidate in data:
+                    player_id = candidate
+        record = data.get(player_id or "")
+        digest = self._player_hash(password, str((record or {}).get("pw_salt", ""))) \
+            if isinstance(record, dict) else self._player_hash(password, "0" * 32)
+        if not isinstance(record, dict) or not hmac.compare_digest(
+                digest, str(record.get("pw_hash") or "")):
+            time.sleep(0.25)
+            raise ValueError("email/CPF ou senha inválidos")
+        self.exclusions.assert_playable(player_id)
+        return self.profile(player_id)
+
+    def _public_profile(self, player_id: str, row: dict) -> dict:
+        return {k: v for k, v in row.items()
+                if k not in self._PLAYER_SECRETS}
 
     def profile(self, player_id: str) -> dict:
         data = self.players.read_all()
         if player_id not in data:
             raise KeyError(f"unknown player: {player_id}")
-        profile = dict(data[player_id])
+        profile = self._public_profile(player_id, data[player_id])
         profile["available_minor"] = self.books.available(player_id)
         profile["bonus_minor"] = self.books.bonus_available(player_id)
         profile["bonus"] = self._bonus_view(player_id)
@@ -2214,16 +2321,50 @@ class Demo:
             session = pg_proxy.mint(gi)
         except pg_proxy.PgError:
             return ""
-        url = (f"{origin}{game_proxy.GAME_PREFIX}/{game['game_id']}/"
-               f"{game_proxy.PG_PREFIX}{session.session_id}/")
-        # the wallet token rides our own query and is stripped again before
-        # the request leaves (`pg_target` sends the minted URL verbatim, so
-        # nothing of ours reaches PG). It is what binds the bridge to a
-        # player: without it the document is served with no wallet in front
-        # of it and PG quietly becomes what it was — free play.
+        # the browser's own query carries the minted session (ot/l/btt):
+        # the client reads its session off location.search, and a launch
+        # that only carries our token leaves it with no session to boot.
+        # `token` rides alongside and is stripped before anything leaves
+        # (`pg_target` sends the minted URL verbatim for the document, and
+        # `publisher_query` drops wallet params on sub-requests).
+        from urllib.parse import parse_qsl, urlsplit, urlencode
+        from urllib.parse import unquote as _unquote
+        minted = [(k, v) for k, v in
+                  parse_qsl(urlsplit(session.game_url).query)
+                  if k not in ("token", "wallet_token")]
+        # the triple's handshake fields ride verbatim (`__hv`/`__sv`, the
+        # names the launcher uses): the client signs its asset URLs from
+        # them — without them it falls back to an unsigned path the
+        # publisher never serves and the game never boots. The blob stores
+        # them already percent-encoded, so decode once before urlencode
+        # (else the `%` itself gets encoded and the client reads `%2F`
+        # where the launcher would hand it `/`).
+        if session.hv:
+            minted.append(("__hv", _unquote(session.hv)))
+        if session.us:
+            minted.append(("__sv", _unquote(session.us)))
+        # the launcher's own mangled domains (`ao` for the api host the
+        # money rides, `or` for the static host): computed, not minted —
+        # the mint page ships the algorithm, so we run it instead of
+        # guessing. Fresh random shifts per launch, exactly like theirs.
+        # PG_AO_HOST overrides `ao` for experiments (ao-steering: naming
+        # our own host so the client's money calls land on us).
+        import os as _ao_os
+        ao_host = _ao_os.environ.get("PG_AO_HOST")
+        if ao_host:
+            minted.append(("ao", pg_proxy.mangle(ao_host)))
+        elif session.api_hosts:
+            minted.append(("ao", pg_proxy.mangle(session.api_hosts[0])))
+        minted.append(("or", pg_proxy.mangle(session.static_host)))
         if token:
-            from urllib.parse import quote as _quote
-            url += f"?token={_quote(str(token), safe='')}"
+            minted.append(("token", str(token)))
+        # Served from `/<gi>/`, not `/g/<id>/pg/<sid>/`: the client builds
+        # its per-game asset URLs off its own path (`<static>/<gi>/<file>`,
+        # measured), and anything else appended 404s at the static host.
+        # The session rides `?pg=` (then the cookie the document sets).
+        from urllib.parse import urlencode as _urlencode
+        minted.append(("pg", session.session_id))
+        url = f"{origin}/{gi}/?{_urlencode(minted)}"
         return url
 
     def wallet_status(self, token: str) -> dict:
@@ -2503,6 +2644,28 @@ class Handler(BaseHTTPRequestHandler):
             return
         parts = game_proxy.split_game_path(path)
         if parts is None:
+            # PG Soft launches live at `/<gi>/…` (not `/g/<id>/…`) so the
+            # client builds its per-game asset URLs exactly like on the
+            # publisher (`<static>/<gi>/<file>`); anything else appended
+            # to our path 404s at the static host. The game comes from
+            # the catalog by gi, the session from `?pg=` (then the cookie
+            # the document sets), and from there the normal pg sub-path
+            # machinery takes over.
+            import re as _gi_re
+            gi_match = _gi_re.match(r"^/(\d+)(?:/(.*))?$", path)
+            game = game_proxy.game_for_gi(
+                gi_match.group(1)) if gi_match else None
+            if game is None:
+                self._send(404, {"error": "not a game path"})
+                return
+            from urllib.parse import parse_qs as _parse_qs
+            early = _parse_qs(parsed.query)
+            sid = ((early.get("pg") or [""])[0]
+                   or self._cookie("pg_session"))
+            tail = gi_match.group(2) or ""
+            parts = (game["game_id"], f"pg/{sid}/{tail}" if tail
+                     else f"pg/{sid}/")
+        if parts is None:
             self._send(404, {"error": "not a game path"})
             return
         game_id, sub = parts
@@ -2581,6 +2744,15 @@ class Handler(BaseHTTPRequestHandler):
             data = game_proxy.rewrite_balance(
                 data, view.get("balance_minor") or 0)
             rewrote = True
+        if provider == "pg_soft" and is_money and view is not None:
+            # PG's balance is JSON, not form-encoded, so the RGS rewrite
+            # above is a no-op for it: this one replaces GameWallet/Get's
+            # cb/tb with our saldo (display only — spins stay the
+            # publisher's, see pg_proxy.rewrite_wallet)
+            balanced = pg_proxy.rewrite_wallet(
+                data, view.get("balance_minor") or 0)
+            rewrote = rewrote or balanced != data
+            data = balanced
         extra = {}
         is_document = is_document or (passthrough and "html" in ctype.lower())
         if is_document:
@@ -2602,6 +2774,14 @@ class Handler(BaseHTTPRequestHandler):
                 f"proxy_provider={provider}; Path=/; SameSite=Lax",
                 f"proxy_game={game_id}; Path=/; SameSite=Lax",
             ]
+            if sub.startswith(game_proxy.PG_PREFIX):
+                # the gi-rooted launch (`/<gi>/`) carries no session in its
+                # path, so the document plants it as a cookie for every
+                # sub-request that follows (reloads included)
+                pg_sid = sub[len(game_proxy.PG_PREFIX):].partition("/")[0]
+                if pg_proxy.session_for(pg_sid) is not None:
+                    extra["Set-Cookie"].append(
+                        f"pg_session={pg_sid}; Path=/; SameSite=Lax")
             if view is not None:
                 # the wallet rides every sub-request, and the client the game
                 # spawns inherits this origin binding
@@ -2743,6 +2923,9 @@ class Handler(BaseHTTPRequestHandler):
                 _re.search(pattern, parsed.path) for pattern in money):
             data = game_proxy.rewrite_balance(
                 data, view.get("balance_minor") or 0)
+            if provider == "pg_soft":
+                data = pg_proxy.rewrite_wallet(
+                    data, view.get("balance_minor") or 0)
         self._send(status, data, ctype, cache="no-cache",
                    charset="text" in ctype.lower() or "json" in ctype.lower())
 
@@ -2915,6 +3098,9 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path.startswith(game_proxy.GAME_PREFIX + "/"):
                 self._serve_game(parsed, None)
                 return
+            if game_proxy.PG_GI_PATH.match(parsed.path or ""):
+                self._serve_game(parsed, None)
+                return
             if parsed.path.startswith(rgs_proxy.PREFIX + "/"):
                 self._serve_rgs(parsed, None)
                 return
@@ -3065,12 +3251,17 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith(game_proxy.GAME_PREFIX + "/"):
                 self._serve_game(urlparse(self.path), self._raw_body())
                 return
+            if game_proxy.PG_GI_PATH.match(path or ""):
+                self._serve_game(urlparse(self.path), self._raw_body())
+                return
             if not path.startswith("/api/") and self._cookie("proxy_host"):
                 self._serve_publisher_root(urlparse(self.path),
                                            self._raw_body())
                 return
             if path == "/api/player":
-                self._send(200, DEMO.upsert_player(self._body()))
+                self._send(200, DEMO.register_player(self._body()))
+            elif path == "/api/player/login":
+                self._send(200, DEMO.login_player(self._body()))
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._body()))
             elif path == "/api/withdraw":

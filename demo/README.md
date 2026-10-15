@@ -88,7 +88,12 @@ the engine is offline and reproducible.
 
 - `GET /api/catalog` → games with `certificate_id`, `launchable`, `demo_rtp`,
   plus `provider_demos` (publisher-hosted, wallet-isolated)
-- `POST /api/player` → `{name, cpf, pix_key, bank:{bank_code, agency, account, holder_name}}`
+- `POST /api/player` → register `{name, email, cpf, password, pix_key,
+  bank:{bank_code, agency, account, holder_name}}` — every field validated
+  (email shape, CPF check digits, 6+ chars with letters and digits); one
+  wallet per CPF and one per email
+- `POST /api/player/login` → `{identifier, password}` (email or CPF) —
+  failed attempts pay a fixed delay; credential hashes never leave the store
 - `GET /api/player?id=` → profile + `available_minor`
 - `POST /api/deposit` → `{player, amount_minor, method}`
 - `POST /api/spin` → `{player, game_id, stake_minor, round_id?}` → symbols/tier/payout
@@ -119,7 +124,8 @@ unexpected errors answer 500 with the exception type only, never a path.
 
 Real: `Books` double-entry (every demo centavo balances), `GameRegistry`
 cert gate, `ExclusionRegistry`, `Limits` (R$50.000/day demo cap), CPF/CNPJ
-check digits, Pix/bank shape validation, idempotent payout keys.
+check digits, email shape, player password policy (SHA-256 salted, constant
+time), Pix/bank shape validation, idempotent payout keys.
 Stub: PSP rail (instant success after validation), slot RNG (deterministic
 hash, not a lab RNG), certificates `BR-DEMO-*` (format-valid, value-void).
 

@@ -32,6 +32,8 @@ from demo.payments import (
     process_withdrawal,
     validate_bank_account,
     validate_cpf,
+    validate_email,
+    validate_player_password,
 )
 from demo.server import (
     DEMO,
@@ -1182,6 +1184,103 @@ class AuthTest(unittest.TestCase):
             self.demo.users.set_password("admin", "ab")
         with self.assertRaises(AuthError):
             self.demo.users.create("short", "ab", "viewer")
+
+
+class PlayerAuthTest(unittest.TestCase):
+    """Player accounts: strict register (name + email + CPF + password +
+    payout details, every field validated) and email-or-CPF login.
+    Credential material never leaves the store through profile()."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        }
+        body.update(over)
+        return body
+
+    def test_email_and_password_policy(self):
+        self.assertEqual(validate_email("Ana@Example.COM"),
+                         "ana@example.com")
+        for bad in ("", "sem-arroba", "a@b", "a@b.c", "x" * 250 + "@a.com"):
+            with self.assertRaises(PaymentError):
+                validate_email(bad)
+        self.assertEqual(validate_player_password("ana1234"), "ana1234")
+        for bad in ("", "ab", "abcde", "abcdef", "123456", "a1"):
+            with self.assertRaises(PaymentError):
+                validate_player_password(bad)
+
+    def test_register_validates_every_field(self):
+        for bad in ("not-an-email", "", "a@b.c"):
+            with self.assertRaises((ValueError, PaymentError)):
+                self.demo.register_player(self._payload(email=bad))
+        for bad in ("123", "111.111.111-11", "529.982.247-26"):
+            with self.assertRaises((ValueError, PaymentError)):
+                self.demo.register_player(self._payload(cpf=bad))
+        for bad in ("abc", "abcdef", "123456"):
+            with self.assertRaises((ValueError, PaymentError)):
+                self.demo.register_player(self._payload(password=bad))
+        with self.assertRaises((ValueError, PaymentError)):
+            self.demo.register_player(self._payload(name="A"))
+
+    def test_register_stores_email_and_hashed_password(self):
+        row = self.demo.register_player(self._payload())
+        self.assertEqual(row["email"], "ana.souza@example.com")
+        with open(self.demo.players.path, "r", encoding="utf-8") as fh:
+            stored = json.load(fh)[row["player_id"]]
+        self.assertEqual(len(stored["pw_hash"]), 64)
+        self.assertNotEqual(stored["pw_hash"], "ana1234")
+        self.assertNotIn("password", stored)
+        self.assertNotIn("pw_hash", row)
+        self.assertNotIn("pw_salt", row)
+
+    def test_register_rejects_second_account_per_cpf_or_email(self):
+        self.demo.register_player(self._payload())
+        with self.assertRaises(ValueError):
+            self.demo.register_player(self._payload())
+        with self.assertRaises(ValueError):
+            self.demo.register_player(self._payload(cpf="111.444.777-35"))
+
+    def test_login_accepts_email_or_cpf(self):
+        player_id = self.demo.register_player(self._payload())["player_id"]
+        out = self.demo.login_player({"identifier": "ana.souza@example.com",
+                                      "password": "ana1234"})
+        self.assertEqual(out["player_id"], player_id)
+        out = self.demo.login_player({"identifier": "529.982.247-25",
+                                      "password": "ana1234"})
+        self.assertEqual(out["player_id"], player_id)
+        self.assertNotIn("pw_hash", out)
+
+    def test_login_refuses_unknown_or_wrong(self):
+        self.demo.register_player(self._payload())
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "errada42"})
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ghost@example.com",
+                                    "password": "ana1234"})
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "123", "password": "ana1234"})
+
+    def test_legacy_rows_without_credentials_cannot_login(self):
+        row = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "529.982.247-25",
+                                    "password": "qualquer1"})
 
 
 class AdminDashboardTest(unittest.TestCase):
@@ -3081,7 +3180,8 @@ class PgSoftTest(unittest.TestCase):
         self.assertIsNotNone(game)
         minted = pg_proxy.Session("minted-1", "126", "ot",
                                   "https://m.pg-demo.com/126/index.html?ot=ot",
-                                  "m.pg-demo.com", "static.pg-demo.com", ())
+                                  "m.pg-demo.com", "static.pg-demo.com", (),
+                                  hv="triple-hv", us="triple-us")
         pg_proxy.bind(minted)
 
         def _mint(gi, lang="pt", session_id=""):
@@ -3094,12 +3194,115 @@ class PgSoftTest(unittest.TestCase):
         finally:
             pg_proxy.mint = original
         # our own path carries the session, so the per-session hosts resolve;
-        # the token rides for us and is stripped again before the request leaves
-        self.assertEqual(url,
-                         "https://ours.example/g/pg:fortune-tiger/pg/minted-1/?token=tok-abc")
+        # the minted query rides for the client (it boots off location.search)
+        # and the token rides for us, both stripped before anything leaves
+        from urllib.parse import parse_qs, urlsplit
+        parts = urlsplit(url)
+        # gi-rooted, so the client builds publisher-identical asset URLs
+        self.assertEqual(
+            parts.scheme + "://" + parts.netloc + parts.path,
+            "https://ours.example/126/")
+        query = parse_qs(parts.query)
+        self.assertEqual(query["ot"], ["ot"])
+        self.assertEqual(query["__hv"], ["triple-hv"])
+        self.assertEqual(query["__sv"], ["triple-us"])
+        self.assertEqual(query["token"], ["tok-abc"])
+        self.assertEqual(query["pg"], ["minted-1"])
+        # `or` is the mangled static host (random shift per launch, so
+        # only the round-trip is asserted, not the value)
+        self.assertEqual(pg_proxy.unmangle(query["or"][0]),
+                         "static.pg-demo.com")
         game_query = game_proxy.target_url(game, "pg/minted-1/", "token=tok-abc")
         self.assertNotIn("tok-abc", game_query)
 
+    def test_the_domain_mangling_matches_a_real_launcher_redirect(self):
+        """`ao`/`or` are computed, not minted: the mint page ships the
+        algorithm (a letter shift + the shift as two digits), and this is
+        the exact value a live launcher produced for the same input."""
+        self.assertEqual(pg_proxy.mangle("api.f26xzzc7c.com", 18),
+                         "18sha=x26prru7u=uge")
+        for domain in ("api.f26xzzc7c.com", "static.eajzzxhro.com",
+                       "m.pg-demo.com"):
+            for shift in (1, 7, 18, 24, 25):
+                self.assertEqual(
+                    pg_proxy.unmangle(pg_proxy.mangle(domain, shift)),
+                    domain)
+        # digits and hyphens pass through, dots become '='
+        self.assertEqual(pg_proxy.mangle("f26.iii", 18), "18x26=aaa")
+
+    def test_the_mint_blob_decodes_to_triples_with_handshake_fields(self):
+        """parse_triples reads the whole msgpack answer, not just the URL
+        runs: every triple's game URL plus the `hv`/`us` fields the
+        launcher forwards as `__hv`/`__sv`."""
+        import struct as _struct
+
+        def enc(value):
+            if isinstance(value, str):
+                raw = value.encode()
+                if len(raw) <= 31:
+                    return bytes([0xa0 + len(raw)]) + raw
+                return b"\xd9" + bytes([len(raw)]) + raw
+            if isinstance(value, int):
+                return bytes([0xcc, value]) if value < 256 else \
+                    b"\xcd" + _struct.pack(">H", value)
+            if isinstance(value, float):
+                return b"\xcb" + _struct.pack(">d", value)
+            if isinstance(value, list):
+                return bytes([0x90 + len(value)]) + b"".join(enc(v)
+                                                             for v in value)
+            if isinstance(value, dict):
+                out = bytes([0x80 + len(value)])
+                for k, v in value.items():
+                    out += enc(k) + enc(v)
+                return out
+            raise AssertionError(f"no encoder for {value!r}")
+
+        import base64 as _b64
+        payload = {"m": {"tid": "t", "pad1": "x" * 200,
+                        "pad2": "y" * 200}, "f": [
+            {"u": "https://m.abc1234.com/126/index.html?ot=ot9&l=pt&btt=2",
+             "w": 70.0,
+             "rd": [{"v": "static.abc1234.com", "w": 100.0,
+                     "hv": "triple-hv", "us": "triple-us",
+                     "ust": "https://static.abc1234.com/p.gif"}],
+             "ad": [{"v": "api.aaa1111.com", "w": 80.0}]}]}
+        html = "<html>" + _b64.b64encode(enc(payload)).decode() + "</html>"
+        triples = pg_proxy.parse_triples(html)
+        self.assertEqual(set(triples), {"abc1234"})
+        self.assertEqual(triples["abc1234"]["hv"], "triple-hv")
+        self.assertEqual(triples["abc1234"]["us"], "triple-us")
+        self.assertIn("ot=ot9", triples["abc1234"]["game_url"])
+        # garbage is not a mint: no triples, no exception
+        self.assertEqual(pg_proxy.parse_triples("<html>no blob</html>"), {})
+        self.assertEqual(pg_proxy.parse_triples(
+            "<html>" + _b64.b64encode(b"\xc0").decode() + "</html>"), {})
+
+
+    def test_the_catalog_resolves_a_game_by_its_gi(self):
+        game = game_proxy.game_for_gi("126")
+        self.assertIsNotNone(game)
+        self.assertEqual(game["game_id"], "pg:fortune-tiger")
+        self.assertIsNone(game_proxy.game_for_gi("000"))
+
+    def test_the_bridge_carries_the_pg_tap_config(self):
+        """The theater tap's two facts ride the bridge config: which spin
+        endpoint the R$0 gate guards, and which game id the wallet poll
+        names. Other providers get neither."""
+        import json as _json
+        import re as _re
+        view = {"balance_minor": 10000, "bonus_minor": 0,
+                "min_stake_minor": 200, "can_play": True}
+        pg = game_proxy.inject_bridge(b"<head></head>", "pg:fortune-tiger",
+                                      "tok", view).decode()
+        cfg = _json.loads(_re.search(
+            r"window\.__WALLET__=(.*?);</script>", pg).group(1))
+        self.assertEqual(cfg["bet_url"], "/v4/Spin")
+        self.assertEqual(cfg["pg_gi"], "126")
+        pp = game_proxy.inject_bridge(
+            b"<head></head>", "pp:gates-of-olympus", "tok",
+            view).decode()
+        self.assertNotIn("pg_gi", pp)
+        self.assertNotIn("bet_url", pp)
 
     def test_the_money_endpoints_are_named_where_they_were_measured(self):
         """The paths are written down because they were measured, not guessed.
@@ -3130,6 +3333,61 @@ class PgSoftTest(unittest.TestCase):
         self.assertEqual(title_from_slug("lgd-monkey-kg"), "Lgd Monkey Kg")
         self.assertEqual(title_from_slug("win-win-fpc"), "Win Win Fpc")
         self.assertEqual(title_from_slug(""), "")
+
+    def test_the_wallet_answer_carries_our_saldo(self):
+        """Display sync: GameWallet/Get's cb/tb show the player's saldo in
+        the publisher's own shape; pb follows so no phantom delta appears,
+        and the unknown bonus keys are left alone."""
+        import json
+        body = json.dumps({
+            "dt": {"tb": 100000.00, "cb": 100000.00, "pb": 0.00,
+                   "tbb": 5.00, "tfgb": 7,
+                   "ch": {"cb": 100000.00, "k": "0_C"}}}).encode()
+        out = json.loads(pg_proxy.rewrite_wallet(body, 10500).decode())
+        self.assertEqual(out["dt"]["cb"], 105.0)
+        self.assertEqual(out["dt"]["tb"], 105.0)
+        self.assertEqual(out["dt"]["pb"], 105.0)
+        self.assertEqual(out["dt"]["ch"]["cb"], 105.0)
+        self.assertEqual(out["dt"]["tbb"], 5.00)
+        self.assertEqual(out["dt"]["tfgb"], 7)
+        # ints stay ints
+        body = json.dumps({"dt": {"tb": 3, "cb": 3, "pb": 0}}).encode()
+        out = json.loads(pg_proxy.rewrite_wallet(body, 10500).decode())
+        self.assertEqual(out["dt"]["cb"], 105)
+        self.assertIsInstance(out["dt"]["cb"], int)
+
+    def test_the_wallet_rewrite_passes_through_what_it_does_not_know(self):
+        binary = bytes([0x08, 0x96, 0x01, 0x1a, 0x04, 0x74, 0x65, 0x73, 0x74])
+        self.assertEqual(pg_proxy.rewrite_wallet(binary, 10500), binary)
+        for raw in (b"{}", b'{"dt": null}',
+                    b'{"dt": {"tbb": 5.00}}', b"[1, 2]", b"not json"):
+            self.assertEqual(pg_proxy.rewrite_wallet(raw, 10500), raw)
+
+    def test_money_tails_ride_the_api_host_and_assets_the_game_host(self):
+        session = pg_proxy.Session(
+            "s5", "126", "ot",
+            "https://m.pg-demo.com/126/index.html?ot=ot123&l=pt&btt=2",
+            "m.pg-demo.com", "static.pg-demo.com",
+            ("api.f26xzzc7c.com", "api.8jkxzybcq.com"))
+        pg_proxy.bind(session)
+        game = {"game_id": "pg:fortune-tiger", "demo_url":
+                "https://public.pg-demo.com/demo/?gi=126&lang=pt"}
+        money = game_proxy.target_url(
+            game, "pg/s5/web-api/game-proxy/v2/GameWallet/Get", "")
+        self.assertTrue(money.startswith("https://api.f26xzzc7c.com/"),
+                        money)
+        spin = game_proxy.target_url(game, "pg/s5/game-api/fortune-tiger/", "")
+        self.assertTrue(spin.startswith("https://api.f26xzzc7c.com/"), spin)
+        asset = game_proxy.target_url(game, "pg/s5/loader/06.js",
+                                      "verify=123-abc%3D")
+        self.assertTrue(asset.startswith("https://m.pg-demo.com/"), asset)
+        # the money classification the serve path reads
+        money_paths = game_proxy.MONEY_PATHS["pg_soft"]
+        import re
+        sub = "pg/s5/web-api/game-proxy/v2/GameWallet/Get"
+        self.assertTrue(any(re.search(p, sub) for p in money_paths))
+        self.assertFalse(any(re.search(p, "pg/s5/loader/06.js")
+                             for p in money_paths))
 
 
 class KenoTest(unittest.TestCase):
