@@ -33,7 +33,7 @@ export default function Page() {
   const session = useSession();
   const {
     player, setPlayer, profile,
-    history, health, refreshError, busy, setBusy, refresh,
+    history, health, asaasAvailable, refreshError, busy, setBusy, refresh,
   } = session;
 
   const [theme, setTheme] = useState("dark");
@@ -95,6 +95,9 @@ export default function Page() {
   const [method, setMethod] = useState("pix");
   const [withdrawAmount, setWithdrawAmount] = useState("20.00");
   const [receipt, setReceipt] = useState("");
+  // The open Asaas Pix charge, if any: the cashier shows its QR and polls
+  // until the provider confirms, then credits through the books.
+  const [pixCharge, setPixCharge] = useState(null);
 
   const anyModal = cashOpen || acctOpen || !!activeOfficialGame;
   useEffect(() => {
@@ -114,6 +117,37 @@ export default function Page() {
       document.body.style.overflow = previous;
     };
   }, [anyModal, cashOpen, activeOfficialGame]);
+
+  // Poll the open Pix charge until Asaas confirms it — the webhook may not
+  // reach a local instance, and the server settles idempotently, so a poll
+  // that races the webhook cannot credit twice.
+  useEffect(() => {
+    if (!pixCharge || pixCharge.posted || !cashOpen || !player) return undefined;
+    let stop = false;
+    const check = async () => {
+      try {
+        const row = await api("POST", "/api/deposit/pix/status", {
+          player,
+          deposit_id: pixCharge.deposit_id,
+        });
+        if (stop) return;
+        setPixCharge(row);
+        if (row.posted) {
+          setReceipt("Depósito confirmado: " + BRL(row.amount_minor));
+          await refresh();
+        }
+      } catch (e) {
+        /* transient: the next tick tries again */
+      }
+    };
+    const timer = setInterval(check, 5000);
+    check();
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+  }, [pixCharge && pixCharge.deposit_id, pixCharge && pixCharge.posted,
+      cashOpen, player, refresh]);
 
   useEffect(() => {
     try {
@@ -399,14 +433,27 @@ export default function Page() {
     setBusy(true);
     try {
       const amount = Math.round(parseFloat(depositAmount.replace(",", ".")) * 100);
-      await api("POST", "/api/deposit", {
-        player,
-        amount_minor: amount,
-        method,
-        deposit_id: newDepositId(),
-      });
-      setCashOpen(false);
-      await refresh();
+      if (asaasAvailable && method === "pix") {
+        // Real Pix: open the charge and let the poll effect confirm it. The
+        // modal stays open showing the QR instead of crediting instantly.
+        const charge = await api("POST", "/api/deposit/pix", {
+          player,
+          amount_minor: amount,
+          method: "pix",
+          deposit_id: newDepositId(),
+        });
+        setReceipt("");
+        setPixCharge(charge);
+      } else {
+        await api("POST", "/api/deposit", {
+          player,
+          amount_minor: amount,
+          method,
+          deposit_id: newDepositId(),
+        });
+        setCashOpen(false);
+        await refresh();
+      }
     } catch (e) {
       window.alert("Depósito: " + e.message);
     } finally {
@@ -790,6 +837,9 @@ export default function Page() {
         busy={busy}
         onDeposit={deposit}
         onWithdraw={withdraw}
+        asaasAvailable={asaasAvailable}
+        pixCharge={pixCharge}
+        onResetPix={() => setPixCharge(null)}
         onClose={() => setCashOpen(false)}
       />
 

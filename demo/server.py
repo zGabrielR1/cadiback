@@ -50,6 +50,7 @@ from frame.wallet.books import (
 )
 
 from .payments import (
+    check_deposit_method,
     classify_pix_key,
     mask_pix_key,
     process_deposit,
@@ -73,6 +74,7 @@ from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
 from . import pg_proxy
 from . import rgs_proxy
+from .asaas import AsaasClient, AsaasConfig, resolve_webhook
 from .risk import RiskPolicy, evaluate_player
 from .vendor import AggregatorError, VendorAggregator, VendorConfig
 
@@ -467,6 +469,16 @@ class Demo:
         except AggregatorError:
             self.vendor = None
         self._load_pix_keys()  # a restart must not widen who can receive money
+        # Asaas Pix rail (decision 0045). The books stay the source of truth:
+        # a charge is a *request* to move money, and a deposit is posted only
+        # after the provider independently confirms it. Unconfigured is a
+        # normal state — the demo falls back to the instant credit.
+        self.asaas_config = AsaasConfig.from_env()
+        self.asaas = (AsaasClient(self.asaas_config)
+                      if self.asaas_config.configured else None)
+        self.asaas_path = os.path.join(data_dir, "asaas_charges.json")
+        self._asaas_lock = threading.RLock()
+        self.asaas_charges: dict[str, dict] = self._load_asaas_charges()
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -987,6 +999,171 @@ class Demo:
             raise ValueError("duplicate payout_id: already withdrawn")
         receipt["available_minor"] = self.books.available(player_id)
         return receipt
+
+    # -- Asaas Pix (real sandbox charge; the books stay the source of truth) --
+    # A pending charge is *not* a balance. Money reaches the player only when
+    # Asaas independently says the Pix landed and the amount matches, which is
+    # why the webhook and the poll both route through the same idempotent
+    # confirm — a replayed event or a double poll cannot pay twice.
+    def asaas_available(self) -> bool:
+        return self.asaas is not None
+
+    def asaas_env_name(self) -> str:
+        return self.asaas_config.env_name if self.asaas else ""
+
+    def _load_asaas_charges(self) -> dict[str, dict]:
+        path = getattr(self, "asaas_path", "")
+        if not path or not os.path.isfile(path):
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                rows = json.load(handle)
+            return rows if isinstance(rows, dict) else {}
+        except (ValueError, OSError):
+            return {}  # unreadable pending charges: start empty, never crash
+
+    def _save_asaas_charges(self) -> None:
+        tmp = self.asaas_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(self.asaas_charges, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp, self.asaas_path)
+
+    def _charge_view(self, deposit_id: str, row: dict) -> dict:
+        player_id = str(row.get("player") or "")
+        return {
+            "deposit_id": deposit_id,
+            "player": player_id,
+            "amount_minor": int(row.get("amount_minor") or 0),
+            "provider_ref": str(row.get("provider_ref") or ""),
+            "status": ("COMPLETED" if row.get("posted")
+                       else str(row.get("provider_status") or "PENDING")),
+            "posted": bool(row.get("posted")),
+            "copy_paste": str(row.get("copy_paste") or ""),
+            "qr_base64": str(row.get("qr_base64") or ""),
+            "env": self.asaas_env_name(),
+            "available_minor": self.books.available(player_id),
+        }
+
+    def create_pix_deposit(self, payload: dict) -> dict:
+        """Open an Asaas Pix charge. Returns the QR; credits nothing.
+
+        Idempotent on `deposit_id`: a retried request returns the same charge
+        instead of opening a second one against the same wallet.
+        """
+        if self.asaas is None:
+            raise ValueError("Pix Asaas não está configurado neste servidor")
+        player_id = payload["player"]
+        if player_id not in self.players.read_all():
+            raise ValueError(f"unknown player: {player_id}")
+        amount = self._minor(payload["amount_minor"])
+        method = check_deposit_method(payload.get("method", "pix"))
+        if method != "pix":
+            raise ValueError("o depósito Asaas é Pix — escolha o método Pix")
+        deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
+        with self._asaas_lock:
+            existing = self.asaas_charges.get(deposit_id)
+            if existing and existing.get("player") == player_id:
+                return self._charge_view(deposit_id, existing)
+            charge = self.asaas.create_pix_charge(txid=deposit_id, amount_cents=amount)
+            row = {
+                "deposit_id": deposit_id,
+                "player": player_id,
+                "amount_minor": amount,
+                "provider_ref": charge.provider_ref,
+                "provider_status": charge.status,
+                "qr_text": charge.qr_text,
+                "copy_paste": charge.copy_paste,
+                "qr_base64": charge.qr_base64,
+                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "posted": False,
+            }
+            self.asaas_charges[deposit_id] = row
+            self._save_asaas_charges()
+            return self._charge_view(deposit_id, row)
+
+    def _confirm_asaas_charge(self, deposit_id: str, row: dict) -> None:
+        """Post the deposit once, whatever wakes it (webhook or poll)."""
+        with self._asaas_lock:
+            if row.get("posted"):
+                return
+            player_id = str(row["player"])
+            amount = int(row["amount_minor"])
+            with self.books.lock:
+                key = f"demo:deposit:{player_id}:{deposit_id}"
+                if not any(p.key == key for p in self.books.postings):
+                    process_deposit(
+                        self.books, self.exclusions, self.limits,
+                        player_id, amount, "pix",
+                        deposit_today_minor=self._deposited_today(player_id),
+                        deposit_id=deposit_id,
+                    )
+                    self._record_deposit(player_id, amount)
+            row["posted"] = True
+            row["provider_status"] = "PAID"
+            row["paid_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            self._save_asaas_charges()
+
+    def pix_deposit_status(self, payload: dict) -> dict:
+        """Poll one charge; confirm it if the provider now says it is paid.
+
+        The front end polls this while the QR is on screen, so a deposit can
+        still credit if the webhook never arrives. Same confirm path, so the
+        two can race without paying twice.
+        """
+        player_id = payload["player"]
+        deposit_id = str(payload["deposit_id"])
+        with self._asaas_lock:
+            row = self.asaas_charges.get(deposit_id)
+            if not row or row.get("player") != player_id:
+                raise ValueError("cobrança Pix não encontrada")
+            if not row.get("posted") and self.asaas is not None \
+                    and row.get("provider_ref"):
+                charge = self.asaas.get_charge(str(row["provider_ref"]))
+                row["provider_status"] = charge.status
+                if charge.status == "PAID" \
+                        and charge.amount_cents == int(row["amount_minor"]):
+                    self._confirm_asaas_charge(deposit_id, row)
+                else:
+                    self._save_asaas_charges()
+            return self._charge_view(deposit_id, row)
+
+    def asaas_webhook(self, payload: dict, headers: dict) -> dict:
+        """Verify, then confirm from provider truth — never from the event.
+
+        A bad token is refused; an unknown charge, a mismatched reference or a
+        wrong amount is acknowledged and dropped rather than credited. The
+        answer is always 200-shaped so Asaas does not retry a body we will
+        never accept.
+        """
+        if self.asaas is None:
+            raise ValueError("Pix Asaas não está configurado neste servidor")
+        if not self.asaas.verify_webhook(headers):
+            raise PermissionError("invalid Asaas webhook token")
+        event = resolve_webhook(payload)
+        if not event["paid"]:
+            return {"received": True, "event": event["event"], "applied": False}
+        deposit_id = event["deposit_id"]
+        with self._asaas_lock:
+            row = self.asaas_charges.get(deposit_id)
+            if not row:
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "unknown deposit"}
+            if event["provider_ref"] and row.get("provider_ref") \
+                    and event["provider_ref"] != row["provider_ref"]:
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "provider ref mismatch"}
+            if int(row["amount_minor"]) != int(event["amount_cents"]):
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "amount mismatch"}
+            if not row.get("posted"):
+                charge = self.asaas.get_charge(str(row["provider_ref"]))
+                if charge.status != "PAID" \
+                        or charge.amount_cents != int(row["amount_minor"]):
+                    raise ValueError("provider has not confirmed the payment")
+                self._confirm_asaas_charge(deposit_id, row)
+            return {"received": True, "event": event["event"], "applied": True,
+                    "deposit_id": deposit_id,
+                    "available_minor": self.books.available(str(row["player"]))}
 
     # -- slot ---------------------------------------------------------
     def spin(self, payload: dict) -> dict:
@@ -3029,6 +3206,37 @@ class Handler(BaseHTTPRequestHandler):
             # an already-settled round; the saldo stands
             pass
 
+    def _serve_asaas_webhook(self) -> None:
+        """Asaas deposit callback: verify the token, confirm from provider truth.
+
+        A 5xx tells Asaas to retry (a transient fault on our side); a 401 for a
+        bad token or a 400 for a malformed body is terminal. An unconfigured
+        server answers 503 instead of pretending the deposit was handled.
+        """
+        if not DEMO.asaas_available():
+            self._send(503, {"error": "Pix Asaas não está configurado"})
+            return
+        raw = self._raw_body()
+        try:
+            payload = json.loads(raw.decode("utf-8")) if raw else {}
+        except (ValueError, UnicodeDecodeError):
+            self._send(400, {"error": "invalid json"})
+            return
+        if not isinstance(payload, dict):
+            self._send(400, {"error": "invalid payload"})
+            return
+        headers = {k.lower(): v for k, v in self.headers.items()}
+        try:
+            result = DEMO.asaas_webhook(payload, headers)
+        except PermissionError as exc:
+            self._send(401, {"error": str(exc)})
+        except (KeyError, ValueError) as exc:
+            self._send(400, {"error": str(exc)})
+        except Exception as exc:  # a transport fault: let Asaas retry
+            self._send(500, {"error": f"internal error: {type(exc).__name__}"})
+        else:
+            self._send(200, result)
+
     def _bearer(self) -> str:
         """Painel session token from `Authorization: Bearer …`, or ""."""
         header = self.headers.get("Authorization") or ""
@@ -3136,7 +3344,14 @@ class Handler(BaseHTTPRequestHandler):
                 # proxy failed", and neither is visible in the other.
                 self._send(200, {**DEMO.health_report(),
                                  "proxy": game_proxy.stats(),
-                                 "pg_soft": pg_proxy.stats()})
+                                 "pg_soft": pg_proxy.stats(),
+                                 "asaas": {"configured": DEMO.asaas_available(),
+                                           "env": DEMO.asaas_env_name()}})
+            elif parsed.path == "/api/webhooks/asaas":
+                # Asaas validates a webhook by reaching the URL; a GET that
+                # answers 200 proves reachability without trusting anything.
+                self._send(200, {"status": "ok",
+                                 "configured": DEMO.asaas_available()})
             elif parsed.path == "/api/player":
                 from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)
@@ -3238,6 +3453,12 @@ class Handler(BaseHTTPRequestHandler):
             if rgs is not None:
                 self._serve_rgs(urlparse(self.path), self._raw_body())
                 return
+            # Asaas calls this from its own servers: it is cross-origin by
+            # design and carries its own constant-time token, so it is routed
+            # before the same-origin write gate (like the RGS callbacks).
+            if urlparse(self.path).path == "/api/webhooks/asaas":
+                self._serve_asaas_webhook()
+                return
             if not self._same_origin():
                 import sys
 
@@ -3264,6 +3485,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.login_player(self._body()))
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._body()))
+            elif path == "/api/deposit/pix":
+                self._send(200, DEMO.create_pix_deposit(self._body()))
+            elif path == "/api/deposit/pix/status":
+                self._send(200, DEMO.pix_deposit_status(self._body()))
             elif path == "/api/withdraw":
                 self._send(200, DEMO.withdraw(self._body()))
             elif path == "/api/spin":

@@ -157,6 +157,13 @@ KEY_FILE = os.path.join(os.path.expanduser("~"), ".render_api_key")
 REPO_FILE = os.path.join(os.path.expanduser("~"), ".render_repo")
 ENV_FILE = os.path.join(ROOT, ".env.render")
 
+# The Asaas Pix rail (decision 0045, docs/asaas.md). These are secrets, so the
+# repository only ever holds `sync: false` placeholders in `render.yaml`; the
+# real values travel from here at deploy time.
+ASAAS_ENV_FILE = os.path.join(ROOT, ".env.asaas")
+ASAAS_KEYS = ("ASAAS_API_KEY", "ASAAS_CUSTOMER_ID", "ASAAS_WEBHOOK_SECRET",
+              "ASAAS_BASE_URL")
+
 
 def _first_line(path: str) -> str:
     with open(path, encoding="utf-8") as handle:
@@ -221,6 +228,46 @@ def read_repo() -> str:
         if value:
             return value
     return ""
+
+
+def _env_pairs(path: str) -> dict[str, str]:
+    """`KEY=value` lines out of a dotenv file; comments and blanks ignored.
+
+    An inline ` # note` is dropped so a value may carry a trailing comment,
+    the same shape `demo/asaas.py` reads.
+    """
+    values: dict[str, str] = {}
+    if not os.path.isfile(path):
+        return values
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, _, value = line.partition("=")
+        value = value.split(" #", 1)[0].strip()
+        if name.strip() and value:
+            values[name.strip()] = value
+    return values
+
+
+def read_asaas_env() -> list[dict]:
+    """The Asaas settings to carry to the host, secrets included.
+
+    The environment wins over the gitignored `.env.asaas`. A setting that is
+    absent everywhere is simply not sent, so a deploy without credentials
+    keeps the instant demo credit instead of half-configuring the rail.
+    """
+    values = _env_pairs(ASAAS_ENV_FILE)
+    for name in ASAAS_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in ASAAS_KEYS if values.get(name)]
+
+
+def runtime_env() -> list[dict]:
+    """Every environment variable the service runs with, secrets included."""
+    return SERVICE["envVars"] + read_asaas_env()
 
 
 class RenderError(RuntimeError):
@@ -361,7 +408,7 @@ def configure(service_id: str, key: str) -> dict:
             "numInstances": 1,
         },
         "envVars": [{"key": item["key"], "value": item["value"]}
-                    for item in SERVICE["envVars"]],
+                    for item in runtime_env()],
     }
     _call(f"/services/{service_id}", key, body, "PATCH")
     return _call(f"/services/{service_id}", key)
@@ -370,7 +417,7 @@ def configure(service_id: str, key: str) -> dict:
 def create_service(key: str, repo: str, owner: dict) -> dict:
     body = {**SERVICE, **DOCKER_BUILD, "repo": repo, "ownerID": owner["id"]}
     body["envVars"] = [{"key": item["key"], "value": item["value"]}
-                       for item in SERVICE["envVars"]]
+                       for item in runtime_env()]
     try:
         return _call("/services", key, body, "POST")
     except RenderError as exc:
@@ -484,6 +531,12 @@ def run(key: str, repo: str, force: bool) -> int:
         print(f"owner:  {owner.get('name')} [{owner.get('id')}]")
         service = create_service(key, repo, owner)
     service_id = service["id"]
+    carried = read_asaas_env()
+    if carried:
+        print(f"carrying {len(carried)} Asaas setting(s) from "
+              f"{os.path.basename(ASAAS_ENV_FILE)}/environment")
+    else:
+        print("no Asaas credentials found: the deploy uses the instant demo credit")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)

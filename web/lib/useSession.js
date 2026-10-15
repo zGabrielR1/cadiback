@@ -12,6 +12,10 @@ export function useSession() {
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState(null);
   const [health, setHealth] = useState("");
+  // Whether the server has a live Asaas Pix rail. When it does, the cashier
+  // opens a real charge and waits for confirmation; when it does not, the
+  // instant demo credit is the honest fallback.
+  const [asaasAvailable, setAsaasAvailable] = useState(false);
   const [refreshError, setRefreshError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -30,6 +34,7 @@ export function useSession() {
       setProfile(p);
       setHistory(h);
       setHealth(hl.status);
+      setAsaasAvailable(!!(hl.asaas && hl.asaas.configured));
       setRefreshError("");
     } catch (e) {
       if (seq !== refreshSeq.current) return;
@@ -46,6 +51,7 @@ export function useSession() {
     setHistory,
     health,
     setHealth,
+    asaasAvailable,
     refreshError,
     setRefreshError,
     busy,

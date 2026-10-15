@@ -21,7 +21,7 @@ required += [os.path.join(p, n) for p, n in [
     ("frame/ops", "notifier.py"), ("frame/ops", "health.py"),
     ("demo", "server.py"), ("demo", "slot.py"), ("demo", "payments.py"),
     ("demo", "risk.py"), ("demo", "sports_data.py"),    ("demo", "vendor.py"),
-    ("demo", "odds_engine.py"),
+    ("demo", "odds_engine.py"), ("demo", "asaas.py"),
     ("demo", "auth.py"),
     ("demo", "game_proxy.py"),
     ("demo", "index.html"), ("frame", "selftest.py"),

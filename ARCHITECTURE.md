@@ -37,6 +37,7 @@ demo/
     ├── slot.py              6-tier paytable engine, SHA256 draw; one paytable per title (95.90 / 94.95 / 96.60)
     ├── casino.py            European single-zero roulette: deterministic ball, 35:1 straight, 1:1 even-money, RTP 97.30%
     ├── payments.py          CPF/CNPJ, Pix key, own-name bank, payout, allowlist
+    ├── asaas.py             Asaas Pix rail: charge, QR, provider-confirmed credit (stdlib)
     ├── risk.py              velocity, stake spikes, loss-chase, RTP drift, dupes
     ├── sports_data.py       live-fixture seam (probes/) with stub fallback
     ├── vendor.py            official-content seam: https-only, gated titles
@@ -45,7 +46,7 @@ demo/
     ├── pg_proxy.py          PG Soft: a minted trial session, the hosts it
     │                        binds, and the measured money-API endpoints
     ├── index.html           zero-build fallback storefront
-    └── test_demo.py         222 execution checks
+    └── test_demo.py         252 execution checks
 
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier
@@ -61,7 +62,7 @@ web/                        React 19 + Next 16 App Router (static export)
 |------|--------|--------------------|
 | Sports | `frame/verticals/sports/contract.py` `SportsEngine` | fixtures, markets, quote, accept, settle, void |
 | Casino | `frame/verticals/casino/stub.py` `CasinoAggregator` | catalogue, launch, bet, wallet_credit, round_history |
-| Payments | `demo/payments.py` | Pix simulation allowlist, own-name validation, two-step payout |
+| Payments | `demo/payments.py`, `demo/asaas.py` | Pix allowlist, own-name validation, two-step payout; a real Pix deposit credits only once Asaas confirms it |
 
 The publisher-game proxy keeps one rule above the other two: **we never serve
 bytes we cannot describe.** A body the proxy rewrites (document, money answer,

@@ -1,4 +1,28 @@
-CURRENTTASK: LIVE on Render (https://cadiback.onrender.com, decision 0039).
+CURRENTTASK: Asaas Pix rail landed in the operator (decision 0045) — real Pix
+when configured, provider-confirmed before any centavo posts, instant demo
+credit otherwise. Sandbox; the webhook is registered after the deploy.
+
+## STATUS
+
+- **ASAAS PIX RAIL (0045).** `demo/asaas.py` (stdlib, injectable transport) +
+  `demo/server.py` (`POST /api/deposit/pix`, `POST /api/deposit/pix/status`,
+  `POST|GET /api/webhooks/asaas` routed before the same-origin gate) + the
+  cashier's QR/copia-e-cola with a 5s poll. A webhook is a hint, never proof:
+  every confirmation re-reads the charge from Asaas and checks the amount, so a
+  replayed or forged event credits nothing. Idempotent on the deposit id in
+  three places; the webhook and the poll share one confirm path. Suites frame
+  45/45, demo 252/252 (+16), verify 0.
+- **LIVE-VERIFIED IN THE SANDBOX.** A real R$5,00 charge -> QR -> provider
+  confirm -> webhook credit, a replay crediting nothing, books balanced. Two
+  constraints the fake transport hid: the billed customer must carry a
+  CPF/CNPJ, and Asaas enforces a R$5,00 minimum (both now in `docs/asaas.md`).
+  The webhook is registered after the deploy; nothing is registered yet, so the
+  Fly-vs-Render question was moot — Render is the host.
+- Deploy carries the four `ASAAS_*` settings from the gitignored `.env.asaas`
+  (`scripts/render_deploy.py`); `render.yaml` keeps `sync: false` placeholders
+  only, so no secret enters the repository. Runbook `docs/asaas.md`.
+
+CURRENTTASK (previous): LIVE on Render (https://cadiback.onrender.com, decision 0039).
 NEW ORIGINAL: Keno Relâmpago (0042) — the game 0034 set aside because it "needs a
 full paytable to get exactly right". The paytable is DERIVED instead: exact
 hypergeometric hit probabilities, one shape decision (each extra hit doubles),

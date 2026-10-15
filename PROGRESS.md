@@ -1,5 +1,61 @@
 # PROGRESS
 
+## DONE (2026-10-15 — Asaas Pix rail: a real charge, confirmed before a centavo posts, decision 0045)
+
+- **Real Pix, or the instant demo credit — never both halves of each.** When
+  Asaas is configured the cashier opens a real Pix charge, shows the QR and the
+  copia-e-cola, and polls until the money lands. When it is not, the deposit
+  behaves exactly as before. `GET /api/health` reports `asaas.configured` and
+  `asaas.env` (`sandbox` | `production`).
+- **The webhook is a hint, never proof.** Asaas says a payment happened; the
+  server re-reads the charge (`GET /payments/{id}`), requires a terminal status
+  and a matching amount, and only then posts. A replayed event, a forged body,
+  or an event for an unrelated charge credits nothing. Same posture as the
+  publisher-game taps (0032/0043/0044): read truth from the side that owns it.
+- **`demo/asaas.py`** (~300 lines, stdlib only, `urllib`): `AsaasConfig`
+  (env / gitignored `.env.asaas`, https enforced), `AsaasClient` (create,
+  read, `pixQrCode`, constant-time webhook check), `Charge`, `resolve_webhook`,
+  a four-outcome status map, and an injectable transport so the whole path is
+  testable with no network and no key. A cross-host redirect is refused, so the
+  account key can never be replayed to another origin.
+- **Idempotency in three places:** `Idempotency-Key: dep:{deposit_id}` on the
+  create, `create_pix_deposit` idempotent on `deposit_id`, and the books post
+  once under `demo:deposit:{player}:{deposit_id}` inside `books.lock` — the
+  webhook and the poll share that one path, so they can race without double
+  paying. Lock order is fixed: `_asaas_lock` before `books.lock`.
+- **Server wiring:** `POST /api/deposit/pix`, `POST /api/deposit/pix/status`,
+  and `POST|GET /api/webhooks/asaas` (routed *before* the same-origin gate,
+  because Asaas calls it from its own servers). Pending charges persist to
+  `$OPERATOR_DATA_DIR/asaas_charges.json` and survive a restart without
+  crediting anyone.
+- **Frontend:** `useSession` exposes `asaasAvailable`; the cashier shows the QR
+  and a copy button, polls the status endpoint every 5s while it is open, and
+  keeps the instant credit path untouched for an unconfigured server.
+- **`AsaasTest` 6 + `AsaasDepositTest` 10** (+16): config needs a key, customer
+  and https; the status map collapses to four outcomes; a pending charge is not
+  a balance; the poll confirms exactly once; the charge is idempotent on the
+  deposit id; a bad token is refused and a good one credits once; an amount
+  mismatch, an unknown deposit and an unpaid event each credit nothing; a
+  pending charge survives a restart. `frame` 45/45, `demo` 252/252, `verify.py`
+  0.
+- **Docs + deploy:** `docs/asaas.md` (credentials, flow, webhook
+  registration, production swap, deploy plumbing, triage);
+  `scripts/render_deploy.py` carries the four `ASAAS_*` settings from the
+  gitignored `.env.asaas`/environment; `render.yaml` holds `sync: false`
+  placeholders only, so no secret enters the repository.
+- **Live-verified in the sandbox.** A real R$5,00 charge → QR → provider-side
+  confirm → webhook credit → a replay credits nothing → books balanced. The
+  smoke also caught two constraints the fake transport could not: the billed
+  customer must carry a CPF/CNPJ (provisioned once via
+  `POST /customers/{id}`), and Asaas enforces a **R$5,00 minimum** per charge.
+  Neither is a code defect; both are in the runbook, along with the real sandbox
+  confirm action `POST /v3/sandbox/payment/{id}/confirm`.
+- **Honest limits:** the webhook is registered after the deploy (nothing is
+  registered yet: `GET /v3/webhooks` → `totalCount: 0`, so the earlier
+  Fly-vs-Render confusion was moot — Render is the host). The payer is one
+  configured customer, not the player; per-player customers are the production
+  path. The two webhook-secret files were reconciled to the `.env.asaas` value.
+
 ## DONE (2026-10-14 — Keno Relâmpago, the original that was set aside for the wrong reason, decision 0042)
 
 - **`demo:keno` "Keno Relâmpago"** (BR-DEMO-0010, RTP 97.00, Originais):

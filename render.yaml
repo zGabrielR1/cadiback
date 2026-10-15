@@ -26,6 +26,19 @@ services:
         value: 0.0.0.0
       - key: OPERATOR_DATA_DIR
         value: /data
+      # Asaas Pix rail (decision 0045, runbook docs/asaas.md). Real Pix when
+      # all four are set; the instant demo credit is the fallback when they
+      # are not. `sync: false` keeps the secrets out of the repository: enter
+      # them in the dashboard, or let scripts/render_deploy.py carry them from
+      # the local gitignored .env.asaas. Never put a key in this file.
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: ASAAS_CUSTOMER_ID
+        sync: false
+      - key: ASAAS_WEBHOOK_SECRET
+        sync: false
+      - key: ASAAS_BASE_URL
+        value: https://sandbox.asaas.com/api/v3
     # disk:            # paid plans only
     #   name: candibet-data
     #   mountPath: /data

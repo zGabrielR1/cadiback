@@ -22,6 +22,8 @@ from demo.arcade import (ARCADE_GAME_IDS, KENO_DRAWN, KENO_MAX_SPOTS,
                          keno_round, parse_keno_selection)
 from demo.arcade import theoretical_rtp as arcade_theoretical_rtp
 from demo.server import DEMO_CATEGORY
+from demo.asaas import (AsaasClient, AsaasConfig, AsaasError, Charge,
+                        resolve_webhook)
 from demo.auth import AuthError
 from demo.payments import (
     PaymentError,
@@ -101,6 +103,256 @@ class BankTest(unittest.TestCase):
             with self.assertRaises(PaymentError):
                 check_deposit_method(method)
         self.assertEqual(check_deposit_method("pix"), "pix")
+
+
+def _asaas_transport(payment: dict, qr: dict | None = None):
+    """An injectable Asaas transport: records the calls, answers canned JSON.
+
+    The real transport is the only thing the tests replace, so the whole
+    deposit path runs without a network or a live key.
+    """
+    calls: list[tuple] = []
+    qr = qr if qr is not None else {
+        "payload": "00020126580014br.gov.bcb.pix0136abc6304ABCD",
+        "encodedImage": "iVBORw0KGgoAAAANSUhEUg==",
+    }
+
+    def transport(method, url, api_key, payload, idempotency_key, timeout):
+        calls.append((method, url, idempotency_key))
+        if url.endswith("/pixQrCode"):
+            return qr
+        return payment
+
+    transport.calls = calls
+    return transport
+
+
+class AsaasTest(unittest.TestCase):
+    def _config(self, **overrides) -> AsaasConfig:
+        base = dict(api_key="$aact_test",
+                    base_url="https://sandbox.asaas.com/api/v3",
+                    customer_id="9387205", webhook_secret="whsec_test")
+        base.update(overrides)
+        return AsaasConfig(**base)
+
+    def test_config_needs_a_key_a_customer_and_https(self):
+        self.assertFalse(AsaasConfig.from_env({}).configured)
+        without_customer = AsaasConfig.from_env({
+            "ASAAS_API_KEY": "k",
+            "ASAAS_BASE_URL": "https://sandbox.asaas.com/api/v3"})
+        self.assertFalse(without_customer.configured)
+        cleartext = AsaasConfig.from_env({
+            "ASAAS_API_KEY": "k", "ASAAS_CUSTOMER_ID": "1",
+            "ASAAS_BASE_URL": "http://sandbox.asaas.com/api/v3"})
+        self.assertFalse(cleartext.configured)
+        good = AsaasConfig.from_env({
+            "ASAAS_API_KEY": "k", "ASAAS_CUSTOMER_ID": "1",
+            "ASAAS_BASE_URL": "https://sandbox.asaas.com/api/v3/"})
+        self.assertTrue(good.configured)
+        self.assertEqual(good.base_url, "https://sandbox.asaas.com/api/v3")
+        self.assertEqual(good.env_name, "sandbox")
+        self.assertEqual(
+            AsaasConfig(base_url="https://api.asaas.com/v3").env_name,
+            "production")
+
+    def test_env_file_keeps_only_the_value_before_an_inline_comment(self):
+        path = os.path.join(tempfile.mkdtemp(), ".env.asaas")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("# sandbox credentials\n")
+            handle.write("ASAAS_API_KEY=abc\n")
+            handle.write("ASAAS_CUSTOMER_ID=42\n")
+            handle.write("ASAAS_BASE_URL=https://sandbox.asaas.com/api/v3  # first\n")
+        cfg = AsaasConfig.from_env(env_file=path)
+        self.assertEqual(cfg.api_key, "abc")
+        self.assertEqual(cfg.customer_id, "42")
+        self.assertEqual(cfg.base_url, "https://sandbox.asaas.com/api/v3")
+
+    def test_create_charge_returns_qr_and_a_deposit_idempotency_key(self):
+        transport = _asaas_transport({"id": "pay_1", "status": "PENDING",
+                                      "value": 100.0})
+        client = AsaasClient(self._config(), transport=transport)
+        charge = client.create_pix_charge(txid="dep-1", amount_cents=10000)
+        self.assertEqual(charge.provider_ref, "pay_1")
+        self.assertEqual(charge.status, "PENDING")
+        self.assertEqual(charge.amount_cents, 10000)
+        self.assertTrue(charge.copy_paste)
+        self.assertTrue(charge.qr_base64)
+        creates = [c for c in transport.calls if c[0] == "POST"]
+        self.assertEqual(creates[0][2], "dep:dep-1")
+
+    def test_status_map_collapses_to_four_outcomes(self):
+        cases = (("RECEIVED", "PAID"), ("CONFIRMED", "PAID"),
+                 ("OVERDUE", "EXPIRED"), ("REFUNDED", "REFUNDED"),
+                 ("CANCELED", "CANCELLED"), ("PENDING", "PENDING"),
+                 ("CHARGEBACK_REQUESTED", "REFUNDED"))
+        for raw, expected in cases:
+            transport = _asaas_transport({"id": "p", "status": raw, "value": 5.0})
+            client = AsaasClient(self._config(), transport=transport)
+            self.assertEqual(client.get_charge("p").status, expected, raw)
+
+    def test_verify_webhook_refuses_without_a_secret(self):
+        client = AsaasClient(self._config(webhook_secret="whsec_x"),
+                             transport=_asaas_transport({}))
+        self.assertTrue(client.verify_webhook({"asaas-access-token": "whsec_x"}))
+        self.assertFalse(client.verify_webhook({"asaas-access-token": "nope"}))
+        self.assertFalse(client.verify_webhook({}))
+        no_secret = AsaasClient(self._config(webhook_secret=""),
+                                transport=_asaas_transport({}))
+        self.assertFalse(no_secret.verify_webhook({"asaas-access-token": "x"}))
+
+    def test_resolve_webhook_reads_our_own_deposit_id(self):
+        event = resolve_webhook({
+            "event": "PAYMENT_RECEIVED",
+            "payment": {"id": "pay_1", "value": 100.0, "status": "RECEIVED",
+                        "externalReference": "dep-9"}})
+        self.assertEqual(event["deposit_id"], "dep-9")
+        self.assertEqual(event["provider_ref"], "pay_1")
+        self.assertEqual(event["amount_cents"], 10000)
+        self.assertTrue(event["paid"])
+        self.assertFalse(resolve_webhook({
+            "event": "PAYMENT_UPDATED",
+            "payment": {"id": "p", "status": "PENDING"}})["paid"])
+        self.assertEqual(resolve_webhook({})["deposit_id"], "")
+
+
+class AsaasDepositTest(unittest.TestCase):
+    """The operator path: a charge credits only after provider confirmation."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.cfg = AsaasConfig(api_key="$aact_test",
+                               base_url="https://sandbox.asaas.com/api/v3",
+                               customer_id="9387205",
+                               webhook_secret="whsec_test")
+
+    def _install(self, payment: dict):
+        client = AsaasClient(self.cfg, transport=_asaas_transport(payment))
+        self.demo.asaas = client
+        self.demo.asaas_config = self.cfg
+        return client
+
+    def _create(self, deposit_id: str, amount: int = 10000) -> dict:
+        return self.demo.create_pix_deposit({
+            "player": self.player, "amount_minor": amount,
+            "method": "pix", "deposit_id": deposit_id})
+
+    def test_pending_charge_is_not_a_balance(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        view = self._create("pix-1")
+        self.assertFalse(view["posted"])
+        self.assertEqual(view["status"], "PENDING")
+        self.assertEqual(view["amount_minor"], 10000)
+        self.assertTrue(view["copy_paste"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_poll_confirms_exactly_once(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        self._create("pix-2")
+        self._install({"id": "pay_1", "status": "RECEIVED", "value": 100.0})
+        first = self.demo.pix_deposit_status({"player": self.player,
+                                              "deposit_id": "pix-2"})
+        self.assertTrue(first["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        again = self.demo.pix_deposit_status({"player": self.player,
+                                              "deposit_id": "pix-2"})
+        self.assertTrue(again["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        self.demo.books.assert_balanced()
+
+    def test_charge_is_idempotent_on_the_deposit_id(self):
+        transport = _asaas_transport({"id": "pay_1", "status": "PENDING",
+                                      "value": 100.0})
+        self.demo.asaas = AsaasClient(self.cfg, transport=transport)
+        self.demo.asaas_config = self.cfg
+        first = self._create("same-pix")
+        second = self._create("same-pix")
+        self.assertEqual(first["provider_ref"], second["provider_ref"])
+        creates = [c for c in transport.calls
+                   if c[0] == "POST" and c[1].endswith("/payments")]
+        self.assertEqual(len(creates), 1)
+
+    def test_webhook_refuses_a_bad_token_and_credits_once(self):
+        self._install({"id": "pay_1", "status": "RECEIVED", "value": 100.0})
+        self._create("pix-3")
+        body = {"event": "PAYMENT_RECEIVED",
+                "payment": {"id": "pay_1", "value": 100.0, "status": "RECEIVED",
+                            "externalReference": "pix-3"}}
+        with self.assertRaises(PermissionError):
+            self.demo.asaas_webhook(body, {"asaas-access-token": "wrong"})
+        self.assertEqual(self.demo.books.available(self.player), 0)
+        applied = self.demo.asaas_webhook(
+            body, {"asaas-access-token": "whsec_test"})
+        self.assertTrue(applied["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        replay = self.demo.asaas_webhook(
+            body, {"asaas-access-token": "whsec_test"})
+        self.assertTrue(replay["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+
+    def test_webhook_amount_mismatch_never_credits(self):
+        self._install({"id": "pay_1", "status": "RECEIVED", "value": 100.0})
+        self._create("pix-4")
+        body = {"event": "PAYMENT_RECEIVED",
+                "payment": {"id": "pay_1", "value": 1.0, "status": "RECEIVED",
+                            "externalReference": "pix-4"}}
+        result = self.demo.asaas_webhook(body, {"asaas-access-token": "whsec_test"})
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["reason"], "amount mismatch")
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_webhook_for_an_unknown_deposit_credits_nothing(self):
+        self._install({"id": "pay_x", "status": "RECEIVED", "value": 100.0})
+        body = {"event": "PAYMENT_RECEIVED",
+                "payment": {"id": "pay_x", "value": 100.0, "status": "RECEIVED",
+                            "externalReference": "never-created"}}
+        result = self.demo.asaas_webhook(body, {"asaas-access-token": "whsec_test"})
+        self.assertFalse(result["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_webhook_ignores_an_unpaid_event(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        self._create("pix-5")
+        body = {"event": "PAYMENT_UPDATED",
+                "payment": {"id": "pay_1", "value": 100.0, "status": "PENDING",
+                            "externalReference": "pix-5"}}
+        result = self.demo.asaas_webhook(body, {"asaas-access-token": "whsec_test"})
+        self.assertFalse(result["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_charge_refuses_non_pix_and_unknown_player(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        with self.assertRaises(ValueError):
+            self.demo.create_pix_deposit(
+                {"player": self.player, "amount_minor": 10000,
+                 "method": "ted", "deposit_id": "pix-6"})
+        with self.assertRaises(ValueError):
+            self.demo.create_pix_deposit(
+                {"player": "nobody", "amount_minor": 10000,
+                 "method": "pix", "deposit_id": "pix-7"})
+
+    def test_an_unconfigured_server_refuses_to_charge(self):
+        self.demo.asaas = None
+        with self.assertRaises(ValueError):
+            self._create("pix-8")
+
+    def test_pending_charge_survives_a_restart_without_crediting(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        self._create("pix-9")
+        revived = Demo(data_dir=self.tmp)
+        revived.asaas = self.demo.asaas
+        revived.asaas_config = self.cfg
+        self.assertIn("pix-9", revived.asaas_charges)
+        view = revived.pix_deposit_status({"player": self.player,
+                                           "deposit_id": "pix-9"})
+        self.assertFalse(view["posted"])
+        self.assertEqual(revived.books.available(self.player), 0)
 
 
 class SlotTest(unittest.TestCase):

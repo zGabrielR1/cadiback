@@ -1,7 +1,14 @@
 "use client";
 
+import { useState } from "react";
+import { BRL } from "../../lib/api";
+
 /** Cashier modal: deposit / Pix-withdraw tabs (F1 extract from page.jsx).
- * Money movement stays in the page handlers; this component is pure UI. */
+ * Money movement stays in the page handlers; this component is pure UI.
+ *
+ * When the server has an Asaas Pix rail, a deposit opens a real charge and
+ * this modal shows the QR + copy-paste string and waits for confirmation
+ * (`pixCharge`). Without the rail it keeps the instant demo credit. */
 export default function CashierModal({
   open,
   tab,
@@ -16,8 +23,23 @@ export default function CashierModal({
   busy,
   onDeposit,
   onWithdraw,
+  asaasAvailable,
+  pixCharge,
+  onResetPix,
   onClose,
 }) {
+  const [copied, setCopied] = useState(false);
+  const realPix = asaasAvailable && method === "pix";
+
+  const copyPix = async () => {
+    try {
+      await navigator.clipboard.writeText(pixCharge.copy_paste);
+      setCopied(true);
+    } catch (e) {
+      /* clipboard blocked: the textarea below is selectable by hand */
+    }
+  };
+
   return (
     <div
       className={"modal" + (open ? " open" : "")}
@@ -39,24 +61,82 @@ export default function CashierModal({
           </button>
         </div>
         {tab === "dep" ? (
-          <div>
-            <label htmlFor="method">Método de Depósito</label>
-            <select id="method" value={method} onChange={(e) => onMethod(e.target.value)}>
-              <option value="pix">Pix Instantâneo</option>
-              <option value="ted">TED</option>
-              <option value="debit">Cartão de Débito</option>
-            </select>
-            <label htmlFor="dep">Valor (R$)</label>
-            <input
-              id="dep"
-              inputMode="decimal"
-              value={depositAmount}
-              onChange={(e) => onDepositAmount(e.target.value)}
-            />
-            <button disabled={busy} onClick={onDeposit} style={{ marginTop: 12 }}>
-              Confirmar Depósito Demo
-            </button>
-          </div>
+          pixCharge ? (
+            <div>
+              <p className="sub" style={{ marginTop: 4 }}>
+                Pague <b>{BRL(pixCharge.amount_minor)}</b> via Pix para o saldo cair
+                na hora.
+              </p>
+              {pixCharge.qr_base64 ? (
+                <img
+                  alt="QR Code Pix"
+                  width={220}
+                  height={220}
+                  src={"data:image/png;base64," + pixCharge.qr_base64}
+                  style={{
+                    display: "block",
+                    margin: "12px auto",
+                    background: "#fff",
+                    padding: 8,
+                    borderRadius: 8,
+                  }}
+                />
+              ) : null}
+              {pixCharge.copy_paste ? (
+                <div>
+                  <label htmlFor="pixcode">Pix copia e cola</label>
+                  <textarea
+                    id="pixcode"
+                    readOnly
+                    rows={3}
+                    value={pixCharge.copy_paste}
+                    onFocus={(e) => e.target.select()}
+                    style={{ width: "100%", fontFamily: "monospace", fontSize: 11.5 }}
+                  />
+                  <button className="ghost" style={{ width: "100%" }} onClick={copyPix}>
+                    {copied ? "Código copiado ✓" : "Copiar código Pix"}
+                  </button>
+                </div>
+              ) : null}
+              <p className="sub" style={{ marginTop: 8 }}>
+                {pixCharge.posted
+                  ? "Pagamento confirmado — saldo creditado."
+                  : "Aguardando a confirmação do pagamento…"}
+              </p>
+              <button
+                className="ghost"
+                style={{ width: "100%", marginTop: 8 }}
+                onClick={onResetPix}
+              >
+                Gerar outro código
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="method">Método de Depósito</label>
+              <select id="method" value={method} onChange={(e) => onMethod(e.target.value)}>
+                <option value="pix">Pix Instantâneo</option>
+                <option value="ted">TED</option>
+                <option value="debit">Cartão de Débito</option>
+              </select>
+              <label htmlFor="dep">Valor (R$)</label>
+              <input
+                id="dep"
+                inputMode="decimal"
+                value={depositAmount}
+                onChange={(e) => onDepositAmount(e.target.value)}
+              />
+              <button disabled={busy} onClick={onDeposit} style={{ marginTop: 12 }}>
+                {realPix ? "Gerar Pix para pagar" : "Confirmar Depósito Demo"}
+              </button>
+              {realPix ? (
+                <p className="sub" style={{ marginTop: 8 }}>
+                  O Pix é gerado pelo Asaas; o saldo cai quando o pagamento é
+                  confirmado.
+                </p>
+              ) : null}
+            </div>
+          )
         ) : (
           <div>
             <label htmlFor="wd">Valor (R$)</label>
