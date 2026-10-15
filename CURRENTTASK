@@ -32,7 +32,12 @@ default) and an admin test-send.
   `example.com` signups must not be bounced against the sending domain.
 - Deploy carries `RESEND_API_KEY`/`MAIL_FROM` from the gitignored `.env.resend`.
   Runbook `docs/mail.md`. Suites: `frame` 45/45, `demo` 263/263 (+5 mail),
-  `verify.py` 0; kit 26 checks.
+  `verify.py` 0; kit 30 checks.
+- **LIVE-VERIFIED.** Deployed; `/api/health` reports `mail.provider = "resend"`
+  and a real test send returns Resend's message id. Fixing that took two live
+  findings: Resend's Cloudflare 403s a request with no `User-Agent` (the kit now
+  always sends one), and the send-only key + unverified sender means delivery
+  reaches the account owner's address only, until a domain is verified.
 
 CURRENTTASK (previous): Signup friction removed + test accounts hidden (decision 0046) — a
 player signs up without bank/agência/conta (Pix settles to the key), the

@@ -33,7 +33,24 @@
 - **Tests.** `MailTest` x5 (welcome off/on + idempotency, a mail failure never
   fails a signup, `mail_status`, test-send admin-only + needs a configured rail,
   bad address refused). `frame` 45/45, `demo` 263/263, `verify.py` 0. The kit's
-  own suite is 26 checks and its `verify.py` also forbids non-stdlib imports.
+  own suite is 30 checks and its `verify.py` also forbids non-stdlib imports.
+- **Verified live.** Deployed to Render carrying `RESEND_API_KEY`/`MAIL_FROM`
+  (`render_deploy.py` reports both), `/api/health` reporting
+  `mail: {provider: "resend", enabled: true, welcome_enabled: false}`, and a
+  real test send returning Resend's message id. Two things only the live check
+  could have found, both now fixed or documented:
+  1. **Cloudflare 403'd every send.** With a configured key `enabled` read
+     `true`, while Resend's edge refused the request because `urllib` sends no
+     `User-Agent`. `ResendMailer` now always sends `foundry-mail/0.1`
+     (`projects/foundry/decisions/0002`).
+  2. **The key is send-only and the sender is unverified**, so Resend delivers
+     *only to the account owner's own address* until a domain is verified —
+     which is what makes `onboarding@resend.dev` the right placeholder rather
+     than a compromise.
+- `.env.resend` is read as `KEY=value` **or** as a bare single-line key (the
+  shape `.env.render` uses), and read as `utf-8-sig` — a BOM (PowerShell's
+  `Set-Content`, Notepad) would otherwise corrupt the *first* key name and make
+  the setting look silently absent.
 
 ## DONE (2026-10-15 — Signup without the payout account + hidden test accounts, decision 0046)
 

@@ -86,9 +86,19 @@ only, so no secret enters the repository. Runbook: `docs/mail.md`.
 ## Notes
 
 - `frame` 45/45, `demo` 263/263 (+5 mail), `verify.py` 0. The kit's own suite is
-  26 checks and `projects/foundry/scripts/verify.py` also fails the build on a
+  30 checks and `projects/foundry/scripts/verify.py` also fails the build on a
   non-stdlib import under `foundry/`.
 - Wall-e consumes the same module by vendoring it into `src/foundry/` and wiring
   a best-effort operations notification on settlement.
 - Next modules by the lift path: `webhooks` (signature verify), then
   `payments/asaas` and `payments/mercadopago`.
+- **Live-verified, and two things only the live check could have found.**
+  `/api/health` reports `mail.provider = "resend"` and a real test send returns
+  Resend's message id. On the way there: (a) Resend sits behind Cloudflare,
+  which 403s a request whose `User-Agent` it does not recognise — including
+  `urllib`'s default — so every send failed while `enabled` still read `true`
+  (the kit now always sends `foundry-mail/0.1`); (b) the key is send-only and
+  the sender is unverified, so Resend delivers only to the account owner's own
+  address until a domain is verified. Neither is visible in `enabled`. This is
+  the argument for keeping the "verify on the rail, not just in the suite"
+  step: the unit tests were green for both.
