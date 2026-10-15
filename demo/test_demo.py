@@ -58,6 +58,7 @@ from demo.slot import DEMO_RTP, spin, theoretical_rtp
 from demo.vendor import AggregatorError, VendorAggregator, VendorConfig
 from frame.compliance.sigap import ExclusionError, ExclusionRegistry, Limits
 from frame.wallet.books import Books, DuplicatePosting, WalletError
+from foundry.mail import MailError, SendResult
 
 
 class CpfTest(unittest.TestCase):
@@ -1691,6 +1692,109 @@ class SignupSettingsTest(unittest.TestCase):
                 viewer, {"player_id": "x", "password": "nova1234"})
         with self.assertRaises(AuthError):
             self.demo.admin_delete_test_account(viewer, {"player_id": "x"})
+
+
+class _RecordingMailer:
+    """Stands in for Resend: records instead of dialing, and can be told to
+    fail so the best-effort path is exercised without a network."""
+
+    name = "recording"
+
+    def __init__(self, enabled: bool = True, fail: bool = False) -> None:
+        self.enabled = enabled
+        self.fail = fail
+        self.sent: list[dict] = []
+
+    def send(self, message, *, idempotency_key: str = ""):
+        if self.fail:
+            raise MailError("boom")
+        to = ", ".join(a.email for a in message.recipients())
+        self.sent.append({"to": to, "subject": message.subject,
+                          "idempotency_key": idempotency_key})
+        return SendResult(id=f"rec-{len(self.sent)}", provider=self.name)
+
+
+class MailTest(unittest.TestCase):
+    """Email through the foundry kit (Resend). The rail is best-effort by
+    design: a mail failure must never fail a signup, the welcome email is off
+    until an operator turns it on, and the test-send is admin-only."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.mailer = _RecordingMailer()
+        self.demo = Demo(data_dir=self.tmp, mailer=self.mailer)
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+        }
+        body.update(over)
+        return body
+
+    def _admin(self):
+        return self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+
+    def test_welcome_is_off_by_default_then_sends_once_when_enabled(self):
+        self.assertFalse(self.demo.settings_view()["mail_welcome"])
+        self.demo.register_player(self._payload())
+        self.assertEqual(self.mailer.sent, [])  # off: nothing leaves
+
+        self.demo.admin_update_settings(self._admin(), {"mail_welcome": True})
+        profile = self.demo.register_player(self._payload(
+            email="bia@example.com", cpf="111.444.777-35",
+            pix_key="bia@example.com"))
+        self.assertEqual(len(self.mailer.sent), 1)
+        self.assertEqual(self.mailer.sent[0]["to"], "bia@example.com")
+        self.assertEqual(self.mailer.sent[0]["idempotency_key"],
+                         f"welcome:{profile['player_id']}")
+
+    def test_a_mail_failure_never_fails_a_signup(self):
+        self.mailer.fail = True
+        self.demo.admin_update_settings(self._admin(), {"mail_welcome": True})
+        profile = self.demo.register_player(self._payload())
+        # the account exists and can log in even though the welcome blew up
+        self.assertEqual(profile["email"], "ana.souza@example.com")
+        self.assertEqual(
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "ana1234"})["player_id"],
+            profile["player_id"])
+
+    def test_mail_status_reports_the_rail(self):
+        status = self.demo.mail_status()
+        self.assertEqual(status["provider"], "recording")
+        self.assertTrue(status["enabled"])
+        self.assertFalse(status["welcome_enabled"])
+
+    def test_admin_test_send_is_admin_only_and_needs_a_configured_rail(self):
+        admin = self._admin()
+        result = self.demo.admin_mail_test(admin, {"to": "eu@example.com"})
+        self.assertTrue(result["sent"])
+        self.assertEqual(result["to"], "eu@example.com")
+
+        viewer = self.demo.admin_create_user(
+            admin, {"username": "ana", "password": "segura42",
+                    "role": "viewer"})
+        viewer = self.demo.auth_login(
+            {"username": "ana", "password": "segura42"})["token"]
+        with self.assertRaises(AuthError):
+            self.demo.admin_mail_test(viewer, {"to": "eu@example.com"})
+
+        unconfigured = Demo(data_dir=tempfile.mkdtemp(),
+                            mailer=_RecordingMailer(enabled=False))
+        with self.assertRaises(PaymentError):
+            unconfigured.admin_mail_test(
+                unconfigured.auth_login({"username": "admin",
+                                         "password": "admin"})["token"],
+                {"to": "eu@example.com"})
+
+    def test_admin_test_send_refuses_a_bad_address(self):
+        with self.assertRaises(ValueError):
+            self.demo.admin_mail_test(self._admin(), {"to": "not-an-email"})
 
 
 class AdminDashboardTest(unittest.TestCase):

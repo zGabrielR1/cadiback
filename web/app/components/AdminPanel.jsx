@@ -108,6 +108,9 @@ export default function AdminPanel({ session, onSession }) {
   const [resetTestPass, setResetTestPass] = useState("");
   const [testMsg, setTestMsg] = useState("");
   const [testError, setTestError] = useState("");
+  const [mailTo, setMailTo] = useState("");
+  const [mailMsg, setMailMsg] = useState("");
+  const [mailError, setMailError] = useState("");
 
   const refreshTestAccounts = async () => {
     try {
@@ -311,8 +314,23 @@ export default function AdminPanel({ session, onSession }) {
     }
   };
 
-  const doCreateTestAccount = async () => {
-    setTestMsg("");
+  const sendTestMail = async () => {
+    setMailMsg("");
+    setMailError("");
+    setBusy(true);
+    try {
+      const out = await api("POST", "/api/admin/mail/test", {
+        to: mailTo.trim(),
+      });
+      setMailMsg(`Enviado para ${out.to} (${out.provider}) · id ${out.id}`);
+    } catch (e) {
+      setMailError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doCreateTestAccount = async () => {    setTestMsg("");
     setTestError("");
     setBusy(true);
     try {
@@ -1042,6 +1060,62 @@ export default function AdminPanel({ session, onSession }) {
               </span>
             </span>
           </label>
+          <label
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-start",
+              marginTop: 12,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={!!(settings && settings.mail_welcome)}
+              disabled={busy || !settings}
+              onChange={(e) => saveSetting("mail_welcome", e.target.checked)}
+              style={{ width: "auto", marginTop: 3 }}
+            />
+            <span>
+              Enviar email de boas-vindas no cadastro
+              <br />
+              <span className="sub" style={{ fontSize: 12 }}>
+                Requer a chave do Resend configurada no servidor. Desligado
+                (padrão): nenhum email é enviado no cadastro. Endereços de
+                teste (example.com) são recusados pelo servidor.
+              </span>
+            </span>
+          </label>
+          <div style={{ marginTop: 12 }}>
+            <span className="sub" style={{ fontSize: 12 }}>
+              Enviar um email de teste
+            </span>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <input
+                type="email"
+                placeholder="voce@seudominio.com"
+                value={mailTo}
+                onChange={(e) => setMailTo(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                disabled={busy || !mailTo.trim()}
+                onClick={sendTestMail}
+              >
+                Enviar teste
+              </button>
+            </div>
+            {mailMsg ? (
+              <p className="ok" style={{ fontSize: 13, marginTop: 8 }}>
+                {mailMsg}
+              </p>
+            ) : null}
+            {mailError ? (
+              <p className="err" style={{ fontSize: 13, marginTop: 8 }}>
+                {mailError}
+              </p>
+            ) : null}
+          </div>
           {settingsMsg ? (
             <p className="ok" style={{ fontSize: 13, marginTop: 10 }}>
               {settingsMsg}

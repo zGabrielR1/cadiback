@@ -46,6 +46,9 @@ WORKDIR /app
 COPY frame/ ./frame/
 COPY demo/ ./demo/
 COPY probes/ ./probes/
+# foundry: the vendored kit modules (stdlib only). Copied rather than installed
+# so the repository + this Dockerfile remain the whole build (decisions/0047).
+COPY foundry/ ./foundry/
 COPY --from=storefront /build/out/ ./web/out/
 
 # run unprivileged; /data is where the ledger, profiles and rounds live. The

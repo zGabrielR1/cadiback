@@ -164,6 +164,13 @@ ASAAS_ENV_FILE = os.path.join(ROOT, ".env.asaas")
 ASAAS_KEYS = ("ASAAS_API_KEY", "ASAAS_CUSTOMER_ID", "ASAAS_WEBHOOK_SECRET",
               "ASAAS_BASE_URL")
 
+# Resend email (decision 0047, docs/mail.md). Same shape: the repository holds
+# `sync: false` placeholders, the real key travels from the local gitignored
+# `.env.resend` at deploy time. MAIL_FROM is not secret but belongs with the
+# key, so it is carried from the same file.
+RESEND_ENV_FILE = os.path.join(ROOT, ".env.resend")
+RESEND_KEYS = ("RESEND_API_KEY", "MAIL_FROM", "MAIL_FROM_NAME")
+
 
 def _first_line(path: str) -> str:
     with open(path, encoding="utf-8") as handle:
@@ -265,9 +272,32 @@ def read_asaas_env() -> list[dict]:
             for name in ASAAS_KEYS if values.get(name)]
 
 
+def read_resend_env() -> list[dict]:
+    """The Resend settings to carry to the host.
+
+    Same rule as Asaas: the environment wins over the gitignored `.env.resend`,
+    and a setting absent everywhere is simply not sent — so a deploy without
+    email keeps the console mailer instead of half-configuring the rail.
+
+    `.env.resend` is accepted either as `KEY=value` lines or as a bare single
+    key, the shape `.env.render` already uses (`_from_env_file`), because a
+    credential file tends to get written whichever way is quickest at the time.
+    """
+    values = _env_pairs(RESEND_ENV_FILE)
+    if not values.get("RESEND_API_KEY") and os.path.isfile(RESEND_ENV_FILE):
+        line = _first_line(RESEND_ENV_FILE)
+        if line.startswith("re_"):
+            values["RESEND_API_KEY"] = line
+    for name in RESEND_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in RESEND_KEYS if values.get(name)]
+
+
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
-    return SERVICE["envVars"] + read_asaas_env()
+    return SERVICE["envVars"] + read_asaas_env() + read_resend_env()
 
 
 class RenderError(RuntimeError):
@@ -551,6 +581,12 @@ def run(key: str, repo: str, force: bool) -> int:
               f"{os.path.basename(ASAAS_ENV_FILE)}/environment")
     else:
         print("no Asaas credentials found: the deploy uses the instant demo credit")
+    carried_mail = read_resend_env()
+    if carried_mail:
+        print(f"carrying {len(carried_mail)} email setting(s) from "
+              f"{os.path.basename(RESEND_ENV_FILE)}/environment")
+    else:
+        print("no email credentials found: the deploy logs mail instead of sending")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)

@@ -22,6 +22,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from html import escape as html_escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -78,6 +79,27 @@ from . import rgs_proxy
 from .asaas import AsaasClient, AsaasConfig, resolve_webhook
 from .risk import RiskPolicy, evaluate_player
 from .vendor import AggregatorError, VendorAggregator, VendorConfig
+
+# Reusable plumbing from the foundry kit, vendored under ./foundry/ so the
+# repository and the Docker build stay self-contained (decisions/0047).
+# NB: this is the stdlib-only copy — no dependency, so the operator's
+# "pip install nothing" contract is intact.
+from foundry.envfile import load_env
+from foundry.mail import MailError, Message, resolve_mailer, wrap_html
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
+
+
+def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
+    """The mail settings: the file, then the real environment on top.
+
+    `.env.resend` is accepted either as `KEY=value` lines or as a single bare
+    key (the shape `.env.render` already uses), and a variable exported in the
+    environment always wins over either — which is how the deploy supplies the
+    key without a file.
+    """
+    return load_env(env_file, environ, secret_name="RESEND_API_KEY")
 
 
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:
@@ -434,11 +456,16 @@ SETTINGS_DEFAULTS = {
     # the storefront and reachable only through a hidden shortcut. With this
     # off they cannot log in at all.
     "test_accounts_enabled": True,
+    # Send a welcome email on signup (Resend, via the foundry kit). Off by
+    # default for the same reason the bank requirement is opt-in: a sandbox
+    # full of example.com test signups must not be handed to a sending domain
+    # and bounced. The admin test-send proves the rail without that.
+    "mail_welcome": False,
 }
 
 
 class Demo:
-    def __init__(self, data_dir: str = DATA) -> None:
+    def __init__(self, data_dir: str = DATA, mailer=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -497,6 +524,12 @@ class Demo:
         self.asaas_path = os.path.join(data_dir, "asaas_charges.json")
         self._asaas_lock = threading.RLock()
         self.asaas_charges: dict[str, dict] = self._load_asaas_charges()
+        # Resend email (foundry.mail, decision 0047). Unconfigured is a normal
+        # state: with no key the console mailer logs instead of sending, and
+        # the welcome email stays off until an admin turns it on. `mailer` is
+        # injectable so tests never touch the network.
+        self.mailer = mailer if mailer is not None else resolve_mailer(
+            env=mail_env())
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -554,6 +587,71 @@ class Demo:
             data = {}
         data[key] = bool(value)
         self.settings.write_all(data)
+
+    # ---- email (foundry.mail / Resend, decision 0047) ----
+    def mail_status(self) -> dict:
+        """Read-only view for /api/health: which rail is live, and whether
+        the welcome email is switched on."""
+        return {
+            "provider": getattr(self.mailer, "name", "unknown"),
+            "enabled": bool(getattr(self.mailer, "enabled", False)),
+            "welcome_enabled": bool(self.settings_view()["mail_welcome"]),
+        }
+
+    def _send_welcome(self, player_id: str, row: dict) -> None:
+        """Best-effort. An email that fails must never fail a signup: the
+        account is already on disk and the player can log in regardless.
+
+        The idempotency key is the player id, so a retried registration
+        cannot send a second welcome. The kit refuses reserved/undeliverable
+        recipients on its own, so a demo signup with an example.com address
+        is dropped here instead of bounced by the provider.
+        """
+        name = str(row.get("name") or "").split(" ")[0]
+        try:
+            self.mailer.send(
+                Message(
+                    to=str(row.get("email") or ""),
+                    subject="Bem-vindo à candibet",
+                    html=wrap_html(
+                        title="Bem-vindo!",
+                        body=f"<p>Olá{', ' + html_escape(name) if name else ''}!</p>"
+                             "<p>Sua conta está pronta. Faça um depósito por Pix "
+                             "para começar a jogar.</p>",
+                        footer="Este é um ambiente de demonstração. Nenhum "
+                               "dinheiro real é movimentado."),
+                    text=f"Olá{', ' + name if name else ''}!\n\n"
+                         "Sua conta está pronta. Faça um depósito por Pix para "
+                         "começar a jogar.\n\nAmbiente de demonstração.",
+                ),
+                idempotency_key=f"welcome:{player_id}",
+            )
+        except MailError:
+            pass  # a mail outage is not a signup outage
+
+    def admin_mail_test(self, token: str, body: dict) -> dict:
+        """Send one test email, so an operator can verify the key end to end
+        without waiting for a real signup. Admin only; never echoes the key."""
+        admin = self._require_admin(token)
+        to = validate_email(str((body or {}).get("to") or ""))
+        if not getattr(self.mailer, "enabled", False):
+            raise PaymentError(
+                "email não configurado: defina RESEND_API_KEY e MAIL_FROM")
+        try:
+            result = self.mailer.send(
+                Message(
+                    to=to,
+                    subject="Teste de email — candibet",
+                    html=wrap_html(title="Funcionou!",
+                                    body="<p>O envio de email está configurado.</p>"),
+                    text="O envio de email está configurado.",
+                ),
+                idempotency_key=f"mailtest:{admin['username']}:{to}",
+            )
+        except MailError as exc:
+            raise PaymentError(str(exc)) from exc
+        return {"sent": True, "to": to, "id": result.id,
+                "provider": result.provider, "by": admin["username"]}
 
     def _exclusions_path(self) -> str:
         return os.path.join(os.path.dirname(self.players.path), "exclusions.json")
@@ -707,6 +805,8 @@ class Demo:
         }
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
+        if self.settings_view()["mail_welcome"]:
+            self._send_welcome(player_id, data[player_id])
         return self.profile(player_id)
 
     def login_player(self, payload: dict) -> dict:
@@ -3479,6 +3579,7 @@ class Handler(BaseHTTPRequestHandler):
                                  "pg_soft": pg_proxy.stats(),
                                  "asaas": {"configured": DEMO.asaas_available(),
                                            "env": DEMO.asaas_env_name()},
+                                 "mail": DEMO.mail_status(),
                                  "config": DEMO.settings_view()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that
@@ -3702,6 +3803,9 @@ class Handler(BaseHTTPRequestHandler):
                     self._bearer(), self._body()))
             elif path == "/api/admin/test-accounts/delete":
                 self._send(200, DEMO.admin_delete_test_account(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/mail/test":
+                self._send(200, DEMO.admin_mail_test(
                     self._bearer(), self._body()))
             else:
                 self._send(404, {"error": "not found"})

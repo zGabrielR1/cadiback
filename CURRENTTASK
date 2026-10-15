@@ -1,4 +1,40 @@
-CURRENTTASK: Signup friction removed + test accounts hidden (decision 0046) — a
+CURRENTTASK: The foundry kit + email through it (decision 0047) — a shared,
+stdlib-core module kit (`projects/foundry/`) is founded so the operator and
+wall-e stop re-solving the same plumbing, and email (Resend) becomes its first
+module, vendored into the operator with a best-effort welcome email (off by
+default) and an admin test-send.
+
+## STATUS
+
+- **A SHARED KIT: `projects/foundry/`.** Its own git repo. One contract — *the
+  core is stdlib-only; every outside dependency is injected* — which is what
+  lets one module run in this stdlib-only container and in wall-e's FastAPI
+  service. `docs/MODULES.md` (contract + add-a-module checklist),
+  `ARCHITECTURE.md`, `decisions/0001`. Deploy manifests for Render / Fly /
+  Vercel live in the kit as `{{TOKEN}}` templates, stamped by
+  `python -m foundry.deploy <host>`.
+- **VENDORED, NOT A DEPENDENCY.** `foundry/scripts/vendor.py` copies the named
+  modules into `operator/foundry/` with a per-file source hash
+  (`VENDOR.foundry.json`), and the `Dockerfile` copies that folder in. A pip
+  dependency would break the stdlib-only contract; a path dependency would
+  break the Render build, which only sees this repository. The vendored code
+  installs nothing.
+- **EMAIL (RESEND), BEST-EFFORT (0047).** `foundry.mail` (stdlib `urllib`,
+  injected transport). `Demo.mailer` resolves from the environment at boot and
+  is injectable for tests; with no key the *console* mailer logs instead of
+  sending, so an unconfigured deploy stays healthy. `mail_welcome` (**default
+  off**) gates the welcome email; a send failure never fails a signup.
+  `POST /api/admin/mail/test` sends one test email; `/api/health` reports
+  `mail: {provider, enabled, welcome_enabled}`; the painel has the toggle and
+  the test box.
+- **RESERVED RECIPIENTS ARE REFUSED LOCALLY.** `example.com`/`.invalid`/… never
+  reach the provider (`allow_reserved=True` to override) — the demo's own
+  `example.com` signups must not be bounced against the sending domain.
+- Deploy carries `RESEND_API_KEY`/`MAIL_FROM` from the gitignored `.env.resend`.
+  Runbook `docs/mail.md`. Suites: `frame` 45/45, `demo` 263/263 (+5 mail),
+  `verify.py` 0; kit 26 checks.
+
+CURRENTTASK (previous): Signup friction removed + test accounts hidden (decision 0046) — a
 player signs up without bank/agência/conta (Pix settles to the key), the
 operator can demand it again with a painel toggle, and the visible test-account
 button became a Ctrl+Shift+T secret plus painel-managed test accounts. Shipped

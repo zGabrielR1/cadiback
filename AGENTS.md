@@ -16,11 +16,13 @@ No real money moves; no commercial legal or regulatory obligations.
 | `frame/` | Core double-entry wallet, ledger, and rules (45 checks) |
 | `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (258 checks) |
 | `demo/asaas.py` | Real Pix through Asaas: charge, QR, provider-confirmed settlement |
+| `foundry/` | Vendored modules from the foundry kit (stdlib only) — email today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decision 0047) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
 | `Dockerfile`, `render.yaml` | The deploy: one container, built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/asaas.md` | Real Pix via Asaas: credentials, webhook registration, production swap |
+| `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |
 | `probes/` | Provider demo catalog (272 official games) & live sports fixtures |
 | `scripts/discover_pgsoft_demos.py` | Find live PG Soft titles: mint each candidate, read its slug |

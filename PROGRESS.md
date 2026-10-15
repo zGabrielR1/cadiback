@@ -1,5 +1,40 @@
 # PROGRESS
 
+## DONE (2026-10-15 — the foundry kit + email through it, decision 0047)
+
+- **A shared kit, `projects/foundry/`.** Small host-agnostic modules under one
+  contract — *the core is stdlib-only; every outside dependency is injected* —
+  so the same module runs in the operator's zero-dependency container and in
+  wall-e's FastAPI service. `docs/MODULES.md` states the contract and the
+  add-a-module checklist; `scripts/verify.py` fails the build on a non-stdlib
+  import. Deploy manifests for Render, Fly.io and Vercel live in the kit as
+  `{{TOKEN}}` templates, stamped by `python -m foundry.deploy <host>`.
+- **The operator consumes it by vendoring, not a dependency.**
+  `foundry/scripts/vendor.py` copies the modules into `operator/foundry/` with a
+  per-file source hash (`VENDOR.foundry.json`); the `Dockerfile` copies the
+  folder in. Copy, not pip, because a dependency breaks the stdlib-only
+  contract and a path dependency breaks the Render build (the build only sees
+  this repository). The vendored code still installs nothing.
+- **Email (Resend), best-effort.** `Demo.mailer` is resolved from the
+  environment (`foundry.mail`); no key → the *console* mailer logs instead of
+  sending, so an unconfigured deploy stays healthy. The welcome email is behind
+  a new setting `mail_welcome` (**default off** — a sandbox of `example.com`
+  signups must not be bounced against the sending domain), and a send failure
+  never fails a signup. `POST /api/admin/mail/test` sends one test email so the
+  key can be verified end to end; `/api/health` reports
+  `mail: {provider, enabled, welcome_enabled}`; the painel gains the toggle and
+  the test box.
+- **The module refuses reserved recipients locally** (`example.com`, `.invalid`,
+  …) before the request leaves the process — `allow_reserved=True` is the
+  deliberate override. Reason: `foundry/decisions/0002`.
+- Deploy carries `RESEND_API_KEY`/`MAIL_FROM` from the gitignored `.env.resend`
+  (`scripts/render_deploy.py`); `render.yaml` holds `sync: false` placeholders
+  only. Runbook `docs/mail.md`.
+- **Tests.** `MailTest` x5 (welcome off/on + idempotency, a mail failure never
+  fails a signup, `mail_status`, test-send admin-only + needs a configured rail,
+  bad address refused). `frame` 45/45, `demo` 263/263, `verify.py` 0. The kit's
+  own suite is 26 checks and its `verify.py` also forbids non-stdlib imports.
+
 ## DONE (2026-10-15 — Signup without the payout account + hidden test accounts, decision 0046)
 
 - **Signup no longer demands bank/agência/conta.** The Pix key is the payout
