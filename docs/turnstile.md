@@ -28,7 +28,7 @@ production allowlist must not contain loopback.
 ```bash
 # .env.turnstile   (gitignored)
 TURNSTILE_SECRET_KEY=0x...
-TURNSTILE_SITE_KEY=0x4AAAAAAFXu9FH01TH3LPSF
+TURNSTILE_SITE_KEY=0x4AAAAAAFX5o_Oc75RuRFDo
 TURNSTILE_HOSTNAMES=cadiback.onrender.com
 TURNSTILE_DEV_HOSTNAMES=localhost,127.0.0.1
 ```

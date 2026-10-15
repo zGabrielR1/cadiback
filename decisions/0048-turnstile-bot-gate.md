@@ -13,7 +13,7 @@ the browser a token, and the *server* exchanges it at siteverify.
 The operator may not `pip install` anything, so the integration cannot reach for
 Cloudflare's SDK or a web framework. The check is one form-encoded POST, which
 is exactly what the foundry kit exists to hold once — and the widget is already
-created (site key `0x4AAAAAAFXu9FH01TH3LPSF`).
+created (site key `0x4AAAAAAFX5o_Oc75RuRFDo`).
 
 ## Decision
 
@@ -103,7 +103,7 @@ with the three Turnstile values carried by `render_deploy.py` from the
 gitignored `.env.turnstile`:
 
 - `/api/health` → `turnstile: {provider: "turnstile", enabled: true,
-  configured: true, site_key: "0x4AAAAAAFXu9FH01TH3LPSF",
+  configured: true, site_key: "0x4AAAAAAFX5o_Oc75RuRFDo",
   hostnames: ["cadiback.onrender.com"], login_required: true}`.
 - `/api/config` → `turnstile_enabled: true` and the public site key, so the
   storefront renders the widget.
@@ -119,6 +119,16 @@ and read its verdict (the always-present `User-Agent` is what keeps Cloudflare's
 edge from answering a bare 403). A credential-less deploy had already been
 verified inert: the same login returned the ordinary 400 before the secret was
 carried.
+
+## Widget rotation (2026-10-15)
+
+The original widget was deleted in the Cloudflare dashboard, so a replacement
+widget was created and rotated in: new site key in `.env.turnstile`, carried to
+Render by `render_deploy.py`, backend redeployed and re-verified live (health
+reports the new key; bogus token → `invalid-input-response`, proving the new
+secret validates). References above now show the current key. Rotation is a
+secret swap only — no code changed on either side, and the Vercel storefront
+picks the new key up from `/api/config` with no rebuild.
 
 The widget's registered Domains are `cadiback.onrender.com` only; the local
 `TURNSTILE_DEV_HOSTNAMES` (`localhost,127.0.0.1`) is never carried to Render, so
