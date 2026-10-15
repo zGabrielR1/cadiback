@@ -28,6 +28,14 @@ from .transport import Transport, urllib_transport
 RESEND_BASE_URL = "https://api.resend.com"
 DEFAULT_ENV_FILE = ".env.resend"
 
+# Resend sits behind Cloudflare, which answers a request carrying a User-Agent
+# it does not recognise — including `urllib`'s default — with a bare 403 that
+# explains nothing. Sending an honest, stable identity is the difference
+# between a working rail and every send failing for a reason no log states.
+# It is set here rather than in the default transport so that an injected
+# transport (httpx, requests) inherits it too.
+USER_AGENT = "foundry-mail/0.1"
+
 
 @runtime_checkable
 class Mailer(Protocol):
@@ -81,7 +89,8 @@ class ResendMailer:
         body = _json.dumps(msg.to_payload()).encode("utf-8")
         headers = {"Authorization": f"Bearer {self._api_key}",
                    "Content-Type": "application/json",
-                   "Accept": "application/json"}
+                   "Accept": "application/json",
+                   "User-Agent": USER_AGENT}
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
         out = self._transport("POST", f"{self.base_url}/emails", headers, body,
