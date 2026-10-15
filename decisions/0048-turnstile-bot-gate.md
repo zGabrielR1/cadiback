@@ -95,3 +95,31 @@ silently contain `localhost`.
   Cloudflare API token), so it is stored through the project's own secret flow:
   `.env.turnstile` (gitignored), carried to Render by `render_deploy.py`.
 - Runbook: `docs/turnstile.md`.
+
+## Live verification (2026-10-15)
+
+Deployed to Render (`srv-db79eljbc2fs73eau2k0`, `https://cadiback.onrender.com`)
+with the three Turnstile values carried by `render_deploy.py` from the
+gitignored `.env.turnstile`:
+
+- `/api/health` → `turnstile: {provider: "turnstile", enabled: true,
+  configured: true, site_key: "0x4AAAAAAFXu9FH01TH3LPSF",
+  hostnames: ["cadiback.onrender.com"], login_required: true}`.
+- `/api/config` → `turnstile_enabled: true` and the public site key, so the
+  storefront renders the widget.
+- `POST /api/player/login` with **no token** → **403**
+  `verificação anti-bot falhou: no turnstile token in the request`.
+- `POST /api/player` with a **bogus token** → **403**
+  `verificação anti-bot falhou: turnstile refused the token
+  (invalid-input-response)`.
+
+That second refusal is the proof the rail is real: `invalid-input-response` is
+Cloudflare's own answer from `siteverify`, so the module reached the endpoint
+and read its verdict (the always-present `User-Agent` is what keeps Cloudflare's
+edge from answering a bare 403). A credential-less deploy had already been
+verified inert: the same login returned the ordinary 400 before the secret was
+carried.
+
+The widget's registered Domains are `cadiback.onrender.com` only; the local
+`TURNSTILE_DEV_HOSTNAMES` (`localhost,127.0.0.1`) is never carried to Render, so
+the production allowlist cannot contain loopback.

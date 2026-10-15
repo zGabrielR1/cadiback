@@ -31,6 +31,10 @@
   enabled refuses a missing/wrong-surface token, the painel switch, the public
   config never leaking the secret, and the route's 403/400 split). `frame` 45/45,
   `demo` suite green, `verify.py` 0; the kit is 45 checks.
+- **Verified live.** Render carries the three values; `/api/health` reports
+  `turnstile.enabled = true` with `hostnames = ["cadiback.onrender.com"]`, a
+  login with no token is **403**, and a bogus token is **403** with Cloudflare's
+  own `invalid-input-response` — the siteverify round-trip is real.
 
 ## DONE (2026-10-15 — the foundry kit + email through it, decision 0047)
 
