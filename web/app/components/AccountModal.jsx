@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TurnstileWidget from "./TurnstileWidget";
 
 /** Player login + registration (Entrar / Criar conta). Real-site shape:
  * login takes email-or-CPF plus password; registration takes name, email,
@@ -20,9 +21,12 @@ export default function AccountModal({
   busy,
   requireBank = false,
   testAccountsEnabled = false,
+  turnstileSiteKey = "",
+  turnstileReset = 0,
   onForm,
   onMode,
   onSubmit,
+  onTurnstileToken,
   onFillTest,
   onClose,
 }) {
@@ -185,6 +189,21 @@ export default function AccountModal({
           <p className="ferr" role="alert" style={{ marginTop: 10 }}>
             {errors._}
           </p>
+        ) : null}
+        {turnstileSiteKey ? (
+          <div style={{ marginTop: 12 }}>
+            <TurnstileWidget
+              siteKey={turnstileSiteKey}
+              action={isLogin ? "login" : "register"}
+              onToken={onTurnstileToken}
+              resetSignal={turnstileReset}
+            />
+            {errors.turnstile ? (
+              <p className="ferr" role="alert">
+                {errors.turnstile}
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <button
           onClick={onSubmit}

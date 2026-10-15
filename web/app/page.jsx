@@ -81,6 +81,15 @@ export default function Page() {
   // and reachable only through the Ctrl+Shift+T shortcut in the modal.
   const [authMode, setAuthMode] = useState("login");
   const [authErrors, setAuthErrors] = useState({});
+  // Cloudflare Turnstile (foundry.turnstile): the widget hands us a token, we
+  // send it with the login/signup POST, and the server checks it at siteverify.
+  // `authAttempt` is bumped after every submit so the widget is reset — a token
+  // is single-use and a retry must mint a fresh one.
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [authAttempt, setAuthAttempt] = useState(0);
+  const onTurnstileToken = useCallback((token) => {
+    setTurnstileToken(token || "");
+  }, []);
   const [form, setForm] = useState({
     identifier: "",
     name: "",
@@ -406,15 +415,24 @@ export default function Page() {
           errs.holder_name = "informe o titular da conta";
       }
     }
+    if (serverConfig.turnstile_enabled && serverConfig.turnstile_site_key &&
+        !turnstileToken) {
+      errs.turnstile = "confirme que você não é um robô";
+    }
     setAuthErrors(errs);
     if (Object.keys(errs).length > 0) return;
     setBusy(true);
     try {
+      const turnstile =
+        serverConfig.turnstile_enabled && serverConfig.turnstile_site_key
+          ? { "cf-turnstile-response": turnstileToken }
+          : {};
       const profileRow =
         authMode === "login"
           ? await api("POST", "/api/player/login", {
               identifier: String(form.identifier || "").trim(),
               password: form.password,
+              ...turnstile,
             })
           : await api("POST", "/api/player", {
               name: String(form.name || "").trim(),
@@ -428,6 +446,7 @@ export default function Page() {
                 account: String(form.account || "").trim(),
                 holder_name: String(form.holder_name || "").trim(),
               },
+              ...turnstile,
             });
       setPlayerSession({ player_id: profileRow.player_id });
       setPlayer(profileRow.player_id);
@@ -437,6 +456,8 @@ export default function Page() {
       setAuthErrors({ _: e.message });
     } finally {
       setBusy(false);
+      // a token is single-use: reset the widget so a retry mints a new one
+      setAuthAttempt((n) => n + 1);
     }
   };
 
@@ -862,12 +883,19 @@ export default function Page() {
         busy={busy}
         requireBank={!!serverConfig.require_bank_at_signup}
         testAccountsEnabled={!!serverConfig.test_accounts_enabled}
+        turnstileSiteKey={
+          serverConfig.turnstile_enabled
+            ? serverConfig.turnstile_site_key || ""
+            : ""
+        }
+        turnstileReset={authAttempt}
         onForm={(next) => {
           setForm(next);
           setAuthErrors({});
         }}
         onMode={setAuthMode}
         onSubmit={submitAuth}
+        onTurnstileToken={onTurnstileToken}
         onFillTest={fillTestAccount}
         onClose={() => setAcctOpen(false)}
       />

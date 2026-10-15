@@ -171,6 +171,15 @@ ASAAS_KEYS = ("ASAAS_API_KEY", "ASAAS_CUSTOMER_ID", "ASAAS_WEBHOOK_SECRET",
 RESEND_ENV_FILE = os.path.join(ROOT, ".env.resend")
 RESEND_KEYS = ("RESEND_API_KEY", "MAIL_FROM", "MAIL_FROM_NAME")
 
+# Cloudflare Turnstile (decision 0048, docs/turnstile.md). The secret is the
+# only sensitive value; the site key is public and the hostnames are an
+# allowlist. All three are carried from the local gitignored `.env.turnstile`.
+# `TURNSTILE_DEV_HOSTNAMES` (loopback, for local work) is deliberately NOT in
+# this list: a production allowlist must never contain localhost.
+TURNSTILE_ENV_FILE = os.path.join(ROOT, ".env.turnstile")
+TURNSTILE_KEYS = ("TURNSTILE_SECRET_KEY", "TURNSTILE_SITE_KEY",
+                  "TURNSTILE_HOSTNAMES")
+
 
 def _first_line(path: str) -> str:
     with open(path, encoding="utf-8") as handle:
@@ -295,9 +304,27 @@ def read_resend_env() -> list[dict]:
             for name in RESEND_KEYS if values.get(name)]
 
 
+def read_turnstile_env() -> list[dict]:
+    """The Turnstile settings to carry to the host.
+
+    Same rule as Asaas/Resend: the environment wins over the gitignored
+    `.env.turnstile`, and a setting absent everywhere is simply not sent — so
+    a deploy without credentials does not gate the surface instead of
+    half-configuring it. `TURNSTILE_DEV_HOSTNAMES` is intentionally excluded:
+    loopback belongs on a laptop, never in a production allowlist.
+    """
+    values = _env_pairs(TURNSTILE_ENV_FILE)
+    for name in TURNSTILE_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in TURNSTILE_KEYS if values.get(name)]
+
+
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
-    return SERVICE["envVars"] + read_asaas_env() + read_resend_env()
+    return (SERVICE["envVars"] + read_asaas_env() + read_resend_env()
+            + read_turnstile_env())
 
 
 class RenderError(RuntimeError):
@@ -587,6 +614,12 @@ def run(key: str, repo: str, force: bool) -> int:
               f"{os.path.basename(RESEND_ENV_FILE)}/environment")
     else:
         print("no email credentials found: the deploy logs mail instead of sending")
+    carried_turnstile = read_turnstile_env()
+    if carried_turnstile:
+        print(f"carrying {len(carried_turnstile)} Turnstile setting(s) from "
+              f"{os.path.basename(TURNSTILE_ENV_FILE)}/environment")
+    else:
+        print("no Turnstile credentials found: login/signup are not bot-gated")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)

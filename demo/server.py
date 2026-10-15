@@ -86,9 +86,11 @@ from .vendor import AggregatorError, VendorAggregator, VendorConfig
 # "pip install nothing" contract is intact.
 from foundry.envfile import load_env
 from foundry.mail import MailError, Message, resolve_mailer, wrap_html
+from foundry.turnstile import FIELD_NAME, TurnstileError, resolve_verifier
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
+TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
 
 
 def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
@@ -100,6 +102,17 @@ def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
     key without a file.
     """
     return load_env(env_file, environ, secret_name="RESEND_API_KEY")
+
+
+def turnstile_env(env_file: str = TURNSTILE_ENV_FILE, environ=None) -> dict[str, str]:
+    """The Turnstile settings: the file, then the real environment on top.
+
+    Same shape as `mail_env`. `.env.turnstile` holds the secret key, the
+    (public) site key, and the hostname allowlist; the environment wins. The
+    deploy carries only the production keys — `TURNSTILE_DEV_HOSTNAMES`
+    (loopback, for local work) is deliberately never sent to Render.
+    """
+    return load_env(env_file, environ, secret_name="TURNSTILE_SECRET_KEY")
 
 
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:
@@ -461,11 +474,17 @@ SETTINGS_DEFAULTS = {
     # full of example.com test signups must not be handed to a sending domain
     # and bounced. The admin test-send proves the rail without that.
     "mail_welcome": False,
+    # Require a Cloudflare Turnstile token on the player login and signup
+    # surfaces (foundry.turnstile). On by default, but only *effective* once
+    # the rail is configured (TURNSTILE_SECRET_KEY + a hostname): with no
+    # credentials the verifier reports itself disabled and the gate is a
+    # no-op, so local work and the test suite are unaffected.
+    "turnstile_login": True,
 }
 
 
 class Demo:
-    def __init__(self, data_dir: str = DATA, mailer=None) -> None:
+    def __init__(self, data_dir: str = DATA, mailer=None, verifier=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -530,6 +549,15 @@ class Demo:
         # injectable so tests never touch the network.
         self.mailer = mailer if mailer is not None else resolve_mailer(
             env=mail_env())
+        # Cloudflare Turnstile (foundry.turnstile, decision 0048). Unconfigured
+        # is a normal state: with no secret the verifier is disabled and the
+        # gate on login/signup is a no-op, so a sandbox keeps working. The
+        # verifier is injectable so tests never touch the network. The site key
+        # is public (it ships in the page); the secret is never surfaced.
+        ts_env = turnstile_env()
+        self.turnstile = verifier if verifier is not None else resolve_verifier(
+            env=ts_env)
+        self.turnstile_site_key = (ts_env.get("TURNSTILE_SITE_KEY") or "").strip()
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -652,6 +680,54 @@ class Demo:
             raise PaymentError(str(exc)) from exc
         return {"sent": True, "to": to, "id": result.id,
                 "provider": result.provider, "by": admin["username"]}
+
+    # ---- Turnstile (foundry.turnstile / Cloudflare, decision 0048) ----
+    def turnstile_enabled(self) -> bool:
+        """True when a login/signup must carry a valid Turnstile token.
+
+        Both halves have to agree: the rail must be configured (a secret and a
+        hostname) and the operator setting must be on. Either being off makes
+        the gate a no-op — never a broken login.
+        """
+        return bool(getattr(self.turnstile, "enabled", False)
+                    and self.settings_view()["turnstile_login"])
+
+    def turnstile_status(self) -> dict:
+        """Read-only view for /api/health and the painel. The site key is
+        public; the secret is never surfaced."""
+        return {
+            "provider": getattr(self.turnstile, "name", "unknown"),
+            "enabled": self.turnstile_enabled(),
+            "configured": bool(getattr(self.turnstile, "enabled", False)),
+            "site_key": self.turnstile_site_key,
+            "hostnames": list(getattr(self.turnstile, "hostnames", ()) or ()),
+            "login_required": bool(self.settings_view()["turnstile_login"]),
+        }
+
+    def require_turnstile(self, body: dict, action: str,
+                          remote_ip: str = "") -> None:
+        """Gate a player auth surface on Turnstile.
+
+        A no-op when the rail is unconfigured or the operator turned it off —
+        the same "unconfigured is a normal state" rule the mailer follows. When
+        it is on, a missing, invalid, replayed, or wrong-surface token is
+        refused here, before the handler ever reads the credentials.
+        """
+        if not self.turnstile_enabled():
+            return
+        token = str((body or {}).get(FIELD_NAME) or "")
+        try:
+            self.turnstile.verify(token, action=action, remote_ip=remote_ip)
+        except TurnstileError as exc:
+            raise TurnstileError(f"verificação anti-bot falhou: {exc}") from exc
+
+    def public_config(self) -> dict:
+        """The operator settings a storefront may see, plus the public
+        Turnstile bits it needs to render the widget. Never a secret."""
+        config = self.settings_view()
+        config["turnstile_enabled"] = self.turnstile_enabled()
+        config["turnstile_site_key"] = self.turnstile_site_key
+        return config
 
     def _exclusions_path(self) -> str:
         return os.path.join(os.path.dirname(self.players.path), "exclusions.json")
@@ -3476,6 +3552,22 @@ class Handler(BaseHTTPRequestHandler):
             return header[7:].strip()
         return ""
 
+    def _client_ip(self) -> str:
+        """The caller's address, passed to siteverify as `remoteip`.
+
+        Behind Render the socket peer is the proxy, so the leftmost
+        `X-Forwarded-For` entry is the real client; a direct call (curl, the
+        test suite) falls back to the socket. This is a signal to Cloudflare,
+        never an authorization decision of ours.
+        """
+        forwarded = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+        try:
+            return self.client_address[0]
+        except (IndexError, TypeError):
+            return ""
+
     def _body(self) -> dict:
         """Read a JSON body. Rejects non-JSON content types: without this,
         any page on any origin can drive the API cross-site (a
@@ -3580,7 +3672,8 @@ class Handler(BaseHTTPRequestHandler):
                                  "asaas": {"configured": DEMO.asaas_available(),
                                            "env": DEMO.asaas_env_name()},
                                  "mail": DEMO.mail_status(),
-                                 "config": DEMO.settings_view()})
+                                 "turnstile": DEMO.turnstile_status(),
+                                 "config": DEMO.public_config()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that
                 # answers 200 proves reachability without trusting anything.
@@ -3623,8 +3716,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.admin_test_accounts(self._bearer()))
             elif parsed.path == "/api/config":
                 # public, read-only operator settings the storefront adapts
-                # to (e.g. whether signup demands the payout account)
-                self._send(200, DEMO.settings_view())
+                # to (e.g. whether signup demands the payout account, whether
+                # to render the Turnstile widget)
+                self._send(200, DEMO.public_config())
             elif parsed.path == "/api/admin":
                 self._send(200, DEMO.admin_dashboard(self._bearer()))
             elif parsed.path == "/api/admin/player":
@@ -3722,9 +3816,13 @@ class Handler(BaseHTTPRequestHandler):
                                            self._raw_body())
                 return
             if path == "/api/player":
-                self._send(200, DEMO.register_player(self._body()))
+                body = self._body()
+                DEMO.require_turnstile(body, "register", self._client_ip())
+                self._send(200, DEMO.register_player(body))
             elif path == "/api/player/login":
-                self._send(200, DEMO.login_player(self._body()))
+                body = self._body()
+                DEMO.require_turnstile(body, "login", self._client_ip())
+                self._send(200, DEMO.login_player(body))
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._body()))
             elif path == "/api/deposit/pix":
@@ -3815,6 +3913,10 @@ class Handler(BaseHTTPRequestHandler):
         except CertificationError as exc:
             self._send(403, {"error": str(exc)})
         except ExclusionError as exc:
+            self._send(403, {"error": str(exc)})
+        except TurnstileError as exc:
+            # a bot gate: 403, not a validation 400 — the request was refused,
+            # not malformed
             self._send(403, {"error": str(exc)})
         except DuplicatePosting as exc:
             self._send(400, {"error": f"duplicate id: {exc}"})

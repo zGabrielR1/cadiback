@@ -48,6 +48,19 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      # Cloudflare Turnstile bot gate on player login/signup (decision 0048,
+      # docs/turnstile.md). Optional: with no secret the verifier is disabled
+      # and the gate is a no-op, so a deploy without it stays healthy. The
+      # secret is the only sensitive value; the site key is public and the
+      # hostnames are an allowlist. `sync: false` keeps the secret out of the
+      # repository — let scripts/render_deploy.py carry all three from the
+      # local gitignored .env.turnstile. Never put the secret in this file.
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_HOSTNAMES
+        sync: false
     # disk:            # paid plans only
     #   name: candibet-data
     #   mountPath: /data

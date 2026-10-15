@@ -59,6 +59,7 @@ from demo.vendor import AggregatorError, VendorAggregator, VendorConfig
 from frame.compliance.sigap import ExclusionError, ExclusionRegistry, Limits
 from frame.wallet.books import Books, DuplicatePosting, WalletError
 from foundry.mail import MailError, SendResult
+from foundry.turnstile import TurnstileError, Verification
 
 
 class CpfTest(unittest.TestCase):
@@ -1795,6 +1796,143 @@ class MailTest(unittest.TestCase):
     def test_admin_test_send_refuses_a_bad_address(self):
         with self.assertRaises(ValueError):
             self.demo.admin_mail_test(self._admin(), {"to": "not-an-email"})
+
+
+class _RecordingVerifier:
+    """Stands in for Cloudflare siteverify: decides from the token, no network.
+
+    A token of the form `<action>:ok` passes for that action; anything else is
+    refused, so a test can drive both the accept and the refuse path.
+    """
+
+    name = "recording"
+
+    def __init__(self, enabled: bool = True, hostnames=("candibet.test",)):
+        self.enabled = enabled
+        self.hostnames = tuple(hostnames)
+        self.calls: list[dict] = []
+
+    def verify(self, token, *, action="", hostnames=None, remote_ip=""):
+        self.calls.append({"token": token, "action": action,
+                           "remote_ip": remote_ip})
+        if not self.enabled:
+            raise TurnstileError("disabled")
+        if token != f"{action}:ok":
+            raise TurnstileError(f"turnstile refused the token (for {action})")
+        return Verification(success=True, action=action,
+                            hostname=(hostnames or self.hostnames)[0])
+
+
+class TurnstileTest(unittest.TestCase):
+    """The bot gate on player login/signup (foundry.turnstile). Unconfigured is
+    a no-op so a sandbox keeps working; configured, a missing or wrong-surface
+    token is refused before the credentials are read, and the secret is never
+    surfaced in a public view."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.verifier = _RecordingVerifier()
+        self.demo = Demo(data_dir=self.tmp, verifier=self.verifier)
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+        }
+        body.update(over)
+        return body
+
+    def test_unconfigured_rail_makes_the_gate_a_noop(self):
+        off = Demo(data_dir=tempfile.mkdtemp(),
+                   verifier=_RecordingVerifier(enabled=False))
+        self.assertFalse(off.turnstile_enabled())
+        off.require_turnstile({}, "login")  # no token, no error
+        profile = off.register_player(self._payload())  # signup still works
+        self.assertEqual(profile["email"], "ana.souza@example.com")
+
+    def test_enabled_rail_refuses_a_missing_or_wrong_surface_token(self):
+        self.assertTrue(self.demo.turnstile_enabled())
+        with self.assertRaises(TurnstileError):
+            self.demo.require_turnstile({}, "login")
+        with self.assertRaises(TurnstileError):
+            self.demo.require_turnstile({"cf-turnstile-response": "register:ok"},
+                                        "login")
+        # the right token for the right surface passes
+        self.demo.require_turnstile({"cf-turnstile-response": "login:ok"}, "login")
+        self.assertEqual(self.verifier.calls[-1]["action"], "login")
+        self.assertEqual(self.verifier.calls[-1]["token"], "login:ok")
+
+    def test_operator_can_turn_the_gate_off_from_the_painel(self):
+        admin = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        self.demo.admin_update_settings(admin, {"turnstile_login": False})
+        self.assertFalse(self.demo.turnstile_enabled())
+        self.demo.require_turnstile({}, "login")  # no-op again
+        self.assertFalse(self.demo.public_config()["turnstile_enabled"])
+
+    def test_public_config_exposes_the_site_key_but_never_the_secret(self):
+        self.demo.turnstile_site_key = "0xSITEKEY"
+        config = self.demo.public_config()
+        self.assertEqual(config["turnstile_site_key"], "0xSITEKEY")
+        self.assertTrue(config["turnstile_enabled"])
+        status = self.demo.turnstile_status()
+        self.assertEqual(status["provider"], "recording")
+        self.assertTrue(status["configured"])
+        self.assertNotIn("secret", status)
+        self.assertNotIn("0xSITEKEY", str(status.get("hostnames")))
+
+
+class TurnstileHttpTest(unittest.TestCase):
+    """The route wiring: a gated surface answers 403 when the token is missing,
+    and the global verifier is restored afterwards so no other test is steered
+    by it."""
+
+    def setUp(self):
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever,
+                                       daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.keep = DEMO.turnstile
+        DEMO.turnstile = _RecordingVerifier()
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        DEMO.turnstile = self.keep
+        self.server.shutdown()
+        self.server.server_close()
+
+    def _post(self, path, body):
+        data = json.dumps(body).encode("utf-8")
+        req = urllib.request.Request(
+            self.base + path, data=data, method="POST",
+            headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status, json.loads(resp.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            with exc:
+                return exc.code, json.loads(exc.read() or b"{}")
+
+    def test_login_and_signup_refuse_a_missing_token_with_403(self):
+        status, body = self._post("/api/player/login",
+                                  {"identifier": "a@b.com", "password": "x"})
+        self.assertEqual(status, 403)
+        self.assertIn("anti-bot", body["error"])
+        status, _ = self._post("/api/player", {"name": "Ana"})
+        self.assertEqual(status, 403)
+
+    def test_a_valid_token_lets_the_handler_run(self):
+        status, body = self._post(
+            "/api/player/login",
+            {"identifier": "a@b.com", "password": "x",
+             "cf-turnstile-response": "login:ok"})
+        # the gate let it through; the credentials are simply wrong
+        self.assertEqual(status, 400)
+        self.assertNotIn("anti-bot", body.get("error", ""))
 
 
 class AdminDashboardTest(unittest.TestCase):

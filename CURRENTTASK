@@ -1,4 +1,45 @@
-CURRENTTASK: The foundry kit + email through it (decision 0047) — a shared,
+CURRENTTASK: Turnstile (Cloudflare) on the player login and signup surfaces (decision
+0048) — the foundry kit gains a `turnstile` module (the canonical siteverify
+check, stdlib, injected transport) plus a `templates/turnstile/` snippet, and the
+operator gates `POST /api/player/login` and `POST /api/player` on it, with the
+widget on the storefront. The admin painel is deliberately out of scope.
+
+## STATUS
+
+- **THE KIT MODULE.** `foundry.turnstile` wraps one form-encoded POST to
+  `challenges.cloudflare.com/turnstile/v0/siteverify`. The answer is a frozen
+  `Verification` whose `validate(action=…, hostnames=…)` states the canonical
+  policy — `success`, the expected `action`, and a `hostname` on the allowlist —
+  and `success` alone is refused as insufficient (a token minted elsewhere with
+  our public site key is `success: true`). `resolve_verifier()` with no secret
+  returns a **disabled** verifier, so "unconfigured" is a normal state, exactly
+  like the console mailer. Rationale: `projects/foundry/decisions/0003`.
+- **GATE, DON'T REPLACE (operator).** `Demo.require_turnstile(body, action,
+  remote_ip)` runs at the route before the handler reads a credential and raises
+  `TurnstileError` → **403**; `login_player` / `register_player` are unchanged.
+  It is a no-op unless the rail is configured (`TURNSTILE_SECRET_KEY` + a
+  hostname) *and* the painel setting `turnstile_login` (default **on**) is set.
+  `/api/health` reports `turnstile: {provider, enabled, configured, site_key,
+  hostnames, login_required}` — never the secret; `/api/config` exposes the
+  public site key so the storefront renders the widget only when the rail is live.
+- **THE WIDGET IS EXPLICIT AND RESETS.** `web/app/components/TurnstileWidget.jsx`
+  renders the widget by hand (the modal mounts after the page loads, so the
+  implicit scan never sees the div) and resets it after every submit — a token is
+  single-use — with the action switched between `login` and `register`.
+- **LOOPBACK STAYS OUT OF PRODUCTION.** `TURNSTILE_HOSTNAMES` is the production
+  allowlist (`cadiback.onrender.com`); `TURNSTILE_DEV_HOSTNAMES` is a separate
+  key for local work and `render_deploy.py` never carries it.
+- **SECRET DELIVERY.** The Secret Key is not retrievable from this machine (no
+  Wrangler, no Cloudflare API token), so it goes through the project's own secret
+  flow: `.env.turnstile` (gitignored, created with the site key and hostnames and
+  an empty secret), carried to Render by `scripts/render_deploy.py`. The operator
+  fills the secret; it never appears in chat or the repository. Runbook
+  `docs/turnstile.md`.
+- Suites: `frame` 45/45, `demo` green (+6 Turnstile: unconfigured no-op, enabled
+  refuses a missing/wrong-surface token, the painel switch, the public config not
+  leaking the secret, the route's 403/400 split), `verify.py` 0; kit 45 checks.
+
+CURRENTTASK (previous): The foundry kit + email through it (decision 0047) — a shared,
 stdlib-core module kit (`projects/foundry/`) is founded so the operator and
 wall-e stop re-solving the same plumbing, and email (Resend) becomes its first
 module, vendored into the operator with a best-effort welcome email (off by

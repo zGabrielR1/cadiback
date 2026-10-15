@@ -23,6 +23,8 @@ export function useSession() {
   const [serverConfig, setServerConfig] = useState({
     require_bank_at_signup: false,
     test_accounts_enabled: true,
+    turnstile_enabled: false,
+    turnstile_site_key: "",
   });
   const [refreshError, setRefreshError] = useState("");
   const [busy, setBusy] = useState(false);

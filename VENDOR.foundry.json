@@ -1,17 +1,22 @@
 {
   "files": {
-    "foundry/__init__.py": "7e22583ad07d7a02ec1503eab3588ca853d7792dc20f711a8a624b636e0873e3",
+    "foundry/__init__.py": "cbd214c509e04b158afa944798527685142e85fe2aed03d55c9b56cf7b165824",
     "foundry/envfile.py": "9a2d8c96090c97035e5e31ca0b726b41b9a30060bf8a3dfecaf0f03fe9179d3d",
     "foundry/mail/__init__.py": "89bb8bee62468c08411893afd4030439dddcd6f13d82284f7d28869456888f23",
     "foundry/mail/mailer.py": "f9d4235a5a989eeb7cecf69e214fe342c8cfd0fd2a25d579a28b31ad6a161d12",
     "foundry/mail/message.py": "d312cff18281171487d89eda78234c653f6f503742f3189b64b6377da3e40701",
     "foundry/mail/templates.py": "2f318d381f007eb886a45170eba12aaa0dda030486f9e2020ab6af69d9e99878",
-    "foundry/mail/transport.py": "4b34260d454d5d3d05683ec34209e7a6d4084ea3f6fc8a4743483b985954d995"
+    "foundry/mail/transport.py": "4b34260d454d5d3d05683ec34209e7a6d4084ea3f6fc8a4743483b985954d995",
+    "foundry/turnstile/__init__.py": "b3c7771893d1e0f4d58fd10f94ed56179c7cac789959641b53db938d09651255",
+    "foundry/turnstile/transport.py": "39d84b1379cf94045778465fc7d0341b7bc978ac3b39b7fe5ea78c5dcf89848a",
+    "foundry/turnstile/verification.py": "69f95fc892cd05142687d8718847edee6e911eeb893f0fa49ed53a9bf874bea4",
+    "foundry/turnstile/verifier.py": "b09a79786337914984959ccc954404ea39a3e32093d9e6138082a67b34163026"
   },
   "kit": "foundry",
   "modules": [
     "envfile",
-    "mail"
+    "mail",
+    "turnstile"
   ],
   "version": "0.1.0"
 }

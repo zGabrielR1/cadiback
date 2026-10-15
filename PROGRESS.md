@@ -1,5 +1,37 @@
 # PROGRESS
 
+## DONE (2026-10-15 — Turnstile on player login and signup, decision 0048)
+
+- **The bot gate (Cloudflare Turnstile).** `POST /api/player/login` and
+  `POST /api/player` now require a Turnstile token, verified server-side by the
+  kit's new `foundry.turnstile` module (stdlib `urllib`, injected transport).
+  The check is the canonical one — `success`, the expected `action`
+  (`login`/`register`), and a `hostname` on the allowlist — not just
+  `success === true`, so a token minted elsewhere with our public site key is
+  refused. Reason: `foundry/decisions/0003`.
+- **Unconfigured is a no-op.** With no `TURNSTILE_SECRET_KEY` the verifier
+  reports itself disabled and `Demo.require_turnstile` does nothing, so local
+  work, the test suite and a credential-less deploy keep working; the gate arms
+  itself the moment the secret and a hostname are present. `turnstile_login`
+  (painel-flippable, default **on**) is the second half of the switch.
+- **Gate, don't replace.** `require_turnstile` runs at the route before the
+  handler reads a credential and raises `TurnstileError` → **403**; the existing
+  login/signup logic is unchanged. `/api/health` reports
+  `turnstile: {provider, enabled, configured, site_key, hostnames,
+  login_required}` (never the secret); `/api/config` exposes the public site key
+  and whether the rail is live.
+- **The storefront renders the widget explicitly** (`TurnstileWidget.jsx`) and
+  resets it after every submit — a token is single-use — and only when
+  `/api/config` says the rail is live, so the site key never appears on a deploy
+  that is not gating.
+- **Loopback stays out of production.** `TURNSTILE_HOSTNAMES` is the production
+  allowlist; `TURNSTILE_DEV_HOSTNAMES` is a separate key for local work and
+  `render_deploy.py` never carries it. Runbook `docs/turnstile.md`.
+- **Tests.** `TurnstileTest` x4 + `TurnstileHttpTest` x2 (unconfigured no-op,
+  enabled refuses a missing/wrong-surface token, the painel switch, the public
+  config never leaking the secret, and the route's 403/400 split). `frame` 45/45,
+  `demo` suite green, `verify.py` 0; the kit is 45 checks.
+
 ## DONE (2026-10-15 — the foundry kit + email through it, decision 0047)
 
 - **A shared kit, `projects/foundry/`.** Small host-agnostic modules under one
