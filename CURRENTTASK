@@ -10,17 +10,29 @@ migration (Render free is ephemeral).
   BIGINT, idempotency is a PRIMARY KEY). `demo/db.py` (engine/session, wall-e's
   shape) + `demo/models.py` mirror it; `DbSeamTest` fails if SQL and models
   drift. `DATABASE_URL` unset means files — nothing reads Postgres yet.
-  Needs: `.env.supabase` filled (`SUPABASE_URL`, keys, `DATABASE_URL`), then
-  apply the migration in the dashboard SQL editor.
+- **ASAAS CHARGES PORTED (first store).** `create_pix_deposit` /
+  `pix_deposit_status` / `asaas_webhook` read through `_get_charge` /
+  `_put_charge`, which hit the `asaas_charges` table when `run()` wired a
+  session factory and the file dict otherwise — same row shape both sides, so
+  no caller changed. The DB is explicit (`Demo(db=…)`), never ambient, so the
+  suite can never touch Supabase; `run()` wires it from the real environment.
+  `AsaasPgTest` x3 proves the table path (idempotent create, confirm-once,
+  webhook-once, restart revival). Turnstile and Resend are stateless — no store
+  to port; their env already rides `render_deploy.py`, and the Vercel host
+  joins `TURNSTILE_HOSTNAMES` at phase 3.
 - **VERCEL DESIGN SETTLED.** `web/next.config.js` is env-driven: `output:
   "export"` stays default (local/Docker/verify untouched); on Vercel it serves
   as a Node app with `rewrites()` proxying `/api`, `/g`, `/rgs` to
   `BACKEND_URL` — same-origin preserved, no api.js/CORS/cookie surgery.
-  Needs: Vercel project with `BACKEND_URL`, then the Vercel host joins the
-  Turnstile allowlist + widget Domains. Runbook `docs/supabase.md`.
-- NEXT: port stores one at a time behind `DATABASE_URL`; then Vercel deploy;
-  then flip + live-verify. `requirements.txt` (sqlalchemy, psycopg) ends the
-  stdlib-only container at the cutover — Dockerfile pip step then.
+- **WEBHOOK VERDICT: CONTINUE.** Vercel Hobby's "no webhooks" rows are deploy
+  triggers + account event webhooks (Pro-only), not inbound HTTP — and ours
+  never touch Vercel anyway: Asaas posts to the Python backend (Render)
+  directly, unchanged. Recorded in foundry decision 0004.
+- Needs: apply the migration in the dashboard SQL editor (direct DNS
+  unresolvable from here — verified), create the Vercel project with
+  `BACKEND_URL`. `render_deploy.py` now carries `DATABASE_URL` too.
+- NEXT: port remaining stores (settings → sessions/users → players →
+  books/rounds → rest); then Vercel deploy; then flip + live-verify.
 
 CURRENTTASK (previous): Turnstile (Cloudflare) on the player login and signup surfaces (decision
 0048) — the foundry kit gains a `turnstile` module (the canonical siteverify

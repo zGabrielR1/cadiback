@@ -180,6 +180,12 @@ TURNSTILE_ENV_FILE = os.path.join(ROOT, ".env.turnstile")
 TURNSTILE_KEYS = ("TURNSTILE_SECRET_KEY", "TURNSTILE_SITE_KEY",
                   "TURNSTILE_HOSTNAMES")
 
+# Supabase Postgres (decision 0049, docs/supabase.md). Only DATABASE_URL is
+# carried: the Python backend is the sole database client, so the anon and
+# service-role keys stay on the laptop (migrations run from here, by hand).
+SUPABASE_ENV_FILE = os.path.join(ROOT, ".env.supabase")
+SUPABASE_KEYS = ("DATABASE_URL",)
+
 
 def _first_line(path: str) -> str:
     with open(path, encoding="utf-8") as handle:
@@ -321,10 +327,27 @@ def read_turnstile_env() -> list[dict]:
             for name in TURNSTILE_KEYS if values.get(name)]
 
 
+def read_supabase_env() -> list[dict]:
+    """The database URL to carry to the host.
+
+    Same rule as the other rails: the environment wins over the gitignored
+    `.env.supabase`, and an absent URL is simply not sent — so a deploy
+    without it keeps files instead of half-configuring Postgres. Only
+    `DATABASE_URL` travels: the backend never uses the anon/service keys
+    (the storefront never talks to Supabase directly).
+    """
+    values = _env_pairs(SUPABASE_ENV_FILE)
+    for name in SUPABASE_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in SUPABASE_KEYS if values.get(name)]
+
+
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
     return (SERVICE["envVars"] + read_asaas_env() + read_resend_env()
-            + read_turnstile_env())
+            + read_turnstile_env() + read_supabase_env())
 
 
 class RenderError(RuntimeError):
@@ -620,6 +643,12 @@ def run(key: str, repo: str, force: bool) -> int:
               f"{os.path.basename(TURNSTILE_ENV_FILE)}/environment")
     else:
         print("no Turnstile credentials found: login/signup are not bot-gated")
+    carried_db = read_supabase_env()
+    if carried_db:
+        print(f"carrying {len(carried_db)} database setting(s) from "
+              f"{os.path.basename(SUPABASE_ENV_FILE)}/environment")
+    else:
+        print("no DATABASE_URL found: the deploy keeps files")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)

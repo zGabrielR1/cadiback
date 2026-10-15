@@ -77,6 +77,7 @@ from . import game_proxy
 from . import pg_proxy
 from . import rgs_proxy
 from .asaas import AsaasClient, AsaasConfig, resolve_webhook
+from .db import database_url, db_env, make_engine, make_session_factory, using_postgres
 from .risk import RiskPolicy, evaluate_player
 from .vendor import AggregatorError, VendorAggregator, VendorConfig
 
@@ -484,7 +485,8 @@ SETTINGS_DEFAULTS = {
 
 
 class Demo:
-    def __init__(self, data_dir: str = DATA, mailer=None, verifier=None) -> None:
+    def __init__(self, data_dir: str = DATA, mailer=None, verifier=None,
+                 db=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -543,6 +545,13 @@ class Demo:
         self.asaas_path = os.path.join(data_dir, "asaas_charges.json")
         self._asaas_lock = threading.RLock()
         self.asaas_charges: dict[str, dict] = self._load_asaas_charges()
+        # Postgres (decision 0049): an explicit session factory, or None for
+        # files. Never ambiently selected — run() wires it from the real
+        # environment, tests inject SQLite or nothing — so importing this
+        # module can never touch Supabase. The in-process `_asaas_lock` still
+        # serializes confirms on the single instance; a second instance would
+        # need SELECT ... FOR UPDATE instead.
+        self._pg = db
         # Resend email (foundry.mail, decision 0047). Unconfigured is a normal
         # state: with no key the console mailer logs instead of sending, and
         # the welcome email stays off until an admin turns it on. `mailer` is
@@ -1268,6 +1277,60 @@ class Demo:
             json.dump(self.asaas_charges, handle, ensure_ascii=False, indent=2)
         os.replace(tmp, self.asaas_path)
 
+    # -- Postgres port (decision 0049): charges live in `asaas_charges` when
+    # run() wired a session factory, else in the file dict exactly as before.
+    # Both sides speak the file row shape, so no caller changes.
+    def _charge_to_row(self, record) -> dict:
+        qr = dict(record.qr_payload or {})
+        return {
+            "deposit_id": record.deposit_id,
+            "player": record.player,
+            "amount_minor": int(record.amount_minor),
+            "provider_ref": record.provider_ref or "",
+            "provider_status": record.provider_status or "",
+            "qr_text": str(qr.get("qr_text") or ""),
+            "copy_paste": str(qr.get("copy_paste") or ""),
+            "qr_base64": str(qr.get("qr_base64") or ""),
+            "created_at": str(qr.get("created_at") or ""),
+            "posted": bool(record.posted),
+            "paid_at": (record.paid_at.isoformat(timespec="seconds")
+                        if record.paid_at else ""),
+        }
+
+    def _get_charge(self, deposit_id: str) -> dict | None:
+        if self._pg is None:
+            return self.asaas_charges.get(deposit_id)
+        from .models import AsaasCharge
+        with self._pg() as session:
+            record = session.get(AsaasCharge, deposit_id)
+            return self._charge_to_row(record) if record is not None else None
+
+    def _put_charge(self, row: dict) -> None:
+        if self._pg is None:
+            self.asaas_charges[row["deposit_id"]] = row
+            self._save_asaas_charges()
+            return
+        from .models import AsaasCharge
+        paid_at = row.get("paid_at") or ""
+        with self._pg() as session:
+            session.merge(AsaasCharge(
+                deposit_id=row["deposit_id"],
+                player=str(row.get("player") or ""),
+                amount_minor=int(row.get("amount_minor") or 0),
+                provider_ref=str(row.get("provider_ref") or ""),
+                provider_status=str(row.get("provider_status") or ""),
+                qr_payload={
+                    "qr_text": str(row.get("qr_text") or ""),
+                    "copy_paste": str(row.get("copy_paste") or ""),
+                    "qr_base64": str(row.get("qr_base64") or ""),
+                    "created_at": str(row.get("created_at") or ""),
+                },
+                posted=bool(row.get("posted")),
+                paid_at=(datetime.fromisoformat(paid_at)
+                         if paid_at else None),
+            ))
+            session.commit()
+
     def _charge_view(self, deposit_id: str, row: dict) -> dict:
         player_id = str(row.get("player") or "")
         return {
@@ -1301,7 +1364,7 @@ class Demo:
             raise ValueError("o depósito Asaas é Pix — escolha o método Pix")
         deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
         with self._asaas_lock:
-            existing = self.asaas_charges.get(deposit_id)
+            existing = self._get_charge(deposit_id)
             if existing and existing.get("player") == player_id:
                 return self._charge_view(deposit_id, existing)
             charge = self.asaas.create_pix_charge(txid=deposit_id, amount_cents=amount)
@@ -1317,8 +1380,7 @@ class Demo:
                 "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "posted": False,
             }
-            self.asaas_charges[deposit_id] = row
-            self._save_asaas_charges()
+            self._put_charge(row)
             return self._charge_view(deposit_id, row)
 
     def _confirm_asaas_charge(self, deposit_id: str, row: dict) -> None:
@@ -1341,7 +1403,7 @@ class Demo:
             row["posted"] = True
             row["provider_status"] = "PAID"
             row["paid_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-            self._save_asaas_charges()
+            self._put_charge(row)
 
     def pix_deposit_status(self, payload: dict) -> dict:
         """Poll one charge; confirm it if the provider now says it is paid.
@@ -1353,7 +1415,7 @@ class Demo:
         player_id = payload["player"]
         deposit_id = str(payload["deposit_id"])
         with self._asaas_lock:
-            row = self.asaas_charges.get(deposit_id)
+            row = self._get_charge(deposit_id)
             if not row or row.get("player") != player_id:
                 raise ValueError("cobrança Pix não encontrada")
             if not row.get("posted") and self.asaas is not None \
@@ -1364,7 +1426,7 @@ class Demo:
                         and charge.amount_cents == int(row["amount_minor"]):
                     self._confirm_asaas_charge(deposit_id, row)
                 else:
-                    self._save_asaas_charges()
+                    self._put_charge(row)
             return self._charge_view(deposit_id, row)
 
     def asaas_webhook(self, payload: dict, headers: dict) -> dict:
@@ -1384,7 +1446,7 @@ class Demo:
             return {"received": True, "event": event["event"], "applied": False}
         deposit_id = event["deposit_id"]
         with self._asaas_lock:
-            row = self.asaas_charges.get(deposit_id)
+            row = self._get_charge(deposit_id)
             if not row:
                 return {"received": True, "event": event["event"],
                         "applied": False, "reason": "unknown deposit"}
@@ -3927,7 +3989,27 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"error": f"internal error: {type(exc).__name__}"})
 
 
+def _ambient_db():
+    """Session factory from the real environment, or None (files).
+
+    Called only by run(), never at import — importing this module (which the
+    test suite does) must never touch Supabase. A database is always an
+    explicit choice, unlike mail/turnstile which self-resolve from ambient.
+    """
+    try:
+        env = db_env()
+        if using_postgres(env):
+            return make_session_factory(make_engine(database_url(env)))
+    except Exception:
+        return None
+    return None
+
+
 def run(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
+    global DEMO
+    # Postgres wiring (decision 0049): files stay the default when DATABASE_URL
+    # is unset; with it, the ported stores read the database instead.
+    DEMO = Demo(db=_ambient_db())
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"operator demo (NO REAL MONEY) on http://{host}:{port}")
     stop = threading.Event()

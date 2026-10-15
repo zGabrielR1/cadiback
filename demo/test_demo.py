@@ -357,6 +357,91 @@ class AsaasDepositTest(unittest.TestCase):
         self.assertEqual(revived.books.available(self.player), 0)
 
 
+class AsaasPgTest(unittest.TestCase):
+    """Asaas charges on Postgres (decision 0049): the same provider contract,
+    the `asaas_charges` table instead of the file. SQLite stands in for
+    Supabase — no credentials, no network. The file path is untouched above;
+    this class proves the ported path behaves identically."""
+
+    def setUp(self):
+        from demo.db import make_engine, make_session_factory
+        from demo.models import Base
+        self.tmp = tempfile.mkdtemp()
+        engine = make_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        self.factory = make_session_factory(engine)
+        self.demo = Demo(data_dir=self.tmp, db=self.factory)
+        self.assertIsNotNone(self.demo._pg)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.cfg = AsaasConfig(api_key="$aact_test",
+                               base_url="https://sandbox.asaas.com/api/v3",
+                               customer_id="9387205",
+                               webhook_secret="whsec_test")
+
+    def _install(self, payment: dict):
+        client = AsaasClient(self.cfg, transport=_asaas_transport(payment))
+        self.demo.asaas = client
+        self.demo.asaas_config = self.cfg
+        return client
+
+    def _create(self, deposit_id: str, amount: int = 10000) -> dict:
+        return self.demo.create_pix_deposit({
+            "player": self.player, "amount_minor": amount,
+            "method": "pix", "deposit_id": deposit_id})
+
+    def test_create_is_idempotent_and_status_confirms_once(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        first = self._create("pg-1")
+        self.assertFalse(first["posted"])
+        second = self._create("pg-1")
+        self.assertEqual(first["provider_ref"], second["provider_ref"])
+        self._install({"id": "pay_1", "status": "RECEIVED", "value": 100.0})
+        confirmed = self.demo.pix_deposit_status(
+            {"player": self.player, "deposit_id": "pg-1"})
+        self.assertTrue(confirmed["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        again = self.demo.pix_deposit_status(
+            {"player": self.player, "deposit_id": "pg-1"})
+        self.assertTrue(again["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        self.demo.books.assert_balanced()
+
+    def test_webhook_credits_once_and_replay_is_safe(self):
+        self._install({"id": "pay_1", "status": "RECEIVED", "value": 100.0})
+        self._create("pg-2")
+        body = {"event": "PAYMENT_RECEIVED",
+                "payment": {"id": "pay_1", "value": 100.0, "status": "RECEIVED",
+                            "externalReference": "pg-2"}}
+        applied = self.demo.asaas_webhook(
+            body, {"asaas-access-token": "whsec_test"})
+        self.assertTrue(applied["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        replay = self.demo.asaas_webhook(
+            body, {"asaas-access-token": "whsec_test"})
+        self.assertTrue(replay["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+
+    def test_pending_charge_survives_a_restart_in_the_table(self):
+        self._install({"id": "pay_1", "status": "PENDING", "value": 100.0})
+        self._create("pg-3")
+        revived = Demo(data_dir=self.tmp, db=self.factory)
+        revived.asaas = self.demo.asaas
+        revived.asaas_config = self.cfg
+        row = revived._get_charge("pg-3")
+        self.assertIsNotNone(row)
+        self.assertFalse(row["posted"])
+        self.assertEqual(row["deposit_id"], "pg-3")
+        view = revived.pix_deposit_status({"player": self.player,
+                                           "deposit_id": "pg-3"})
+        self.assertFalse(view["posted"])
+        self.assertEqual(revived.books.available(self.player), 0)
+
+
 class SlotTest(unittest.TestCase):
     def test_probabilities_sum_to_one_and_rtp(self):
         from demo.slot import TIERS

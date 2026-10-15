@@ -6,9 +6,15 @@
   `requirements.txt`) landed with files still the default; `DbSeamTest` x4
   green on scratch SQLite. `web/next.config.js` is env-driven (export by
   default, proxying server app on Vercel).
-- Blocked on the operator: fill `.env.supabase`, apply the migration, create
-  the Vercel project with `BACKEND_URL`. Then: port stores → Vercel deploy →
-  flip + live-verify. Runbook `docs/supabase.md`.
+- First store ported: Asaas charges (`_get_charge`/`_put_charge`, explicit
+  `Demo(db=…)` wired only in `run()`); `AsaasPgTest` x3 green. Turnstile +
+  Resend are stateless — nothing to port; Vercel host joins their allowlist
+  at phase 3. Webhook verdict: Asaas stays on the Render backend, continue.
+- Foundry: render template carries `DATABASE_URL`/`SUPABASE_URL`; decision
+  0004 records the stack + the ORM-stays-out rule; `docs/MODULES.md` notes it.
+- Blocked on the operator: apply the migration (dashboard SQL editor —
+  direct DNS unresolvable from here), create the Vercel project with
+  `BACKEND_URL`. Runbook `docs/supabase.md`.
 
 ## DONE (2026-10-15 — Turnstile on player login and signup, decision 0048)
 

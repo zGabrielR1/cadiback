@@ -14,7 +14,7 @@ as `.env.resend` / `.env.turnstile`):
 | `SUPABASE_URL` | no | `https://<ref>.supabase.co` |
 | `SUPABASE_ANON_KEY` | barely — public-ish | unused by the backend; the storefront never talks to Supabase directly |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | migrations / emergency SQL only; never ships to a client |
-| `DATABASE_URL` | **yes** | SQLAlchemy URL for the backend: `postgresql+psycopg://postgres:<PASSWORD>@db.<ref>.supabase.co:5432/postgres` (URL-encode the password). If direct connections fail from the host, use the transaction pooler (`:6543`) instead — same shape |
+| `DATABASE_URL` | **yes** | SQLAlchemy URL for the backend: `postgresql+psycopg://postgres:<PASSWORD>@db.<ref>.supabase.co:5432/postgres` (URL-encode the password). If the direct host does not resolve from a machine (IPv4-only egress — observed on this laptop), apply the migration through the dashboard SQL editor instead, and prefer the transaction pooler (`:6543`) for `DATABASE_URL` itself — same shape, IPv4, and what Render's egress wants too |
 
 `demo/db.py` reads this file with the real environment winning, exactly like
 `mail_env`/`turnstile_env`. `DATABASE_URL` unset or non-`postgresql…` means
@@ -53,8 +53,10 @@ backend with `turnstile_login` off.
 
 ## Cutover checklist
 
-1. `.env.supabase` filled; `select` the fourteen tables after applying
-   `supabase/migrations/`.
+1. `.env.supabase` filled; apply `supabase/migrations/` in the dashboard SQL
+   editor (direct `db.<ref>` DNS does not resolve from IPv4-only egress —
+   verified 2026-10-15); confirm the fourteen tables with the `select` in
+   `supabase/README.md`.
 2. Stores ported one at a time behind `DATABASE_URL`; `demo.test_demo` green
    throughout (SQLite) plus a staging-schema pass against Supabase.
 3. Vercel deploy with `BACKEND_URL`; smoke `/api/health`, `/api/config`,

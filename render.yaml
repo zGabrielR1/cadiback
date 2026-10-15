@@ -61,6 +61,13 @@ services:
         sync: false
       - key: TURNSTILE_HOSTNAMES
         sync: false
+      # Supabase Postgres (decision 0049, docs/supabase.md). Optional: with no
+      # DATABASE_URL the server keeps files, so a deploy without it stays
+      # healthy. `sync: false` keeps the URL out of the repository — let
+      # scripts/render_deploy.py carry it from the local gitignored
+      # .env.supabase. Never put the URL in this file.
+      - key: DATABASE_URL
+        sync: false
     # disk:            # paid plans only
     #   name: candibet-data
     #   mountPath: /data
