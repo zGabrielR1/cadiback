@@ -50,11 +50,22 @@
   `POST /customers/{id}`), and Asaas enforces a **R$5,00 minimum** per charge.
   Neither is a code defect; both are in the runbook, along with the real sandbox
   confirm action `POST /v3/sandbox/payment/{id}/confirm`.
-- **Honest limits:** the webhook is registered after the deploy (nothing is
-  registered yet: `GET /v3/webhooks` → `totalCount: 0`, so the earlier
-  Fly-vs-Render confusion was moot — Render is the host). The payer is one
-  configured customer, not the player; per-player customers are the production
-  path. The two webhook-secret files were reconciled to the `.env.asaas` value.
+- **Registered and verified on the live host.** The webhook `operator-deposits`
+  → `https://cadiback.onrender.com/api/webhooks/asaas` (RECEIVED / CONFIRMED /
+  OVERDUE / REFUNDED, `hasAuthToken: true`). A live end-to-end on the deployed
+  service: a R$5 charge confirmed provider-side credited the player through the
+  **webhook alone** (balance 500 at t+5s with no poll call), and the poll agreed
+  without double-crediting. Render is the host; the earlier Fly-vs-Render
+  confusion was moot because nothing was registered before.
+- **A deploy-tooling bug surfaced on the way:** `PATCH /services/{id}` does not
+  own environment variables — smuggling `envVars` into it collapsed the
+  service's whole environment to one junk variable, and the first deploy came up
+  with the rail unconfigured. They now go through `PUT /services/{id}/env-vars`.
+- **Honest limits:** the payer is one configured customer, not the player
+  (per-player customers are the production path); the sandbox customer needed a
+  CPF/CNPJ, provisioned once. The two webhook-secret files were reconciled to
+  the `.env.asaas` value. A pre-existing `weeeb` webhook (enabled, pointing at
+  the site root) was left untouched.
 
 ## DONE (2026-10-14 — Keno Relâmpago, the original that was set aside for the wrong reason, decision 0042)
 

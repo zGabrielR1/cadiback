@@ -103,10 +103,13 @@ simulate`, is a 404).
   created, confirmed provider-side and credited through the webhook once, with a
   replay crediting nothing and the books balanced. Production swaps the three
   credentials and re-registers the webhook (the runbook covers it).
-- **The webhook is registered after the deploy.** Nothing is registered in
-  Asaas until then (`GET /v3/webhooks` → `totalCount: 0`), so the earlier "does
-  the callback point at Fly or Render?" question was moot. Render
-  (`https://cadiback.onrender.com`) is the host; Fly is down and uncommitted.
+- **The webhook is registered and live-verified.** `operator-deposits` →
+  `https://cadiback.onrender.com/api/webhooks/asaas` (RECEIVED / CONFIRMED /
+  OVERDUE / REFUNDED, `hasAuthToken: true`). A live deposit on the deployed
+  service credited through the webhook alone, with no poll call. Render is the
+  host; the earlier "Fly or Render?" question was moot because nothing was
+  registered before. A pre-existing `weeeb` webhook (enabled, pointing at the
+  site root) was left untouched.
 - **The payer is one configured customer, not the player.** The sandbox-first
   default charges `ASAAS_CUSTOMER_ID`; a per-payer design (an Asaas customer per
   player, CPF stored) is the production path and is deliberately not built yet.

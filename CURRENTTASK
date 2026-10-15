@@ -12,12 +12,13 @@ credit otherwise. Sandbox; the webhook is registered after the deploy.
   replayed or forged event credits nothing. Idempotent on the deposit id in
   three places; the webhook and the poll share one confirm path. Suites frame
   45/45, demo 252/252 (+16), verify 0.
-- **LIVE-VERIFIED IN THE SANDBOX.** A real R$5,00 charge -> QR -> provider
-  confirm -> webhook credit, a replay crediting nothing, books balanced. Two
-  constraints the fake transport hid: the billed customer must carry a
+- **LIVE-VERIFIED END-TO-END ON RENDER.** A R$5,00 charge created through the
+  deployed service, confirmed on Asaas, credited the player through the webhook
+  ALONE (balance 500 at t+5s, no poll call), and the poll agreed without
+  double-crediting. The webhook `operator-deposits` is registered ->
+  `https://cadiback.onrender.com/api/webhooks/asaas` with `hasAuthToken: true`.
+  Two constraints the fake transport hid: the billed customer must carry a
   CPF/CNPJ, and Asaas enforces a R$5,00 minimum (both now in `docs/asaas.md`).
-  The webhook is registered after the deploy; nothing is registered yet, so the
-  Fly-vs-Render question was moot — Render is the host.
 - Deploy carries the four `ASAAS_*` settings from the gitignored `.env.asaas`
   (`scripts/render_deploy.py`); `render.yaml` keeps `sync: false` placeholders
   only, so no secret enters the repository. Runbook `docs/asaas.md`.
