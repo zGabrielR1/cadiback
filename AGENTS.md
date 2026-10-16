@@ -14,7 +14,7 @@ No real money moves; no commercial legal or regulatory obligations.
 | `Makefile`, `scripts/verify.py` | Executable verification: tests, structure, links |
 | `decisions/` | Decision log, one file per decision |
 | `frame/` | Core double-entry wallet, ledger, and rules (45 checks) |
-| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (281 checks) |
+| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (282 checks) |
 | `demo/asaas.py` | Real Pix through Asaas: charge, QR, provider-confirmed settlement |
 | `foundry/` | Vendored modules from the foundry kit (stdlib only) — email + Turnstile today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decisions 0047, 0048) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |

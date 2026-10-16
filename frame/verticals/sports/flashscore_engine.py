@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 
 from .contract import BetReceipt, Fixture, Market, Quote
 from . import marketboard as MB
+from . import locale_pt as PT
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
@@ -116,7 +117,7 @@ def _parse(raw: str, sport: str) -> list[dict]:
     for ent in _entities(raw):
         if "ZA" in ent:
             league = str(ent.get("ZA") or "").strip()
-            country = str(ent.get("ZY") or "").strip()
+            country = PT.pt(str(ent.get("ZY") or "").strip())
             continue
         if "AA" not in ent:
             continue

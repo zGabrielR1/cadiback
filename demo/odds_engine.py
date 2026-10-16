@@ -98,15 +98,15 @@ def _fixture(comp: str, home: str, away: str, date: str, hour: int,
         })
 
     if COMPS[comp]["sport"] == "soccer":
-        add("1x2", (home, "Draw", away), soccer_probs(home, away))
-        add("total", ("Over", "Under"),
+        add("1x2", (home, "Empate", away), soccer_probs(home, away))
+        add("total", ("Mais", "Menos"),
             (total_probs_over(home, away, 2.5),
              1.0 - total_probs_over(home, away, 2.5)), line=2.5)
     else:
         hp = nfl_probs(home, away)
         add("moneyline", (home, away), (hp, 1.0 - hp))
         over = nfl_total(home, away)
-        add("total", ("Over", "Under"), (over, 1.0 - over), line=44.5)
+        add("total", ("Mais", "Menos"), (over, 1.0 - over), line=44.5)
 
     return {
         "key": f"{comp}:{date}:{home}-{away}",

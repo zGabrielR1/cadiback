@@ -2747,7 +2747,7 @@ class Demo:
                         "home_score": fix.home_score,
                         "away_score": fix.away_score,
                         "progress": fix.progress or _sports_progress(
-                            fix.kickoff_date, fix.status),
+                            fix.kickoff_date, fix.status, fix.sport),
                         "markets": markets,
                     })
                 if fixtures:
@@ -3132,10 +3132,19 @@ def _sports_status(kickoff: str, sport: str) -> str:
     return "STATUS_FINAL"
 
 
-def _sports_progress(kickoff: str, status: str) -> str:
+_LIVE_CAPS = {"soccer": 90, "futsal": 40, "handball": 60, "basketball": 48,
+              "hockey": 60, "rugby": 80, "football": 60}
+
+
+def _sports_progress(kickoff: str, status: str, sport: str = "") -> str:
     """A live clock for a source that only ships a kickoff (ESPN's scoreboard
-    carries its own; a bare schedule does not)."""
+    carries its own; a bare schedule does not). Only the sports whose clock is
+    minutes get one — a set/innings sport shows the live dot without a
+    misleading number."""
     if status != "IN_PROGRESS":
+        return ""
+    cap = _LIVE_CAPS.get(str(sport or ""))
+    if cap is None:
         return ""
     try:
         started = datetime.fromisoformat(str(kickoff).replace("Z", "+00:00"))
@@ -3144,8 +3153,8 @@ def _sports_progress(kickoff: str, status: str) -> str:
     minute = max(0.0, (datetime.now(timezone.utc) - started).total_seconds() / 60.0)
     if minute <= 0:
         return ""
-    if minute >= 90:
-        return "90+'"
+    if minute >= cap:
+        return f"{cap}+'"
     return f"{int(minute)}'"
 
 

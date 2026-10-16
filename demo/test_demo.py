@@ -1024,11 +1024,20 @@ class SportsShowcaseTest(unittest.TestCase):
         self.assertEqual(fix.home, "Flamengo")
         self.assertEqual(fix.away, "Santos")
         self.assertEqual(fix.competition, "Serie A")
-        self.assertEqual(fix.country, "Brazil")
+        self.assertEqual(fix.country, "Brasil")
         self.assertEqual(fix.status, "IN_PROGRESS")
         self.assertEqual((fix.home_score, fix.away_score), (1, 0))
         markets = engine.markets(fix.key)
-        self.assertIn("1x2", {m.kind for m in markets})
+        kinds = {m.kind for m in markets}
+        self.assertIn("1x2", kinds)
+        self.assertIn("total", kinds)
+        self.assertIn("btts", kinds)
+        result = next(m for m in markets if m.kind == "1x2")
+        self.assertEqual(result.selections, ("Flamengo", "Empate", "Santos"))
+        for market in markets:
+            self.assertEqual(len(market.selections), len(market.prices))
+            for price in market.prices:
+                self.assertGreater(price, 1.0, market)
         receipt = engine.accept("b3", f"{fix.key}:1x2", 500)
         self.assertEqual(receipt.stake_minor, 500)
 
@@ -1058,6 +1067,32 @@ class SportsShowcaseTest(unittest.TestCase):
         self.assertIn("1x2", {m.kind for m in markets})
         receipt = engine.accept("b2", f"{fixtures[0].key}:1x2", 500)
         self.assertEqual(receipt.stake_minor, 500)
+
+    def test_marketboard_shapes_per_sport(self):
+        from frame.verticals.sports.marketboard import quote_markets
+
+        soccer = {m.kind: m for m in quote_markets("t1:s1", "soccer", "Anjos", "Tubarões")}
+        self.assertEqual(soccer["1x2"].selections, ("Anjos", "Empate", "Tubarões"))
+        self.assertIsNone(soccer["1x2"].line)
+        self.assertEqual(soccer["total"].line, 2.5)
+        self.assertEqual({m.kind for m in quote_markets("t1:s2", "soccer", "A", "B")},
+                         {"1x2", "total", "dc", "btts", "total-h1", "total-h2"})
+
+        # a sport that cannot end tied offers no draw, the same way every
+        # real card does: two-way winner + total on the sport's own scale
+        basketball = {m.kind: m for m in quote_markets("t1:b1", "basketball", "A", "B")}
+        self.assertEqual(set(basketball["moneyline"].selections), {"A", "B"})
+        self.assertEqual(basketball["total"].line, 215.5)
+        self.assertIn("total-h1", basketball)
+        self.assertNotIn("dc", basketball)
+
+        tennis = {m.kind: m for m in quote_markets("t1:t1", "tennis", "A", "B")}
+        self.assertNotIn("1x2", tennis)
+        self.assertEqual(tennis["total"].line, 21.5)
+
+        # hockey regulation can finish tied, so it keeps the three-way
+        hockey = {m.kind: m for m in quote_markets("t1:h1", "hockey", "A", "B")}
+        self.assertEqual(hockey["1x2"].selections, ("A", "Empate", "B"))
 
     def test_odds_engine_deterministic_per_bucket(self):
         from demo import odds_engine

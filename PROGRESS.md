@@ -1,5 +1,26 @@
 # PROGRESS
 
+## DONE (2026-10-16 — PT countries, fuller market card, ticking minute, decision 0052)
+
+- **Countries in Portuguese.** New `locale_pt.py` (~150 names) applied at
+  parse time by the Flashscore (`ZY`) and Livescore (`Cnm`) engines — the
+  grouping key must not exist under two spellings. 146 distinct feed names
+  inventoried; the live payload carries zero English leftovers.
+- **A fuller card per fixture.** `marketboard.quote_markets` returns the
+  result + total side by side in the row; expanded: dupla chance, ambas
+  marcam and 1st/2nd-half totals. The draw appears wherever the rules allow
+  a tie (soccer, futsal, handball, hockey, rugby, football), priced via
+  `match_probs` + `DRAW_FLOOR` (Poisson ties in high-scoring sports printed
+  150.00; hockey now ~4.7, handball ~10). Tennis gains total games; no
+  Empate where a draw cannot settle.
+- **The minute ticks between polls.** The board advances the live minute
+  locally from the kickoff (10s render tick, zero extra requests); the
+  source's own minute wins when it has one; and `_sports_progress` only
+  minute-caps clock sports, so set-based sports show the dot with no fake
+  `90+'`.
+- Suites: `frame` 45/45, `demo` 282/282 (+1 market-shape test), `verify.py`
+  0; export rebuilt.
+
 ## DONE (2026-10-16 — Flashscore board + sport-separated sports UX, decision 0051)
 
 - **Flashscore is the primary feed.** `flashscore_engine.py` reads its public

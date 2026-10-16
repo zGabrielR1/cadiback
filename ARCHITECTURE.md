@@ -25,8 +25,8 @@ operator/
     ├── compliance/sigap.py  game registry, exclusions, limits
     ├── models/registry.py   fair-price provider registry (devig methods registered)
     ├── verticals/sports/    SportsEngine contract + stub + real feeds
-    │                        (Flashscore primary; shared marketboard; Livescore
-    │                        then ESPN fallbacks)
+    │                        (Flashscore primary; shared marketboard + locale_pt;
+    │                        Livescore then ESPN fallbacks)
     ├── verticals/casino/    CasinoAggregator contract + deterministic stub
     ├── ops/scheduler.py     tiered loop, per-subject cooldown, daily cap, receipts
     ├── ops/notifier.py      ntfy fan-out (fail-open) + local file double for tests

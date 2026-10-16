@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const SPORT_ORDER = [
   "soccer", "basketball", "tennis", "hockey", "volleyball", "futsal",
@@ -23,6 +23,40 @@ const SPORT_META = {
 };
 
 const PRIMARY_KINDS = new Set(["1x2", "moneyline"]);
+const TOTAL_KIND = "total";
+
+const KIND_LABEL = {
+  "1x2": "Casa · Empate · Fora",
+  moneyline: "Vencedor",
+  total: "Total",
+  "total-h1": "Total 1º tempo",
+  "total-h2": "Total 2º tempo",
+  dc: "Dupla chance",
+  btts: "Ambas marcam",
+};
+
+// the sports whose live clock is minutes — a set/innings sport shows the live
+// dot without a misleading number. Same caps the backend derives.
+const LIVE_CAP = {
+  soccer: 90, futsal: 40, handball: 60, basketball: 48, hockey: 60,
+  rugby: 80, football: 60,
+};
+
+/** The live clock for one row: prefer the source's own minute, otherwise
+ *  advance it locally from the kickoff — minute by minute between polls, with
+ *  no extra request to the feed (the score still refreshes every poll). */
+function liveLabel(f, nowMs) {
+  const raw = String(f.progress || "").trim();
+  if (/^(\d+'\d*|\d+\+\d+'|\d+min|HT)$/.test(raw)) return raw;
+  const cap = LIVE_CAP[f.sport];
+  if (!cap || !f.kickoff) return "";
+  const ko = new Date(f.kickoff).getTime();
+  if (Number.isNaN(ko)) return "";
+  const m = Math.max(0, (nowMs - ko) / 60000);
+  if (m >= cap) return cap + "+'";
+  if (m < 1) return "1'";
+  return Math.floor(m) + "'";
+}
 
 function meta(sport) {
   return SPORT_META[sport] || { label: sport || "Outros", icon: "🎯" };
@@ -59,7 +93,7 @@ function kickLabel(iso) {
 function tick(kind, i, selections) {
   if (kind === "1x2") return ["1", "X", "2"][i] || selections[i];
   if (kind === "moneyline") return i === 0 ? "1" : "2";
-  if (kind === "total") return i === 0 ? "Mais" : "Menos";
+  if (kind === "total") return ["Mais", "Menos"][i] || selections[i];
   return selections[i];
 }
 
@@ -72,16 +106,18 @@ function pricedMarkets(f) {
 /** One fixture row, Sofascore-shaped: state on the left, teams stacked with
  *  the score right-aligned, and the main market's odds in a fixed column.
  *  Extra markets (the total) expand under a "mais mercados" toggle. */
-function EventRow({ f, onSelectBet, selectedBets }) {
+function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
   const [open, setOpen] = useState(false);
   const markets = pricedMarkets(f);
   const primary = markets.find((m) => PRIMARY_KINDS.has(m.kind)) || markets[0];
-  const extras = markets.filter((m) => m !== primary);
+  const total = markets.find((m) => m.kind === TOTAL_KIND) || null;
+  const extras = markets.filter((m) => m !== primary && m !== total);
   const live = isLive(f);
   const final = isFinal(f);
   const home = f.home_score;
   const away = f.away_score;
   const showScore = live || final;
+  const state = live ? liveLabel(f, nowMs) || "AO VIVO" : null;
 
   const pick = (m, sel, price) => () =>
     onSelectBet &&
@@ -119,7 +155,7 @@ function EventRow({ f, onSelectBet, selectedBets }) {
         {live ? (
           <span className="sx-live">
             <i />
-            {f.progress || "AO VIVO"}
+            {state}
           </span>
         ) : final ? (
           <span className="sx-final">ENC</span>
@@ -141,9 +177,10 @@ function EventRow({ f, onSelectBet, selectedBets }) {
 
       <div className="sx-markets">
         {primary ? renderOdds(primary) : <span className="sx-nomarket">mercados em atualização</span>}
+        {total ? renderOdds(total) : null}
         {extras.length > 0 ? (
           <button className="sx-more" onClick={() => setOpen((v) => !v)}>
-            {open ? "menos mercados ▲" : "mais mercados ▼"}
+            {open ? "menos mercados ▲" : "+" + extras.length + " mercados ▼"}
           </button>
         ) : null}
       </div>
@@ -153,7 +190,8 @@ function EventRow({ f, onSelectBet, selectedBets }) {
           {extras.map((m) => (
             <div className="sx-extra-row" key={m.key}>
               <span className="sx-extra-kind">
-                Total {m.line != null ? m.line : ""}
+                {KIND_LABEL[m.kind] || m.kind}
+                {m.line != null ? " " + m.line : ""}
               </span>
               {renderOdds(m)}
             </div>
@@ -167,6 +205,15 @@ function EventRow({ f, onSelectBet, selectedBets }) {
 export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive }) {
   const [sport, setSport] = useState(null);
   const [closed, setClosed] = useState({});
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  // the live minute advances between polls: it is derived from the kickoff on
+  // the client, so a game running at 67' stays 67' → 68' → 69' without asking
+  // the feed for a new payload every few seconds
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 10000);
+    return () => clearInterval(id);
+  }, []);
 
   const fixtures = useMemo(() => {
     const rows = sports ? sports.fixtures || [] : [];
@@ -328,7 +375,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                           <div className="sx-league-body">
                             {lg.rows.map((f) => (
                               <EventRow key={f.key} f={f} onSelectBet={onSelectBet}
-                                        selectedBets={selectedBets} />
+                                        selectedBets={selectedBets} nowMs={nowMs} />
                             ))}
                           </div>
                         )}

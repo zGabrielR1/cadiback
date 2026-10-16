@@ -1,4 +1,29 @@
-CURRENTTASK: Flashscore board + a sport-separated sports UX (decision 0051) —
+CURRENTTASK: PT countries + a fuller market card + a ticking live minute (decision
+0052) — every country on the board is in Portuguese, the row shows the result
+market and the total side by side (with dupla chance, ambas marcam and
+half-totals on expand, and the draw wherever the sport's rules allow one), and
+the live minute advances locally between polls so a minute-by-minute feel costs
+the feed nothing.
+
+## STATUS
+
+- **COUNTRIES ARE PT AT THE SOURCE.** `locale_pt.py` (~150 names, from a
+  full inventory of the 146 distinct names the feeds actually send) runs at
+  parse time in the Flashscore and Livescore engines — the grouping key, so
+  no country can appear twice under two spellings. Zero leftovers in the
+  live payload; internationals group under "Internacional".
+- **THE CARD IS FULLER.** Row = result + total; expand = dc/btts/half
+  totals (soccer, clock sports) or half totals (basketball). Three-way book
+  only where a tie is possible (soccer, futsal, handball, hockey, rugby,
+  football); tennis gains total games; draw prices floored per sport
+  (`DRAW_FLOOR`) so regulation ties price like a real card.
+- **THE MINUTE TICKS LOCALLY.** The board renders from a 10s local clock,
+  the source minute takes precedence, and only clock sports carry a minute
+  (`_sports_progress` is sport-aware — no more fake `90+'` on tennis).
+- Suites: `frame` 45/45, `demo` 282/282, `verify.py` 0; export rebuilt.
+  Live-probed locally end to end. Decision `0052`.
+
+CURRENTTASK (previous): Flashscore board + a sport-separated sports UX (decision 0051) —
 `/api/sports` now leads with Flashscore (every sport, with country, league and
 the live score), every source shares one in-house market board, and the sports
 view is rebuilt as a Sofascore-shaped board separated by sport, then country →

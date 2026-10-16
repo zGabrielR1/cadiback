@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 
 from .contract import BetReceipt, Fixture, Market, Quote
 from . import marketboard as MB
+from . import locale_pt as PT
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
@@ -107,7 +108,7 @@ def _parse_stages(data: dict) -> list[dict]:
         if not isinstance(stage, dict):
             continue
         league = str(stage.get("Snm") or stage.get("CompN") or "Futebol")
-        country = str(stage.get("Cnm") or "").strip()
+        country = PT.pt(str(stage.get("Cnm") or "").strip())
         for event in stage.get("Events") or []:
             if not isinstance(event, dict):
                 continue

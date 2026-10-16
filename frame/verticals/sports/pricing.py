@@ -49,8 +49,7 @@ def _poisson_cdf(lmbda: float, k: int) -> float:
 def soccer_probs(home: str, away: str) -> tuple[float, float, float]:
     """(home, draw, away) win probabilities via independent Poissons."""
     sh, sa = team_strength(home), team_strength(away)
-    lh = 1.45 * (sh / sa)
-    la = 1.20 * (sa / sh)
+    lh, la = _soccer_lambdas(sh, sa)
     p_home = p_draw = p_away = 0.0
     for h in range(11):
         for a in range(11):
@@ -64,9 +63,43 @@ def soccer_probs(home: str, away: str) -> tuple[float, float, float]:
     return p_home, p_draw, p_away
 
 
-def total_probs_over(home: str, away: str, line: float) -> float:
+def _soccer_lambdas(sh: float, sa: float) -> tuple[float, float]:
+    return 1.45 * (sh / sa), 1.20 * (sa / sh)
+
+
+def match_probs(home: str, away: str, base: float) -> tuple[float, float, float]:
+    """(home, draw, away) for a clock sport whose total is `base`: each side
+    gets half of it, scaled by the strength ratio, on independent Poissons."""
     sh, sa = team_strength(home), team_strength(away)
-    lt = 1.45 * (sh / sa) + 1.20 * (sa / sh)
+    lh = (base / 2.0) * (sh / sa)
+    la = (base / 2.0) * (sa / sh)
+    p_home = p_draw = p_away = 0.0
+    for h in range(int(lh + 6 * math.sqrt(lh)) + 2):
+        ph = _poisson(lh, h)
+        for a in range(int(la + 6 * math.sqrt(la)) + 2):
+            p = ph * _poisson(la, a)
+            if h > a:
+                p_home += p
+            elif h == a:
+                p_draw += p
+            else:
+                p_away += p
+    return p_home, p_draw, p_away
+
+
+def both_score(home: str, away: str) -> float:
+    """P(both sides finish with at least one)."""
+    sh, sa = team_strength(home), team_strength(away)
+    lh, la = _soccer_lambdas(sh, sa)
+    return (1.0 - math.exp(-lh)) * (1.0 - math.exp(-la))
+
+
+def total_probs_over(home: str, away: str, line: float,
+                     factor: float = 1.0) -> float:
+    """P(the total beats `line`); `factor` scales the expected total for a
+    fragment of the game (a half, a period)."""
+    sh, sa = team_strength(home), team_strength(away)
+    lt = (1.45 * (sh / sa) + 1.20 * (sa / sh)) * factor
     return 1.0 - _poisson_cdf(lt, int(line))
 
 
@@ -83,9 +116,9 @@ def nfl_total(home: str, away: str) -> float:
 
 
 def points_total_over(home: str, away: str, base: float, scale: float,
-                      line: float) -> float:
+                      line: float, factor: float = 1.0) -> float:
     sh, sa = team_strength(home), team_strength(away)
-    lt = base + (sh + sa - 2.0) * scale
+    lt = (base + (sh + sa - 2.0) * scale) * factor
     return 1.0 - _poisson_cdf(lt, int(line))
 
 
