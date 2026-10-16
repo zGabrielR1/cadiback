@@ -34,6 +34,7 @@ class Player(Base):
 
     player_id: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
+    username: Mapped[str] = mapped_column(default="")
     email: Mapped[str] = mapped_column(unique=True)
     cpf_masked: Mapped[str] = mapped_column(default="")
     pw_hash: Mapped[str] = mapped_column()

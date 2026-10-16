@@ -83,6 +83,24 @@ def validate_email(email: str) -> str:
     return value
 
 
+_USERNAME = re.compile(r"^[a-z0-9][a-z0-9._-]{2,19}$")
+
+
+def validate_username(username: object) -> str:
+    """Public handle chosen at signup, used to log in.
+
+    3–20 chars, starts with a letter or digit, then letters/digits/`.`/`_`/`-`.
+    Normalised to lowercase so ``Ana`` and ``ana`` are the same account, and
+    the store keeps the lowercase form as the only spelling.
+    """
+    value = str(username or "").strip().lower()
+    if not _USERNAME.match(value):
+        raise PaymentError(
+            "nome de usuário: 3-20 caracteres (letras, números, . _ -), "
+            "começando por letra ou número")
+    return value
+
+
 MIN_PLAYER_PASSWORD_LEN = 6
 
 

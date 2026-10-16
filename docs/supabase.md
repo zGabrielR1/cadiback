@@ -71,7 +71,9 @@ backend with `turnstile_login` off.
 1. `.env.supabase` filled; apply `supabase/migrations/` in the dashboard SQL
    editor (direct `db.<ref>` DNS does not resolve from IPv4-only egress —
    verified 2026-10-15); confirm the fourteen tables with the `select` in
-   `supabase/README.md`.
+   `supabase/README.md`. Migration `20261016000000_players_username.sql`
+   (decision 0050) is applied **after** the base schema — it only adds the
+   `players.username` column and its partial unique index.
 2. Stores ported one at a time behind `DATABASE_URL`; `demo.test_demo` green
    throughout (SQLite) plus a staging-schema pass against Supabase.
 3. Vercel deploy with `BACKEND_URL`; smoke `/api/health`, `/api/config`,

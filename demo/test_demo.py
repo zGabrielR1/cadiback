@@ -36,6 +36,7 @@ from demo.payments import (
     validate_cpf,
     validate_email,
     validate_player_password,
+    validate_username,
 )
 from demo.server import (
     DEMO,
@@ -953,7 +954,7 @@ class SportsShowcaseTest(unittest.TestCase):
     def test_read_only_fixtures(self):
         demo = Demo(data_dir=tempfile.mkdtemp())
         show = demo.sports_showcase()
-        self.assertIn(show["source"], ("espn", "superbet", "inhouse"))
+        self.assertIn(show["source"], ("livescore", "espn", "inhouse"))
         self.assertGreaterEqual(len(show["fixtures"]), 1)
         for fix in show["fixtures"]:
             self.assertTrue(fix["home"] and fix["away"], fix)
@@ -1005,27 +1006,28 @@ class SportsShowcaseTest(unittest.TestCase):
         self.assertEqual(receipt.market_key, f"{fixture_key}:1x2")
         self.assertIn(engine.settle("b1", {"selection": "home"}), ("won", "lost"))
 
-    def test_superbet_engine_contract_with_canned_feed(self):
+    def test_livescore_engine_contract_with_canned_feed(self):
         import tempfile, os
-        from frame.verticals.sports.superbet_engine import SuperbetSportsEngine
+        from frame.verticals.sports.livescore_engine import LivescoreSportsEngine
 
         def fake(url):
-            return {"events": [{
-                "event_id": 999,
-                "fixture": {
-                    "sport_id": 5,
-                    "event_name": "Flamengo × Santos",
-                    "tournament_id": 77,
-                    "utc_date": "2026-10-10T19:00:00Z",
-                    "status": "Scheduled",
-                },
+            return {"Ts": 1, "Stages": [{
+                "Sid": "77", "Snm": "LaLiga", "Cnm": "Spain",
+                "Events": [{
+                    "Eid": 999, "Eps": "24'", "Esd": 20261016190000,
+                    "Tr1": "1", "Tr2": "0",
+                    "T1": [{"ID": "1", "Nm": "Flamengo"}],
+                    "T2": [{"ID": "2", "Nm": "Santos"}],
+                }],
             }]}
 
-        cache = os.path.join(tempfile.mkdtemp(), "sb.json")
-        engine = SuperbetSportsEngine(cache_path=cache, fetcher=fake)
+        cache = os.path.join(tempfile.mkdtemp(), "ls.json")
+        engine = LivescoreSportsEngine(cache_path=cache, fetcher=fake, days=1)
         fixtures = engine.fixtures()
         self.assertEqual(len(fixtures), 1)
         self.assertEqual(fixtures[0].home, "Flamengo")
+        self.assertEqual(fixtures[0].status, "IN_PROGRESS")
+        self.assertTrue(fixtures[0].kickoff_date.startswith("2026-10-16"))
         markets = engine.markets(fixtures[0].key)
         self.assertIn("1x2", {m.kind for m in markets})
         receipt = engine.accept("b2", f"{fixtures[0].key}:1x2", 500)
@@ -1526,9 +1528,10 @@ class AuthTest(unittest.TestCase):
 
 
 class PlayerAuthTest(unittest.TestCase):
-    """Player accounts: strict register (name + email + CPF + password +
-    payout details, every field validated) and email-or-CPF login.
-    Credential material never leaves the store through profile()."""
+    """Player accounts: strict register (name + username + email + CPF +
+    password + payout details, every field validated) and
+    username/email/CPF login. Credential material never leaves the store
+    through profile()."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -1537,6 +1540,7 @@ class PlayerAuthTest(unittest.TestCase):
     def _payload(self, **over):
         body = {
             "name": "Ana Souza",
+            "username": "ana.souza",
             "email": "ana.souza@example.com",
             "cpf": "529.982.247-25",
             "password": "ana1234",
@@ -1545,6 +1549,12 @@ class PlayerAuthTest(unittest.TestCase):
                      "account": "56789-0", "holder_name": "Ana Souza"},
         }
         body.update(over)
+        # the handle defaults to the email's local part, so a test that
+        # overrides the email keeps the username unique (signup requires one)
+        if not body.get("username"):
+            body["username"] = "".join(
+                c for c in str(body["email"]).split("@")[0].lower()
+                if c.isalnum() or c in "._-")
         return body
 
     def test_email_and_password_policy(self):
@@ -1599,6 +1609,41 @@ class PlayerAuthTest(unittest.TestCase):
         self.assertEqual(out["player_id"], player_id)
         self.assertNotIn("pw_hash", out)
 
+    def test_register_requires_a_valid_username(self):
+        # required: a signup without one is refused, not defaulted
+        missing = self._payload()
+        missing.pop("username")
+        with self.assertRaises((ValueError, PaymentError)):
+            self.demo.register_player(missing)
+        for bad in ("ab", "1" * 21, "Ana Souza", "ana@souza", "-ana", ".ana"):
+            with self.assertRaises(PaymentError):
+                validate_username(bad)
+        self.assertEqual(validate_username("  Ana.Souza  "), "ana.souza")
+
+    def test_register_stores_username_lowercased(self):
+        row = self.demo.register_player(self._payload(username="Ana.Souza"))
+        self.assertEqual(row["username"], "ana.souza")
+        with open(self.demo.players.path, "r", encoding="utf-8") as fh:
+            stored = json.load(fh)[row["player_id"]]
+        self.assertEqual(stored["username"], "ana.souza")
+
+    def test_register_rejects_a_taken_username(self):
+        self.demo.register_player(self._payload())
+        with self.assertRaises(ValueError):
+            self.demo.register_player(self._payload(
+                username="ANA.SOUZA", email="outra@example.com",
+                cpf="111.444.777-35"))
+
+    def test_login_accepts_username_case_insensitively(self):
+        player_id = self.demo.register_player(self._payload())["player_id"]
+        out = self.demo.login_player({"identifier": "Ana.Souza",
+                                      "password": "ana1234"})
+        self.assertEqual(out["player_id"], player_id)
+        # the username wins even when it never contains an "@"
+        out = self.demo.login_player({"identifier": "ana.souza",
+                                      "password": "ana1234"})
+        self.assertEqual(out["player_id"], player_id)
+
     def test_login_refuses_unknown_or_wrong(self):
         self.demo.register_player(self._payload())
         with self.assertRaises(ValueError):
@@ -1640,6 +1685,12 @@ class SignupSettingsTest(unittest.TestCase):
             "pix_key": "ana.souza@example.com",
         }
         body.update(over)
+        # the handle defaults to the email's local part, so a test that
+        # overrides the email keeps the username unique (signup requires one)
+        if not body.get("username"):
+            body["username"] = "".join(
+                c for c in str(body["email"]).split("@")[0].lower()
+                if c.isalnum() or c in "._-")
         return body
 
     def _admin(self):
@@ -1819,6 +1870,12 @@ class MailTest(unittest.TestCase):
             "pix_key": "ana.souza@example.com",
         }
         body.update(over)
+        # the handle defaults to the email's local part, so a test that
+        # overrides the email keeps the username unique (signup requires one)
+        if not body.get("username"):
+            body["username"] = "".join(
+                c for c in str(body["email"]).split("@")[0].lower()
+                if c.isalnum() or c in "._-")
         return body
 
     def _admin(self):
@@ -1928,6 +1985,12 @@ class TurnstileTest(unittest.TestCase):
             "pix_key": "ana.souza@example.com",
         }
         body.update(over)
+        # the handle defaults to the email's local part, so a test that
+        # overrides the email keeps the username unique (signup requires one)
+        if not body.get("username"):
+            body["username"] = "".join(
+                c for c in str(body["email"]).split("@")[0].lower()
+                if c.isalnum() or c in "._-")
         return body
 
     def test_unconfigured_rail_makes_the_gate_a_noop(self):

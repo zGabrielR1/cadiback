@@ -1,4 +1,33 @@
-CURRENTTASK: Backend state to Supabase Postgres, storefront to Vercel (decision
+CURRENTTASK: Username accounts + a live sports feed (decision 0050) — every new
+player picks a username at signup and logs in with it (alongside email/CPF), and
+`/api/sports` carries real, cloud-reachable fixtures again after the dead
+Superbet rail was removed. Shipped to Supabase + Render + Vercel.
+
+## STATUS
+
+- **USERNAME AT SIGNUP AND LOGIN.** `demo/payments.py:validate_username` is the
+  one rule: 3–20 chars, `^[a-z0-9][a-z0-9._-]{2,19}$`, lowercased (`Ana` ==
+  `ana`). `register_player` now *requires* it and refuses a duplicate;
+  `login_player` resolves through `Demo._find_player` — username first, then
+  email only when the identifier holds an `@`, then the CPF-derived `player-…`
+  key. `Player.username` (models) + `supabase/migrations/
+  20261016000000_players_username.sql` (column `NOT NULL DEFAULT ''` + partial
+  unique index on `lower(username) WHERE username <> ''`). Storefront:
+  `validateUsername`, the signup field, the login branch (email vs digits vs
+  handle), the account view, and the painel test-account form/table.
+- **THE SPORTS FEED IS LIVE AGAIN.** Root cause was two-fold: `.dockerignore`
+  keeps `probes/*cache*.json` out of the image, *and* ESPN answers 403 from
+  datacenter egress, so the deployed feed fell to `source: "inhouse"`.
+  Superbet's offer server is gone. New
+  `frame/verticals/sports/livescore_engine.py` reads Livescore's public match
+  API (no key) — verified 200 from **both** this machine and the cloud, with
+  in-play status + score; `superbet_engine.py` + its cache are deleted.
+  `Fixture` gains an optional `status`; `Demo.sports_showcase` is Livescore →
+  ESPN → deterministic slate and *records* every upstream error.
+- Suites: `frame` 45/45, `demo` 280/280 (+5 username, +1 Livescore contract),
+  `verify.py` 0; export rebuilt. Decision `0050`; runbook `docs/supabase.md`.
+
+CURRENTTASK (previous): Backend state to Supabase Postgres, storefront to Vercel (decision
 0049) — the Python backend and frame/ stay; Postgres becomes their disk and the
 Next.js app moves to Vercel as a proxying server app. Fresh start, no data
 migration (Render free is ephemeral).

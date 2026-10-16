@@ -1,5 +1,26 @@
 # PROGRESS
 
+## DONE (2026-10-16 — Username accounts + a live sports feed, decision 0050)
+
+- **Username at signup and login.** `validate_username` (3–20 chars,
+  `^[a-z0-9][a-z0-9._-]{2,19}$`, lowercased) is required by
+  `register_player` and refused when taken; `login_player` resolves the
+  identifier through `_find_player` — username → email (only when the
+  identifier holds `@`) → CPF. Column added by a *new* migration
+  (`players_username.sql`, partial unique index on `lower(username)`); the
+  storefront gained the signup field, the login branch and the painel column.
+  `demo` +5 username tests.
+- **The sports feed is real again.** Root cause: `.dockerignore` keeps the
+  probe caches out of the Render image *and* ESPN answers 403 from datacenter
+  egress, so `/api/sports` fell to `source: "inhouse"`; Superbet's offer server
+  is dead. New `frame/verticals/sports/livescore_engine.py` reads Livescore's
+  public match API (no key; verified 200 from this machine **and** the cloud)
+  with in-play status + score; `superbet_engine.py` and its cache are deleted.
+  `Fixture.status` added; `Demo.sports_showcase` is Livescore → ESPN →
+  in-house and now *reports* each failed source. Live probe: 240 fixtures,
+  priced, with live games.
+- Suites: `frame` 45/45, `demo` 280/280, `verify.py` 0; export rebuilt.
+
 ## DOING (2026-10-15 — Supabase Postgres + Vercel, decision 0049)
 
 - Schema (`supabase/migrations/`) + seam (`demo/db.py`, `demo/models.py`,

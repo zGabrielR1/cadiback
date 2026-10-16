@@ -61,6 +61,7 @@ from .payments import (
     validate_cpf,
     validate_email,
     validate_player_password,
+    validate_username,
 )
 from frame.core.ids import normalize, slug
 from .auth import AuthError, SessionBook, SessionStore, UserStore
@@ -813,6 +814,8 @@ class Demo:
         })
         # optional credentials on the legacy path: the strict register
         # route always sets them, and an upsert must never wipe them
+        if payload.get("username"):
+            row["username"] = validate_username(payload.get("username") or "")
         if payload.get("email"):
             row["email"] = validate_email(payload.get("email") or "")
         if payload.get("password"):
@@ -828,9 +831,9 @@ class Demo:
         return profile
 
     def register_player(self, payload: dict, *, is_test: bool = False) -> dict:
-        """Strict account creation: name + email + CPF + password + Pix
-        key, every field validated. One wallet per CPF and one per email —
-        a duplicate is a login hint, not an overwrite.
+        """Strict account creation: name + username + email + CPF + password +
+        Pix key, every field validated. One wallet per CPF, one per email and
+        one per username — a duplicate is a login hint, not an overwrite.
 
         The payout bank account is optional: Pix settles to the key, so it
         is demanded at signup only while the operator's
@@ -842,6 +845,7 @@ class Demo:
         name = (payload.get("name") or "").strip()
         if len(name) < 2:
             raise ValueError("informe seu nome completo")
+        username = validate_username(payload.get("username") or "")
         email = validate_email(payload.get("email") or "")
         cpf = validate_cpf(payload.get("cpf") or "")
         password = validate_player_password(payload.get("password") or "")
@@ -864,13 +868,18 @@ class Demo:
         if player_id in data:
             raise ValueError("este CPF já tem conta — entre com sua senha")
         for other in data.values():
-            if isinstance(other, dict) and str(other.get("email") or "") == email:
+            if not isinstance(other, dict):
+                continue
+            if str(other.get("email") or "") == email:
                 raise ValueError("este email já tem conta — entre com sua senha")
+            if str(other.get("username") or "").lower() == username:
+                raise ValueError("este nome de usuário já está em uso")
         salt = secrets.token_hex(16)
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         data[player_id] = {
             "player_id": player_id,
             "name": name,
+            "username": username,
             "email": email,
             "cpf_masked": "***" + cpf[-4:],
             "pw_salt": salt,
@@ -895,43 +904,58 @@ class Demo:
         return self.profile(player_id)
 
     def login_player(self, payload: dict) -> dict:
-        """Email-or-CPF + password. Unknown account and wrong password are
-        the same message after the same fixed delay, so neither the
-        existence of an account nor its password can be probed cheaply."""
+        """Username, email or CPF + password. Unknown account and wrong
+        password are the same message after the same fixed delay, so neither
+        the existence of an account nor its password can be probed cheaply."""
         ident = str(payload.get("identifier")
+                    or payload.get("username")
                     or payload.get("email") or "").strip().lower()
         password = str(payload.get("password") or "")
         data = self.players.read_all()
-        player_id = None
-        if "@" in ident:
-            for pid, row in data.items():
-                if isinstance(row, dict) and str(row.get("email") or "") == ident:
-                    player_id = pid
-                    break
-        else:
-            try:
-                cpf = validate_cpf(ident)
-            except ValueError:
-                cpf = ""
-            if cpf:
-                candidate = "player-" + slug("wallet", cpf)[:24]
-                if candidate in data:
-                    player_id = candidate
+        player_id = self._find_player(data, ident)
         record = data.get(player_id or "")
         digest = self._player_hash(password, str((record or {}).get("pw_salt", ""))) \
             if isinstance(record, dict) else self._player_hash(password, "0" * 32)
         if not isinstance(record, dict) or not hmac.compare_digest(
                 digest, str(record.get("pw_hash") or "")):
             time.sleep(0.25)
-            raise ValueError("email/CPF ou senha inválidos")
+            raise ValueError("usuário/email/CPF ou senha inválidos")
         self.exclusions.assert_playable(player_id)
         if record.get("is_test") and \
                 not self.settings_view()["test_accounts_enabled"]:
             # a disabled test account is just an account that cannot log in:
             # same message, same delay, nothing special to probe
             time.sleep(0.25)
-            raise ValueError("email/CPF ou senha inválidos")
+            raise ValueError("usuário/email/CPF ou senha inválidos")
         return self.profile(player_id)
+
+    @staticmethod
+    def _find_player(data: dict, ident: str) -> str | None:
+        """Resolve a login identifier to a player id.
+
+        Username is matched first (exact, lowercased), then an email (only
+        when the identifier holds an ``@``), then a CPF whose id derives the
+        deterministic ``player-…`` key. Anything else resolves to ``None``,
+        which the caller treats exactly like a wrong password.
+        """
+        ident = str(ident or "").strip().lower()
+        if not ident:
+            return None
+        for pid, row in data.items():
+            if isinstance(row, dict) and \
+                    str(row.get("username") or "").lower() == ident:
+                return pid
+        if "@" in ident:
+            for pid, row in data.items():
+                if isinstance(row, dict) and str(row.get("email") or "") == ident:
+                    return pid
+            return None
+        try:
+            cpf = validate_cpf(ident)
+        except ValueError:
+            return None
+        candidate = "player-" + slug("wallet", cpf)[:24]
+        return candidate if candidate in data else None
 
     def _public_profile(self, player_id: str, row: dict) -> dict:
         return {k: v for k, v in row.items()
@@ -2381,6 +2405,7 @@ class Demo:
                 rows.append({
                     "player_id": player_id,
                     "name": str(row.get("name") or ""),
+                    "username": str(row.get("username") or ""),
                     "email": str(row.get("email") or ""),
                     "cpf_masked": str(row.get("cpf_masked") or ""),
                     "pix_masked": str(row.get("pix_masked") or ""),
@@ -2669,19 +2694,28 @@ class Demo:
         }
 
     def sports_showcase(self) -> dict:
-        """Sports window: real fixtures from ESPN, Superbet as the
-        fallback source, deterministic slate as the last resort.
-        Prices always come from the in-house deterministic model."""
+        """Sports window: real fixtures from Livescore (every competition
+        it covers, with the in-play status), ESPN scoreboard as the
+        fallback source — reachable from ordinary hosts but 403 from
+        datacenter egress — and the deterministic slate as the last
+        resort. Prices always come from the in-house model.
+
+        A source that fails is recorded, not swallowed: the caller sees
+        every upstream error even when a later source carries the board.
+        """
+        from frame.verticals.sports.livescore_engine import LivescoreSportsEngine
         from frame.verticals.sports.espn_engine import EspnSportsEngine
-        from frame.verticals.sports.superbet_engine import SuperbetSportsEngine
         sources = [
+            (LivescoreSportsEngine, "livescore",
+             "Livescore public feed + in-house model",
+             "fixtures reais via Livescore (placar ao vivo); cotações "
+             "geradas pelo motor próprio (modelo determinístico); não é "
+             "direito oficial"),
             (EspnSportsEngine, "espn", "ESPN scoreboard + in-house model",
              "fixtures reais via ESPN; cotações geradas pelo motor próprio "
              "(modelo determinístico); não é direito oficial"),
-            (SuperbetSportsEngine, "superbet", "Superbet events + in-house model",
-             "fixtures reais via Superbet; cotações geradas pelo motor "
-             "próprio (modelo determinístico); não é direito oficial"),
         ]
+        errors = []
         for factory, source, provider, note in sources:
             try:
                 engine = factory()
@@ -2699,7 +2733,8 @@ class Demo:
                         "key": fix.key, "competition": fix.competition,
                         "home": fix.home, "away": fix.away,
                         "kickoff": fix.kickoff_date,
-                        "status": _sports_status(fix.kickoff_date, fix.sport),
+                        "status": getattr(fix, "status", "")
+                        or _sports_status(fix.kickoff_date, fix.sport),
                         "markets": markets,
                     })
                 if fixtures:
@@ -2707,11 +2742,15 @@ class Demo:
                         "fixtures": fixtures, "source": source,
                         "provider": provider, "licensed_feed": False,
                         "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                        "errors": [], "note": note,
+                        "errors": errors, "note": note,
                     }
-            except Exception:
-                continue
-        return odds_engine.build()
+                errors.append({"source": source, "error": "sem partidas no momento"})
+            except Exception as exc:  # a dead source must not close the window
+                errors.append({"source": source,
+                               "error": f"{type(exc).__name__}: {exc}"})
+        fallback = odds_engine.build()
+        fallback["errors"] = errors + list(fallback.get("errors") or [])
+        return fallback
 
     def risk(self, player_id: str) -> dict:
         """All rounds on file feed the in-house flags (velocity, spikes,

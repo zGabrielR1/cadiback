@@ -100,6 +100,7 @@ export default function AdminPanel({ session, onSession }) {
   const [settingsError, setSettingsError] = useState("");
   const [testAccounts, setTestAccounts] = useState(null);
   const [tName, setTName] = useState("");
+  const [tUsername, setTUsername] = useState("");
   const [tEmail, setTEmail] = useState("");
   const [tCpf, setTCpf] = useState("");
   const [tPix, setTPix] = useState("");
@@ -336,6 +337,7 @@ export default function AdminPanel({ session, onSession }) {
     try {
       await api("POST", "/api/admin/test-accounts", {
         name: tName.trim(),
+        username: tUsername.trim(),
         email: tEmail.trim(),
         cpf: tCpf.trim(),
         password: tPass,
@@ -343,6 +345,7 @@ export default function AdminPanel({ session, onSession }) {
       });
       setTestMsg(`Conta de teste ${tEmail.trim()} criada.`);
       setTName("");
+      setTUsername("");
       setTEmail("");
       setTCpf("");
       setTPix("");
@@ -1143,6 +1146,7 @@ export default function AdminPanel({ session, onSession }) {
             <thead>
               <tr>
                 <th>Nome</th>
+                <th>Usuário</th>
                 <th>Email</th>
                 <th>CPF</th>
                 <th>Pix</th>
@@ -1154,6 +1158,7 @@ export default function AdminPanel({ session, onSession }) {
               {(testAccounts || []).map((a) => (
                 <tr key={a.player_id}>
                   <td>{a.name}</td>
+                  <td>{a.username}</td>
                   <td>{a.email}</td>
                   <td>{a.cpf_masked}</td>
                   <td>{a.pix_masked}</td>
@@ -1188,7 +1193,7 @@ export default function AdminPanel({ session, onSession }) {
               ))}
               {(testAccounts || []).length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ color: "var(--mut)" }}>
+                  <td colSpan={7} style={{ color: "var(--mut)" }}>
                     Nenhuma conta de teste.
                   </td>
                 </tr>
@@ -1204,6 +1209,12 @@ export default function AdminPanel({ session, onSession }) {
                 label="Nome completo"
                 value={tName}
                 onChange={(e) => setTName(e.target.value)}
+              />
+              <Field
+                id="ta-username"
+                label="Nome de usuário"
+                value={tUsername}
+                onChange={(e) => setTUsername(e.target.value)}
               />
               <Field
                 id="ta-email"

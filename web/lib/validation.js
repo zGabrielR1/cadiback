@@ -49,3 +49,10 @@ export function validateName(value) {
   if (String(value || "").trim().length < 2) return "informe seu nome completo";
   return "";
 }
+
+export function validateUsername(value) {
+  const v = String(value || "").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{2,19}$/.test(v))
+    return "usuário: 3-20 caracteres (letras, números, . _ -), começando por letra ou número";
+  return "";
+}

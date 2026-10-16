@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import TurnstileWidget from "./TurnstileWidget";
 
 /** Player login + registration (Entrar / Criar conta). Real-site shape:
- * login takes email-or-CPF plus password; registration takes name, email,
- * CPF, password, the Pix key and — only when the operator requires it —
- * the payout account. Every field is validated here and again on the
- * server (demo/payments.py + Demo.register_player); the page owns the
+ * login takes username, email or CPF plus password; registration takes name,
+ * username, email, CPF, password, the Pix key and — only when the operator
+ * requires it — the payout account. Every field is validated here and again on
+ * the server (demo/payments.py + Demo.register_player); the page owns the
  * form state and the submit, this modal only renders.
  *
  * Test accounts are invisible: there is no button. Ctrl+Shift+T while the
@@ -85,16 +85,15 @@ export default function AccountModal({
         <h3>{isLogin ? "Entrar" : "Criar sua conta"}</h3>
         <p className="sub">
           {isLogin
-            ? "Acesse com seu email ou CPF e sua senha."
-            : "Uma conta por CPF. Validação de email e CPF no navegador e no servidor."}
+            ? "Acesse com seu usuário, email ou CPF e sua senha."
+            : "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor."}
         </p>
         {isLogin ? (
           <>
-            {field("identifier", "Email ou CPF", {
+            {field("identifier", "Usuário, email ou CPF", {
               name: "identifier",
               autoComplete: "username",
-              inputMode: "email",
-              placeholder: "voce@email.com ou 000.000.000-00",
+              placeholder: "seu.usuario, voce@email.com ou 000.000.000-00",
             })}
             {field("password", "Senha", {
               name: "password",
@@ -110,6 +109,18 @@ export default function AccountModal({
               autoComplete: "name",
               placeholder: "Como está no seu documento",
             })}
+            {field(
+              "username",
+              "Nome de usuário",
+              {
+                name: "username",
+                autoComplete: "username",
+                autoCapitalize: "none",
+                spellCheck: "false",
+                placeholder: "seu.usuario",
+              },
+              "3-20 caracteres: letras, números, ponto, hífen ou _."
+            )}
             {field("email", "Email", {
               name: "email",
               autoComplete: "email",

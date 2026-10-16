@@ -36,6 +36,11 @@ export default function AccountView({ profile, player, health, history, refreshE
             <>
               <b>{profile.name}</b> · {profile.player_id}
               <br />
+              {profile.username ? (
+                <>
+                  Usuário: <b>{profile.username}</b> ·{" "}
+                </>
+              ) : null}
               Chave Pix: {profile.pix_masked} · Saldo Disponível:{" "}
               <b>{BRL(profile.available_minor)}</b>
             </>

@@ -12,6 +12,9 @@ class Fixture:
     home: str
     away: str
     kickoff_date: str
+    # a source that carries an in-play status fills this; a source that only
+    # ships a kickoff leaves it empty and the caller derives the status
+    status: str = ""
 
 
 @dataclass(frozen=True)

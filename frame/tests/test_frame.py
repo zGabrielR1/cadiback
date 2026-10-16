@@ -537,8 +537,8 @@ class SportsFeedTest(unittest.TestCase):
         """A 503 answer holds its connection open until the collector runs;
         on a feed polled every 30s that is a silent leak, and the operator
         sees nothing but a memory that climbs."""
-        from frame.verticals.sports import espn_engine, superbet_engine
-        for module in (espn_engine, superbet_engine):
+        from frame.verticals.sports import espn_engine, livescore_engine
+        for module in (espn_engine, livescore_engine):
             self.assertEqual(self._capture(module), [True], module.__name__)
 
 

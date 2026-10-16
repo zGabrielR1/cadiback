@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, BRL, newDepositId, getAdminSession, setAdminSession, getPlayerSession, setPlayerSession } from "../lib/api";
-import { validateCPF, validateEmail, validateName, validatePassword } from "../lib/validation";
+import { validateCPF, validateEmail, validateName, validatePassword, validateUsername } from "../lib/validation";
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import CasinoHome from "./components/CasinoHome";
@@ -93,6 +93,7 @@ export default function Page() {
   const [form, setForm] = useState({
     identifier: "",
     name: "",
+    username: "",
     email: "",
     cpf: "",
     password: "",
@@ -363,6 +364,7 @@ export default function Page() {
       setForm((f) => ({
         ...f,
         name: "Ana Souza",
+        username: "ana.souza",
         email: "ana.souza@example.com",
         cpf: "529.982.247-25",
         password: "ana1234",
@@ -379,18 +381,23 @@ export default function Page() {
     const errs = {};
     if (authMode === "login") {
       const id = String(form.identifier || "").trim();
-      if (!id) errs.identifier = "informe seu email ou CPF";
+      if (!id) errs.identifier = "informe seu usuário, email ou CPF";
       else if (id.includes("@")) {
         const e = validateEmail(id);
         if (e) errs.identifier = e;
-      } else {
+      } else if (/^[\d.\-\s]+$/.test(id)) {
         const c = validateCPF(id);
         if (c) errs.identifier = c;
+      } else {
+        const u = validateUsername(id);
+        if (u) errs.identifier = u;
       }
       if (!String(form.password || "")) errs.password = "informe sua senha";
     } else {
       const n = validateName(form.name);
       if (n) errs.name = n;
+      const u = validateUsername(form.username);
+      if (u) errs.username = u;
       const e = validateEmail(form.email);
       if (e) errs.email = e;
       const c = validateCPF(form.cpf);
@@ -436,6 +443,7 @@ export default function Page() {
             })
           : await api("POST", "/api/player", {
               name: String(form.name || "").trim(),
+              username: String(form.username || "").trim(),
               email: String(form.email || "").trim(),
               cpf: String(form.cpf || "").trim(),
               password: form.password,
