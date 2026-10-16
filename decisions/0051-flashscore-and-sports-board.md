@@ -91,3 +91,8 @@ with a shared `_poisson_cdf`, so any total is priced robustly.
   `verify.py` 0; export rebuilt.
 - Multi-sport means the pricing board is exercised on totals it never saw
   before (that is what surfaced the overflow).
+- **Live-verified** (both origins): `/api/sports` returns
+  `source: "flashscore"`, 320 priced fixtures across 9 sports — 54 in play,
+  every one carrying a score, 56 countries — with `errors: []`, directly on
+  Render **and** through the Vercel `/api` proxy; the rewritten board is in the
+  shipped Vercel chunk (`sx-league`, `mais mercados`, `só ao vivo`).
