@@ -107,3 +107,15 @@ card's estorno. The first test run caught this; it is now enforced by
   (open/settled slip list), M3 = score-aware in-play repricing, M4 =
   match-detail page (full market ladder), M5 = feed resilience (mirror,
   SWR).
+- Live verification (2026-10-16, shipped commit `f58d072`): Render deploy
+  `dep-db98e3hsrm7s73bcrlu0` live — `/api/health` 200 (receipt fresh,
+  books balance), `/api/catalog` 200, `/` 200, and `/api/sports` 200
+  from the production container: Flashscore, 320 fixtures, 98 in play,
+  `errors: []`, every market kind present (1x2, dc, btts, moneyline,
+  total, total-h1, total-h2) with lines — so the deployed settlement has
+  everything it needs to decide a slip. Vercel `cadiback-web` redeployed;
+  storefront 200, `/api/health` through its same-origin rewrite returns
+  the backend's payload (Turnstile hostnames still carry both hosts), and
+  the served chunk contains the `ANULADA` badge and the real-result
+  confirmation message. No Supabase migration: rounds are JSONL, the new
+  `legs`/`settled_by`/`note` fields are free-form JSON.
