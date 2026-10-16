@@ -20,9 +20,13 @@ NOTE = ("cotações geradas internamente (motor próprio); vitrine "
         "read-only — não é direito oficial de dados esportivos")
 
 COMPS = {
-    "bra.1": {"sport": "soccer", "hours": (16, 18, 21), "duration": 105},
-    "ita.1": {"sport": "soccer", "hours": (13, 16, 19), "duration": 105},
-    "nfl": {"sport": "nfl", "hours": (13, 17, 21), "duration": 195},
+    "bra.1": {"sport": "soccer", "country": "Brasil",
+              "label": "Brasileir\u00e3o S\u00e9rie A",
+              "hours": (16, 18, 21), "duration": 105},
+    "ita.1": {"sport": "soccer", "country": "It\u00e1lia", "label": "Serie A",
+              "hours": (13, 16, 19), "duration": 105},
+    "nfl": {"sport": "football", "country": "EUA", "label": "NFL",
+            "hours": (13, 17, 21), "duration": 195},
 }
 
 TEAMS = {
@@ -106,11 +110,16 @@ def _fixture(comp: str, home: str, away: str, date: str, hour: int,
 
     return {
         "key": f"{comp}:{date}:{home}-{away}",
-        "competition": comp,
+        "sport": COMPS[comp]["sport"],
+        "country": COMPS[comp]["country"],
+        "competition": COMPS[comp]["label"],
         "home": home,
         "away": away,
         "kickoff": kickoff.isoformat(timespec="minutes").replace("+00:00", "Z"),
         "status": status,
+        "home_score": None,
+        "away_score": None,
+        "progress": "",
         "markets": markets,
     }
 

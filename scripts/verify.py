@@ -19,6 +19,7 @@ required += [os.path.join(p, n) for p, n in [
     ("frame/models", "registry.py"),
     ("frame/verticals/sports", "contract.py"), ("frame/verticals/sports", "stub.py"),
     ("frame/verticals/sports", "pricing.py"),     ("frame/verticals/sports", "espn_engine.py"), ("frame/verticals/sports", "livescore_engine.py"),
+    ("frame/verticals/sports", "marketboard.py"), ("frame/verticals/sports", "flashscore_engine.py"),
     ("frame/verticals/casino", "stub.py"), ("frame/ops", "scheduler.py"),
     ("frame/ops", "notifier.py"), ("frame/ops", "health.py"),
     ("demo", "server.py"), ("demo", "slot.py"), ("demo", "payments.py"),

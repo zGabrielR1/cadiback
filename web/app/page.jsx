@@ -801,6 +801,7 @@ export default function Page() {
             liveOnly={liveOnly}
             onSelectBet={selectBet}
             selectedBets={selectedBets}
+            onLive={setLiveOnly}
           />
         ) : null}
 

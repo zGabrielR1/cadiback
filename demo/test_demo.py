@@ -954,7 +954,7 @@ class SportsShowcaseTest(unittest.TestCase):
     def test_read_only_fixtures(self):
         demo = Demo(data_dir=tempfile.mkdtemp())
         show = demo.sports_showcase()
-        self.assertIn(show["source"], ("livescore", "espn", "inhouse"))
+        self.assertIn(show["source"], ("flashscore", "livescore", "espn", "inhouse"))
         self.assertGreaterEqual(len(show["fixtures"]), 1)
         for fix in show["fixtures"]:
             self.assertTrue(fix["home"] and fix["away"], fix)
@@ -1005,6 +1005,32 @@ class SportsShowcaseTest(unittest.TestCase):
         receipt = engine.accept("b1", f"{fixture_key}:1x2", 1000)
         self.assertEqual(receipt.market_key, f"{fixture_key}:1x2")
         self.assertIn(engine.settle("b1", {"selection": "home"}), ("won", "lost"))
+
+    def test_flashscore_engine_contract_with_canned_feed(self):
+        import tempfile, os
+        from frame.verticals.sports.flashscore_engine import FlashscoreSportsEngine
+
+        feed = ("SA\u00f71\u00ac~ZA\u00f7BRAZIL: Serie A\u00acZEE\u00f7abc\u00ac"
+                "ZY\u00f7Brazil\u00ac~AA\u00f7m1\u00acAD\u00f71792161000\u00ac"
+                "AB\u00f72\u00acAE\u00f7Flamengo\u00acAF\u00f7Santos\u00ac"
+                "AG\u00f71\u00acAH\u00f70")
+
+        cache = os.path.join(tempfile.mkdtemp(), "fs.json")
+        engine = FlashscoreSportsEngine(cache_path=cache, fetcher=lambda url: feed,
+                                        sports={1: "soccer"})
+        fixtures = engine.fixtures()
+        self.assertTrue(fixtures)
+        fix = fixtures[0]
+        self.assertEqual(fix.home, "Flamengo")
+        self.assertEqual(fix.away, "Santos")
+        self.assertEqual(fix.competition, "Serie A")
+        self.assertEqual(fix.country, "Brazil")
+        self.assertEqual(fix.status, "IN_PROGRESS")
+        self.assertEqual((fix.home_score, fix.away_score), (1, 0))
+        markets = engine.markets(fix.key)
+        self.assertIn("1x2", {m.kind for m in markets})
+        receipt = engine.accept("b3", f"{fix.key}:1x2", 500)
+        self.assertEqual(receipt.stake_minor, 500)
 
     def test_livescore_engine_contract_with_canned_feed(self):
         import tempfile, os

@@ -1,4 +1,34 @@
-CURRENTTASK: Username accounts + a live sports feed (decision 0050) — every new
+CURRENTTASK: Flashscore board + a sport-separated sports UX (decision 0051) —
+`/api/sports` now leads with Flashscore (every sport, with country, league and
+the live score), every source shares one in-house market board, and the sports
+view is rebuilt as a Sofascore-shaped board separated by sport, then country →
+league.
+
+## STATUS
+
+- **FLASHSCORE IS PRIMARY.**
+  `frame/verticals/sports/flashscore_engine.py` reads
+  `global.flashscore.ninja/2/x/feed/f_<sport>_<day>_3_en_1` (no key, only an
+  `x-fsign` header) — one feed format for soccer, tennis, basketball, hockey,
+  baseball, handball, rugby, volleyball, e-sports and futsal, carrying country,
+  league, status and the running score. Verified 200 from this machine **and** a
+  cloud egress. `Demo.sports_showcase` order is Flashscore → Livescore → ESPN →
+  deterministic slate; every failed source is still recorded.
+- **ONE SHARED MARKET BOARD.**
+  `frame/verticals/sports/marketboard.py` prices every source (soccer 1x2 + a
+  2.5 total; other sports a two-way moneyline + a sport-scaled total; tennis
+  moneyline-only), so a source only supplies fixtures. `Fixture` gained
+  `country`/`home_score`/`away_score`/`progress`; `Market` gained `line`.
+  `pricing._poisson` is now a recurrence — basketball/cricket totals no longer
+  overflow.
+- **SPORT-SEPARATED UI.** `SportsHome.jsx` rebuilt: sport tabs (icon, count,
+  live count), country → league collapsible groups, and Sofascore-shaped
+  fixture rows (state | stacked teams with a right-aligned score | fixed odds
+  column) with expandable extra markets and a "só ao vivo" filter.
+- Suites: `frame` 45/45, `demo` 281/281 (+1 Flashscore contract test),
+  `verify.py` 0; export rebuilt. Decision `0051`.
+
+CURRENTTASK (previous): Username accounts + a live sports feed (decision 0050) — every new
 player picks a username at signup and logs in with it (alongside email/CPF), and
 `/api/sports` carries real, cloud-reachable fixtures again after the dead
 Superbet rail was removed. Shipped to Supabase + Render + Vercel.

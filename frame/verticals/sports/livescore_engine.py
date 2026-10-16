@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 from .contract import BetReceipt, Fixture, Market, Quote
-from . import pricing as P
+from . import marketboard as MB
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
@@ -108,7 +108,6 @@ def _parse_stages(data: dict) -> list[dict]:
             continue
         league = str(stage.get("Snm") or stage.get("CompN") or "Futebol")
         country = str(stage.get("Cnm") or "").strip()
-        competition = f"{country} \u00b7 {league}" if country else league
         for event in stage.get("Events") or []:
             if not isinstance(event, dict):
                 continue
@@ -117,7 +116,7 @@ def _parse_stages(data: dict) -> list[dict]:
                 continue
             rows.append({
                 "key": str(event.get("Eid") or ""),
-                "competition": competition,
+                "competition": league,
                 "country": country,
                 "home": home,
                 "away": away,
@@ -125,6 +124,7 @@ def _parse_stages(data: dict) -> list[dict]:
                 "status": _status(event.get("Eps")),
                 "home_score": _score(event.get("Tr1")),
                 "away_score": _score(event.get("Tr2")),
+                "progress": str(event.get("Eps") or "").strip(),
             })
     return rows
 
@@ -199,9 +199,14 @@ class LivescoreSportsEngine:
     def fixtures(self) -> list[Fixture]:
         self._refresh()
         return [Fixture(key=f"ls:{r['key']}", sport="soccer",
-                        competition=r["competition"], home=r["home"],
-                        away=r["away"], kickoff_date=r["kickoff"],
-                        status=r["status"]) for r in self._events]
+                        competition=r["competition"], country=r["country"],
+                        home=r["home"], away=r["away"],
+                        kickoff_date=r["kickoff"], status=r["status"],
+                        home_score=r.get("home_score"),
+                        away_score=r.get("away_score"),
+                        progress=(r.get("progress") or "")
+                        if r["status"] == "IN_PROGRESS" else "")
+                for r in self._events]
 
     def _row(self, fixture_key: str) -> dict | None:
         self._refresh()
@@ -225,25 +230,10 @@ class LivescoreSportsEngine:
         row = self._row(fixture_key)
         if row is None:
             return []
-        bucket = int(time.time()) // 30
-        minute = self._minute(row) if self._live(row) else 0.0
-        out = []
-
-        def add(kind, selections, probs):
-            prices = []
-            for i, prob in enumerate(probs):
-                ratio = 1.0 + P.drift(f"{fixture_key}:{kind}:{i}", bucket, minute)
-                prices.append(max(1.01, round(P.to_price(prob) * ratio, 2)))
-            out.append(Market(key=f"{fixture_key}:{kind}",
-                              fixture_key=fixture_key, kind=kind,
-                              selections=tuple(selections),
-                              prices=tuple(prices)))
-
-        add("1x2", (row["home"], "Draw", row["away"]),
-            P.soccer_probs(row["home"], row["away"]))
-        over = P.total_probs_over(row["home"], row["away"], 2.5)
-        add("total", ("Over", "Under"), (over, 1.0 - over))
-        return out
+        live = self._live(row)
+        minute = self._minute(row) if live else 0.0
+        return MB.quote_markets(fixture_key, "soccer", row["home"],
+                                row["away"], live=live, minute=minute)
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from .contract import BetReceipt, Fixture, Market, Quote
-from . import pricing as P
+from . import marketboard as MB
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
@@ -41,7 +41,12 @@ FEEDS = {
 
 UA = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
 SPORT = {comp_id: kind for comp_id, (_, kind) in FEEDS.items()}
-STATUS_DURATION = {"soccer": 105, "nfl": 195, "nba": 150, "mlb": 180, "nhl": 150}
+CANON = {"soccer": "soccer", "nfl": "football", "nba": "basketball",
+         "mlb": "baseball", "nhl": "hockey"}
+ESPN_COUNTRY = {"bra.1": "Brasil", "ita.1": "Itália", "eng.1": "Inglaterra",
+                "esp.1": "Espanha", "ger.1": "Alemanha", "fra.1": "França",
+                "uefa.champions": "Europa", "nfl": "EUA", "nba": "EUA",
+                "mlb": "EUA", "nhl": "EUA"}
 
 
 class ProviderError(RuntimeError):
@@ -68,24 +73,40 @@ def _http(url: str) -> dict:
 
 def _parse_events(comp_id: str, data: dict) -> list[dict]:
     rows = []
+    leagues = data.get("leagues") or []
+    league_name = (leagues[0] or {}).get("name") if leagues else None
+    league_name = league_name or comp_id
     for event in data.get("events", []):
         comp = (event.get("competitions") or [{}])[0]
-        teams = {}
+        teams, scores = {}, {}
         for competitor in comp.get("competitors") or []:
-            teams[competitor.get("homeAway")] = (
-                (competitor.get("team") or {}).get("displayName"))
+            side = competitor.get("homeAway")
+            teams[side] = (competitor.get("team") or {}).get("displayName")
+            scores[side] = competitor.get("score")
         if not teams.get("home") or not teams.get("away"):
             continue
-        status = ((event.get("status") or {}).get("type") or {}).get("name") or ""
+        state = event.get("status") or {}
+        status = (state.get("type") or {}).get("name") or ""
         rows.append({
             "key": str(event.get("id")),
-            "competition": comp_id,
+            "competition": league_name,
+            "country": ESPN_COUNTRY.get(comp_id, ""),
             "home": teams["home"],
             "away": teams["away"],
             "kickoff": event.get("date") or "",
             "status": status,
+            "home_score": _int(scores.get("home")),
+            "away_score": _int(scores.get("away")),
+            "progress": str(state.get("displayClock") or "").strip(),
         })
     return rows
+
+
+def _int(value: object) -> int | None:
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None
 
 
 @dataclass
@@ -142,11 +163,17 @@ class EspnSportsEngine:
         for row in self._events:
             out.append(Fixture(
                 key=f"{row['competition']}:{row['key']}",
-                sport=SPORT[row["competition"]],
+                sport=CANON.get(SPORT.get(row["competition"], "soccer"),
+                                "soccer"),
                 competition=row["competition"],
+                country=row.get("country", ""),
                 home=row["home"],
                 away=row["away"],
                 kickoff_date=row["kickoff"],
+                status=row["status"],
+                home_score=row.get("home_score"),
+                away_score=row.get("away_score"),
+                progress=row.get("progress") or "",
             ))
         return out
 
@@ -175,45 +202,11 @@ class EspnSportsEngine:
         row = self._row(fixture_key)
         if row is None:
             return []
-        bucket = int(time.time()) // 30
-        minute = self._minute(row) if self._live(row) else 0.0
-        sport = SPORT[row["competition"]]
-        out = []
-
-        def add(kind, selections, probs):
-            prices = []
-            for i, prob in enumerate(probs):
-                ratio = 1.0 + P.drift(f"{fixture_key}:{kind}:{i}", bucket, minute)
-                prices.append(max(1.01, round(P.to_price(prob) * ratio, 2)))
-            out.append(Market(
-                key=f"{fixture_key}:{kind}",
-                fixture_key=fixture_key,
-                kind=kind,
-                selections=tuple(selections),
-                prices=tuple(prices),
-            ))
-
-        if sport == "soccer":
-            add("1x2", (row["home"], "Draw", row["away"]),
-                P.soccer_probs(row["home"], row["away"]))
-            over = P.total_probs_over(row["home"], row["away"], 2.5)
-            add("total", ("Over", "Under"), (over, 1.0 - over))
-        elif sport == "nfl":
-            home_p = P.nfl_probs(row["home"], row["away"])
-            add("moneyline", (row["home"], row["away"]), (home_p, 1.0 - home_p))
-            over = P.nfl_total(row["home"], row["away"])
-            add("total", ("Over", "Under"), (over, 1.0 - over))
-        else:
-            home_p = P.nfl_probs(row["home"], row["away"])
-            add("moneyline", (row["home"], row["away"]), (home_p, 1.0 - home_p))
-            base, scale, line = {
-                "nba": (222.0, 12.0, 215.5),
-                "mlb": (8.6, 1.6, 8.5),
-                "nhl": (6.2, 1.2, 5.5),
-            }[sport]
-            over = P.points_total_over(row["home"], row["away"], base, scale, line)
-            add("total", ("Over", "Under"), (over, 1.0 - over))
-        return out
+        live = self._live(row)
+        minute = self._minute(row) if live else 0.0
+        sport = CANON.get(SPORT.get(row["competition"], "soccer"), "soccer")
+        return MB.quote_markets(fixture_key, sport, row["home"], row["away"],
+                                live=live, minute=minute)
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

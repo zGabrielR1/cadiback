@@ -25,7 +25,8 @@ operator/
     ├── compliance/sigap.py  game registry, exclusions, limits
     ├── models/registry.py   fair-price provider registry (devig methods registered)
     ├── verticals/sports/    SportsEngine contract + stub + real feeds
-    │                        (Livescore primary, ESPN fallback)
+    │                        (Flashscore primary; shared marketboard; Livescore
+    │                        then ESPN fallbacks)
     ├── verticals/casino/    CasinoAggregator contract + deterministic stub
     ├── ops/scheduler.py     tiered loop, per-subject cooldown, daily cap, receipts
     ├── ops/notifier.py      ntfy fan-out (fail-open) + local file double for tests
@@ -47,11 +48,11 @@ demo/
     ├── pg_proxy.py          PG Soft: a minted trial session, the hosts it
     │                        binds, and the measured money-API endpoints
     ├── index.html           zero-build fallback storefront
-    └── test_demo.py         280 execution checks
+    └── test_demo.py         281 execution checks
 
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier
-    ├── app/components/SportsHome.jsx   leagues + events with live odds & betslip
+    ├── app/components/SportsHome.jsx   sport tabs, country→league groups, live scoreboard + odds
     ├── app/components/CasinoHome.jsx   lobby: unified cards + official demos
     ├── app/globals.css     dark default + light toggle
     └── lib/api.js          shared fetch helper

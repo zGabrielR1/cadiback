@@ -15,6 +15,14 @@ class Fixture:
     # a source that carries an in-play status fills this; a source that only
     # ships a kickoff leaves it empty and the caller derives the status
     status: str = ""
+    # grouping + scoreboard facts a real board shows. A source that carries a
+    # live score fills them; a source that only ships a schedule leaves the
+    # scores empty and the scoreboard prints a dash instead of a fake 0-0.
+    country: str = ""
+    home_score: int | None = None
+    away_score: int | None = None
+    # the in-play clock/state label ("67'", "HT", "3ºQ"); empty when not live
+    progress: str = ""
 
 
 @dataclass(frozen=True)
@@ -24,6 +32,9 @@ class Market:
     kind: str
     selections: tuple[str, ...]
     prices: tuple[float, ...]
+    # the handicap/total line the prices are quoted against (2.5 goals,
+    # 215.5 points); None for a straight moneyline
+    line: float | None = None
 
 
 @dataclass(frozen=True)

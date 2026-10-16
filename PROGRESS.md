@@ -1,5 +1,24 @@
 # PROGRESS
 
+## DONE (2026-10-16 — Flashscore board + sport-separated sports UX, decision 0051)
+
+- **Flashscore is the primary feed.** `flashscore_engine.py` reads its public
+  match feed (no key, `x-fsign` header) — one format for **every sport**
+  (soccer, tennis, basketball, hockey, baseball, handball, rugby, volleyball,
+  e-sports, futsal), with country, league, status and the live score. Verified
+  200 from this machine **and** a cloud egress. Order is Flashscore →
+  Livescore → ESPN → slate, failures still recorded.
+- **One shared market board.** New `marketboard.py` quotes every source —
+  soccer 1x2 + 2.5 total, other sports a moneyline + a sport-scaled total,
+  tennis moneyline-only. `Fixture` gained country/scores/progress; `Market`
+  gained the line. `pricing._poisson` rewritten as a recurrence so a large
+  total (basketball ~220, cricket ~300) no longer overflows.
+- **The board is separated by sport.** `SportsHome.jsx` rewritten: sport tabs
+  with live counts, country → league collapsible groups, and Sofascore-shaped
+  rows (state | stacked teams + right-aligned score | fixed odds column) with
+  expandable extra markets and a "só ao vivo" filter.
+- Suites: `frame` 45/45, `demo` 281/281, `verify.py` 0; export rebuilt.
+
 ## DONE (2026-10-16 — Username accounts + a live sports feed, decision 0050)
 
 - **Username at signup and login.** `validate_username` (3–20 chars,

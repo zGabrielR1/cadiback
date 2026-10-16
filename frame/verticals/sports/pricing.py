@@ -24,7 +24,26 @@ def team_strength(name: str) -> float:
 
 
 def _poisson(lmbda: float, k: int) -> float:
-    return math.exp(-lmbda) * (lmbda ** k) / math.factorial(k)
+    """Poisson pmf via the recurrence p_k = p_{k-1} * lmbda / k, so a large
+    mean (basketball's ~220 points) never evaluates lmbda**k and overflows."""
+    if lmbda <= 0.0:
+        return 1.0 if k == 0 else 0.0
+    term = math.exp(-lmbda)
+    for i in range(1, k + 1):
+        term *= lmbda / i
+    return term
+
+
+def _poisson_cdf(lmbda: float, k: int) -> float:
+    """P(X <= k) for X ~ Poisson(lmbda), same recurrence as `_poisson`."""
+    if lmbda <= 0.0:
+        return 1.0
+    term = math.exp(-lmbda)
+    total = term
+    for i in range(1, k + 1):
+        term *= lmbda / i
+        total += term
+    return total
 
 
 def soccer_probs(home: str, away: str) -> tuple[float, float, float]:
@@ -48,7 +67,7 @@ def soccer_probs(home: str, away: str) -> tuple[float, float, float]:
 def total_probs_over(home: str, away: str, line: float) -> float:
     sh, sa = team_strength(home), team_strength(away)
     lt = 1.45 * (sh / sa) + 1.20 * (sa / sh)
-    return 1.0 - sum(_poisson(lt, k) for k in range(int(line) + 1))
+    return 1.0 - _poisson_cdf(lt, int(line))
 
 
 def nfl_probs(home: str, away: str) -> float:
@@ -60,14 +79,14 @@ def nfl_probs(home: str, away: str) -> float:
 def nfl_total(home: str, away: str) -> float:
     sh, sa = team_strength(home), team_strength(away)
     lt = 43.5 + (sh + sa - 2.0) * 8.0
-    return 1.0 - sum(_poisson(lt, k) for k in range(int(45.5)))
+    return 1.0 - _poisson_cdf(lt, 45)
 
 
 def points_total_over(home: str, away: str, base: float, scale: float,
                       line: float) -> float:
     sh, sa = team_strength(home), team_strength(away)
     lt = base + (sh + sa - 2.0) * scale
-    return 1.0 - sum(_poisson(lt, k) for k in range(int(line) + 1))
+    return 1.0 - _poisson_cdf(lt, int(line))
 
 
 def to_price(prob: float) -> float:

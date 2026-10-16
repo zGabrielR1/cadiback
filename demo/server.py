@@ -2694,18 +2694,25 @@ class Demo:
         }
 
     def sports_showcase(self) -> dict:
-        """Sports window: real fixtures from Livescore (every competition
-        it covers, with the in-play status), ESPN scoreboard as the
-        fallback source — reachable from ordinary hosts but 403 from
-        datacenter egress — and the deterministic slate as the last
-        resort. Prices always come from the in-house model.
+        """Sports window: real fixtures from Flashscore (every sport it
+        carries, with country, league, in-play status and the running
+        score) as the primary source, Livescore's soccer feed next and
+        ESPN's scoreboard after that — reachable from ordinary hosts but
+        403 from datacenter egress — with the deterministic slate as the
+        last resort. Prices always come from the in-house model.
 
         A source that fails is recorded, not swallowed: the caller sees
         every upstream error even when a later source carries the board.
         """
+        from frame.verticals.sports.flashscore_engine import FlashscoreSportsEngine
         from frame.verticals.sports.livescore_engine import LivescoreSportsEngine
         from frame.verticals.sports.espn_engine import EspnSportsEngine
         sources = [
+            (FlashscoreSportsEngine, "flashscore",
+             "Flashscore feed + in-house model",
+             "fixtures e placares ao vivo via Flashscore; cotações "
+             "geradas pelo motor próprio (modelo determinístico); não é "
+             "direito oficial"),
             (LivescoreSportsEngine, "livescore",
              "Livescore public feed + in-house model",
              "fixtures reais via Livescore (placar ao vivo); cotações "
@@ -2727,14 +2734,20 @@ class Demo:
                             "key": m.key, "kind": m.kind,
                             "selections": list(m.selections),
                             "prices": list(m.prices),
-                            "provider": provider, "line": None,
+                            "provider": provider, "line": m.line,
                         })
                     fixtures.append({
-                        "key": fix.key, "competition": fix.competition,
+                        "key": fix.key, "sport": fix.sport,
+                        "country": fix.country,
+                        "competition": fix.competition,
                         "home": fix.home, "away": fix.away,
                         "kickoff": fix.kickoff_date,
-                        "status": getattr(fix, "status", "")
+                        "status": fix.status
                         or _sports_status(fix.kickoff_date, fix.sport),
+                        "home_score": fix.home_score,
+                        "away_score": fix.away_score,
+                        "progress": fix.progress or _sports_progress(
+                            fix.kickoff_date, fix.status),
                         "markets": markets,
                     })
                 if fixtures:
@@ -3117,6 +3130,23 @@ def _sports_status(kickoff: str, sport: str) -> str:
     if (now - started).total_seconds() < duration * 60:
         return "IN_PROGRESS"
     return "STATUS_FINAL"
+
+
+def _sports_progress(kickoff: str, status: str) -> str:
+    """A live clock for a source that only ships a kickoff (ESPN's scoreboard
+    carries its own; a bare schedule does not)."""
+    if status != "IN_PROGRESS":
+        return ""
+    try:
+        started = datetime.fromisoformat(str(kickoff).replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    minute = max(0.0, (datetime.now(timezone.utc) - started).total_seconds() / 60.0)
+    if minute <= 0:
+        return ""
+    if minute >= 90:
+        return "90+'"
+    return f"{int(minute)}'"
 
 
 class Handler(BaseHTTPRequestHandler):
