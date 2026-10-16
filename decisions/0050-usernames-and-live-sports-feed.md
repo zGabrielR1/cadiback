@@ -101,4 +101,12 @@ out of the build (the root cause was a missing cache, not the exclusion itself).
   does not resolve from IPv4-only egress — see `docs/supabase.md`).
 - Suites: `frame` 45/45, `demo` 280/280 (+5 username, +1 Livescore contract,
   −1 Superbet), `verify.py` 0; export rebuilt.
-- Deployed to Render (`cadiback`) and Vercel (`cadiback-web`); live-verified.
+- Deployed to Render (`cadiback`) and Vercel (`cadiback-web`); live-verified:
+  `/api/sports` returns `source: "livescore"`, 240 priced fixtures with in-play
+  statuses and `errors: []` (direct and through the Vercel `/api` proxy);
+  `/api/health` 200 on both. The username rule was exercised live through the
+  painel's test-account path: a fresh handle is accepted, a duplicate handle
+  (different email + CPF) is refused `400` on the username rule alone, and the
+  smoke row was deleted afterwards (no test accounts left). The migration was
+  applied over the session pooler; a probe write (`POST /api/deposit/pix/status`)
+  confirms Postgres is reachable from Render's egress.

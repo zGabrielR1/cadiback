@@ -14,7 +14,7 @@ as `.env.resend` / `.env.turnstile`):
 | `SUPABASE_URL` | no | `https://<ref>.supabase.co` |
 | `SUPABASE_ANON_KEY` | barely — public-ish | unused by the backend; the storefront never talks to Supabase directly |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | migrations / emergency SQL only; never ships to a client |
-| `DATABASE_URL` | **yes** | SQLAlchemy URL for the backend: `postgresql+psycopg://postgres:<PASSWORD>@db.<ref>.supabase.co:5432/postgres` (URL-encode the password). If the direct host does not resolve from a machine (IPv4-only egress — observed on this laptop), apply the migration through the dashboard SQL editor instead, and prefer the transaction pooler (`:6543`) for `DATABASE_URL` itself — same shape, IPv4, and what Render's egress wants too |
+| `DATABASE_URL` | **yes** | SQLAlchemy URL for the backend: `postgresql://postgres:<PASSWORD>@db.<ref>.supabase.co:5432/postgres` (URL-encode the password). The direct host is IPv6-only and does **not** resolve from IPv4 egress (this laptop *and* Render), so the value in use points at the **session pooler**: `postgresql://postgres.<ref>:<PASSWORD>@aws-1-<region>.pooler.supabase.com:5432/postgres` — same database, IPv4, and session mode keeps prepared statements valid (use the transaction pooler `:6543` only if a client can turn prepared statements off). This project's pooler region is `ca-central-1` (verified 2026-10-16). Apply migrations through the pooler too, or the dashboard SQL editor |
 
 `demo/db.py` reads this file with the real environment winning, exactly like
 `mail_env`/`turnstile_env`. `DATABASE_URL` unset or non-`postgresql…` means
