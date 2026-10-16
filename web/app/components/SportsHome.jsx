@@ -129,6 +129,7 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
       marketKind: m.kind,
       selection: sel,
       price,
+      line: m.line == null ? null : m.line,
     });
   const isPicked = (sel) =>
     selectedBets && selectedBets.some((x) => x.fixtureKey === f.key && x.selection === sel);

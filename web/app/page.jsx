@@ -594,12 +594,13 @@ export default function Page() {
           market_kind: b.marketKind,
           selection: b.selection,
           price: b.price,
+          line: b.line == null ? null : b.line,
         })),
         stake_minor: stakeMinor,
         bet_id: newDepositId(),
       });
       window.alert(
-        `✓ Aposta registrada!\n${totalOdds.toFixed(2)} @ combinada\n${selectedBets.map(b => `${b.selection} @ ${b.price.toFixed(2)}`).join("\n")}\nValor: ${BRL(stakeMinor)}\nAguardando resultado - acompanhe em Histórico.`
+        `✓ Aposta registrada!\n${totalOdds.toFixed(2)} @ combinada\n${selectedBets.map(b => `${b.selection} @ ${b.price.toFixed(2)}`).join("\n")}\nValor: ${BRL(stakeMinor)}\nConsolidação automática pelo resultado real ao fim das partidas — acompanhe no Histórico.`
       );
       setSelectedBets([]);
       refresh();

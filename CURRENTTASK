@@ -1,9 +1,44 @@
-CURRENTTASK: PT countries + a fuller market card + a ticking live minute (decision
-0052) — every country on the board is in Portuguese, the row shows the result
-market and the total side by side (with dupla chance, ambas marcam and
-half-totals on expand, and the draw wherever the sport's rules allow one), and
-the live minute advances locally between polls so a minute-by-minute feel costs
-the feed nothing.
+CURRENTTASK: Real-result settlement (decision 0053) — a slip placed on the
+board settles against the fixture's actual final score: won pays the bought
+price, a losing leg takes the stake, a push refunds, and a match the feed
+hasn't decided yet keeps the slip pending until the result (or a declared
+simulation after 12h of silence) — never a hash roll.
+
+## STATUS
+
+- **THE VERDICT IS THE MATCH.** New
+  `frame/verticals/sports/settlement.py` maps a market kind + selection
+  onto the final score (`won`/`lost`/`push`/`None`=undetermined): 1x2 by
+  team name or Casa/Empate/Fora, moneyline with push, dupla chance, ambas
+  marcam, and totals — full game (push on the integer grid) plus half
+  fragments (a half's total ≤ the full total, so `Mais 1.5` on H1 is
+  decisively lost once the FULL total is ≤ 1.5, while the covering side can
+  stay undetermined → pending, never an invented verdict).
+- **THE SLIP CARRIES ITS LEGS.** `bet()` persists per-leg `fixture_key`,
+  `selection`, `price`, `market_kind`, `home`, `away`, `line` on the round
+  row; `Demo._settle_verdict` settles an express all-or-nothing (any losing
+  leg kills it; a push with no loss refunds it) and records
+  `settled_by: "result"` plus a readable note (`Flamengo 2:1 Santos → won`).
+- **RESULT FIRST, SIMULATION DECLARED.** `/api/sports` donates the payload
+  it just fetched (zero extra calls); missing legs fall to the lazy
+  Flashscore finals archive (`results()`, own 15-min cache, yesterday +
+  today); still undetermined → pending for `STALE_BET_SECONDS = 12h`, then
+  the legacy draw settles it with an honest `— simulado` note. Slips
+  without legs keep the classic 45s path.
+- **A PUSH IS THE BOOKS' OWN POSTING.** `settle_bet_push` (cash back to
+  balance, bonus back to bonus) — not a 1.00-odds win, which the money
+  layer refuses (min 1.01). The account view renders `anulada` as
+  `ANULADA · estorno @ 1.00` (it used to fall through to DERROTA) and
+  prints the settlement note under the badge.
+- Suites: `frame` 45/45, `demo` 289/289 (+7 `SportsSettlementTest`),
+  `verify.py` 0; export rebuilt. Decision `0053`.
+
+CURRENTTASK (previous): PT countries + a fuller market card + a ticking live
+minute (decision 0052) — every country on the board is in Portuguese, the
+row shows the result market and the total side by side (with dupla chance,
+ambas marcam and half-totals on expand, and the draw wherever the sport's
+rules allow one), and the live minute advances locally between polls so a
+minute-by-minute feel costs the feed nothing.
 
 ## STATUS
 

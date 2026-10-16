@@ -1113,6 +1113,201 @@ class SportsShowcaseTest(unittest.TestCase):
         self.assertAlmostEqual(_decimal(-140), 1.7143, places=3)
 
 
+class SportsSettlementTest(unittest.TestCase):
+    """M1: a posted slip settles against the fixture's real final score —
+    the feed supplies the facts, `settlement.resolve` maps the market onto
+    them, and the books pay or take the stake. No hash roll decides a bet
+    whose result actually happened."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.demo.deposit({"player": self.player, "amount_minor": 10000,
+                           "method": "pix", "deposit_id": "settle-dep"})
+
+    def _bet(self, bet_id, legs, stake=500):
+        return self.demo.bet({"player": self.player, "stake_minor": stake,
+                              "bet_id": bet_id, "legs": legs})
+
+    @staticmethod
+    def _final(key="fs:m1", home="Flamengo", away="Santos", hs=2, as_=1,
+               kind="soccer"):
+        return {"key": key, "sport": kind, "home": home, "away": away,
+                "status": "STATUS_FINAL", "home_score": hs,
+                "away_score": as_}
+
+    def test_resolve_maps_every_market_onto_the_final_score(self):
+        from frame.verticals.sports.settlement import resolve
+        r = resolve
+        # 1x2 — by team name or by the Casa/Empate/Fora tokens
+        self.assertEqual(r("1x2", "Flamengo", "Flamengo", "Santos", 2, 1), "won")
+        self.assertEqual(r("1x2", "Casa", "Flamengo", "Santos", 2, 1), "won")
+        self.assertEqual(r("1x2", "Empate", "Flamengo", "Santos", 1, 1), "won")
+        self.assertEqual(r("1x2", "Santos", "Flamengo", "Santos", 2, 1), "lost")
+        # moneyline — a tie pushes (two-way market, no draw selection)
+        self.assertEqual(r("moneyline", "A", "A", "B", 100, 98), "won")
+        self.assertEqual(r("moneyline", "B", "A", "B", 100, 98), "lost")
+        self.assertEqual(r("moneyline", "A", "A", "B", 100, 100), "push")
+        # dupla chance
+        self.assertEqual(r("dc", "1X", "A", "B", 1, 1), "won")
+        self.assertEqual(r("dc", "12", "A", "B", 1, 1), "lost")
+        self.assertEqual(r("dc", "X2", "A", "B", 0, 2), "won")
+        # ambas marcam
+        self.assertEqual(r("btts", "Sim", "A", "B", 2, 1), "won")
+        self.assertEqual(r("btts", "Não", "A", "B", 2, 0), "won")
+        self.assertEqual(r("btts", "Não", "A", "B", 2, 1), "lost")
+        # total on the .5 grid never pushes; an integer line can
+        self.assertEqual(r("total", "Mais", "A", "B", 2, 1, line=2.5), "won")
+        self.assertEqual(r("total", "Menos", "A", "B", 1, 1, line=2.5), "won")
+        self.assertEqual(r("total", "Mais", "A", "B", 1, 1, line=2.0), "push")
+        # a half the full score can decide — and the ones it cannot
+        self.assertEqual(r("total-h1", "Mais", "A", "B", 1, 0, line=1.5), "lost")
+        self.assertEqual(r("total-h1", "Menos", "A", "B", 1, 0, line=1.5), "won")
+        self.assertIsNone(r("total-h1", "Mais", "A", "B", 2, 1, line=1.5))
+        # undeterminable cases never invent a verdict
+        self.assertIsNone(r("1x2", "Nonsense", "A", "B", 2, 1))
+        self.assertIsNone(r("moneyline", "A", "A", "B", None, 1))
+        self.assertIsNone(r("unknown-kind", "A", "A", "B", 2, 1))
+        self.assertIsNone(r("total", "Mais", "A", "B", 2, 1, line=None))
+
+    def test_legged_slip_settles_a_win_by_the_real_result(self):
+        row = self._bet("leg-win", [{
+            "fixture_key": "fs:m1", "selection": "Flamengo", "price": 2.0,
+            "home": "Flamengo", "away": "Santos", "market_kind": "1x2",
+        }])
+        self.assertEqual(row["tier"], "pendente")
+        # the leg keeps the market shape settlement needs (kind + names)
+        self.assertEqual(row["legs"][0]["market_kind"], "1x2")
+        self.assertEqual(row["legs"][0]["home"], "Flamengo")
+        settled = self.demo.settle_pending(
+            settle_delay_seconds=0,
+            payload={"fixtures": [self._final()]})
+        self.assertEqual(len(settled), 1)
+        final = settled[0]
+        self.assertEqual(final["tier"], "vitoria")
+        self.assertEqual(final["payout_minor"], 1000)  # stake × bought price
+        self.assertEqual(final["settled_by"], "result")
+        self.assertIn("Flamengo 2:1 Santos", final["note"])
+        self.assertEqual(final["available_minor"],
+                         self.demo.books.available(self.player))
+        self.demo.books.assert_balanced()
+        # exactly once: a second pass finds nothing pending
+        self.assertEqual(self.demo.settle_pending(
+            settle_delay_seconds=0, payload={"fixtures": [self._final()]}), [])
+
+    def test_losing_leg_takes_the_stake_and_a_push_refunds(self):
+        self._bet("leg-loss", [{
+            "fixture_key": "fs:m2", "selection": "Santos", "price": 2.0,
+            "home": "Flamengo", "away": "Santos", "market_kind": "1x2",
+        }])
+        self._bet("leg-push", [{
+            "fixture_key": "fs:b1", "selection": "A", "price": 1.9,
+            "home": "A", "away": "B", "market_kind": "moneyline",
+        }], stake=800)
+        payload = {"fixtures": [
+            self._final(key="fs:m2"),
+            self._final(key="fs:b1", home="A", away="B", hs=100, as_=100,
+                        kind="basketball"),
+        ]}
+        settled = {r["round_id"]: r
+                   for r in self.demo.settle_pending(settle_delay_seconds=0,
+                                                     payload=payload)}
+        self.assertEqual(settled["leg-loss"]["tier"], "derrota")
+        self.assertEqual(settled["leg-loss"]["payout_minor"], 0)
+        # a push is an estorno: the stake comes back at odds 1.00
+        self.assertEqual(settled["leg-push"]["tier"], "anulada")
+        self.assertEqual(settled["leg-push"]["payout_minor"], 800)
+        self.assertEqual(settled["leg-push"]["settled_by"], "result")
+        # books: 10000 in, 500 lost, 800 returned untouched
+        self.assertEqual(self.demo.books.available(self.player), 10000 - 500)
+        self.demo.books.assert_balanced()
+
+    def test_express_needs_every_leg_and_loses_on_one_dead_leg(self):
+        self._bet("acc-lose", [
+            {"fixture_key": "fs:m1", "selection": "Flamengo", "price": 2.0,
+             "home": "Flamengo", "away": "Santos", "market_kind": "1x2"},
+            {"fixture_key": "fs:m2", "selection": "Santos", "price": 3.0,
+             "home": "Palmeiras", "away": "Santos", "market_kind": "1x2"},
+        ])
+        payload = {"fixtures": [self._final(),
+                                 self._final(key="fs:m2", home="Palmeiras")]}
+        settled = self.demo.settle_pending(settle_delay_seconds=0,
+                                           payload=payload)
+        self.assertEqual(len(settled), 1)
+        self.assertEqual(settled[0]["tier"], "derrota")
+        self.demo.books.assert_balanced()
+
+    def test_undetermined_slip_stays_pending_until_the_archive_answers(self):
+        self._bet("leg-late", [{
+            "fixture_key": "fs:old", "selection": "Empate", "price": 3.0,
+            "home": "Grêmio", "away": "Internacional",
+            "market_kind": "1x2",
+        }])
+        # the board has rolled past the fixture: no verdict, no settlement
+        # (stub the archive too — the test must never touch the network)
+        self.demo._archive_results = lambda: {}
+        self.assertEqual(self.demo.settle_pending(
+            settle_delay_seconds=0, payload={"fixtures": [self._final()]}), [])
+        self.assertEqual(self.demo.books.available(self.player), 10000 - 500)
+        # the lazy archive supplies yesterday's final → settled by result
+        self.demo._archive_results = lambda: {
+            "fs:old": self._final(key="fs:old", home="Grêmio",
+                                   away="Internacional", hs=1, as_=1)}
+        settled = self.demo.settle_pending(
+            settle_delay_seconds=0, payload={"fixtures": [self._final()]})
+        self.assertEqual(len(settled), 1)
+        self.assertEqual(settled[0]["tier"], "vitoria")
+        self.assertEqual(settled[0]["payout_minor"], 1500)
+        self.assertIn("Grêmio 1:1 Internacional", settled[0]["note"])
+
+    def test_a_silently_lost_fixture_goes_stale_then_declares_simulation(self):
+        bet_id = _forced_bet_id("stale", "express:fs:ghost", "Casa",
+                                2.0, win=False)
+        self._bet(bet_id, [{
+            "fixture_key": "fs:ghost", "selection": "Casa", "price": 2.0,
+            "home": "Anjos", "away": "Tubarões", "market_kind": "1x2",
+        }])
+        self.demo._archive_results = lambda: {}
+        self.demo.STALE_BET_SECONDS = 0  # the silence has outlived patience
+        settled = self.demo.settle_pending(
+            settle_delay_seconds=0, payload={"fixtures": []})
+        self.assertEqual(len(settled), 1)
+        final = settled[0]
+        self.assertEqual(final["tier"], "derrota")
+        self.assertEqual(final["settled_by"], "simulado")
+        self.assertIn("resultado não confirmado", final["note"])
+        self.demo.books.assert_balanced()
+
+    def test_flashscore_archive_parses_finals_and_keeps_the_live_board_untouched(self):
+        import os
+        from frame.verticals.sports.flashscore_engine import FlashscoreSportsEngine
+        feed = ("SA\u00f71\u00ac~ZA\u00f7BRAZIL: Serie A\u00acZEE\u00f7abc\u00ac"
+                "ZY\u00f7Brazil\u00ac~AA\u00f7m1\u00acAD\u00f71792161000\u00ac"
+                "AB\u00f73\u00acAE\u00f7Flamengo\u00acAF\u00f7Santos\u00ac"
+                "AG\u00f72\u00acAH\u00f71\u00ac"
+                "~AA\u00f7m2\u00acAD\u00f71792164600\u00acAB\u00f72\u00ac"
+                "AE\u00f7Gr\u00eamo\u00f7AF\u00f7Internacional\u00acAG\u00f71\u00acAH\u00f71")
+        tmp = tempfile.mkdtemp()
+        engine = FlashscoreSportsEngine(
+            cache_path=os.path.join(tmp, "board.json"),
+            results_cache=os.path.join(tmp, "results.json"),
+            fetcher=lambda url: feed, sports={1: "soccer"})
+        results = engine.results()
+        # finals only, keyed the way the board keys its fixtures
+        self.assertEqual(list(results), ["fs:m1"])
+        self.assertEqual((results["fs:m1"]["home_score"],
+                          results["fs:m1"]["away_score"]), (2, 1))
+        # the archive lives in its own cache — the board's is untouched
+        self.assertTrue(os.path.exists(os.path.join(tmp, "results.json")))
+        self.assertEqual(engine.fixtures(), engine.fixtures())
+
+
 def _forced_bet_id(prefix: str, fixture: str, selection: str, price: float,
                    win: bool) -> str:
     """A bet_id whose stored unit settles the way the test needs: the

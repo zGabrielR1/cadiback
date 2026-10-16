@@ -54,6 +54,11 @@ LIVE_CAP = {"soccer": 90, "futsal": 40, "handball": 60, "basketball": 48,
             "hockey": 60, "rugby": 80, "football": 60}
 RANK = {"IN_PROGRESS": 0, "STATUS_SCHEDULED": 1, "STATUS_FINAL": 2}
 
+# settlement's archive: yesterday's finals, pulled lazily with its own cache
+# so the board never pays ten extra requests for a lookup it rarely needs
+RESULTS_TTL = 900
+RESULTS_CACHE = "probes/flashscore-results-cache.json"
+
 
 class ProviderError(RuntimeError):
     pass
@@ -150,9 +155,12 @@ class FlashscoreSportsEngine:
     ttl_seconds: int = TTL
     limit: int = MAX_FIXTURES
     fetcher: object = None
+    results_cache: str = RESULTS_CACHE
     sports: dict = field(default_factory=lambda: dict(SPORTS))
     _events: list[dict] = field(default_factory=list)
     _fetched_at: float = 0.0
+    _results: list[dict] = field(default_factory=list)
+    _results_at: float = 0.0
     accepted: dict[str, BetReceipt] = field(default_factory=dict)
     settled: dict[str, str] = field(default_factory=dict)
 
@@ -255,6 +263,66 @@ class FlashscoreSportsEngine:
             if f"fs:{row['key']}" == fixture_key:
                 return row
         return None
+
+    def results(self) -> dict[str, dict]:
+        """Real finals keyed `fs:<id>` — yesterday's archive *and* today's
+        full feed, since the board keeps only its 320 most-relevant rows and
+        a morning final can legitimately drop off it. A separate, lazily
+        pulled fetch with its own cache: `fixtures()` stays untouched, so
+        nothing extra shows up on the board. It fails quiet — settlement
+        prefers staying pending to inventing a verdict."""
+        self._refresh_results()
+        return {f"fs:{r['key']}": dict(r) for r in self._results}
+
+    def _refresh_results(self) -> None:
+        now = time.time()
+        if self._results and now - self._results_at < RESULTS_TTL:
+            return
+        try:
+            with open(self.results_cache, "r", encoding="utf-8") as handle:
+                cached = json.load(handle)
+            if now - float(cached.get("fetched_at", 0)) < RESULTS_TTL \
+                    and cached.get("rows"):
+                self._results = cached["rows"]
+                self._results_at = float(cached["fetched_at"])
+                return
+        except (ValueError, OSError):
+            pass
+        if self._results:
+            return  # keep what we have; pending beats an invented verdict
+        fetch = self.fetcher or _http
+        rows: list[dict] = []
+
+        def one(job):
+            sport_id, day, sport = job
+            return _parse(fetch(self._url(sport_id, day)), sport)
+
+        try:
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                for chunk in pool.map(
+                        one, [(sid, -1, sport) for sid, sport in
+                              self.sports.items()]
+                        + [(sid, 0, sport) for sid, sport in
+                           self.sports.items()]):
+                    rows.extend(chunk)
+            finals: dict[str, dict] = {}
+            for row in rows:  # day 0 feeds second: today's live truth wins
+                if row["status"] == "STATUS_FINAL":
+                    finals[f"fs:{row['key']}"] = row
+            self._results = list(finals.values())
+        except Exception:
+            return  # settlement stays pending rather than inventing results
+        self._results_at = now
+        self._save_results()
+
+    def _save_results(self) -> None:
+        try:
+            os.makedirs(os.path.dirname(self.results_cache), exist_ok=True)
+            with open(self.results_cache, "w", encoding="utf-8") as handle:
+                json.dump({"fetched_at": self._results_at, "rows": self._results},
+                          handle)
+        except OSError:
+            pass  # a read-only probes/ must not cost settlement its archive
 
     def markets(self, fixture_key: str) -> list[Market]:
         row = self._row(fixture_key)

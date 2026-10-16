@@ -1,5 +1,29 @@
 # PROGRESS
 
+## DONE (2026-10-16 — real-result settlement, decision 0053)
+
+- **A slip settles on what actually happened.** New
+  `frame/verticals/sports/settlement.py` maps a market + selection onto the
+  fixture's final score (`won`/`lost`/`push`/`None`=undetermined): 1x2 by
+  team name or Casa/Empate/Fora, moneyline with push, dupla chance, ambas
+  marcam, and totals (full game + the half fragments a full score can
+  decide). `None` keeps the slip pending — an undeterminable market never
+  invents a verdict. This retires the sha256 hash-roll verdict.
+- **The slip carries its legs.** `bet()` persists per-leg `fixture_key`,
+  `selection`, `price`, `market_kind`, `home`, `away`, `line`; the express
+  settles all-or-nothing (any losing leg kills it, a push with no loss
+  refunds it) and each settled row records `settled_by` + a readable note
+  (`Flamengo 2:1 Santos → won`).
+- **Result first, simulation declared.** `/api/sports` donates the payload
+  it just fetched; missing legs fall to the lazy Flashscore finals archive
+  (`results()`, its own 15-min cache, yesterday + today); still undetermined
+  → pending 12h, then the legacy draw settles it with an honest
+  `— simulado` note. A push refunds via `settle_bet_push` (the money layer
+  refuses 1.00 odds), and the account view shows `anulada` as
+  `ANULADA · estorno @ 1.00` with the note under the badge.
+- Suites: `frame` 45/45, `demo` 289/289 (+7 `SportsSettlementTest`),
+  `verify.py` 0; export rebuilt. Decision `0053`.
+
 ## DONE (2026-10-16 — PT countries, fuller market card, ticking minute, decision 0052)
 
 - **Countries in Portuguese.** New `locale_pt.py` (~150 names) applied at

@@ -1774,6 +1774,7 @@ class Demo:
     def bet(self, payload: dict) -> dict:
         player_id = payload["player"]
         legs = payload.get("legs")
+        legs_payload: list[dict] = []
         if legs is not None:
             if not isinstance(legs, list) or not (1 <= len(legs) <= 12):
                 raise ValueError("legs must be a list of 1..12 picks")
@@ -1791,7 +1792,15 @@ class Demo:
                 if not (1.01 <= p <= 1000.0):
                     raise ValueError("leg price out of range (1.01..1000)")
                 total_price *= p
-                validated.append({**leg, "price": p})
+                validated.append(dict(leg))
+                legs_payload.append({
+                    "fixture_key": fk, "selection": sel, "price": p,
+                    "market_kind": str(leg.get("market_kind", "1x2")),
+                    "home": str(leg.get("home") or ""),
+                    "away": str(leg.get("away") or ""),
+                    "line": (None if leg.get("line") is None
+                             else float(leg["line"])),
+                })
             fixture_key = "express:" + "+".join(str(l["fixture_key"]) for l in validated)
             selection = " / ".join(str(l["selection"]) for l in validated)
             market_kind = "Express" if len(validated) > 1 else str(validated[0].get("market_kind", "1x2"))
@@ -1839,18 +1848,79 @@ class Demo:
             "available_minor": self.books.available(player_id),
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "type": "sports", "price": round(price, 2), "selection": selection,
+            "legs": legs_payload,
         }
         self._append_round(row)
         return row
 
-    def settle_pending(self, settle_delay_seconds: int = 45) -> list[dict]:
-        """Settle open sports bets once their simulated result is due.
+    def _result_index(self, payload: dict | None) -> dict:
+        """Every fixture the board currently knows, keyed by fixture_key —
+        the settlement's primary source of real results."""
+        if payload is None:
+            payload = self.sports_showcase()
+        if not isinstance(payload, dict):
+            return {}
+        return {str(r.get("key")): r
+                for r in (payload.get("fixtures") or []) if r.get("key")}
 
-        Mirrors a real feed: the bet's stake sits in `bet:staked` from
-        placement; settlement posts win/loss exactly once per bet_id and
-        appends a final row (same round_id) to the rounds log. Callers:
-        every /api/sports refresh, every /api/bet, and POST /api/settle.
-        Also drains any abandoned live crash round (sweep_crash).
+    def _archive_results(self) -> dict:
+        """Yesterday's finals, filled in only for bets the live board has
+        already rolled past — an unreachable archive settles nothing."""
+        try:
+            from frame.verticals.sports.flashscore_engine import (
+                FlashscoreSportsEngine)
+            return FlashscoreSportsEngine().results()
+        except Exception:
+            return {}
+
+    def _settle_verdict(self, legs: list[dict], index: dict) -> tuple[str, str]:
+        """(verdict, note) from the real results, or ("", "") while any leg
+        is undetermined — never guessed."""
+        from frame.verticals.sports.settlement import resolve
+        notes: list[str] = []
+        pushed = False
+        for leg in legs:
+            fix = index.get(str(leg.get("fixture_key")))
+            if fix is None:
+                return "", ""
+            status = str(fix.get("status") or "").upper()
+            hs, as_ = fix.get("home_score"), fix.get("away_score")
+            if "FINAL" not in status or hs is None or as_ is None:
+                return "", ""
+            verdict = resolve(leg.get("market_kind"), leg.get("selection"),
+                              fix.get("home"), fix.get("away"), hs, as_,
+                              leg.get("line"))
+            if verdict is None:
+                return "", ""
+            notes.append(f"{fix.get('home')} {hs}:{as_} {fix.get('away')}"
+                         f" → {verdict}")
+            if verdict == "lost":
+                return "lost", " · ".join(notes)
+            if verdict == "push":
+                pushed = True
+        return ("refund" if pushed else "won"), " · ".join(notes)
+
+    def _books_bonus_part(self, player_id: str, round_id: str) -> int:
+        bet_key = f"demo:spbet:{player_id}:{round_id}"
+        for posting in self.books.postings:
+            if posting.key == bet_key:
+                return int(posting.metadata.get("bonus_part") or 0)
+        return 0
+
+    def settle_pending(self, settle_delay_seconds: int = 45,
+                       payload=None) -> list[dict]:
+        """Settle open sports bets: a slip placed through the board settles
+        against the feed's real final scores (won pays the bought price, a
+        push refunds, a losing leg takes the stake); a slip still
+        undeterminable stays pending until its leg is stale for half a day,
+        when the legacy deterministic draw settles it — the honest order is
+        result first, simulation only as the declared fallback. Slips
+        without legs (the dog-food synthetic path) keep the classic 45s
+        settlement. Mirror of a real feed: the stake sits in `bet:staked`
+        from placement; settlement posts exactly once per bet_id and
+        appends a final row (same round_id). Callers: every /api/sports
+        refresh (which donates the payload it already fetched), /api/bet,
+        POST /api/settle. Also drains any abandoned live crash round.
         """
         self.sweep_crash()
         rows = []
@@ -1865,6 +1935,7 @@ class Demo:
         }
         out = []
         now = datetime.now(timezone.utc)
+        index: dict | None = None
         for r in rows:
             if r.get("type") != "sports" or r.get("tier") != "pendente":
                 continue
@@ -1874,33 +1945,66 @@ class Demo:
                 ts = datetime.fromisoformat(str(r["ts"]).replace("Z", "+00:00"))
             except ValueError:
                 continue
-            if (now - ts).total_seconds() < settle_delay_seconds:
+            age = (now - ts).total_seconds()
+            legs = r.get("legs") or []
+            verdict, note = "", ""
+            if legs:
+                if index is None:
+                    index = self._result_index(payload)
+                verdict, note = self._settle_verdict(legs, index)
+                if not verdict:
+                    missing = [l for l in legs
+                               if str(l.get("fixture_key")) not in index]
+                    if missing:
+                        index.update(self._archive_results())
+                        verdict, note = self._settle_verdict(legs, index)
+                if not verdict:
+                    if age < self.STALE_BET_SECONDS:
+                        continue  # the match decides; hold the slip
+                    note = f"resultado não confirmado há {age/3600:.0f} h — simulado"
+            elif age < settle_delay_seconds:
                 continue
             price = float(r["price"])
-            win = float(r["unit"]) < (1.0 / price)
             stake = int(r["stake_minor"])
             player_id = r["player"]
             with self.books.lock:
                 # the stake's bonus portion is whatever the journal recorded
                 # at placement: a restart must not forget it
-                bonus_part = 0
-                bet_key = f"demo:spbet:{player_id}:{r['round_id']}"
-                for posting in self.books.postings:
-                    if posting.key == bet_key:
-                        bonus_part = int(
-                            posting.metadata.get("bonus_part") or 0)
-                        break
-                if win:
-                    self.books.settle_bet_win(
-                        f"demo:spstl:{player_id}:{r['round_id']}", player_id,
-                        stake, f"{price:.2f}", bonus_part=bonus_part)
+                bonus_part = self._books_bonus_part(player_id, r["round_id"])
+                settle_key = f"demo:spstl:{player_id}:{r['round_id']}"
+                if verdict == "won":
+                    self.books.settle_bet_win(settle_key, player_id,
+                                              stake, f"{price:.2f}",
+                                              bonus_part=bonus_part)
                     payout = int(round(stake * price))
                     tier = "vitoria"
-                else:
-                    self.books.settle_bet_loss(
-                        f"demo:spstl:{player_id}:{r['round_id']}", player_id, stake)
+                elif verdict == "lost":
+                    self.books.settle_bet_loss(settle_key, player_id, stake)
                     payout = 0
                     tier = "derrota"
+                elif verdict == "refund":
+                    # a push returns the stake unchanged (bonus portion
+                    # back to bonus), exactly like a real card — the books'
+                    # own push posting, not a 1.00-odds win (odds below 1.01
+                    # are refused by the money layer)
+                    self.books.settle_bet_push(settle_key, player_id,
+                                               stake,
+                                               bonus_part=bonus_part)
+                    payout = stake
+                    tier = "anulada"
+                else:
+                    win = float(r["unit"]) < (1.0 / price)
+                    if win:
+                        self.books.settle_bet_win(settle_key, player_id,
+                                                  stake, f"{price:.2f}",
+                                                  bonus_part=bonus_part)
+                        payout = int(round(stake * price))
+                        tier = "vitoria"
+                    else:
+                        self.books.settle_bet_loss(settle_key, player_id,
+                                                   stake)
+                        payout = 0
+                        tier = "derrota"
                 self.books.assert_balanced()
                 # a bonus-staked win pays part of its payout back into
                 # player:bonus; release it only if no requirement owns it
@@ -1910,7 +2014,10 @@ class Demo:
                 tier=tier, payout_minor=payout,
                 available_minor=self.books.available(player_id),
                 ts=now.isoformat(timespec="seconds"),
+                settled_by="result" if legs and verdict else "simulado",
             )
+            if note:
+                final["note"] = note
             if self._append_round(final):
                 out.append(final)
                 settled_ids.add(r["round_id"])
@@ -2780,6 +2887,9 @@ class Demo:
     # books, so the player's saldo is OUR saldo. An empty saldo blocks the
     # spin with a deposit message instead of letting the game play for free.
     WALLET_MIN_STAKE = 200  # R$2 — the smallest stake step
+    # a sports slip is decided by the real result; simulation only takes
+    # over when the feed has been silent about it for half a day
+    STALE_BET_SECONDS = 12 * 3600
 
     def _wallet_session(self, token: str) -> dict:
         session = self.wallet_tokens.get(str(token or ""))
@@ -3830,8 +3940,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"rounds": DEMO.history(player),
                                  "risk": DEMO.risk(player)})
             elif parsed.path == "/api/sports":
-                DEMO.settle_pending()
-                self._send(200, DEMO.sports_showcase())
+                payload = DEMO.sports_showcase()
+                DEMO.settle_pending(payload=payload)
+                self._send(200, payload)
             elif parsed.path == "/api/trending":
                 self._send(200, DEMO.trending())
             elif parsed.path == "/api/live":

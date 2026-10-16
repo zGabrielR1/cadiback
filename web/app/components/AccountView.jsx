@@ -139,6 +139,8 @@ export default function AccountView({ profile, player, health, history, refreshE
                           <span className="badge">PENDENTE @ {r.multiplier}</span>
                         ) : r.tier === "vitoria" ? (
                           <span className="badge b-ok">VITÓRIA @ {r.multiplier}</span>
+                        ) : r.tier === "anulada" ? (
+                          <span className="badge">ANULADA · estorno @ 1.00</span>
                         ) : (
                           <span className="badge b-err">DERROTA @ {r.multiplier}</span>
                         )
@@ -147,6 +149,11 @@ export default function AccountView({ profile, player, health, history, refreshE
                           {r.tier} {r.multiplier}x
                         </>
                       )}
+                      {r.type === "sports" && r.note ? (
+                        <div style={{ fontSize: 11, color: "var(--mut)", marginTop: 4 }}>
+                          {r.note}
+                        </div>
+                      ) : null}
                     </td>
                   </tr>
                 ))
