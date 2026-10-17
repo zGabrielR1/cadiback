@@ -26,6 +26,12 @@ services:
         value: 0.0.0.0
       - key: OPERATOR_DATA_DIR
         value: /data
+      # The Vercel storefront proxies /api to this backend, so a browser write
+      # arrives with the frontend in Origin and the backend in Host. Naming the
+      # frontend here lets the same-origin write guard see through the proxy
+      # (demo.server.same_origin). Comma-separated hostnames or origins.
+      - key: FRONTEND_ORIGINS
+        value: cadiback-web.vercel.app
       # Asaas Pix rail (decision 0045, runbook docs/asaas.md). Real Pix when
       # all four are set; the instant demo credit is the fallback when they
       # are not. `sync: false` keeps the secrets out of the repository: enter
@@ -67,6 +73,21 @@ services:
       # scripts/render_deploy.py carry it from the local gitignored
       # .env.supabase. Never put the URL in this file.
       - key: DATABASE_URL
+        sync: false
+      # Authgear social login — Google/Facebook + CPF (decision 0054,
+      # docs/oauth.md). Optional: with no endpoint/client id the social buttons
+      # stay hidden, so a deploy without it stays healthy. The client secret is
+      # the only sensitive value; the endpoint, client id and provider list are
+      # public. `sync: false` keeps the secret out of the repository — let
+      # scripts/render_deploy.py carry them from the local gitignored
+      # .env.authgear. Never put the secret in this file.
+      - key: AUTHGEAR_ENDPOINT
+        sync: false
+      - key: AUTHGEAR_CLIENT_ID
+        sync: false
+      - key: AUTHGEAR_CLIENT_SECRET
+        sync: false
+      - key: AUTHGEAR_PROVIDERS
         sync: false
     # disk:            # paid plans only
     #   name: candibet-data

@@ -11,7 +11,8 @@ fail = []
 required = ["AGENTS.md", "ARCHITECTURE.md", "PROGRESS.md", "CURRENTTASK",
             "README.md", "Makefile", "requirements.txt",
             "docs/gap-assessment.md",
-            "docs/mail.md", "docs/turnstile.md", "docs/supabase.md"]
+            "docs/mail.md", "docs/turnstile.md", "docs/supabase.md",
+            "docs/oauth.md"]
 required += [os.path.join(p, n) for p, n in [
     ("frame/core", "money.py"), ("frame/core", "ids.py"), ("frame/core", "ledger.py"),
     ("frame/core", "devig.py"), ("frame/wallet", "books.py"),
@@ -39,6 +40,9 @@ required += [os.path.join(p, n) for p, n in [
     ("foundry/turnstile", "verification.py"),
     ("foundry/turnstile", "verifier.py"),
     ("foundry/turnstile", "transport.py"),
+    ("foundry/oauth", "__init__.py"), ("foundry/oauth", "config.py"),
+    ("foundry/oauth", "identity.py"), ("foundry/oauth", "client.py"),
+    ("foundry/oauth", "transport.py"),
     ("demo", "game_proxy.py"),
     ("demo", "index.html"), ("frame", "selftest.py"),
     ("frame/tests", "test_frame.py"), ("demo", "test_demo.py"),

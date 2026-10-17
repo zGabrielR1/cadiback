@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import TurnstileWidget from "./TurnstileWidget";
 
-/** Player login + registration (Entrar / Criar conta). Real-site shape:
- * login takes username, email or CPF plus password; registration takes name,
- * username, email, CPF, password, the Pix key and — only when the operator
- * requires it — the payout account. Every field is validated here and again on
- * the server (demo/payments.py + Demo.register_player); the page owns the
- * form state and the submit, this modal only renders.
+/** Player login, registration and social completion (Entrar / Criar conta /
+ * Complete seu cadastro). Real-site shape: login takes username, email or CPF
+ * plus password; registration takes name, username, email, CPF, password, the
+ * Pix key and — only when the operator requires it — the payout account;
+ * "complete" is the social path, where the name/email come from the provider
+ * and the player still supplies the CPF that keys the wallet (plus a username
+ * and Pix key). Every field is validated here and again on the server
+ * (demo/payments.py + Demo.register_player); the page owns the form state and
+ * the submit, this modal only renders.
  *
  * Test accounts are invisible: there is no button. Ctrl+Shift+T while the
  * modal is open fills the built-in test identity, and only while the
@@ -23,9 +26,12 @@ export default function AccountModal({
   testAccountsEnabled = false,
   turnstileSiteKey = "",
   turnstileReset = 0,
+  oauthProviders = [],
+  social = null,
   onForm,
   onMode,
   onSubmit,
+  onSocial,
   onTurnstileToken,
   onFillTest,
   onClose,
@@ -51,7 +57,19 @@ export default function AccountModal({
   }, [open, testAccountsEnabled, onFillTest]);
 
   if (!open) return null;
-  const isLogin = mode !== "register";
+  const isComplete = mode === "complete";
+  const isLogin = mode !== "register" && !isComplete;
+  const title = isComplete
+    ? "Complete seu cadastro"
+    : isLogin
+      ? "Entrar"
+      : "Criar sua conta";
+  const subtitle = isComplete
+    ? "Você entrou com " + (social?.provider || "sua conta social") +
+      ". Falta o CPF para abrir sua carteira (uma conta por CPF) e escolher um usuário."
+    : isLogin
+      ? "Acesse com seu usuário, email ou CPF e sua senha."
+      : "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor.";
   const field = (id, label, props, hint) => (
     <>
       <label htmlFor={id}>{label}</label>
@@ -71,24 +89,83 @@ export default function AccountModal({
       ) : null}
     </>
   );
+  const socialRow = !isComplete && oauthProviders.length > 0 ? (
+    <div className="oauth-row">
+      <span className="oauth-note">ou continue com</span>
+      {oauthProviders.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          className={"oauth-btn oauth-" + p.id}
+          onClick={() => onSocial(p.id)}
+          disabled={!!busy}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  ) : null;
   return (
     <div
       className={"modal" + (open ? " open" : "")}
       role="dialog"
       aria-modal="true"
-      aria-label={isLogin ? "Entrar na sua conta" : "Criar sua conta"}
+      aria-label={title}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="sheet">
-        <h3>{isLogin ? "Entrar" : "Criar sua conta"}</h3>
-        <p className="sub">
-          {isLogin
-            ? "Acesse com seu usuário, email ou CPF e sua senha."
-            : "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor."}
-        </p>
-        {isLogin ? (
+        <h3>{title}</h3>
+        <p className="sub">{subtitle}</p>
+        {isComplete ? (
+          <>
+            <label>Nome</label>
+            <input value={social?.name || ""} readOnly disabled />
+            <label>Email</label>
+            <input value={social?.email || ""} readOnly disabled />
+            {field(
+              "cpf",
+              "CPF",
+              {
+                name: "cpf",
+                inputMode: "numeric",
+                autoComplete: "off",
+                placeholder: "000.000.000-00",
+              },
+              "Obrigatório e único: é a chave da sua carteira."
+            )}
+            {field(
+              "username",
+              "Nome de usuário",
+              {
+                name: "username",
+                autoComplete: "username",
+                autoCapitalize: "none",
+                spellCheck: "false",
+                placeholder: "seu.usuario",
+              },
+              "3-20 caracteres: letras, números, ponto, hífen ou _."
+            )}
+            {field("pix", "Chave Pix", {
+              name: "pix_key",
+              autoComplete: "off",
+              placeholder: "CPF, email, telefone ou EVP",
+            })}
+            {field(
+              "password",
+              "Senha (opcional)",
+              {
+                name: "password",
+                type: "password",
+                autoComplete: "new-password",
+                placeholder: "Defina se quiser entrar sem a conta social",
+              },
+              "Sem senha, você entra apenas com " +
+                (social?.provider || "sua conta social") + "."
+            )}
+          </>
+        ) : isLogin ? (
           <>
             {field("identifier", "Usuário, email ou CPF", {
               name: "identifier",
@@ -201,7 +278,8 @@ export default function AccountModal({
             {errors._}
           </p>
         ) : null}
-        {turnstileSiteKey ? (
+        {socialRow}
+        {turnstileSiteKey && !isComplete ? (
           <div style={{ marginTop: 12 }}>
             <TurnstileWidget
               siteKey={turnstileSiteKey}
@@ -221,7 +299,13 @@ export default function AccountModal({
           disabled={!!busy}
           style={{ marginTop: 14 }}
         >
-          {busy ? "Aguarde…" : isLogin ? "Entrar" : "Criar conta e entrar"}
+          {busy
+            ? "Aguarde…"
+            : isComplete
+              ? "Verificar CPF e entrar"
+              : isLogin
+                ? "Entrar"
+                : "Criar conta e entrar"}
         </button>
         {secretFilled ? (
           <p className="fhint" style={{ marginTop: 8 }} role="status">
@@ -230,13 +314,15 @@ export default function AccountModal({
               : "Conta de teste preenchida — crie a conta para entrar."}
           </p>
         ) : null}
-        <button
-          className="ghost"
-          style={{ width: "100%", marginTop: 8 }}
-          onClick={() => onMode(isLogin ? "register" : "login")}
-        >
-          {isLogin ? "Ainda não tenho conta — criar" : "Já tenho conta — entrar"}
-        </button>
+        {isComplete ? null : (
+          <button
+            className="ghost"
+            style={{ width: "100%", marginTop: 8 }}
+            onClick={() => onMode(isLogin ? "register" : "login")}
+          >
+            {isLogin ? "Ainda não tenho conta — criar" : "Já tenho conta — entrar"}
+          </button>
+        )}
         <button
           className="ghost"
           style={{ width: "100%", marginTop: 8 }}

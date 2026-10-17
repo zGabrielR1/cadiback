@@ -1,5 +1,32 @@
 # PROGRESS
 
+## DONE (2026-10-17 — Authgear social login + a real sports book, decisions 0054–0055)
+
+- **Google/Facebook login through Authgear** (new `foundry/oauth`, vendored):
+  the OIDC Authorization Code + PKCE flow, with the identity read from the
+  userinfo endpoint so the kit stays stdlib-only. Config-gated — no credentials
+  means a disabled client and hidden buttons. `Demo` gains `oauth_status()`
+  (on `/api/health` + `/api/config`), `oauth_links.json`, and four routes; a
+  **new social user must supply a CPF** (check digits + unique — the wallet key)
+  plus username and Pix before the account is created. Existing accounts link by
+  `provider:subject` or email. Runbook `docs/oauth.md`, decision 0054.
+- **A better sports book** (decision 0055): `pricing.price_market` prices a whole
+  market with an **exact target overround** (per sport + kind, a
+  favourite-longshot bias via the power form, the drift applied to probabilities
+  so it moves shape not margin). New markets — **draw-no-bet** and an **asian
+  handicap** — settle off the final score; the live result market **tilts with
+  the score**; where ESPN publishes a moneyline it is served verbatim and tagged
+  `pricing: "market"`. The desktop sport icons grow 15 → 22 → 26px.
+- **A proxy-aware write guard** (decision 0056): every player write on the
+  Vercel site answered 403 "cross-origin writes refused" because the guard
+  compared the browser's `Origin` (frontend host) to the request `Host` (backend
+  host). `same_origin()` now also accepts `X-Forwarded-Host` and a
+  `FRONTEND_ORIGINS` allowlist, and is unit-tested.
+- Suites: frame 50/50 (+5 `SportsPricingTest`), demo 307/307 (+7 `SameOriginTest`,
+  +6 `OAuthTest`, +2 `OAuthHttpTest`, +3 odds tests; the marketboard test
+  extended), foundry kit 57/57; `verify.py` 0; export rebuilt. Decisions 0054,
+  0055, 0056.
+
 ## DONE (2026-10-16 — real-result settlement, decision 0053)
 
 - **A slip settles on what actually happened.** New

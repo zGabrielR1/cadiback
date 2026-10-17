@@ -1,11 +1,14 @@
-"""EspnSportsEngine: real fixtures from ESPN scoreboards, prices from
-the in-house deterministic model (`frame.verticals.sports.pricing`).
+"""EspnSportsEngine: real fixtures from ESPN scoreboards, priced by the
+in-house deterministic model (`frame.verticals.sports.pricing`).
 
 Same source as cleanSheet's edgewatch: public scoreboard endpoints,
-soccer comps + NFL. ESPN's own DraftKings prices are NOT served; the
-engine quotes its own book so the delivery never depends on a
-bookmaker's payload. Cache-first, fail-open to the last good snapshot,
-fail-closed (ProviderError) when nothing is on disk.
+soccer comps + NFL. Where ESPN actually publishes a moneyline, that price is
+served verbatim and tagged `source="market"` — a real number beats a modelled
+one — and the rest of the card (spread line, total, halves) stays our own
+book, tagged `source="model"`. The two are never mixed silently: the payload
+carries the provenance per market, so a model price is never presented as a
+provider's. Cache-first, fail-open to the last good snapshot, fail-closed
+(ProviderError) when nothing is on disk.
 """
 
 from __future__ import annotations
@@ -98,6 +101,7 @@ def _parse_events(comp_id: str, data: dict) -> list[dict]:
             "home_score": _int(scores.get("home")),
             "away_score": _int(scores.get("away")),
             "progress": str(state.get("displayClock") or "").strip(),
+            "odds": _espn_odds(comp),
         })
     return rows
 
@@ -107,6 +111,49 @@ def _int(value: object) -> int | None:
         return int(str(value))
     except (TypeError, ValueError):
         return None
+
+
+def _decimal_moneyline(value: object) -> float | None:
+    """A US moneyline (-160 / +135) as decimal odds, or None."""
+    try:
+        ml = float(value)
+    except (TypeError, ValueError):
+        return None
+    if ml == 0.0:
+        return None
+    dec = 1.0 + (100.0 / abs(ml)) if ml < 0 else 1.0 + (ml / 100.0)
+    if dec <= 1.0:
+        return None
+    return round(dec, 2)
+
+
+def _espn_odds(comp: dict) -> dict | None:
+    """The published moneyline (and total line), if ESPN carries one.
+
+    ESPN spells a price three ways depending on the sport and the week
+    (`moneyline.home.odds`, `homeTeamOdds.moneyLine`, or nothing at all), so
+    every shape is tried and a fixture with no usable price simply gets no
+    overlay. Only a two-sided moneyline is usable: one side alone is not a book.
+    """
+    odds = comp.get("odds") or []
+    row = odds[0] if odds and isinstance(odds[0], dict) else None
+    if not row:
+        return None
+    out: dict = {}
+    ml = row.get("moneyline") if isinstance(row.get("moneyline"), dict) else {}
+    home_ml = (ml.get("home") or {}).get("odds") if isinstance(ml.get("home"), dict) else None
+    away_ml = (ml.get("away") or {}).get("odds") if isinstance(ml.get("away"), dict) else None
+    if home_ml is None:
+        home_ml = (row.get("homeTeamOdds") or {}).get("moneyLine")
+    if away_ml is None:
+        away_ml = (row.get("awayTeamOdds") or {}).get("moneyLine")
+    dh, da = _decimal_moneyline(home_ml), _decimal_moneyline(away_ml)
+    if dh and da:
+        out["moneyline"] = (dh, da)
+    ou = row.get("overUnder")
+    if isinstance(ou, (int, float)):
+        out["total"] = float(ou)
+    return out or None
 
 
 @dataclass
@@ -205,8 +252,21 @@ class EspnSportsEngine:
         live = self._live(row)
         minute = self._minute(row) if live else 0.0
         sport = CANON.get(SPORT.get(row["competition"], "soccer"), "soccer")
-        return MB.quote_markets(fixture_key, sport, row["home"], row["away"],
-                                live=live, minute=minute)
+        model = MB.quote_markets(fixture_key, sport, row["home"], row["away"],
+                                 live=live, minute=minute,
+                                 home_score=row.get("home_score"),
+                                 away_score=row.get("away_score"))
+        odds = row.get("odds") or {}
+        published = odds.get("moneyline")
+        if not published:
+            return model
+        # a real published moneyline replaces the modelled one; the rest of the
+        # card is still ours, and the provenance rides on each market
+        real = Market(key=f"{fixture_key}:moneyline", fixture_key=fixture_key,
+                      kind="moneyline", selections=(row["home"], row["away"]),
+                      prices=(float(published[0]), float(published[1])),
+                      line=None, source="market")
+        return [real, *[m for m in model if m.kind != "moneyline"]]
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

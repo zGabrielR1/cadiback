@@ -80,3 +80,23 @@ backend with `turnstile_login` off.
    login, a demo deposit, one game launch.
 4. Backend `DATABASE_URL` set where Python runs; file paths retire.
 5. Live-verify exactly as in 0045/0047/0048; record the result in the decision.
+
+## Still file-backed
+
+`players` (and therefore the social-login links in `oauth_links.json`,
+decision 0054) are not ported yet: `Demo.players` is a JSON `Store`, and an
+`oauth_links` table would be read by nothing until the player store moves. The
+`oauth_links` map (`provider:subject → player_id`) joins the migration when
+`players` does, in the same ported-store step (this is the decision-0049 plan
+continuing, not a separate one).
+
+## Writes through the Vercel proxy
+
+The storefront (Vercel) proxies `/api` to the backend (Render), so a browser
+write arrives with the frontend in `Origin` and the backend in `Host`. The
+same-origin write guard sees through that with `X-Forwarded-Host` and a
+**`FRONTEND_ORIGINS`** allowlist (decision 0056); without it every login/deposit
+on the Vercel site answered `403 cross-origin writes refused`. `render.yaml` and
+`render_deploy.py` set it to `cadiback-web.vercel.app`. If the frontend moves to
+another host, update `FRONTEND_ORIGINS` (comma-separated hostnames or origins)
+or writes break again.

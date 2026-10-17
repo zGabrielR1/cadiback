@@ -234,7 +234,9 @@ class LivescoreSportsEngine:
         live = self._live(row)
         minute = self._minute(row) if live else 0.0
         return MB.quote_markets(fixture_key, "soccer", row["home"],
-                                row["away"], live=live, minute=minute)
+                                row["away"], live=live, minute=minute,
+                                home_score=row.get("home_score"),
+                                away_score=row.get("away_score"))
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

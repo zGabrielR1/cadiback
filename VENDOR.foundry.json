@@ -1,12 +1,17 @@
 {
   "files": {
-    "foundry/__init__.py": "cbd214c509e04b158afa944798527685142e85fe2aed03d55c9b56cf7b165824",
+    "foundry/__init__.py": "97a0698ad7630077cee4037f9aa747ba58ee8c6ba2676c0d6f692251b3a830fe",
     "foundry/envfile.py": "9a2d8c96090c97035e5e31ca0b726b41b9a30060bf8a3dfecaf0f03fe9179d3d",
     "foundry/mail/__init__.py": "89bb8bee62468c08411893afd4030439dddcd6f13d82284f7d28869456888f23",
     "foundry/mail/mailer.py": "f9d4235a5a989eeb7cecf69e214fe342c8cfd0fd2a25d579a28b31ad6a161d12",
     "foundry/mail/message.py": "d312cff18281171487d89eda78234c653f6f503742f3189b64b6377da3e40701",
     "foundry/mail/templates.py": "2f318d381f007eb886a45170eba12aaa0dda030486f9e2020ab6af69d9e99878",
     "foundry/mail/transport.py": "4b34260d454d5d3d05683ec34209e7a6d4084ea3f6fc8a4743483b985954d995",
+    "foundry/oauth/__init__.py": "0b0b800e62854eee45cf86373db7fb0ee4bd455c4cd89851b5e8a98a31964b7c",
+    "foundry/oauth/client.py": "c1f98932cb6f02ba7a70cf1e63c444fa7e726e80390d7dc10d2a5ffdb29b2144",
+    "foundry/oauth/config.py": "462279a4a2f04df287bb0ece25a8bcc76ca3bde641a1fa83fed738308b306542",
+    "foundry/oauth/identity.py": "dc8e87a7c5348983ba5fb17a63ae3014e716a494783e88a4e30b531e9bbddceb",
+    "foundry/oauth/transport.py": "7d6c4c0eff98859c2323a71a9b19e80f062d21edb21df767023618ee3fbe5b8b",
     "foundry/turnstile/__init__.py": "b3c7771893d1e0f4d58fd10f94ed56179c7cac789959641b53db938d09651255",
     "foundry/turnstile/transport.py": "39d84b1379cf94045778465fc7d0341b7bc978ac3b39b7fe5ea78c5dcf89848a",
     "foundry/turnstile/verification.py": "69f95fc892cd05142687d8718847edee6e911eeb893f0fa49ed53a9bf874bea4",
@@ -16,6 +21,7 @@
   "modules": [
     "envfile",
     "mail",
+    "oauth",
     "turnstile"
   ],
   "version": "0.1.0"

@@ -147,6 +147,58 @@ class LedgerTest(unittest.TestCase):
         self.assertIsNotNone(report.broken_at)
 
 
+class SportsPricingTest(unittest.TestCase):
+    """The sports book: a deterministic per-market pricer whose overround is
+    the market's own target margin (not a flat 5%), a drift that moves the
+    shape without moving the margin, a live tilt driven by the score, and the
+    dnb/ah settlement the new markets need."""
+
+    def test_overround_equals_the_target_margin(self):
+        from frame.verticals.sports import pricing as P
+        for kind, probs in (("1x2", (0.45, 0.28, 0.27)),
+                            ("moneyline", (0.6, 0.4)),
+                            ("total", (0.5, 0.5))):
+            prices = P.price_market("fx", kind, probs, margin=0.06, bucket=1)
+            self.assertAlmostEqual(P.overround(prices), 0.06, places=2)
+
+    def test_bias_pushes_margin_onto_longshots(self):
+        from frame.verticals.sports import pricing as P
+        flat = P.price_market("fx", "1x2", (0.7, 0.2, 0.1), margin=0.06,
+                              bias=1.0, bucket=1)
+        biased = P.price_market("fx", "1x2", (0.7, 0.2, 0.1), margin=0.06,
+                                bias=1.3, bucket=1)
+        self.assertGreater(biased[2], flat[2])
+        self.assertAlmostEqual(P.overround(flat), P.overround(biased), places=2)
+
+    def test_drift_moves_the_shape_not_the_margin(self):
+        from frame.verticals.sports import pricing as P
+        a = P.price_market("fx", "1x2", (0.45, 0.28, 0.27), margin=0.05, bucket=1)
+        b = P.price_market("fx", "1x2", (0.45, 0.28, 0.27), margin=0.05, bucket=9)
+        self.assertNotEqual(a, b)
+        self.assertAlmostEqual(P.overround(a), P.overround(b), places=2)
+
+    def test_live_tilt_shortens_the_leader_and_firms_the_level_draw(self):
+        from frame.verticals.sports import pricing as P
+        base = P.normalize((0.5, 0.3, 0.2))
+        lead = P.inplay_probs("1x2", base, 2, 0, 60, cap=90.0)
+        self.assertGreater(lead[0], base[0])
+        self.assertLess(lead[2], base[2])
+        level = P.inplay_probs("1x2", base, 0, 0, 80, cap=90.0)
+        self.assertGreater(level[1], base[1])
+        # not live (minute 0) is a no-op
+        self.assertEqual(P.inplay_probs("1x2", base, 0, 0, 0.0), list(base))
+
+    def test_dnb_and_ah_settle_off_the_final_score(self):
+        from frame.verticals.sports import settlement as S
+        self.assertEqual(S.resolve("dnb", "Casa", "Casa", "Fora", 1, 1), "push")
+        self.assertEqual(S.resolve("dnb", "Casa", "Casa", "Fora", 2, 1), "won")
+        self.assertEqual(S.resolve("ah", "Casa", "Casa", "Fora", 1, 0, -1.0), "push")
+        self.assertEqual(S.resolve("ah", "Casa", "Casa", "Fora", 2, 0, -1.0), "won")
+        self.assertEqual(S.resolve("ah", "Fora", "Casa", "Fora", 0, 1, 1.0), "push")
+        self.assertEqual(S.resolve("ah", "Fora", "Casa", "Fora", 0, 2, 1.0), "won")
+        self.assertEqual(S.resolve("ah", "Fora", "Casa", "Fora", 2, 0, -1.0), "lost")
+
+
 class DevigTest(unittest.TestCase):
     PRICES = ("2.75", "3.10", "2.62")
 

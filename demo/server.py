@@ -89,10 +89,13 @@ from .vendor import AggregatorError, VendorAggregator, VendorConfig
 from foundry.envfile import load_env
 from foundry.mail import MailError, Message, resolve_mailer, wrap_html
 from foundry.turnstile import FIELD_NAME, TurnstileError, resolve_verifier
+from foundry.oauth import (Identity, OAuthError, code_challenge, new_state,
+                           new_verifier, resolve_oauth)
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
 TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
+AUTHGEAR_ENV_FILE = os.path.join(_REPO_ROOT, ".env.authgear")
 
 
 def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
@@ -117,6 +120,17 @@ def turnstile_env(env_file: str = TURNSTILE_ENV_FILE, environ=None) -> dict[str,
     return load_env(env_file, environ, secret_name="TURNSTILE_SECRET_KEY")
 
 
+def authgear_env(env_file: str = AUTHGEAR_ENV_FILE, environ=None) -> dict[str, str]:
+    """The Authgear/OIDC settings: the file, then the real environment on top.
+
+    Same shape as `mail_env`. `.env.authgear` holds the endpoint, the client
+    id, the client secret and (optionally) the redirect URI; the environment
+    wins. Unconfigured is a normal state — the rail then falls back to a
+    disabled client and the social buttons stay hidden.
+    """
+    return load_env(env_file, environ, secret_name="AUTHGEAR_CLIENT_SECRET")
+
+
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:
     """Official provider free-play page, if the operator configured one.
 
@@ -129,6 +143,67 @@ def external_demo_url(env: dict[str, str] | None = None) -> str | None:
     if not url or not url.startswith("https://"):
         return None
     return url
+
+
+def _host_only(value: str) -> str:
+    """The hostname out of a host, an `host:port`, or a full origin URL."""
+    text = (value or "").strip()
+    if not text:
+        return ""
+    if "//" in text:
+        try:
+            return (urlparse(text).hostname or "").lower()
+        except ValueError:
+            return ""
+    return text.split(":")[0].strip().lower()
+
+
+def frontend_hosts(env: dict[str, str] | None = None) -> set[str]:
+    """Extra hostnames a write may come from, from `FRONTEND_ORIGINS`.
+
+    The local demo is single-origin, but a deploy splits the storefront
+    (Vercel) from the backend (Render): the browser's `Origin` is the frontend
+    host while the proxied request's `Host` is the backend host. Naming the
+    frontend host here keeps the write guard meaningful without trusting a
+    proxy header we cannot be sure is forwarded. Comma-separated; each entry
+    is a hostname or a full origin URL.
+    """
+    source = env if env is not None else os.environ
+    raw = (source.get("FRONTEND_ORIGINS") or "").replace(";", ",")
+    return {h for h in (_host_only(part) for part in raw.split(",")) if h}
+
+
+def same_origin(origin: str, host: str = "", forwarded_host: str = "",
+                extra_hosts=()) -> bool:
+    """The write guard, as a pure decision (so it is tested without a socket).
+
+    Only same-origin writes are accepted. Behind a reverse proxy the browser's
+    `Origin` is the public frontend host while the request `Host` is the
+    internal backend host; the proxy names the public host in
+    `X-Forwarded-Host`, and `extra_hosts` (`FRONTEND_ORIGINS`) covers a proxy
+    that does not forward it. Loopback aliases (localhost / 127.0.0.1 / ::1)
+    are the same machine and stay allowed.
+    """
+    if not origin:
+        return True  # curl / a same-origin fetch that sends no Origin
+    try:
+        o_host = (urlparse(origin).hostname or "").lower()
+    except ValueError:
+        return False
+    if not o_host:
+        return False
+    hosts = set()
+    for value in (host, forwarded_host):
+        for part in (value or "").split(","):
+            name = _host_only(part)
+            if name:
+                hosts.add(name)
+    hosts |= set(extra_hosts)
+    loopbacks = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+    if o_host in hosts:
+        return True
+    return o_host in loopbacks and bool(hosts & loopbacks)
+
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 # Data dir: overridable so a deployment can point the ledger and profiles at a
@@ -186,6 +261,13 @@ LEDGER_PATH = os.path.join(DATA, "ledger.jsonl")
 
 STAKE_STEPS = (200, 500, 1000, 2500)  # centavos: R$2/5/10/25
 HEARTBEAT_SECONDS = 30
+
+# Social login (Authgear/OIDC, decision 0054). The `state` (with its PKCE
+# verifier) and the one-time handoff token are short-lived and in-memory on
+# purpose: a restart mid-flow just means "sign in again", which is a normal
+# outcome for a social login and keeps no credential material on disk.
+OAUTH_STATE_TTL_SECONDS = 600
+OAUTH_HANDOFF_TTL_SECONDS = 900
 
 # Promotions (demo): real mechanics through the double-entry wallet.
 # Welcome bonus: 100% of the first deposit, capped, released by turnover.
@@ -487,7 +569,7 @@ SETTINGS_DEFAULTS = {
 
 class Demo:
     def __init__(self, data_dir: str = DATA, mailer=None, verifier=None,
-                 db=None) -> None:
+                 db=None, oauth=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -568,6 +650,18 @@ class Demo:
         self.turnstile = verifier if verifier is not None else resolve_verifier(
             env=ts_env)
         self.turnstile_site_key = (ts_env.get("TURNSTILE_SITE_KEY") or "").strip()
+        # Social login through an OIDC broker (Authgear, decision 0054).
+        # Unconfigured is a normal state: with no endpoint/client id the rail
+        # falls back to a disabled client and the storefront hides the Google
+        # and Facebook buttons. The client is injectable so tests never dial.
+        # Links and in-flight states live in memory / a small JSON store; the
+        # player row itself is written by the same code the password path uses.
+        self.oauth = oauth if oauth is not None else resolve_oauth(
+            env=authgear_env())
+        self.oauth_links = Store(os.path.join(data_dir, "oauth_links.json"))
+        self._oauth_lock = threading.RLock()
+        self.oauth_states: dict[str, dict] = {}
+        self.oauth_handoffs: dict[str, dict] = {}
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -733,11 +827,148 @@ class Demo:
 
     def public_config(self) -> dict:
         """The operator settings a storefront may see, plus the public
-        Turnstile bits it needs to render the widget. Never a secret."""
+        Turnstile and social-login bits it needs to render the widgets. Never
+        a secret: the OAuth client secret stays server-side."""
         config = self.settings_view()
         config["turnstile_enabled"] = self.turnstile_enabled()
         config["turnstile_site_key"] = self.turnstile_site_key
+        config["oauth_enabled"] = self.oauth_enabled()
+        config["oauth_providers"] = self.oauth_status()["providers"]
         return config
+
+    # ---- social login (Authgear / OIDC, decision 0054) ----
+    def oauth_enabled(self) -> bool:
+        """True when the social buttons should be offered at all."""
+        return bool(getattr(self.oauth, "enabled", False))
+
+    def oauth_status(self) -> dict:
+        """Read-only view for /api/health and /api/config. The client secret
+        is never surfaced; the endpoints are public knowledge."""
+        providers = [{"id": p.id, "label": p.shown_label()}
+                     for p in getattr(self.oauth, "providers", ())]
+        return {
+            "provider": getattr(self.oauth, "name", "none"),
+            "enabled": self.oauth_enabled(),
+            "configured": self.oauth_enabled(),
+            "providers": providers,
+        }
+
+    def _oauth_redirect_uri(self, origin: str) -> str:
+        """The redirect URI Authgear must whitelist. It is computed from the
+        request's own public origin unless the environment pins one, so a
+        local run (127.0.0.1:8765) and the deploy both land on the path the
+        backend actually serves."""
+        configured = getattr(getattr(self.oauth, "config", None),
+                             "redirect_uri", "")
+        return configured or (origin.rstrip("/") + "/api/auth/callback")
+
+    def _sweep_oauth(self, now: float | None = None) -> None:
+        """Drop expired states and handoffs. Called under `_oauth_lock`."""
+        now = time.time() if now is None else now
+        for bucket, ttl in ((self.oauth_states, OAUTH_STATE_TTL_SECONDS),
+                            (self.oauth_handoffs, OAUTH_HANDOFF_TTL_SECONDS)):
+            for key, row in list(bucket.items()):
+                if now - float(row.get("created_at", 0)) > ttl:
+                    bucket.pop(key, None)
+
+    def _issue_handoff(self, payload: dict) -> str:
+        """Mint a one-time token that carries an in-flight sign-in from the
+        callback redirect to the storefront, so no player id travels in a URL
+        a third party could see."""
+        token = secrets.token_urlsafe(32)
+        with self._oauth_lock:
+            self._sweep_oauth()
+            self.oauth_handoffs[token] = {**payload, "created_at": time.time()}
+        return token
+
+    def oauth_start(self, provider: str, origin: str) -> str:
+        """Begin a sign-in: mint PKCE + CSRF state, return the provider URL."""
+        if not self.oauth_enabled():
+            raise OAuthError("login social não está configurado")
+        provider = str(provider or "").strip().lower()
+        verifier = new_verifier()
+        state = new_state()
+        with self._oauth_lock:
+            self._sweep_oauth()
+            self.oauth_states[state] = {"verifier": verifier,
+                                        "provider": provider,
+                                        "created_at": time.time()}
+        return self.oauth.authorize_url(
+            state=state, code_challenge=code_challenge(verifier),
+            provider=provider, redirect_uri=self._oauth_redirect_uri(origin))
+
+    def oauth_callback(self, code: str, state: str, origin: str) -> dict:
+        """Finish a sign-in. Links an existing account by provider:subject or
+        email, otherwise hands the storefront a token that opens the CPF
+        completion step. The CPF is what makes the wallet key, so an account
+        is never created here without one."""
+        if not self.oauth_enabled():
+            raise OAuthError("login social não está configurado")
+        with self._oauth_lock:
+            self._sweep_oauth()
+            pending = self.oauth_states.pop(str(state or ""), None)
+        if not pending:
+            # an unknown or already-used state is a replayed or forged
+            # callback: refuse before the code is ever exchanged
+            raise OAuthError("estado de login inválido ou expirado")
+        identity = self.oauth.identity_from_code(
+            code, pending.get("verifier", ""),
+            provider=pending.get("provider", ""),
+            redirect_uri=self._oauth_redirect_uri(origin))
+        data = self.players.read_all()
+        links = self.oauth_links.read_all()
+        player_id = links.get(identity.key) or (
+            self._find_player(data, identity.email) if identity.email else None)
+        if player_id and player_id in data:
+            links[identity.key] = player_id
+            self.oauth_links.write_all(links)
+            return {"token": self._issue_handoff(
+                        {"player_id": player_id, "needs_profile": False}),
+                    "needs_profile": False}
+        suggested = {"name": identity.name, "email": identity.email,
+                     "provider": identity.provider}
+        return {
+            "token": self._issue_handoff({
+                "needs_profile": True, "provider": identity.provider,
+                "subject": identity.subject, "email": identity.email,
+                "name": identity.name, "suggested": suggested}),
+            "needs_profile": True,
+            "suggested": suggested,
+        }
+
+    def oauth_session(self, token: str) -> dict:
+        """Exchange a handoff for the player profile, or tell the storefront
+        that this sign-in still needs a CPF."""
+        with self._oauth_lock:
+            self._sweep_oauth()
+            handoff = self.oauth_handoffs.get(str(token or ""))
+        if not handoff:
+            raise OAuthError("sessão social inválida ou expirada")
+        if handoff.get("needs_profile"):
+            return {"needs_profile": True,
+                    "suggested": dict(handoff.get("suggested") or {})}
+        player_id = str(handoff.get("player_id") or "")
+        if player_id not in self.players.read_all():
+            raise OAuthError("conta social não encontrada")
+        return {"needs_profile": False, **self.profile(player_id)}
+
+    def oauth_complete_profile(self, token: str, payload: dict) -> dict:
+        """CPF verification for a new social user: validate the CPF (check
+        digits) and its uniqueness, plus username and Pix, then create the
+        wallet — the same rules the password signup enforces."""
+        with self._oauth_lock:
+            self._sweep_oauth()
+            handoff = self.oauth_handoffs.get(str(token or ""))
+        if not handoff or not handoff.get("needs_profile"):
+            raise OAuthError("sessão social inválida ou já concluída")
+        identity = Identity(subject=str(handoff.get("subject") or ""),
+                            provider=str(handoff.get("provider") or ""),
+                            email=str(handoff.get("email") or ""),
+                            name=str(handoff.get("name") or ""))
+        profile = self.register_player(dict(payload or {}), identity=identity)
+        with self._oauth_lock:
+            self.oauth_handoffs.pop(str(token or ""), None)
+        return profile
 
     def _exclusions_path(self) -> str:
         return os.path.join(os.path.dirname(self.players.path), "exclusions.json")
@@ -830,7 +1061,8 @@ class Demo:
         profile["available_minor"] = self.books.available(player_id)
         return profile
 
-    def register_player(self, payload: dict, *, is_test: bool = False) -> dict:
+    def register_player(self, payload: dict, *, is_test: bool = False,
+                        identity: Identity | None = None) -> dict:
         """Strict account creation: name + username + email + CPF + password +
         Pix key, every field validated. One wallet per CPF, one per email and
         one per username — a duplicate is a login hint, not an overwrite.
@@ -841,14 +1073,29 @@ class Demo:
         supplied the whole account is validated (own-name rule included).
         ``is_test`` marks a hidden test account; test accounts are exempt
         from the signup requirement (the operator creates them) and are
-        refused at login while ``test_accounts_enabled`` is off."""
-        name = (payload.get("name") or "").strip()
+        refused at login while ``test_accounts_enabled`` is off.
+
+        ``identity`` is set only on the social path (Authgear, decision 0054):
+        the name and email then fall back to the values the provider vouched
+        for, the password becomes optional (a random unusable secret keeps the
+        column satisfied until the player sets one), and the ``provider:subject``
+        link is recorded so the next sign-in is one tap. The CPF is still
+        required and still unique — that is the wallet key."""
+        name = (payload.get("name")
+                or (identity.name if identity else "") or "").strip()
         if len(name) < 2:
             raise ValueError("informe seu nome completo")
         username = validate_username(payload.get("username") or "")
-        email = validate_email(payload.get("email") or "")
+        email = validate_email(payload.get("email")
+                               or (identity.email if identity else ""))
         cpf = validate_cpf(payload.get("cpf") or "")
-        password = validate_player_password(payload.get("password") or "")
+        supplied_password = payload.get("password")
+        if supplied_password:
+            password = validate_player_password(supplied_password)
+        elif identity is not None:
+            password = secrets.token_urlsafe(32)  # unusable by design
+        else:
+            raise PaymentError("informe uma senha")
         pix = classify_pix_key(payload.get("pix_key") or "")
         bank = payload.get("bank") or {}
         has_bank = any(str(bank.get(field) or "").strip()
@@ -899,6 +1146,12 @@ class Demo:
         }
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
+        if identity is not None:
+            # remember the provider:subject link so this social sign-in is
+            # one tap next time, regardless of a later email change
+            links = self.oauth_links.read_all()
+            links[identity.key] = player_id
+            self.oauth_links.write_all(links)
         if self.settings_view()["mail_welcome"]:
             self._send_welcome(player_id, data[player_id])
         return self.profile(player_id)
@@ -2806,7 +3059,10 @@ class Demo:
         score) as the primary source, Livescore's soccer feed next and
         ESPN's scoreboard after that — reachable from ordinary hosts but
         403 from datacenter egress — with the deterministic slate as the
-        last resort. Prices always come from the in-house model.
+        last resort. Prices come from the in-house model, except where a
+        provider publishes a moneyline: that price is served verbatim and the
+        market is tagged `pricing: "market"`, so a modelled price is never
+        presented as a provider's.
 
         A source that fails is recorded, not swallowed: the caller sees
         every upstream error even when a later source carries the board.
@@ -2814,6 +3070,7 @@ class Demo:
         from frame.verticals.sports.flashscore_engine import FlashscoreSportsEngine
         from frame.verticals.sports.livescore_engine import LivescoreSportsEngine
         from frame.verticals.sports.espn_engine import EspnSportsEngine
+        from frame.verticals.sports import pricing as _P
         sources = [
             (FlashscoreSportsEngine, "flashscore",
              "Flashscore feed + in-house model",
@@ -2826,8 +3083,10 @@ class Demo:
              "geradas pelo motor próprio (modelo determinístico); não é "
              "direito oficial"),
             (EspnSportsEngine, "espn", "ESPN scoreboard + in-house model",
-             "fixtures reais via ESPN; cotações geradas pelo motor próprio "
-             "(modelo determinístico); não é direito oficial"),
+             "fixtures reais via ESPN; linha do vencedor publicada pelo "
+             "provedor quando disponível (marcada como 'market'), demais "
+             "cotações pelo motor próprio (modelo determinístico); não é "
+             "direito oficial"),
         ]
         errors = []
         for factory, source, provider, note in sources:
@@ -2842,6 +3101,8 @@ class Demo:
                             "selections": list(m.selections),
                             "prices": list(m.prices),
                             "provider": provider, "line": m.line,
+                            "pricing": getattr(m, "source", "model"),
+                            "margin": round(_P.overround(m.prices), 4),
                         })
                     fixtures.append({
                         "key": fix.key, "sport": fix.sport,
@@ -3802,6 +4063,19 @@ class Handler(BaseHTTPRequestHandler):
             return header[7:].strip()
         return ""
 
+    def _redirect(self, location: str, code: int = 303) -> None:
+        """303 See Other to a browser-navigation URL (the OAuth round trip).
+
+        A redirect is not a JSON answer, so it does not go through `_send`:
+        no body, no content type, and `no-store` so a login callback is never
+        cached or replayed by a back-navigation.
+        """
+        self.send_response(code)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
     def _client_ip(self) -> str:
         """The caller's address, passed to siteverify as `remoteip`.
 
@@ -3850,29 +4124,16 @@ class Handler(BaseHTTPRequestHandler):
         return self.rfile.read(length)
 
     def _same_origin(self) -> bool:
-        """Local demo, single-user: only same-origin writes are accepted."""
-        origin = self.headers.get("Origin")
-        if not origin:
-            return True  # curl / same-origin fetch without Origin
-        host = self.headers.get("Host") or ""
-        if origin.split("//")[-1] == host:
-            return True
-        # Local single-user demo: loopback aliases (localhost vs 127.0.0.1 vs ::1)
-        # are the same machine — allow them on the same port.
-        try:
-            from urllib.parse import urlparse
+        """Only same-origin writes are accepted (see `same_origin`).
 
-            o = urlparse(origin)
-            h = host.split(":")[0]
-            o_host = (o.hostname or "").lower()
-            o_port = o.port
-            srv_port = int(host.split(":")[1]) if ":" in host else None
-            loopbacks = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
-            if o_host in loopbacks and h in loopbacks:
-                return True  # any local loopback alias port (browser preview, file, proxy)
-        except (ValueError, IndexError):
-            pass
-        return False
+        Behind the Vercel proxy the browser's Origin is the frontend host
+        while the request Host is the backend host; `X-Forwarded-Host` and
+        `FRONTEND_ORIGINS` are what let the guard see through the proxy.
+        """
+        return same_origin(self.headers.get("Origin") or "",
+                           self.headers.get("Host") or "",
+                           self.headers.get("X-Forwarded-Host") or "",
+                           frontend_hosts())
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
@@ -3923,6 +4184,7 @@ class Handler(BaseHTTPRequestHandler):
                                            "env": DEMO.asaas_env_name()},
                                  "mail": DEMO.mail_status(),
                                  "turnstile": DEMO.turnstile_status(),
+                                 "oauth": DEMO.oauth_status(),
                                  "config": DEMO.public_config()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that
@@ -3968,8 +4230,28 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/config":
                 # public, read-only operator settings the storefront adapts
                 # to (e.g. whether signup demands the payout account, whether
-                # to render the Turnstile widget)
+                # to render the Turnstile widget, which social buttons to show)
                 self._send(200, DEMO.public_config())
+            elif parsed.path == "/api/auth/oauth/start":
+                from urllib.parse import parse_qs
+                provider = (parse_qs(parsed.query).get("provider") or [""])[0]
+                self._redirect(DEMO.oauth_start(provider, self._our_origin()))
+            elif parsed.path == "/api/auth/callback":
+                from urllib.parse import parse_qs, quote
+                query = parse_qs(parsed.query)
+                origin = self._our_origin()
+                try:
+                    result = DEMO.oauth_callback(
+                        (query.get("code") or [""])[0],
+                        (query.get("state") or [""])[0], origin)
+                except OAuthError as exc:
+                    # a failed social login returns to the storefront, not to
+                    # a raw JSON page — the hash carries the reason
+                    self._redirect(origin + "/#social_error=" +
+                                   quote(str(exc), safe=""))
+                else:
+                    self._redirect(origin + "/#social=" +
+                                   quote(str(result["token"]), safe=""))
             elif parsed.path == "/api/admin":
                 self._send(200, DEMO.admin_dashboard(self._bearer()))
             elif parsed.path == "/api/admin/player":
@@ -4132,6 +4414,13 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/auth/password":
                 self._send(200, DEMO.auth_change_password(
                     self._bearer(), self._body()))
+            elif path == "/api/auth/oauth/session":
+                self._send(200, DEMO.oauth_session(
+                    self._body().get("token") or ""))
+            elif path == "/api/auth/oauth/complete":
+                body = self._body()
+                self._send(200, DEMO.oauth_complete_profile(
+                    body.get("token") or "", body))
             elif path == "/api/admin/users":
                 self._send(200, DEMO.admin_create_user(
                     self._bearer(), self._body()))

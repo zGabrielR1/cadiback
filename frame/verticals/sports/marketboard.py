@@ -5,8 +5,17 @@ Every sports source quotes the *same* deterministic book for a given
 never prices. The result market carries a draw only for the sports whose
 rules can actually end in one; offering a draw on tennis would be a market
 that can never settle. Two-way sports get a winner line, soccer adds both-
-teams-to-score, and every sport with a total gets its full-game line plus
-first/second-half fragments, so a row offers what a real card offers.
+teams-to-score and dupla chance, and every sport with a total gets its
+full-game line plus first/second-half fragments, so a row offers what a real
+card offers.
+
+Two more markets a real card always has: **draw-no-bet** (`dnb`, a draw
+refunds) and an **asian handicap** (`ah`, the home side giving a goal on the
+clock sports). Both settle off the final score (`settlement.resolve`) and both
+are priced by `pricing` with the same exact-overround rule as the rest of the
+book. When a fixture is live the result market is tilted by the running score
+through `pricing.inplay_probs`, so a 2-0 lead shortens the leader instead of
+leaving the pre-match price untouched.
 """
 
 from __future__ import annotations
@@ -39,14 +48,17 @@ TOTALS = {
 }
 DEFAULT_TOTAL = (2.7, 0.6, 2.5)
 RUGBY_TOTAL = (44.0, 4.0, 43.5)
+# the live clock cap per sport, for the in-play tilt (mirrors the engines')
+LIVE_CAP = {"soccer": 90.0, "futsal": 40.0, "handball": 60.0,
+            "basketball": 48.0, "hockey": 60.0, "rugby": 80.0,
+            "football": 60.0}
 
 
-def _market(fixture_key: str, kind: str, selections, probs, bucket: int,
-            minute: float, line: float | None = None) -> Market:
-    prices = []
-    for i, prob in enumerate(probs):
-        ratio = 1.0 + P.drift(f"{fixture_key}:{kind}:{i}", bucket, minute)
-        prices.append(max(1.01, round(P.to_price(prob) * ratio, 2)))
+def _market(fixture_key: str, sport: str, kind: str, selections, probs,
+            bucket: int, minute: float, line: float | None = None) -> Market:
+    prices = P.price_market(fixture_key, kind, probs,
+                            margin=P.margin_for(sport, kind),
+                            bias=P.bias_for(kind), bucket=bucket, minute=minute)
     return Market(key=f"{fixture_key}:{kind}", fixture_key=fixture_key,
                   kind=kind, selections=tuple(selections),
                   prices=tuple(prices), line=line)
@@ -59,40 +71,60 @@ def _half_line(line: float) -> tuple[float, float]:
 
 def quote_markets(fixture_key: str, sport: str, home: str, away: str,
                   live: bool = False, minute: float = 0.0,
-                  bucket: int | None = None) -> list[Market]:
-    """The book for one fixture. Deterministic per 30s bucket; a live
-    fixture adds the minute-scaled drift so the prices breathe."""
+                  bucket: int | None = None, home_score: int | None = None,
+                  away_score: int | None = None) -> list[Market]:
+    """The book for one fixture. Deterministic per 30s bucket; a live fixture
+    adds the minute-scaled drift and tilts the result market by the score."""
     if bucket is None:
         bucket = int(time.time()) // 30
     minute = minute if live else 0.0
+    hs, as_ = (home_score, away_score) if live else (None, None)
 
-    def add(kind, selections, probs, line=None):
-        return _market(fixture_key, kind, selections, probs, bucket, minute,
-                       line=line)
+    def add(kind, selections, probs, line=None, tilt=False):
+        if tilt and live:
+            probs = P.inplay_probs(kind, probs, hs, as_, minute,
+                                   cap=LIVE_CAP.get(str(sport or ""), 90.0))
+        return _market(fixture_key, sport, kind, selections, probs, bucket,
+                       minute, line=line)
 
-    result: Market
+    def result_extras(three):
+        """dnb + ah derived from a (home, draw, away) result vector."""
+        home_p, _draw, away_p = three
+        out = []
+        if home_p + away_p > 0:
+            out.append(add("dnb", (home, away), (home_p, away_p)))
+            hcap = -1.0 if home_p >= away_p else 1.0
+            out.append(add("ah", (home, away),
+                           P.handicap_two_way(home_p, away_p, hcap),
+                           line=hcap))
+        return out
+
+    def halves(kind_a, kind_b, over_a, over_b, line1, line2):
+        return [
+            add(kind_a, ("Mais", "Menos"), (over_a, 1.0 - over_a), line=line1),
+            add(kind_b, ("Mais", "Menos"), (over_b, 1.0 - over_b), line=line2),
+        ]
+
     totals: list[Market] = []
     extras: list[Market] = []
 
     if sport == "soccer":
-        probs = P.soccer_probs(home, away)
-        result = add("1x2", (home, "Empate", away), probs)
+        raw = list(P.normalize(P.soccer_probs(home, away)))
+        adj = (P.inplay_probs("1x2", raw, hs, as_, minute,
+                              cap=LIVE_CAP["soccer"]) if live else raw)
+        result = _market(fixture_key, sport, "1x2", (home, "Empate", away),
+                         adj, bucket, minute)
         extras.append(add("dc", ("1X", "12", "X2"),
-                          (probs[0] + probs[1], probs[0] + probs[2],
-                           probs[1] + probs[2])))
-        extras.append(add("btts", ("Sim", "N\u00e3o"),
-                          (P.both_score(home, away),
-                           1.0 - P.both_score(home, away))))
+                          (adj[0] + adj[1], adj[0] + adj[2], adj[1] + adj[2])))
+        both = P.both_score(home, away)
+        extras.append(add("btts", ("Sim", "N\u00e3o"), (both, 1.0 - both)))
         over = P.total_probs_over(home, away, SOCCER_TOTAL_LINE)
         line1, line2 = _half_line(SOCCER_TOTAL_LINE)
-        extras.append(add("total-h1", ("Mais", "Menos"),
-                          (P.total_probs_over(home, away, line1, 0.45),
-                           1.0 - P.total_probs_over(home, away, line1, 0.45)),
-                          line=line1))
-        extras.append(add("total-h2", ("Mais", "Menos"),
-                          (P.total_probs_over(home, away, line2, 0.55),
-                           1.0 - P.total_probs_over(home, away, line2, 0.55)),
-                          line=line2))
+        extras.extend(halves(
+            "total-h1", "total-h2",
+            P.total_probs_over(home, away, line1, 0.45),
+            P.total_probs_over(home, away, line2, 0.55), line1, line2))
+        extras.extend(result_extras(adj))
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=SOCCER_TOTAL_LINE))
         return [result, totals[0], *extras]
@@ -101,56 +133,45 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
         base, scale, line = (RUGBY_TOTAL if sport == "rugby" else
                              (43.5, 8.0, 45.5) if sport == "football" else
                              TOTALS.get(sport, DEFAULT_TOTAL))
-        probs = P.match_probs(home, away, base)
+        raw = list(P.match_probs(home, away, base))
         floor = DRAW_FLOOR.get(sport, 0.0)
-        if probs[1] < floor:
-            spread = probs[0] + probs[2]
+        if raw[1] < floor:
+            spread = raw[0] + raw[2]
             if spread > 0:
-                probs = ((1.0 - floor) * probs[0] / spread, floor,
-                         (1.0 - floor) * probs[2] / spread)
-        result = add("1x2", (home, "Empate", away), probs)
+                raw = [(1.0 - floor) * raw[0] / spread, floor,
+                       (1.0 - floor) * raw[2] / spread]
+        adj = (P.inplay_probs("1x2", raw, hs, as_, minute,
+                              cap=LIVE_CAP.get(sport, 90.0)) if live else raw)
+        result = _market(fixture_key, sport, "1x2", (home, "Empate", away),
+                         adj, bucket, minute)
         line1, line2 = _half_line(line)
-        extras.append(add("total-h1", ("Mais", "Menos"),
-                          (P.points_total_over(home, away, base, scale,
-                                               line1, 0.45),
-                           1.0 - P.points_total_over(home, away, base, scale,
-                                                     line1, 0.45)),
-                          line=line1))
-        extras.append(add("total-h2", ("Mais", "Menos"),
-                          (P.points_total_over(home, away, base, scale,
-                                               line2, 0.55),
-                           1.0 - P.points_total_over(home, away, base, scale,
-                                                     line2, 0.55)),
-                          line=line2))
+        extras.extend(halves(
+            "total-h1", "total-h2",
+            P.points_total_over(home, away, base, scale, line1, 0.45),
+            P.points_total_over(home, away, base, scale, line2, 0.55),
+            line1, line2))
+        extras.extend(result_extras(adj))
         over = P.points_total_over(home, away, base, scale, line)
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=line))
         return [result, totals[0], *extras]
 
     home_p = P.nfl_probs(home, away)
-    result = add("moneyline", (home, away), (home_p, 1.0 - home_p))
+    result = add("moneyline", (home, away), (home_p, 1.0 - home_p), tilt=True)
+    base, scale, line = TOTALS.get(sport, DEFAULT_TOTAL)
     if sport == "tennis":
-        base, scale, line = TOTALS["tennis"]
         over = P.points_total_over(home, away, base, scale, line)
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=line))
         return [result, totals[0], *extras]
-
-    base, scale, line = TOTALS.get(sport, DEFAULT_TOTAL)
-    if sport == "basketball":
-        line1, line2 = _half_line(line)
-        extras.append(add("total-h1", ("Mais", "Menos"),
-                          (P.points_total_over(home, away, base, scale,
-                                               line1, 0.47),
-                           1.0 - P.points_total_over(home, away, base, scale,
-                                                     line1, 0.47)),
-                          line=line1))
-        extras.append(add("total-h2", ("Mais", "Menos"),
-                          (P.points_total_over(home, away, base, scale,
-                                               line2, 0.53),
-                           1.0 - P.points_total_over(home, away, base, scale,
-                                                     line2, 0.53)),
-                          line=line2))
+    line1, line2 = _half_line(line)
+    extras.extend(halves(
+        "total-h1", "total-h2",
+        P.points_total_over(home, away, base, scale, line1,
+                            0.47 if sport == "basketball" else 0.45),
+        P.points_total_over(home, away, base, scale, line2,
+                            0.53 if sport == "basketball" else 0.55),
+        line1, line2))
     over = P.points_total_over(home, away, base, scale, line)
     totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                       line=line))

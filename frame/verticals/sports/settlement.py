@@ -84,6 +84,29 @@ def resolve(kind: object, selection: object, home: object, away: object,
         if pick in ("não", "nao", "no"):
             return "lost" if both else "won"
         return None
+    if text == "dnb":
+        # draw-no-bet: a level final refunds, otherwise it is the winner line
+        if hs == as_:
+            return "push"
+        if pick in _HOME or pick == side:
+            return "won" if hs > as_ else "lost"
+        if pick in _AWAY or pick == other:
+            return "won" if as_ > hs else "lost"
+        return None
+    if text == "ah":
+        # asian handicap on the home score: `line` is the home handicap (a
+        # negative line is the home side giving goals), a whole-goal line that
+        # lands exactly refunds
+        try:
+            hcap = float(line)
+        except (TypeError, ValueError):
+            return None
+        edge = (hs + hcap) - as_
+        if pick in _HOME or pick == side:
+            return "won" if edge > 0 else ("push" if edge == 0 else "lost")
+        if pick in _AWAY or pick == other:
+            return "won" if edge < 0 else ("push" if edge == 0 else "lost")
+        return None
 
     fragment = _fragment(kind)
     if not fragment:

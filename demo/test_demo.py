@@ -14,6 +14,7 @@ from http.server import ThreadingHTTPServer
 from urllib.parse import quote
 
 from demo import game_proxy, pg_proxy, provider_demos
+from foundry.oauth import OAuthError
 from demo.arcade import (ARCADE_GAME_IDS, KENO_DRAWN, KENO_MAX_SPOTS,
                          KENO_MIN_SPOTS, KENO_POOL, KENO_GAME_ID,
                          keno_draw, keno_multiplier, keno_paytable,
@@ -44,6 +45,8 @@ from demo.server import (
     Handler,
     external_demo_url,
     fixture_catalog,
+    frontend_hosts,
+    same_origin,
     static_file,
 )
 from demo.risk import (
@@ -1075,8 +1078,14 @@ class SportsShowcaseTest(unittest.TestCase):
         self.assertEqual(soccer["1x2"].selections, ("Anjos", "Empate", "Tubarões"))
         self.assertIsNone(soccer["1x2"].line)
         self.assertEqual(soccer["total"].line, 2.5)
+        # draw-no-bet (a draw refunds) and an asian handicap the home side
+        # gives; both settle off the final score
+        self.assertEqual(set(soccer["dnb"].selections), {"Anjos", "Tubarões"})
+        self.assertEqual(set(soccer["ah"].selections), {"Anjos", "Tubarões"})
+        self.assertIn(soccer["ah"].line, (-1.0, 1.0))
         self.assertEqual({m.kind for m in quote_markets("t1:s2", "soccer", "A", "B")},
-                         {"1x2", "total", "dc", "btts", "total-h1", "total-h2"})
+                         {"1x2", "total", "dc", "btts", "total-h1", "total-h2",
+                          "dnb", "ah"})
 
         # a sport that cannot end tied offers no draw, the same way every
         # real card does: two-way winner + total on the sport's own scale
@@ -1093,6 +1102,68 @@ class SportsShowcaseTest(unittest.TestCase):
         # hockey regulation can finish tied, so it keeps the three-way
         hockey = {m.kind: m for m in quote_markets("t1:h1", "hockey", "A", "B")}
         self.assertEqual(hockey["1x2"].selections, ("A", "Empate", "B"))
+        self.assertIn("dnb", hockey)
+        self.assertIn("ah", hockey)
+
+    def test_overround_is_the_target_margin_not_a_flat_five_percent(self):
+        from frame.verticals.sports.marketboard import quote_markets
+        from frame.verticals.sports import pricing as P
+
+        for sport in ("soccer", "basketball", "tennis", "hockey", "cricket",
+                      "handball", "futsal", "volleyball"):
+            for m in quote_markets(f"t2:{sport}", sport, "Flamengo", "Peixe",
+                                   bucket=7):
+                target = P.margin_for(sport, m.kind)
+                over = P.overround(m.prices)
+                for p in m.prices:
+                    self.assertGreaterEqual(p, 1.01, (sport, m.kind))
+                # an extreme favourite clamps at 1.01 and carries *less*
+                # margin; nothing should ever carry more than the target
+                self.assertGreaterEqual(over, 0.0, (sport, m.kind))
+                self.assertLessEqual(over, target + 0.01, (sport, m.kind, over))
+
+    def test_live_result_market_tilts_with_the_score(self):
+        from frame.verticals.sports.marketboard import quote_markets
+
+        pre = {m.kind: m for m in quote_markets("t3:l", "soccer", "Casa", "Fora",
+                                                bucket=3)}
+        live = {m.kind: m for m in quote_markets(
+            "t3:l", "soccer", "Casa", "Fora", bucket=3, live=True, minute=70,
+            home_score=2, away_score=0)}
+        # a two-goal lead shortens the leader and lengthens the trailer
+        self.assertLess(live["1x2"].prices[0], pre["1x2"].prices[0])
+        self.assertGreater(live["1x2"].prices[2], pre["1x2"].prices[2])
+
+    def test_espn_overlays_a_published_moneyline_and_tags_it(self):
+        import tempfile, os
+        from frame.verticals.sports.espn_engine import EspnSportsEngine
+
+        def fake(url):
+            return {"events": [{
+                "id": "9", "date": "2026-10-10T19:00Z",
+                "status": {"type": {"name": "STATUS_SCHEDULED"}},
+                "competitions": [{
+                    "competitors": [
+                        {"homeAway": "home", "team": {"displayName": "Casa"}},
+                        {"homeAway": "away", "team": {"displayName": "Fora"}},
+                    ],
+                    "odds": [{"moneyline": {"home": {"odds": -160},
+                                            "away": {"odds": 135}},
+                              "overUnder": 2.5}],
+                }],
+            }]}
+
+        engine = EspnSportsEngine(cache_path=os.path.join(tempfile.mkdtemp(), "c.json"),
+                                  fetcher=fake)
+        fix = engine.fixtures()[0]
+        markets = {m.kind: m for m in engine.markets(fix.key)}
+        ml = markets["moneyline"]
+        self.assertEqual(ml.source, "market")
+        self.assertAlmostEqual(ml.prices[0], 1.62, places=2)  # -160 (100/160)
+        self.assertAlmostEqual(ml.prices[1], 2.35, places=2)  # +135
+        for kind, market in markets.items():
+            if kind != "moneyline":
+                self.assertEqual(market.source, "model")
 
     def test_odds_engine_deterministic_per_bucket(self):
         from demo import odds_engine
@@ -2337,6 +2408,249 @@ class TurnstileHttpTest(unittest.TestCase):
         # the gate let it through; the credentials are simply wrong
         self.assertEqual(status, 400)
         self.assertNotIn("anti-bot", body.get("error", ""))
+
+
+class SameOriginTest(unittest.TestCase):
+    """The write guard: same-origin only, but it must see through the Vercel
+    proxy, where the browser's Origin is the frontend host and the request Host
+    is the backend host. A regression here is "cross-origin writes refused" on
+    every login in the deploy."""
+
+    def test_no_origin_is_allowed(self):
+        self.assertTrue(same_origin("", host="x"))
+
+    def test_the_same_host_is_allowed(self):
+        self.assertTrue(same_origin("https://candibet.onrender.com",
+                                    host="candibet.onrender.com"))
+
+    def test_the_proxy_origin_is_allowed_via_forwarded_host(self):
+        self.assertTrue(same_origin(
+            "https://cadiback-web.vercel.app",
+            host="cadiback.onrender.com",
+            forwarded_host="cadiback-web.vercel.app"))
+
+    def test_the_proxy_origin_is_allowed_via_the_allowlist(self):
+        self.assertTrue(same_origin(
+            "https://cadiback-web.vercel.app",
+            host="cadiback.onrender.com",
+            extra_hosts=("cadiback-web.vercel.app",)))
+
+    def test_a_foreign_origin_is_refused(self):
+        self.assertFalse(same_origin("https://evil.example",
+                                     host="candibet.onrender.com"))
+
+    def test_loopback_aliases_are_allowed(self):
+        self.assertTrue(same_origin("http://localhost:8765",
+                                    host="127.0.0.1:8765"))
+        self.assertFalse(same_origin("http://localhost:3000",
+                                     host="example.com"))
+
+    def test_frontend_hosts_parses_hosts_and_urls(self):
+        hosts = frontend_hosts({"FRONTEND_ORIGINS":
+                                "cadiback-web.vercel.app, "
+                                "https://app.example.com, x.io:8443"})
+        self.assertEqual(hosts, {"cadiback-web.vercel.app",
+                                 "app.example.com", "x.io"})
+        self.assertEqual(frontend_hosts({}), set())
+
+
+class _Prov:
+    def __init__(self, ident):
+        self.id = ident
+
+    def shown_label(self):
+        return self.id.capitalize()
+
+
+class _FakeOAuth:
+    """A stand-in for foundry.oauth's client: records the flow, returns a
+    canned identity, never dials. `identities` maps a code to an Identity."""
+
+    name = "authgear"
+
+    def __init__(self, *, enabled=True, providers=("google", "facebook")):
+        self._enabled = enabled
+        self.config = type("Cfg", (), {"redirect_uri": ""})()
+        self._providers = tuple(_Prov(p) for p in providers)
+        self.last_state = None
+        self.last_challenge = None
+        self.identities = {}
+
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @property
+    def providers(self):
+        return self._providers
+
+    def authorize_url(self, *, state, code_challenge, provider="", redirect_uri=""):
+        self.last_state = state
+        self.last_challenge = code_challenge
+        return "https://idp.example/authorize?state=" + state
+
+    def identity_from_code(self, code, code_verifier, *, provider="", redirect_uri=""):
+        from foundry.oauth import Identity
+        return self.identities[code]
+
+
+class OAuthTest(unittest.TestCase):
+    """Social login (decision 0054): a config-gated OIDC rail that links an
+    existing account by provider:subject or email, and forces a **CPF** —
+    validated and unique — before a new social account gets a wallet. The CPF
+    is the wallet key, so no account is created without one."""
+
+    def _demo(self, **kw):
+        return Demo(data_dir=tempfile.mkdtemp(), oauth=_FakeOAuth(**kw))
+
+    def _identity(self, *, subject="auth0|abc", email="ana@example.com",
+                  name="Ana Souza", provider="google"):
+        from foundry.oauth import Identity
+        return Identity(subject=subject, email=email, email_verified=True,
+                        name=name, provider=provider)
+
+    def _register(self, demo, cpf="529.982.247-25", email="existing@example.com"):
+        return demo.register_player({
+            "name": "Ana Souza", "username": "ana.souza", "email": email,
+            "cpf": cpf, "password": "ana1234", "pix_key": email})
+
+    def test_unconfigured_is_a_noop(self):
+        demo = Demo(data_dir=tempfile.mkdtemp())  # no oauth client
+        self.assertFalse(demo.oauth_enabled())
+        status = demo.oauth_status()
+        self.assertFalse(status["enabled"])
+        self.assertEqual(status["providers"], [])
+        cfg = demo.public_config()
+        self.assertFalse(cfg["oauth_enabled"])
+        self.assertEqual(cfg["oauth_providers"], [])
+        with self.assertRaises(OAuthError):
+            demo.oauth_start("google", "http://localhost:8765")
+
+    def test_config_and_health_expose_providers_without_a_secret(self):
+        demo = self._demo()
+        cfg = demo.public_config()
+        self.assertTrue(cfg["oauth_enabled"])
+        self.assertEqual([p["id"] for p in cfg["oauth_providers"]],
+                         ["google", "facebook"])
+        status = demo.oauth_status()
+        self.assertEqual(status["provider"], "authgear")
+        self.assertNotIn("secret", str(status).lower())
+
+    def test_state_is_single_use(self):
+        demo = self._demo()
+        fake = demo.oauth
+        demo.oauth_start("google", "http://localhost:8765")
+        state = fake.last_state
+        fake.identities["c1"] = self._identity()
+        demo.oauth_callback("c1", state, "http://localhost:8765")
+        with self.assertRaises(OAuthError):
+            demo.oauth_callback("c1", state, "http://localhost:8765")
+
+    def test_a_known_email_logs_in_without_a_second_handoff(self):
+        demo = self._demo()
+        profile = self._register(demo, email="ana@example.com")
+        fake = demo.oauth
+        demo.oauth_start("google", "http://localhost:8765")
+        fake.identities["c2"] = self._identity(email="ana@example.com")
+        result = demo.oauth_callback("c2", fake.last_state,
+                                     "http://localhost:8765")
+        self.assertFalse(result["needs_profile"])
+        session = demo.oauth_session(result["token"])
+        self.assertEqual(session["player_id"], profile["player_id"])
+        # the provider:subject link is remembered for next time
+        self.assertEqual(demo.oauth_links.read_all().get("google:auth0|abc"),
+                         profile["player_id"])
+
+    def test_a_new_email_requires_the_cpf_completion(self):
+        demo = self._demo()
+        fake = demo.oauth
+        demo.oauth_start("facebook", "http://localhost:8765")
+        fake.identities["c3"] = self._identity(email="novo@example.com",
+                                               provider="facebook")
+        result = demo.oauth_callback("c3", fake.last_state,
+                                     "http://localhost:8765")
+        self.assertTrue(result["needs_profile"])
+        self.assertEqual(result["suggested"]["email"], "novo@example.com")
+        session = demo.oauth_session(result["token"])
+        self.assertTrue(session["needs_profile"])
+        # CPF is required and keys the wallet
+        profile = demo.oauth_complete_profile(result["token"], {
+            "cpf": "111.444.777-35", "username": "novato",
+            "pix_key": "novo@example.com"})
+        self.assertTrue(profile["player_id"].startswith("player-"))
+        self.assertEqual(profile["email"], "novo@example.com")
+        # a second sign-in on the same subject is now one tap
+        demo.oauth_start("facebook", "http://localhost:8765")
+        again = demo.oauth_callback("c3", fake.last_state,
+                                    "http://localhost:8765")
+        self.assertFalse(again["needs_profile"])
+
+    def test_completion_refuses_a_bad_or_duplicate_cpf(self):
+        demo = self._demo()
+        self._register(demo, cpf="529.982.247-25", email="taken@example.com")
+        fake = demo.oauth
+        demo.oauth_start("google", "http://localhost:8765")
+        fake.identities["c4"] = self._identity(email="novo2@example.com")
+        token = demo.oauth_callback("c4", fake.last_state,
+                                    "http://localhost:8765")["token"]
+        with self.assertRaises(ValueError):
+            demo.oauth_complete_profile(token, {
+                "cpf": "111.111.111-11", "username": "x",  # invalid check digits
+                "pix_key": "novo2@example.com"})
+        with self.assertRaises(ValueError):
+            demo.oauth_complete_profile(token, {
+                "cpf": "529.982.247-25",  # already has a wallet
+                "username": "outro", "pix_key": "novo2@example.com"})
+
+
+class OAuthHttpTest(unittest.TestCase):
+    """The route wiring: start 303s to the provider, the callback 303s back to
+    the storefront with the handoff in the hash (never a query a third party
+    could read), and the two frontend calls are same-origin POSTs."""
+
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+
+    def setUp(self):
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.keep_oauth = DEMO.oauth
+        self.fake = _FakeOAuth()
+        DEMO.oauth = self.fake
+        self.opener = urllib.request.build_opener(self._NoRedirect)
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        DEMO.oauth = self.keep_oauth
+        self.server.shutdown()
+        self.server.server_close()
+
+    def _get(self, path):
+        try:
+            with self.opener.open(self.base + path, timeout=10) as resp:
+                return resp.status, resp.headers.get("Location")
+        except urllib.error.HTTPError as exc:
+            with exc:
+                return exc.code, exc.headers.get("Location")
+
+    def test_start_redirects_to_the_provider(self):
+        status, location = self._get("/api/auth/oauth/start?provider=google")
+        self.assertEqual(status, 303)
+        self.assertTrue(location.startswith("https://idp.example/authorize"))
+        self.assertTrue(self.fake.last_challenge)  # PKCE
+
+    def test_callback_returns_to_the_storefront_with_the_hash_handoff(self):
+        self._get("/api/auth/oauth/start?provider=google")
+        from foundry.oauth import Identity
+        self.fake.identities["code-1"] = Identity(
+            subject="s1", email="n@example.com", provider="google")
+        status, location = self._get(
+            "/api/auth/callback?code=code-1&state=" + self.fake.last_state)
+        self.assertEqual(status, 303)
+        self.assertIn("/#social=", location)
 
 
 class DbSeamTest(unittest.TestCase):

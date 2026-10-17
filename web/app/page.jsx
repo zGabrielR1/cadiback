@@ -87,6 +87,10 @@ export default function Page() {
   // is single-use and a retry must mint a fresh one.
   const [turnstileToken, setTurnstileToken] = useState("");
   const [authAttempt, setAuthAttempt] = useState(0);
+  // The in-flight social sign-in: the one-time token from the OAuth callback
+  // plus the name/email the provider vouched for, shown while the player
+  // supplies the CPF that keys the wallet. Null on every password path.
+  const [pendingSocial, setPendingSocial] = useState(null);
   const onTurnstileToken = useCallback((token) => {
     setTurnstileToken(token || "");
   }, []);
@@ -180,6 +184,57 @@ export default function Page() {
   const applyAdminSession = useCallback((next) => {
     setAdminSession(next); // write first: later api() calls read it
     setAdmin(next);
+  }, []);
+
+  // The OAuth callback returns the browser to "/#social=<token>" (or
+  // "#social_error=<msg>"). A hash never reaches the server, so the one-time
+  // token stays out of request logs and referrers; we exchange it here, then
+  // clear it so a reload cannot replay it. A returning account logs straight
+  // in; a new one opens the CPF completion step.
+  useEffect(() => {
+    const raw = String(window.location.hash || "");
+    if (!raw.startsWith("#social")) return;
+    const params = new URLSearchParams(raw.slice(1));
+    const token = params.get("social");
+    const err = params.get("social_error");
+    window.history.replaceState(
+      null, "", window.location.pathname + window.location.search);
+    if (err) {
+      setMessage("Login social: " + err);
+      return;
+    }
+    if (!token) return;
+    setBusy(true);
+    api("POST", "/api/auth/oauth/session", { token })
+      .then((row) => {
+        if (row.needs_profile) {
+          const s = row.suggested || {};
+          setForm((f) => ({
+            ...f,
+            name: s.name || "",
+            email: s.email || "",
+            cpf: "",
+            username: "",
+            pix_key: "",
+            password: "",
+          }));
+          setPendingSocial({ token, suggested: s });
+          setAuthMode("complete");
+          setAuthErrors({});
+          setAcctOpen(true);
+        } else {
+          setPlayerSession({ player_id: row.player_id });
+          setPlayer(row.player_id);
+          setAcctOpen(false);
+        }
+      })
+      .catch((e) => setMessage("Login social: " + e.message))
+      .finally(() => setBusy(false));
+  }, [setPlayer]);
+
+  const startSocial = useCallback((provider) => {
+    window.location.href =
+      "/api/auth/oauth/start?provider=" + encodeURIComponent(provider);
   }, []);
 
   // The Painel button only renders for a logged-in admin, so the owner
@@ -379,6 +434,7 @@ export default function Page() {
 
   const submitAuth = async () => {
     const errs = {};
+    const complete = authMode === "complete";
     if (authMode === "login") {
       const id = String(form.identifier || "").trim();
       if (!id) errs.identifier = "informe seu usuário, email ou CPF";
@@ -393,6 +449,19 @@ export default function Page() {
         if (u) errs.identifier = u;
       }
       if (!String(form.password || "")) errs.password = "informe sua senha";
+    } else if (complete) {
+      // the social path: the name/email come from the provider, the CPF is
+      // mandatory (it keys the wallet), and the password is optional
+      const c = validateCPF(form.cpf);
+      if (c) errs.cpf = c;
+      const u = validateUsername(form.username);
+      if (u) errs.username = u;
+      if (!String(form.pix_key || "").trim())
+        errs.pix_key = "informe sua chave Pix";
+      if (String(form.password || "").trim()) {
+        const p = validatePassword(form.password);
+        if (p) errs.password = p;
+      }
     } else {
       const n = validateName(form.name);
       if (n) errs.name = n;
@@ -422,50 +491,69 @@ export default function Page() {
           errs.holder_name = "informe o titular da conta";
       }
     }
-    if (serverConfig.turnstile_enabled && serverConfig.turnstile_site_key &&
-        !turnstileToken) {
+    if (!complete && serverConfig.turnstile_enabled &&
+        serverConfig.turnstile_site_key && !turnstileToken) {
       errs.turnstile = "confirme que você não é um robô";
     }
     setAuthErrors(errs);
     if (Object.keys(errs).length > 0) return;
+    if (complete && !pendingSocial) {
+      setAuthErrors({ _: "sessão social expirada — entre com " +
+        "Google ou Facebook novamente" });
+      return;
+    }
     setBusy(true);
     try {
       const turnstile =
         serverConfig.turnstile_enabled && serverConfig.turnstile_site_key
           ? { "cf-turnstile-response": turnstileToken }
           : {};
-      const profileRow =
-        authMode === "login"
-          ? await api("POST", "/api/player/login", {
-              identifier: String(form.identifier || "").trim(),
-              password: form.password,
-              ...turnstile,
-            })
-          : await api("POST", "/api/player", {
-              name: String(form.name || "").trim(),
-              username: String(form.username || "").trim(),
-              email: String(form.email || "").trim(),
-              cpf: String(form.cpf || "").trim(),
-              password: form.password,
-              pix_key: String(form.pix_key || "").trim(),
-              bank: {
-                bank_code: String(form.bank_code || "").trim(),
-                agency: String(form.agency || "").trim(),
-                account: String(form.account || "").trim(),
-                holder_name: String(form.holder_name || "").trim(),
-              },
-              ...turnstile,
-            });
+      let profileRow;
+      if (authMode === "login") {
+        profileRow = await api("POST", "/api/player/login", {
+          identifier: String(form.identifier || "").trim(),
+          password: form.password,
+          ...turnstile,
+        });
+      } else if (complete) {
+        profileRow = await api("POST", "/api/auth/oauth/complete", {
+          token: pendingSocial.token,
+          name: String(form.name || "").trim(),
+          email: String(form.email || "").trim(),
+          cpf: String(form.cpf || "").trim(),
+          username: String(form.username || "").trim(),
+          pix_key: String(form.pix_key || "").trim(),
+          password: String(form.password || ""),
+        });
+      } else {
+        profileRow = await api("POST", "/api/player", {
+          name: String(form.name || "").trim(),
+          username: String(form.username || "").trim(),
+          email: String(form.email || "").trim(),
+          cpf: String(form.cpf || "").trim(),
+          password: form.password,
+          pix_key: String(form.pix_key || "").trim(),
+          bank: {
+            bank_code: String(form.bank_code || "").trim(),
+            agency: String(form.agency || "").trim(),
+            account: String(form.account || "").trim(),
+            holder_name: String(form.holder_name || "").trim(),
+          },
+          ...turnstile,
+        });
+      }
       setPlayerSession({ player_id: profileRow.player_id });
       setPlayer(profileRow.player_id);
       setAuthErrors({});
+      setPendingSocial(null);
+      setAuthMode("login");
       setAcctOpen(false);
     } catch (e) {
       setAuthErrors({ _: e.message });
     } finally {
       setBusy(false);
       // a token is single-use: reset the widget so a retry mints a new one
-      setAuthAttempt((n) => n + 1);
+      if (!complete) setAuthAttempt((n) => n + 1);
     }
   };
 
@@ -899,15 +987,27 @@ export default function Page() {
             : ""
         }
         turnstileReset={authAttempt}
+        oauthProviders={
+          serverConfig.oauth_enabled ? serverConfig.oauth_providers || [] : []
+        }
+        social={pendingSocial ? { ...pendingSocial.suggested } : null}
         onForm={(next) => {
           setForm(next);
           setAuthErrors({});
         }}
-        onMode={setAuthMode}
+        onMode={(next) => {
+          setAuthMode(next);
+          setPendingSocial(null);
+        }}
         onSubmit={submitAuth}
+        onSocial={startSocial}
         onTurnstileToken={onTurnstileToken}
         onFillTest={fillTestAccount}
-        onClose={() => setAcctOpen(false)}
+        onClose={() => {
+          setAcctOpen(false);
+          setPendingSocial(null);
+          setAuthMode("login");
+        }}
       />
 
       <BottomNav

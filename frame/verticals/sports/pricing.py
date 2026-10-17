@@ -2,16 +2,49 @@
 
 Team strength is a sha256-derived rating (no external data needed);
 probabilities come from independent Poissons for soccer and a logistic
-for NFL, then a uniform 5% book margin turns probabilities into decimal
-prices. Same input, same price — reproducible under test.
+for NFL. Decimal prices come from the raw probabilities through a *per-market*
+margin, not a flat one:
+
+  * the margin is set per sport (`SPORT_MARGIN`) and nudged per market kind
+    (`KIND_MARGIN`), so a 3-way derivative or a both-teams-to-score book
+    carries a little more than the headline result;
+  * `price_market` builds the book with the power form
+    ``o_i = (1+margin)·p_i^k / Σ p_j^k`` — the overround is exactly `margin`
+    by construction (k=1 gives the flat multiplicative margin; k>1 pushes more
+    margin onto longshots, i.e. a favourite–longshot book), and a cent-grid
+    correction keeps the delivered book as close to that margin as two decimals
+    allow;
+  * the per-30s drift is applied to the *probabilities* and renormalized, so it
+    moves the shape of the book without changing how much margin it holds —
+    which the old "multiply each price by 1+d" did not.
+
+Same input, same price — reproducible under test. `to_price` and `drift` are
+kept as thin back-compat wrappers: the in-house slate (`demo/odds_engine.py`)
+and the frame tests still call them.
 """
 
 from __future__ import annotations
 
 import hashlib
 import math
+import time
 
 MARGIN = 0.05
+
+# Per-sport margin: tighter on the deep, liquid markets, wider on the thin ones.
+SPORT_MARGIN = {
+    "soccer": 0.05, "basketball": 0.045, "tennis": 0.055, "hockey": 0.055,
+    "volleyball": 0.06, "futsal": 0.06, "handball": 0.06, "esports": 0.06,
+    "baseball": 0.05, "football": 0.05, "rugby": 0.06, "cricket": 0.065,
+}
+# Added on top of the sport's margin for the derivative kinds.
+KIND_MARGIN = {"dc": 0.02, "btts": 0.02, "total-h1": 0.01, "total-h2": 0.01,
+               "ah": 0.01, "dnb": 0.01}
+# The power `k`: >1 puts relatively more margin on the long side (a real book's
+# favourite–longshot bias). 1.0 is a flat multiplicative margin.
+KIND_BIAS = {"1x2": 1.12, "moneyline": 1.12, "total": 1.15, "total-h1": 1.0,
+             "total-h2": 1.0, "dc": 1.0, "btts": 1.0, "dnb": 1.05, "ah": 1.1}
+DEFAULT_MARGIN = 0.055
 
 
 def _hash(text: str) -> int:
@@ -123,10 +156,144 @@ def points_total_over(home: str, away: str, base: float, scale: float,
 
 
 def to_price(prob: float) -> float:
+    """Back-compat single price: the flat 5% multiplicative margin. New code
+    prices a whole market through `price_market` so the overround is exact."""
     return max(1.01, round(1.0 / (prob * (1.0 + MARGIN)), 2))
 
 
 def drift(seed_key: str, bucket: int, minute: float) -> float:
+    """Per-30s wobble in ±3%, grown by the live minute. A *price* factor in the
+    back-compat path; `price_market` applies the same values to probabilities."""
     seed = _hash(f"{seed_key}:{bucket}")
-    wobble = ((seed % 200) - 100) / 3333.0  # ±3%
+    wobble = ((seed % 200) - 100) / 3333.0
     return wobble * (1.0 + minute / 90.0)
+
+
+# -- the per-market book -------------------------------------------------
+
+def normalize(probs) -> list[float]:
+    """A non-negative probability vector that sums to 1."""
+    vals = [max(0.0, float(p)) for p in probs]
+    total = sum(vals)
+    if total <= 0.0:
+        n = len(vals) or 1
+        return [1.0 / n] * n
+    return [v / total for v in vals]
+
+
+def margin_for(sport: str, kind: str) -> float:
+    """The target overround for one market: the sport's base plus the kind's."""
+    return (SPORT_MARGIN.get(str(sport or "").lower(), DEFAULT_MARGIN)
+            + KIND_MARGIN.get(str(kind or "").lower(), 0.0))
+
+
+def bias_for(kind: str) -> float:
+    return KIND_BIAS.get(str(kind or "").lower(), 1.0)
+
+
+def drift_probs(base_key: str, bucket: int, minute: float,
+                probs) -> list[float]:
+    """Perturb probabilities by the per-leg wobble, then renormalize: the drift
+    changes the shape of the book, never the margin it holds."""
+    perturbed = [max(1e-9, p * (1.0 + drift(f"{base_key}:{i}", bucket, minute)))
+                 for i, p in enumerate(probs)]
+    return normalize(perturbed)
+
+
+def _cent_fix(prices: list[float], target: float) -> list[float]:
+    """Nudge the shortest-priced leg in 0.01 steps so the rounded book's
+    overround lands as close to `target` as the cent grid allows."""
+    if not prices:
+        return prices
+    out = list(prices)
+    idx = min(range(len(out)), key=lambda i: out[i])
+
+    def overround() -> float:
+        return sum(1.0 / p for p in out) - 1.0
+
+    for _ in range(6):
+        err = overround() - target
+        if abs(err) < 0.004:
+            break
+        step = 0.01 if err > 0 else -0.01
+        out[idx] = round(max(1.01, out[idx] + step), 2)
+    return out
+
+
+def price_market(fixture_key: str, kind: str, probs, *, margin: float,
+                 bias: float = 1.0, bucket: int | None = None,
+                 minute: float = 0.0) -> tuple[float, ...]:
+    """Decimal prices for one market with `margin` as the exact overround.
+
+    ``o_i = (1+margin)·p_i^k / Σ p_j^k`` with ``k = bias``; the drift is applied
+    to the probabilities first, so the delivered overround is `margin` (up to
+    cent rounding) regardless of how the wobble moved the shape.
+    """
+    if bucket is None:
+        bucket = int(time.time()) // 30
+    p = drift_probs(f"{fixture_key}:{kind}", bucket, minute, normalize(probs))
+    if bias and abs(bias - 1.0) > 1e-9:
+        powered = [max(1e-12, q) ** bias for q in p]
+        total = sum(powered) or 1.0
+        implied = [(1.0 + margin) * v / total for v in powered]
+    else:
+        implied = [(1.0 + margin) * q for q in p]
+    prices = [max(1.01, round(1.0 / o, 2)) if o > 0 else 1000.0
+              for o in implied]
+    return tuple(_cent_fix(prices, margin))
+
+
+def overround(prices) -> float:
+    """The book's margin: sum of implied probabilities minus one."""
+    return sum(1.0 / float(p) for p in prices if float(p) > 0) - 1.0
+
+
+def handicap_two_way(p_home: float, p_away: float, hcap: float,
+                     scale: float = 0.9) -> tuple[float, float]:
+    """Two-way handicap probabilities from a two-way result book.
+
+    `hcap` is the handicap applied to the home score (negative when the home
+    side gives goals). A log-odds shift of `scale·hcap` is a bounded, monotone
+    stand-in for a full goal-difference model: a bigger give shortens the home
+    price, never inverts it.
+    """
+    total = p_home + p_away
+    base = (p_home / total) if total > 0 else 0.5
+    base = min(0.97, max(0.03, base))
+    shifted = math.log(base / (1.0 - base)) + scale * hcap
+    ph = 1.0 / (1.0 + math.exp(-shifted))
+    return ph, 1.0 - ph
+
+
+def inplay_probs(kind: str, probs, home_score, away_score, minute: float,
+                 cap: float = 90.0) -> list[float]:
+    """Live adjustment: shift a result book toward the current leader, or —
+    level and late — toward the draw. Deterministic and bounded; the pre-match
+    model is the base, the score only tilts it."""
+    p = normalize(probs)
+    if len(p) < 2 or home_score is None or away_score is None:
+        return p
+    frac = (max(0.0, min(1.0, float(minute) / float(cap)))
+            if cap and cap > 0 else 0.0)
+    if frac <= 0.0:
+        return p
+    try:
+        diff = int(home_score) - int(away_score)
+    except (TypeError, ValueError):
+        return p
+    boost = min(6.0, 1.0 + 0.9 * abs(diff) * frac)
+    if len(p) == 3:
+        home, draw, away = p
+        if diff > 0:
+            home *= boost
+        elif diff < 0:
+            away *= boost
+        else:
+            draw *= 1.0 + 1.2 * frac
+        return normalize([home, draw, away])
+    line = list(p)
+    if diff > 0:
+        line[0] *= boost
+    elif diff < 0:
+        line[-1] *= boost
+    return normalize(line)

@@ -12,7 +12,9 @@ operator/
 ├── Makefile / scripts/verify.py / scripts/verify.sh
 ├── decisions/ / docs/
 ├── frame/            the money core + verticals (stdlib only)
-├── demo/             playable product: HTTP server, slot, Pix, risk, sports seam
+├── demo/             playable product: HTTP server, slot, Pix, risk, sports seam,
+│                     Authgear social login (routes + oauth_links store)
+├── foundry/          vendored kit modules (envfile, mail, turnstile, oauth)
 ├── web/              Next.js storefront (React 19), builds to web/out
 ├── probes/           captured live-feed evidence & provider demos
 └── frame/
@@ -26,7 +28,10 @@ operator/
     ├── models/registry.py   fair-price provider registry (devig methods registered)
     ├── verticals/sports/    SportsEngine contract + stub + real feeds
     │                        (Flashscore primary; shared marketboard + locale_pt;
-    │                        Livescore then ESPN fallbacks)
+    │                        Livescore then ESPN fallbacks. pricing.py is a
+    │                        per-market book — exact overround, dnb/ah, a live
+    │                        score tilt — and ESPN's published moneyline is the
+    │                        one real price served, tagged `market`)
     ├── verticals/casino/    CasinoAggregator contract + deterministic stub
     ├── ops/scheduler.py     tiered loop, per-subject cooldown, daily cap, receipts
     ├── ops/notifier.py      ntfy fan-out (fail-open) + local file double for tests

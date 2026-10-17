@@ -25,6 +25,8 @@ export function useSession() {
     test_accounts_enabled: true,
     turnstile_enabled: false,
     turnstile_site_key: "",
+    oauth_enabled: false,
+    oauth_providers: [],
   });
   const [refreshError, setRefreshError] = useState("");
   const [busy, setBusy] = useState(false);

@@ -33,6 +33,8 @@ const KIND_LABEL = {
   "total-h2": "Total 2º tempo",
   dc: "Dupla chance",
   btts: "Ambas marcam",
+  dnb: "Empate anula",
+  ah: "Handicap",
 };
 
 // the sports whose live clock is minutes — a set/innings sport shows the live
@@ -94,6 +96,7 @@ function tick(kind, i, selections) {
   if (kind === "1x2") return ["1", "X", "2"][i] || selections[i];
   if (kind === "moneyline") return i === 0 ? "1" : "2";
   if (kind === "total") return ["Mais", "Menos"][i] || selections[i];
+  if (kind === "dnb" || kind === "ah") return i === 0 ? "1" : "2";
   return selections[i];
 }
 
@@ -136,6 +139,14 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
 
   const renderOdds = (m) => (
     <div className="sx-odds" key={m.key}>
+      {m.pricing === "market" ? (
+        <span
+          className="sx-prov"
+          title="Cotação publicada pelo provedor (não é do nosso modelo)"
+        >
+          mercado
+        </span>
+      ) : null}
       {m.selections.map((sel, i) => (
         <button
           key={sel}

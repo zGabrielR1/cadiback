@@ -1,4 +1,49 @@
-CURRENTTASK: Real-result settlement (decision 0053) — a slip placed on the
+CURRENTTASK: Authgear social login (Google/Facebook + CPF, decision 0054) and a
+better sports book (per-market overround, draw-no-bet + asian handicap,
+live-score tilt, and an ESPN moneyline overlay, decision 0055).
+
+## STATUS
+
+- **GOOGLE/FACEBOOK VIA AUTHGEAR, CONFIG-GATED (0054).** New
+  `foundry/oauth` (Authorization Code + PKCE; identity read from the userinfo
+  endpoint so the kit stays stdlib-only), vendored into the operator with
+  `scripts/vendor.py`. `demo/server.py` gains `authgear_env()`, `Demo.oauth`,
+  `oauth_status()` (surfaced on `/api/health` and `/api/config`), the
+  `oauth_links.json` store, and four routes: `GET /api/auth/oauth/start`,
+  `GET /api/auth/callback`, `POST /api/auth/oauth/session`,
+  `POST /api/auth/oauth/complete`. Unconfigured is a no-op — the storefront
+  hides the buttons and nothing else changes.
+- **A NEW SOCIAL USER MUST SUPPLY A CPF.** A `provider:subject` link (or a
+  matching email) logs an existing account in; anything else returns a one-time
+  handoff in the URL hash and opens the **CPF completion** step, which validates
+  the CPF (check digits) and its uniqueness — the wallet key — plus username
+  and Pix before the account is created.
+- **THE ODDS ARE A BOOK, NOT A FLAT 5% (0055).** `pricing.price_market` prices a
+  whole market with an exact target overround (per sport + kind, a
+  favourite-longshot bias via the power form, the drift applied to the
+  probabilities so it moves shape not margin). New markets: **draw-no-bet** and
+  an **asian handicap**, both settled off the final score by
+  `settlement.resolve`. The live result market tilts with the running score, and
+  where ESPN publishes a moneyline it is served verbatim, tagged
+  `pricing: "market"` (the rest stays `"model"`).
+- **THE ICONS CARRY THE BOX ON DESKTOP.** A `min-width:761px` / `1400px` block
+  grows `.sx-tab-icon` (15 → 22 → 26px) with the tab padding and odds column.
+- **THE WRITE GUARD SEES THROUGH THE VERCEL PROXY (0056).** Every player write
+  on the Vercel site answered 403 "cross-origin writes refused": the guard
+  compared the browser's `Origin` (the frontend host) to the request `Host` (the
+  backend host). `same_origin()` now also accepts `X-Forwarded-Host` and a
+  `FRONTEND_ORIGINS` allowlist (`cadiback-web.vercel.app`), and is unit-tested
+  without a socket.
+- Suites: frame 50/50, demo 307/307 (+7 SameOriginTest, +6 OAuthTest,
+  +2 OAuthHttpTest, +3 odds, the marketboard test extended), foundry kit 57/57;
+  `verify.py` 0; export rebuilt. Decisions 0054, 0055, 0056; runbook
+  `docs/oauth.md`.
+- OPEN: the six `AsaasPgTest`/`DbSeamTest` tests need `sqlalchemy`, absent on
+  this machine (pre-existing). Go-live needs `AUTHGEAR_CLIENT_SECRET` in
+  `.env.authgear` and the Google/Facebook identities enabled in the Authgear
+  portal (redirect URIs whitelisted).
+
+CURRENTTASK (previous): Real-result settlement (decision 0053) — a slip placed on the
 board settles against the fixture's actual final score: won pays the bought
 price, a losing leg takes the stake, a push refunds, and a match the feed
 hasn't decided yet keeps the slip pending until the result (or a declared

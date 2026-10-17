@@ -35,6 +35,9 @@ class Market:
     # the handicap/total line the prices are quoted against (2.5 goals,
     # 215.5 points); None for a straight moneyline
     line: float | None = None
+    # where the prices came from: "model" (our own board) or "market" (a
+    # price the provider actually published). Never presented as the other.
+    source: str = "model"
 
 
 @dataclass(frozen=True)

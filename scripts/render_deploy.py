@@ -57,6 +57,11 @@ SERVICE = {
     "envVars": [
         {"key": "HOST", "value": "0.0.0.0"},
         {"key": "OPERATOR_DATA_DIR", "value": "/data"},
+        # The storefront (Vercel) proxies /api to this backend (Render), so a
+        # browser write arrives with the frontend in Origin and the backend in
+        # Host — the same-origin guard needs the frontend named. See
+        # `demo.server.same_origin`.
+        {"key": "FRONTEND_ORIGINS", "value": "cadiback-web.vercel.app"},
     ],
 }
 
@@ -185,6 +190,15 @@ TURNSTILE_KEYS = ("TURNSTILE_SECRET_KEY", "TURNSTILE_SITE_KEY",
 # service-role keys stay on the laptop (migrations run from here, by hand).
 SUPABASE_ENV_FILE = os.path.join(ROOT, ".env.supabase")
 SUPABASE_KEYS = ("DATABASE_URL",)
+
+# Authgear social login (decision 0054, docs/oauth.md). The client secret is the
+# only sensitive value; the endpoint, client id, redirect URI and provider list
+# are public configuration. All of them travel from the local gitignored
+# `.env.authgear`, so a deploy without them simply hides the social buttons.
+AUTHGEAR_ENV_FILE = os.path.join(ROOT, ".env.authgear")
+AUTHGEAR_KEYS = ("AUTHGEAR_ENDPOINT", "AUTHGEAR_CLIENT_ID",
+                 "AUTHGEAR_CLIENT_SECRET", "AUTHGEAR_REDIRECT_URI",
+                 "AUTHGEAR_PROVIDERS")
 
 
 def _first_line(path: str) -> str:
@@ -344,10 +358,27 @@ def read_supabase_env() -> list[dict]:
             for name in SUPABASE_KEYS if values.get(name)]
 
 
+def read_authgear_env() -> list[dict]:
+    """The Authgear/OIDC settings to carry to the host.
+
+    Same rule as the other rails: the environment wins over the gitignored
+    `.env.authgear`, and a setting absent everywhere is simply not sent — so a
+    deploy without credentials hides the social buttons instead of
+    half-configuring a login that cannot complete.
+    """
+    values = _env_pairs(AUTHGEAR_ENV_FILE)
+    for name in AUTHGEAR_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in AUTHGEAR_KEYS if values.get(name)]
+
+
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
     return (SERVICE["envVars"] + read_asaas_env() + read_resend_env()
-            + read_turnstile_env() + read_supabase_env())
+            + read_turnstile_env() + read_supabase_env()
+            + read_authgear_env())
 
 
 class RenderError(RuntimeError):
