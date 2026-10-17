@@ -680,6 +680,12 @@ def run(key: str, repo: str, force: bool) -> int:
               f"{os.path.basename(SUPABASE_ENV_FILE)}/environment")
     else:
         print("no DATABASE_URL found: the deploy keeps files")
+    carried_oauth = read_authgear_env()
+    if carried_oauth:
+        print(f"carrying {len(carried_oauth)} social-login setting(s) from "
+              f"{os.path.basename(AUTHGEAR_ENV_FILE)}/environment")
+    else:
+        print("no Authgear credentials found: the social buttons stay hidden")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)
