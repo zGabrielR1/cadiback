@@ -358,3 +358,7 @@ that was open at session 4 is now closed too:
   the HUD over the splash, and `gameService`/`saveSettings.do`/`reloadBalance.do`/
   `announcements` all answered 200 on our host. What was missing was the
   publisher's own scene activation, which their signed session table gates.
+  Note this is the **boot**, not settlement: Pragmatic stays a balance-rewrite
+  proxy where the publisher's demo RGS owns the rounds (as for every PROXIED
+  title — only Spribe settles, because its socket carries the round). Interposing
+  an RGS for the PROXIED titles is a separate piece of work, not part of §5.

@@ -83,19 +83,34 @@ flag with other readers; pinning the two globals changes nothing but the check.
 
 ## Proof
 
+Live deploy (`8105dda`), measured **with no CDP injection at all** — the page's
+own bundle, through our proxy:
+
 | signal | before | after | publisher's own page |
 |---|---|---|---|
 | `LoaderProgress.Localize/Blocking/Symbols/Init` | `0/0/0/0` | **`1/1/22/1`** | `1/1/22/1` |
 | `EventManager.handlers` | 34 | 64 | — |
 | `allObjects` after the game import | 11571 | **843** | 843 |
+| `window._4025` | `cadiback.onrender.com` | `demogamesfree.pragmaticplay.net` | — |
 
-Local (`127.0.0.1`, no CDP injection, through the real proxy) reaches
-`1/1, 0/-, 22/22, 0/1`; `InitConnection` is the one step that needs the money
-round-trip, which on a plain-HTTP local origin is the proxy's own
-`https://127.0.0.1:8777/_abs/…` scheme mismatch, not this. On the deployed
-(`https`) origin the loader completes **and Gates of Olympus renders, spins and
-runs its real UI** — the first time a Pragmatic title has booted off-origin.
-Verified with `/tmp/opencode/shot.mjs` against the live launcher.
+The game then renders its real UI — the full Pragmatic HUD with its own bet
+controls (`COMPRAR RODADAS GRÁTIS`, `APOSTA`, `CRÉDITO`, `JOGO AUTOMÁTICO`, the
+turbo hint) — under our saldo HUD, and takes clicks. **Gates of Olympus boots
+off-origin for the first time.**
+
+Local (`127.0.0.1`, also through the real proxy) reaches `1/1, 0/-, 22/22, 0/1`:
+`InitConnection` is the one step that needs the money round-trip, and on a
+plain-HTTP local origin our own `_abs` rewrite keeps the publisher's `https`
+scheme, so `https://127.0.0.1:8777/g/…/_abs/…` dies with
+`ERR_SSL_PROTOCOL_ERROR`. That is a local-origin artifact, not this defect; the
+deployed origin is `https` and completes.
+
+**What this does not do.** Pragmatic stays a **balance-rewrite** proxy: the
+publisher's demo RGS owns the rounds and we substitute our saldo into its
+payloads (`MONEY_PATHS["pragmatic_play"]` + `rewrite_balance`), so a spin shows
+our saldo but does not move our ledger. Booting the scene does not change that;
+interposing an RGS for these titles is a separate piece of work (Spribe got one
+because its socket carries the round — decision 0060).
 
 ## Reproduction traps
 
@@ -108,3 +123,8 @@ Verified with `/tmp/opencode/shot.mjs` against the live launcher.
   `undefined` and proves nothing.
 - Off-origin the failure is silent and total: no boot-time exception reaches
   `window.onerror`, and the splash simply never moves.
+- **A live wallet token is required to see any of this.** With a stale launcher
+  token the game document comes back **without the bridge and without the patched
+  bundle** (`window._4025` is then the real hostname, the loader sits at `0/0/0/0`
+  and `allObjects` blows past 11571) — a page that looks like the defect. Mint a
+  fresh token before concluding anything.
