@@ -339,8 +339,19 @@ def read_crypto_env() -> list[dict]:
     Same rule as every other rail: the environment wins over the gitignored
     `.env.crypto`, and a setting absent everywhere is simply not sent — so a
     deploy without a key hides the crypto tab instead of half-configuring it.
+
+    `.env.crypto` is accepted either as `KEY=value` lines *or* as the bare
+    two-line file (an API key, then the IPN secret) that tends to get written
+    first — `demo.crypto.read_env_pairs` is the one parser for both, so the
+    server and the deploy can never disagree about what the file says.
     """
-    values = _env_pairs(CRYPTO_ENV_FILE)
+    try:
+        if ROOT not in sys.path:
+            sys.path.insert(0, ROOT)
+        from demo.crypto import read_env_pairs as _crypto_pairs
+        values = _crypto_pairs(CRYPTO_ENV_FILE)
+    except Exception:
+        values = _env_pairs(CRYPTO_ENV_FILE)
     for name in CRYPTO_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()

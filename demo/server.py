@@ -1892,11 +1892,14 @@ class Demo:
             "available_minor": self.books.available(player_id),
         }
 
-    def create_crypto_deposit(self, payload: dict) -> dict:
+    def create_crypto_deposit(self, payload: dict,
+                              ipn_url: str = "") -> dict:
         """Open a NOWPayments invoice. Returns the pay address; credits nothing.
 
         Idempotent on `deposit_id`: a retried request returns the same invoice
-        instead of opening a second one against the same wallet.
+        instead of opening a second one against the same wallet. `ipn_url` (the
+        caller's public `/api/webhooks/crypto`) is registered on the invoice, so
+        the rail needs no dashboard setting to hear back.
         """
         if self.crypto is None:
             raise ValueError("cripto não está configurado neste servidor")
@@ -1917,7 +1920,8 @@ class Demo:
             if existing and existing.get("player") == player_id:
                 return self._crypto_view(deposit_id, existing)
             charge = self.crypto.create_payment(
-                txid=deposit_id, amount_cents=amount, pay_currency=coin)
+                txid=deposit_id, amount_cents=amount, pay_currency=coin,
+                ipn_url=ipn_url)
             row = {
                 "deposit_id": deposit_id,
                 "player": player_id,
@@ -4791,7 +4795,10 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/deposit/pix/status":
                 self._send(200, DEMO.pix_deposit_status(self._body()))
             elif path == "/api/deposit/crypto":
-                self._send(200, DEMO.create_crypto_deposit(self._body()))
+                self._send(200, DEMO.create_crypto_deposit(
+                    self._body(),
+                    ipn_url=self._our_origin().rstrip("/")
+                    + "/api/webhooks/crypto"))
             elif path == "/api/deposit/crypto/status":
                 self._send(200, DEMO.crypto_deposit_status(self._body()))
             elif path == "/api/withdraw":

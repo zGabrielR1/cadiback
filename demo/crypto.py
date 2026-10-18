@@ -23,6 +23,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -82,8 +83,22 @@ class CryptoCharge:
     price_currency: str = "brl"
 
 
-def _read_env_file(path: str) -> dict[str, str]:
-    """`KEY=value` lines, `#` comments and inline comments tolerated."""
+# A NOWPayments API key is dash-separated uppercase groups
+# (`GTAFVTN-52VMMEQ-PT6FJK7-V4SMH6R`); an IPN secret is whatever the merchant
+# set in the dashboard (a UUID, typically). A credentials file tends to get
+# written whichever way is quickest at the time, so a *bare* line (no `KEY=`)
+# is classified by that shape rather than refused — and the file's line order
+# is not relied on, so swapping the two still loads.
+_API_KEY_RE = re.compile(r"^[A-Z0-9]{5,}(?:-[A-Z0-9]{5,}){2,}$")
+
+
+def read_env_pairs(path: str) -> dict[str, str]:
+    """`KEY=value` lines, plus the bare two-line credential file.
+
+    `#` comments and inline comments are tolerated. A bare line (no `=`) is a
+    secret written without its name: the one shaped like a NOWPayments API key
+    becomes `CRYPTO_API_KEY`, the other `CRYPTO_IPN_SECRET`.
+    """
     values: dict[str, str] = {}
     if not path or not os.path.isfile(path):
         return values
@@ -92,15 +107,30 @@ def _read_env_file(path: str) -> dict[str, str]:
             lines = handle.read().splitlines()
     except OSError:
         return values
+    bare: list[str] = []
     for line in lines:
-        line = line.strip()
-        if not line or line.startswith("#"):
+        text = line.strip()
+        if not text or text.startswith("#"):
             continue
-        name, _, value = line.partition("=")
+        if "=" not in text:
+            bare.append(text)
+            continue
+        name, _, value = text.partition("=")
         value = value.split(" #", 1)[0].strip()
         if name.strip():
             values[name.strip()] = value
+    for secret in bare:
+        if _API_KEY_RE.match(secret) and not values.get("CRYPTO_API_KEY"):
+            values["CRYPTO_API_KEY"] = secret
+        elif not values.get("CRYPTO_IPN_SECRET"):
+            values["CRYPTO_IPN_SECRET"] = secret
+        elif not values.get("CRYPTO_API_KEY"):
+            values["CRYPTO_API_KEY"] = secret
     return values
+
+
+# the older name; a caller that only wants the `KEY=value` file keeps working
+_read_env_file = read_env_pairs
 
 
 @dataclass(frozen=True)

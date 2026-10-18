@@ -146,7 +146,7 @@ def _crypto_transport(payment: dict):
     calls: list[tuple] = []
 
     def transport(method, url, api_key, payload, idempotency_key, timeout):
-        calls.append((method, url, idempotency_key))
+        calls.append((method, url, idempotency_key, payload))
         return payment
 
     transport.calls = calls
@@ -420,6 +420,21 @@ class CryptoTest(unittest.TestCase):
         self.assertEqual(cfg.ipn_secret, "sec")
         self.assertEqual(cfg.base_url, "https://api.nowpayments.io/v1")
 
+    def test_a_bare_two_line_file_is_classified_by_shape_either_order(self):
+        # the shape a credentials file is often first written in: no `KEY=`.
+        # The API key is the dashed one, the IPN secret the other — and the
+        # order in the file must not matter.
+        key = "GTAFVTN-52VMMEQ-PT6FJK7-V4SMH6R"
+        secret = "e3ead52d-1904-4c51-83d7-9ac797b8034c"
+        for body in (f"{key}\n{secret}\n", f"{secret}\n{key}\n"):
+            path = os.path.join(tempfile.mkdtemp(), ".env.crypto")
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(body)
+            cfg = CryptoConfig.from_env(env_file=path)
+            self.assertEqual(cfg.api_key, key, body)
+            self.assertEqual(cfg.ipn_secret, secret, body)
+            self.assertTrue(cfg.configured)
+
     def test_create_payment_returns_a_pay_address_and_a_deposit_key(self):
         transport = _crypto_transport({
             "payment_id": "pay_1", "payment_status": "waiting",
@@ -520,6 +535,29 @@ class CryptoDepositTest(unittest.TestCase):
         self.assertEqual(view["amount_minor"], 10000)
         self.assertEqual(view["pay_address"], "TX1")
         self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_the_invoice_registers_our_ipn_callback(self):
+        client = self._install({"payment_id": "pay_2",
+                                "payment_status": "waiting",
+                                "price_amount": 250.0, "pay_address": "TX2"})
+        self.demo.create_crypto_deposit(
+            {"player": self.player, "amount_minor": 25000,
+             "method": "crypto", "pay_currency": "usdttrc20",
+             "deposit_id": "cr-ipn"},
+            ipn_url="https://host.example/api/webhooks/crypto")
+        body = client.transport.calls[0][3]
+        self.assertEqual(body["ipn_callback_url"],
+                         "https://host.example/api/webhooks/crypto")
+        self.assertEqual(body["order_id"], "cr-ipn")
+        # without a URL the field is simply absent (a caller that predates it)
+        client2 = self._install({"payment_id": "pay_3",
+                                 "payment_status": "waiting",
+                                 "price_amount": 100.0, "pay_address": "TX3"})
+        self.demo.create_crypto_deposit(
+            {"player": self.player, "amount_minor": 10000,
+             "method": "crypto", "pay_currency": "usdttrc20",
+             "deposit_id": "cr-noipn"})
+        self.assertNotIn("ipn_callback_url", client2.transport.calls[0][3])
 
     def test_poll_confirms_exactly_once(self):
         self._install({"payment_id": "pay_1", "payment_status": "waiting",
