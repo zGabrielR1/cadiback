@@ -111,6 +111,11 @@ after                                      balance_minor 498019
 498500 − 481 = 498019, and 481 is exactly Σpayout − Σstake over the nine rounds
 posted — the mirror is not approximately right, it is exact.
 
+The **deploy** was then verified the same way, against the bridge the deployed
+site actually serves (byte-identical to the local one): a live test account on
+`https://cadiback.onrender.com` placed 11 bets with 10 cash-outs (1.01×–1.10×)
+and its wallet moved `50000 → 49524`, again exactly Σpayout − Σstake (−476).
+
 ## Consequence
 
 Spribe titles load with our saldo HUD and now **settle on our books**: a bet

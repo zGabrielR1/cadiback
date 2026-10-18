@@ -306,7 +306,11 @@ join answer that opens the saldo is zlib (`flag 0xa0`) and is inflated with the
 browser's own `DecompressionStream`. Verified live: a R$1 loss lands `stake 100
 / payout 0` and moves `500000 → 499900`; ten cash-outs at 1.01×–1.09× land
 `stake 100 / payout 104`, and the balance reconciles exactly (`498500 − 481 =
-498019 = Σpayout − Σstake`). Gates (session 4): `frame.selftest` 50/50 ·
+498019 = Σpayout − Σstake`). **The deploy itself was then verified**: a live test
+account on `https://cadiback.onrender.com` placed 11 bets with 10 cash-outs
+(1.01×–1.10×) and its wallet moved `50000 → 49524` — exactly Σpayout − Σstake
+(−476) — against the bridge the deploy serves (byte-identical to the local one).
+Gates (session 4): `frame.selftest` 50/50 ·
 `demo.test_demo` **358** tests with only the 6 pre-existing `sqlalchemy` errors ·
 `verify.py` 0 problems; the bridge script is `node --check` clean.
 

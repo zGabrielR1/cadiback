@@ -76,7 +76,10 @@ and self-service test deposits for test accounts.
   ones behind it. Verified live: a R$1 loss posts `stake 100 / payout 0` and moves
   the ledger `500000 → 499900`; twelve bets with ten cash-outs at 1.01×–1.09×
   post `stake 100 / payout 104` and the balance reconciles exactly
-  (`498500 − 481 = 498019 = Σpayout − Σstake`).
+  (`498500 − 481 = 498019 = Σpayout − Σstake`).** The deploy was then verified
+  the same way: a live test account on `cadiback.onrender.com` ran 11 bets with
+  10 cash-outs and its wallet moved `50000 → 49524` (Σpayout − Σstake = −476).
+  The bridge the deploy serves is byte-identical to the local one.
 - **THE PRAGMATIC STALL WAS PARTLY OUR REGRESSION (session 3, decision `0058`).**
   `patch_unity_client` was **dead code**: the client XHRs `build.js` straight off
   the publisher's CDN and evals it, so the browser never ran the patched body.
