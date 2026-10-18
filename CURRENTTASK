@@ -71,15 +71,27 @@ and self-service test deposits for test accounts.
   other asset deliberately stays on the CDN. Boot exceptions drop to **zero**,
   all 93 textures load, and `evtConnectionReady`/`evtInitRequest` now fire where
   they never did. `ServerOptions.serverUrl` is pinned to the document origin
-  (no-op live; it is what makes a local reproduction possible). Still open: the
-  importer's cross-file `listOfStages` references deserialize empty, so
-  `XT.RegisterAndInit` never runs.
+  (no-op live; it is what makes a local reproduction possible).
+- **THE PRAGMATIC STALL IS THE PUBLISHER'S DERIVED-FIELD PASS (session 4,
+  decision `0059`).** Session 3's guess was wrong in both halves and is
+  corrected: `listOfStages: []` is what the publisher's own bytes ship, and the
+  six stages are meant to be derived at runtime from the ordered `UHTStage`
+  components on the `Logic` GameObject's children — exactly as `XTRoot: false`
+  is meant to resolve to the GameObject named `XTRoot`. Ours runs
+  `GameLogicRuntime.Start` before those derived fields exist; the engine sets
+  `start_called` *before* the call, so the throw is never retried and nothing
+  downstream runs. A bridge-side reconstruction of both fields was implemented
+  and tested: it gets past `XT.RegisterAndInit` and then fails on the next
+  underived field, so it is deliberately not shipped. Assets (all 52 fetched,
+  identical bytes), our bundle patch (`PP_RAW_CLIENT=1`) and our bridge
+  (blocking `bridge.js`) are each eliminated as causes, with evidence. The
+  `PP_RAW_CLIENT=1` diagnostic switch is kept.
 - **RODA DA SORTE IS 97% BY CONSTRUCTION (0057 §6).** 100 equal sectors whose
   ladder sums to 97 (the prior ladder was 137%); animated SVG `WheelPanel`,
   cover, cert `BR-DEMO-0011`. `WheelTest` (7).
 - Suites: `frame` 50/50 · `demo` 357 tests with only the 6 pre-existing
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
-  `npm run build` OK. Decisions `0057`, `0058`.
+  `npm run build` OK. Decisions `0057`, `0058`, `0059`.
 - DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
   per-invoice IPN URL) → `167acef` (Pragmatic host fix) → `f42c05b` (serve the
   client bundle through us, 0058), pushed to
@@ -93,7 +105,8 @@ and self-service test deposits for test accounts.
   the deploy.
 - OPEN (owner): **Asaas prod keys** — `.env.asaasprod` still holds only the
   customer id. Nothing else waits on the owner. Remaining provider items are
-  code: Pragmatic's off-origin splash, Spribe's AMF socket round.
+  code: Pragmatic's off-origin splash (upstream, decision 0059 — the wallet path
+  is done and proven), Spribe's AMF socket round.
 
 CURRENTTASK (previous): Authgear social login (Google/Facebook + CPF, decision 0054) and a
 better sports book (per-market overround, draw-no-bet + asian handicap,

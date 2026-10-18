@@ -467,7 +467,12 @@ def rewrite_urls(body: bytes, content_type: str, game_id: str,
     # markup the publisher wrote.
     patcher = CLIENT_PATCHERS.get(provider)
     if patcher and "javascript" in (content_type or "").lower():
-        text = patcher(text)
+        # PP_RAW_CLIENT=1 forwards the publisher's bundle untouched. Some
+        # clients (Pragmatic's) decode their own strings from a table keyed by
+        # a hash of their source text, so a text patch can silently break
+        # deserialization; this switch tells the two apart (decisions 0059).
+        if os.environ.get("PP_RAW_CLIENT") != "1":
+            text = patcher(text)
     return text.encode("utf-8")
 
 

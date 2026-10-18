@@ -165,8 +165,10 @@ harness was right to withhold judgement. Loading the launchers in a browser:
   the loader stall was partly *our* regression — the client was running an
   unpatched bundle, because the patched one was never actually served (see
   **0058**); fixing that removed every boot exception and restored the XT
-  connection callbacks, though the splash remains (the importer's cross-file
-  `listOfStages` references still deserialize empty).
+  connection callbacks, though the splash remains. Session 4 then corrected the
+  remaining-cause description — `listOfStages: []` is what the publisher ships
+  and the stages are derived at runtime; ours starts the scene before that pass
+  runs (see **0059**).
 - **Spribe (Aviator) and Play'n GO (Book of Dead) load fully** through our
   proxy, with **our** saldo in the HUD (`Saldo: R$ 5000,00`), and a real
   trusted click on *Aposta* places the bet (the button flips to *Cancelar ·
@@ -270,22 +272,35 @@ it is what makes a local reproduction possible). Gates: `frame.selftest` 50/50 �
 `demo.test_demo` 357 tests, only the 6 pre-existing `sqlalchemy` errors ·
 `verify.py` 0 problems.
 
+**Update, session 4 (2026-10-18).** The session-3 hypothesis about Pragmatic's
+stall was **wrong in both halves** and is corrected. It is not that
+`listOfStages` "deserializes empty off-origin": `listOfStages: []` is what the
+publisher ships, and the six stages are meant to be derived at runtime from the
+ordered `UHTStage` components on the `Logic` GameObject's children, just as
+`XTRoot: false` is meant to resolve to the GameObject named `XTRoot`. Ours runs
+`GameLogicRuntime.Start` before those derived fields exist, and because the
+engine sets `start_called` before the call, the throw is never retried and
+nothing downstream ever runs. The remaining gap is the publisher's obfuscated
+derived-field/nested-class pass, which cannot be reproduced from outside; a
+bridge-side reconstruction of the two fields was implemented and tested, moves
+the boot past `XT.RegisterAndInit`, and then fails on the next underived field
+— so it is deliberately **not** shipped. Assets, our bundle patch and our bridge
+are all eliminated as causes, with evidence. Full forensics, the
+`PP_RAW_CLIENT=1` diagnostic switch and the two traps that cost real time are in
+**decision 0059**.
+
 **Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` still
 holds only the customer id. Everything else that waited on the owner is now
 done: the NOWPayments key + IPN secret are in and live, and no dashboard IPN
 step is needed (the invoice carries `ipn_callback_url`). Two provider items stay
 open and are code, not credentials:
 
-- **Pragmatic's Unity loader still parks on the splash.** The remaining cause is
-  now named: `GameLogicRuntime.listOfStages` is an array of cross-file component
-  references that deserializes **empty** off-origin, so `GameLogicRuntime.Start`
-  never calls the stage `UHTInit`s and `XT.RegisterAndInit` never runs
-  (`Evt_ToServer_RequestInit` is never registered, `OnRequestInit` /
-  `OnConnectionReady` never run, `Localize`/`Blocking`/`SymbolsManagers` never
-  start). Injecting the stage list at runtime does not restore registration.
-  The wallet side is done and proven: `/api/wallet/status` answers, the saldo is
-  painted in the HUD over the splash, and `gameService`/`saveSettings.do`/
-  `reloadBalance.do`/`announcements` all answer 200 on our host.
+- **Pragmatic's client still parks on the splash** (see the session-4 update
+  above and decision 0059). The wallet side is done and proven:
+  `/api/wallet/status` answers, the saldo is painted in the HUD over the splash,
+  and `gameService`/`saveSettings.do`/`reloadBalance.do`/`announcements` all
+  answer 200 on our host. What is missing is the publisher's own scene
+  activation, not our money path.
 - **Spribe settles its round over a binary AMF socket**
   (`app-demo.spribegaming.com/BlueBox/websocket`) our tap does not decode.
   Spribe Aviator and Play'n GO Book of Dead otherwise load fully with our saldo

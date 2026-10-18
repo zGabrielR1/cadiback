@@ -55,9 +55,17 @@
   The bridge now rewrites exactly that request to `_abs/` (the served body is
   byte-verified as `patch_unity_client(original)`); every other asset stays on
   the CDN on purpose. Boot exceptions drop to zero, all 93 textures load, and
-  `evtConnectionReady`/`evtInitRequest` fire where they never did. Still open:
-  the importer's cross-file `listOfStages` references deserialize empty, so
-  `XT.RegisterAndInit` never runs and the splash remains.
+  `evtConnectionReady`/`evtInitRequest` fire where they never did. Session 4
+  (**decision 0059**) corrected the remaining-cause description: `listOfStages`
+  is `[]` in the publisher's own bytes and the six stages are derived at runtime
+  from the ordered `UHTStage` components on the `Logic` GameObject's children —
+  as `XTRoot: false` is derived to the GameObject named `XTRoot`. Ours starts
+  the scene before that pass runs, and the engine's `start_called` flag means
+  the throw is never retried. Assets, our bundle patch and our bridge are each
+  eliminated as causes; a bridge-side reconstruction of both fields was tested,
+  moves the boot past `XT.RegisterAndInit`, and then fails on the next underived
+  field — so it is deliberately not shipped. `PP_RAW_CLIENT=1` is kept as the
+  diagnostic switch for this class of bug.
 - **Roda da Sorte is 97% by construction** (§6). 100 equal sectors summing to 97
   (the prior ladder was 137%); animated SVG `WheelPanel`, cover, cert
   `BR-DEMO-0011`. Test: `WheelTest` (7).
