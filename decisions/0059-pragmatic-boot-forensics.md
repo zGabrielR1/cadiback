@@ -1,7 +1,16 @@
 # 0059 — Why Pragmatic Play's client cannot finish booting off-origin
 
 Date: 2026-10-18
-Status: accepted (diagnosis; upstream limitation)
+Status: superseded by 0062 (the diagnosis here is wrong; the boot **is** fixable)
+
+> **Superseded.** The reading below — that the missing piece is a publisher
+> "derived-field pass" we do not emulate — is incorrect. The scene's field values
+> are *encrypted*, not derived, and their decryption is keyed to the publisher's
+> origin via an RSA-signed session table. Pinning two globals the bundle captured
+> restores it and the game boots; see decision 0062. Everything in this file about
+> *how to observe* the failure (the method-wrapper probes, the swallowed `Start`
+> exception, the sample-to-sample instability of `listOfStages`) still holds and
+> is what made 0062 possible.
 
 ## Context
 

@@ -4559,7 +4559,37 @@ class GameProxyTest(unittest.TestCase):
         out = game_proxy.rewrite_urls(
             js, "text/javascript", self.GAME,
             "http://127.0.0.1:8765", money)
-        self.assertEqual(js, out)
+        # The bundle itself is still the publisher's bytes, tail-last; a script
+        # body may carry a prepended shim (decisions 0062), but no asset URL in
+        # it may be pointed at us.
+        self.assertTrue(out.endswith(js), out[:120])
+        self.assertIn(b"https://demogamesfree.pragmaticplay.net/gs2c/common", out)
+
+    def test_a_pragmatic_bundle_pins_the_signed_session_readings(self):
+        """Pragmatic's importer only decrypts a component's field values when
+        the browser's user agent and hostname match the RSA-signed table the
+        game config carries. Off the publisher's origin they never can, so the
+        permutation is rebuilt per call and every field arrives as garbage —
+        the stage list stays empty and the loader stops on its splash
+        (decisions 0059/0062). The pin is prepended to the bundle so it lands
+        before the bundle captures those two globals."""
+        from demo import game_proxy
+        out = game_proxy.patch_unity_client("var x=1;")
+        self.assertTrue(out.endswith("var x=1;"))
+        for token in ("_634", "_4025", "sessionKeyV2", "demogamesfree.pragmaticplay.net"):
+            self.assertIn(token, out)
+        # the shim is the publisher-agnostic prologue, not a rewrite of the body
+        self.assertIn("Object.defineProperty", out)
+
+    def test_the_session_pin_is_pragmatic_only(self):
+        """Only Pragmatic's importer keys its field decryption on the session
+        table, so no other publisher's script body may carry the shim."""
+        from demo import game_proxy
+        js = b"var x=1;"
+        out = game_proxy.rewrite_urls(
+            js, "text/javascript", "spribe:aviator", "http://127.0.0.1:8765")
+        self.assertEqual(out, js)
+        self.assertNotIn(b"_4025", out)
 
     def test_publisher_subdomains_are_allowed_lookalikes_are_not(self):
         """A publisher serves each game from its own subdomain (Spribe uses
@@ -5119,7 +5149,9 @@ class ProxyHttpTest(unittest.TestCase):
     def test_a_script_body_is_never_revalidated_against_the_publisher(self):
         """A bundle may be rewritten on the way out, and a rewritten body
         cannot be pinned to the publisher's validator: neither send the
-        client's nor advertise one we would not honour."""
+        client's nor advertise one we would not honour. Pragmatic's bundle is
+        always rewritten (its reference fixes and, since 0062, the session
+        shim), so it is only ever revalidated."""
         self.answer = (200, {"Content-Type": "application/javascript",
                              "ETag": '"v1"',
                              "Cache-Control": "public, max-age=600"},
@@ -5127,10 +5159,11 @@ class ProxyHttpTest(unittest.TestCase):
         status, headers, body = self._call(f"{self.game_path}/build.js",
                                             {"If-None-Match": '"v1"'})
         self.assertEqual(status, 200)
-        self.assertEqual(body, b"var x=1;")
+        # the publisher's real body, possibly behind the Pragmatic shim (0062)
+        self.assertTrue(body.endswith(b"var x=1;"), body[:120])
         self.assertNotIn("If-None-Match", self.calls[0]["headers"])
         self.assertNotIn("ETag", headers)
-        self.assertEqual(headers["Cache-Control"], "public, max-age=600")
+        self.assertEqual(headers["Cache-Control"], "no-cache")
 
     def test_a_publisher_304_on_a_patchable_body_serves_the_real_body(self):
         """An empty answer cannot be patched, and a 304 we forwarded would
@@ -5141,7 +5174,8 @@ class ProxyHttpTest(unittest.TestCase):
         status, headers, body = self._call(f"{self.game_path}/build.js",
                                            {"If-None-Match": '"v1"'})
         self.assertEqual(status, 200)
-        self.assertEqual(body, b"var x=1;")
+        # the publisher's real body, possibly behind the Pragmatic shim (0062)
+        self.assertTrue(body.endswith(b"var x=1;"), body[:120])
         self.assertNotIn("ETag", headers)
         self.assertEqual(len(self.calls), 2)
         self.assertNotIn("If-None-Match", self.calls[1]["headers"])

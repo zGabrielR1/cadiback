@@ -67,8 +67,18 @@ and self-service test deposits for test accounts.
   makes them land on us — verified live (`doInit`, `saveSettings.do`,
   `reloadBalance.do`, `announcements` all 200 on our origin). Spribe Aviator and
   Play'n GO Book of Dead load fully with our saldo in the HUD and a trusted click
-  places a bet. Still open: Pragmatic's splash parks at ~90% off-origin
-  (characterised, decision `0059`).
+  places a bet. **PRAGMATIC NOW BOOTS (session 5, decision `0062`).** `0059`'s
+  conclusion was wrong: the scene's component field values are not derived, they
+  are **encrypted**, and the decryption permutation is seeded by three environment
+  readings compared against an RSA-signed table the config carries — the user
+  agent, the clock and `location.hostname`. Off the publisher's origin the user
+  agent and the hostname can never match, so the permutation is rebuilt per call
+  and every field decrypts to garbage: the stage list arrives empty and the splash
+  never moves. The bundle captures those two readings into plain globals
+  (`_634`, `_4025`) once, at its own load, so a shim prepended to the bundle that
+  pins both (reading the signed values out of `Vars` at call time) restores it.
+  Proof: the loader goes `0/0/0/0` → `1/1/22/1` — the publisher's own numbers —
+  and Gates of Olympus renders, spins and runs its real UI on the live deploy.
 - **SPRIBE NOW SETTLES ON OUR BOOKS (session 4, decision `0060`).** The socket is
   not AMF — it is SmartFoxServer SFS2X **binary**, and its string keys are
   literal, so the account saldo reads straight out of a frame: a `newBalance`

@@ -524,12 +524,44 @@ UNITY_FIXES: tuple[tuple[str, str], ...] = (
 )
 
 
+# Pragmatic's importer decrypts every component's field values in place, with a
+# permutation keyed on the component's `wasabiCode` *and* on three readings of
+# its environment: the browser's user agent, the wall clock, and
+# `location.hostname`. Each is compared against an RSA-signed table the game
+# config carries (`sessionKeyV2`), and the permutation only comes out
+# deterministic when all three match. Served from any other origin two of the
+# three can never match, so the permutation is rebuilt differently per call and
+# every field decrypts to garbage: the stage list arrives empty, the loader
+# stops on its splash, and the only symptom is a `Cannot read properties of
+# undefined` from deep inside their deserializer (decisions 0059/0062).
+#
+# The check reads two plain globals the bundle captured at load — `_634` (the
+# user agent) and `_4025` (the hostname) — so pinning those to the signed values
+# restores the intended permutation. The values come out of the decrypted table
+# at read time (the deserializer writes it before it decrypts the first field),
+# so a publisher that changes them does not need a code change; the shipped
+# constants are only the fallback when that lookup is unavailable.
+_PP_SESSION_PIN = """(function(){var FALLBACK_UA='Mozilla/5.0 (Windows NT 10.0; \
+Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',\
+FALLBACK_HOST='demogamesfree.pragmaticplay.net';\
+function signed(name,fallback){try{var cfg=window.UHT_GAME_CONFIG_SRC,\
+sk=cfg&&cfg.sessionKeyV2;if(sk&&sk.length){var key=String(sk[0]).replace(\
+/[^0-9a-z-A-Z ]/g,''),raw=(window.Vars||{})[key];if(raw){var txt=\
+String.fromCharCode.apply(null,String(raw).split(',').map(Number)),\
+m=new RegExp('"'+name+'"\\\\s*:\\\\s*"([^"]*)"').exec(txt);if(m)return m[1];}}}\
+catch(e){}return fallback;}\
+function pin(name,get){try{Object.defineProperty(window,name,{configurable:true,\
+enumerable:true,get:get,set:function(){}});}catch(e){}}\
+pin('_634',function(){return signed('userAgent',FALLBACK_UA);});\
+pin('_4025',function(){return signed('serverHostname',FALLBACK_HOST);});})();\n"""
+
+
 def patch_unity_client(text: str) -> str:
     """Apply the Unity-client fixes to a Pragmatic Play bundle."""
     for old, new in UNITY_FIXES:
         if old in text:
             text = text.replace(old, new)
-    return _patch_animation_curves(text)
+    return _PP_SESSION_PIN + _patch_animation_curves(text)
 
 
 # Several animator components read `animationCurve.keys[...]`, and off the

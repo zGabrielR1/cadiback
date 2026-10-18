@@ -88,8 +88,17 @@
   `https://<publisher>/g/<id>/_abs/…`. Returning `location.host` lands them on us
   (verified live: `doInit`, `saveSettings.do`, `reloadBalance.do` → 200). Spribe
   Aviator and Play'n GO Book of Dead load fully with our saldo in the HUD and
-  take a real bet click. Open: Pragmatic's splash still parks off-origin
-  (characterised in decision 0059).
+  take a real bet click. **Pragmatic now boots too** (session 5, **decision
+  0062**): 0059's "obfuscated derived-field pass" reading was wrong — the scene's
+  component field values are *encrypted*, with the decryption permutation seeded
+  by three environment readings checked against an RSA-signed table the config
+  carries (user agent, clock, `location.hostname`). Off the publisher's origin
+  two of the three can never match, so every field decrypts to garbage and the
+  splash never moves. The bundle captures those two readings into plain globals
+  once, at its own load; a shim prepended to the bundle pins both (reading the
+  signed values out of `Vars` at call time) and the loader goes `0/0/0/0` →
+  `1/1/22/1`, the publisher's own numbers, with Gates of Olympus rendering and
+  spinning on the live deploy.
 - **Spribe's round now settles on our books** (session 4, **decision 0060**).
   Its socket is not AMF but SmartFoxServer SFS2X binary, and its string keys are
   literal, so the account saldo reads straight out of a frame: a `newBalance`

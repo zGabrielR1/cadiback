@@ -227,8 +227,10 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
       per-match stats and prices the count lines (below).
 - [x] 5 providers — live harness wired 22/22 sampled games (evolution launcher 502); **browser pass done**: Pragmatic's server-call host fixed and verified
       live, Spribe + Play'n GO load fully with our saldo, and **Spribe now
-      settles our ledger** (SFS2X socket tap, decision 0060, verified live below).
-      Remaining: Pragmatic's splash still parks off-origin (0059).
+      settles our ledger** (SFS2X socket tap, decision 0060, verified live below),
+      and **Pragmatic now boots** — its splash was its own deserializer refusing
+      to decrypt off-origin (RSA-signed session table; decision 0062, verified
+      live below).
 - [x] 6 wheel — exactly 97% RTP; tests (`WheelTest`), cover, SVG panel; **live**: the catalog lists `demo:roda-da-sorte`.
 - [x] 7 test deposits — code + tests (`TestDepositTest`); **verified live** (below).
 
@@ -282,6 +284,34 @@ it is what makes a local reproduction possible). Gates: `frame.selftest` 50/50 �
 `demo.test_demo` 357 tests, only the 6 pre-existing `sqlalchemy` errors ·
 `verify.py` 0 problems.
 
+**Update, session 5 (2026-10-18) — both open items close.** Two things were still
+open at the end of session 4: the scorer market (item 4) and Pragmatic's splash
+(item 5). Both are now shipped and verified live.
+
+- **Scorer market (item 4, decision 0061).** `scorer-h`/`scorer-a`, one list per
+  side, in-play soccer only, top four distinct names, priced per leg off the
+  lineup slots (no renormalisation — the legs are not an exhaustive partition)
+  and settled from the incidents feed's non-own goals. Live: 19 + 19 markets on
+  the board, with the role gap visible (`Estudiantes L.P.` at 45' → `Correa J.
+  @3.63`, `Alario L. @3.50`, then `Monsalve M. @9.43`, `Kociubinski B. @9.33`).
+
+- **Pragmatic boots (item 5, decision 0062).** 0059's conclusion was wrong: the
+  scene's component field values are **encrypted**, not derived, and the
+  decryption permutation is seeded by three environment readings compared against
+  an RSA-signed table (`UHT_GAME_CONFIG_SRC.sessionKeyV2` → `Vars[…]`) — the user
+  agent, the clock, and `location.hostname`. Off the publisher's origin the user
+  agent and the hostname can never match, so the permutation is rebuilt per call
+  and every field decrypts to garbage; that is why the stage list arrived empty
+  and the splash never moved. The bundle captures those two readings into plain
+  globals (`_634`, `_4025`) *once, at its own load*, so a shim prepended to the
+  bundle that pins both (reading the signed values out of `Vars` at call time)
+  restores it. Proof: the loader goes `0/0/0/0` → **`1/1/22/1`**, byte-identical
+  to the publisher's own page, `allObjects` lands on the publisher's 843, and
+  **Gates of Olympus renders, spins and runs its real UI on the live deploy**.
+
+**Gates (session 5):** `frame.selftest` 50/50 · `demo.test_demo` **368** tests
+with only the 6 pre-existing `sqlalchemy` errors.
+
 **Update, session 4 (2026-10-18).** The session-3 hypothesis about Pragmatic's
 stall was **wrong in both halves** and is corrected. It is not that
 `listOfStages` "deserializes empty off-origin": `listOfStages: []` is what the
@@ -319,12 +349,12 @@ Gates (session 4): `frame.selftest` 50/50 ·
 **Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` still
 holds only the customer id. Everything else that waited on the owner is now
 done: the NOWPayments key + IPN secret are in and live, and no dashboard IPN
-step is needed (the invoice carries `ipn_callback_url`). One provider item stays
-open and is code, not credentials:
+step is needed (the invoice carries `ipn_callback_url`). The one provider item
+that was open at session 4 is now closed too:
 
-- **Pragmatic's client still parks on the splash** (see the session-4 update
-  above and decision 0059). The wallet side is done and proven:
-  `/api/wallet/status` answers, the saldo is painted in the HUD over the splash,
-  and `gameService`/`saveSettings.do`/`reloadBalance.do`/`announcements` all
-  answer 200 on our host. What is missing is the publisher's own scene
-  activation, not our money path.
+- **Nothing.** The last open provider item — Pragmatic's client parking on its
+  splash — is fixed and live (session-5 update above, decision 0062). The wallet
+  side was never the problem: `/api/wallet/status` answered, the saldo painted in
+  the HUD over the splash, and `gameService`/`saveSettings.do`/`reloadBalance.do`/
+  `announcements` all answered 200 on our host. What was missing was the
+  publisher's own scene activation, which their signed session table gates.
