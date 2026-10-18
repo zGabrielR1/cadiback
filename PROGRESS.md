@@ -40,6 +40,14 @@
   `BR-DEMO-0011`. Test: `WheelTest` (7).
 - Suites: frame 50/50; demo 354 tests with only the 6 pre-existing `sqlalchemy`
   (Postgres seam) errors; `verify.py` 0 problems; frontend `npm run build` OK.
+- **Deployed and live** (`2da35e9` → Render `cadiback`, `https://cadiback.onrender.com`).
+  Live checks: storefront 200; health `ok` with Asaas `configured (sandbox)` and
+  the crypto rail present-but-unconfigured; `/api/sports` 320 fixtures, 13
+  carrying per-match stats and pricing their count lines, 0 upstream errors;
+  `/api/catalog` lists `demo:roda-da-sorte`; a live admin pass created a test
+  account, credited a **test deposit (saldo moved to 5000)**, guarded the replay,
+  set `always_win`, and read `balance.available_minor` +
+  `balance.test_deposits_minor` back from `/api/admin/player`.
 
 ## DONE (2026-10-17 — Authgear social login + a real sports book, decisions 0054–0055)
 

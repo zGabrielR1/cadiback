@@ -55,8 +55,14 @@ and self-service test deposits for test accounts.
 - Suites: `frame` 50/50 · `demo` 354 tests with only the 6 pre-existing
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
   `npm run build` OK. Decision `0057`.
+- DEPLOYED: `2da35e9` pushed to `github.com/zGabrielR1/cadiback`; Render service
+  `cadiback` auto-built it — live at `https://cadiback.onrender.com`. Verified
+  against the deploy: health `ok` (Asaas `configured/sandbox`, crypto
+  present-but-unconfigured with 6 coins), `/api/sports` priced per-match count
+  lines from live stats, `/api/catalog` lists `demo:roda-da-sorte`, and an admin
+  pass moved a test account's saldo with a test deposit (and guarded the replay).
 - OPEN: Asaas prod keys + NOWPayments key/IPN (owner); a browser pass over the
-  deployed provider launchers; the deploy itself.
+  deployed provider launchers and the wheel/crypto UI.
 
 CURRENTTASK (previous): Authgear social login (Google/Facebook + CPF, decision 0054) and a
 better sports book (per-market overround, draw-no-bet + asian handicap,

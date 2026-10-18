@@ -159,20 +159,41 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
 
 - [x] Decision logged; prior-run leftovers triaged.
 - [x] 1 crypto — code + tests (`CryptoTest`, `CryptoDepositTest`); live half awaits NOWPayments keys.
-- [x] 2 behaviour — code + tests (`BehaviourTest`); live verify at deploy.
-- [ ] 3 asaas — **plumbing fixed** (env-file resolution in `render_deploy.py`); production awaits the owner's keys.
-- [x] 4 sports — stats engine + in-play cards/corners/fouls markets + settle + SVG icons + stats panel; tests (`MatchStatsTest`).
+- [x] 2 behaviour — code + tests (`BehaviourTest`); **verified live** (below).
+- [ ] 3 asaas — **plumbing fixed** (env-file resolution in `render_deploy.py`) and
+      carried to the live service (health reports `asaas: configured / sandbox`);
+      production awaits the owner's prod keys.
+- [x] 4 sports — stats engine + in-play cards/corners/fouls markets + settle + SVG icons + stats panel; tests (`MatchStatsTest`); **live**: the board carries
+      per-match stats and prices the count lines (below).
 - [x] 5 providers — live harness wired 22/22 sampled games (evolution launcher 502); browser hop is the deploy check.
-- [x] 6 wheel — exactly 97% RTP; tests (`WheelTest`), cover, SVG panel.
-- [x] 7 test deposits — code + tests (`TestDepositTest`).
+- [x] 6 wheel — exactly 97% RTP; tests (`WheelTest`), cover, SVG panel; **live**: the catalog lists `demo:roda-da-sorte`.
+- [x] 7 test deposits — code + tests (`TestDepositTest`); **verified live** (below).
 
 **Gates (this session):** `frame.selftest` 50/50 · `demo.test_demo` 354 tests
 with only the 6 pre-existing `sqlalchemy` (Postgres seam) errors · `verify.py`
 0 problems · frontend `npm run build` OK.
 
+**Deployed.** Pushed `2da35e9` to `github.com/zGabrielR1/cadiback` (`main`); the
+Render service `cadiback` (`autoDeploy: yes`) built it and it is **live** at
+`https://cadiback.onrender.com`.
+
+**Live verification against the deploy (2026-10-18):**
+
+| Check | Result |
+|-------|--------|
+| `GET /` storefront | 200, 14 KB |
+| `GET /api/health` | `ok`; `asaas: configured (sandbox)`; `crypto: not configured`, 6 coins listed |
+| `GET /api/sports` | 320 fixtures, 39 live, **13 carrying per-match stats**, count markets present (`cards` 12, `corners` 13, `fouls` 12), 0 upstream errors |
+| `GET /api/catalog` | 284 games incl. **`demo:roda-da-sorte`** |
+| `GET /api/admin/users` (no token) | 401 |
+| admin login → create test account | 200 |
+| `POST /api/admin/test-deposit {5000}` | 200, **`available_minor: 5000`** |
+| replay the same `deposit_id` | `replayed: true`, saldo unchanged (7000, not 9000) |
+| `POST /api/admin/set-behaviour {always_win}` | 200, `outcome_bias: always_win`, rate 100 |
+| `GET /api/admin/player` | `balance.available_minor` 7000, `balance.test_deposits_minor` 7000, `player.outcome_bias` `always_win` |
+
 **Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` is
 still blank but for the customer id; NOWPayments API key + IPN secret (§1 live);
-a browser pass over the deployed provider launchers (§5); and the **deploy**,
-which this session could not do because the tree is not a git checkout (there is
-no remote for `scripts/render_deploy.py` to name — `--url-only` still reports the
-service at `https://cadiback.onrender.com`). `--check` passes 10/10.
+and a **browser pass** over the deployed provider launchers and the wheel/crypto
+UI (§5 and §1's front half — a headless browser over CDP, `scripts/capture_session.mjs`,
+is the tool).
