@@ -122,17 +122,19 @@ the time left (`pricing.count_over`), with the line moving on the book's own .5
 grid as the tally grows**. They are offered **only in-play**, because only then
 does the fixture carry the stats that settle them; `settlement.resolve` decides
 them from the final match stats and returns *pending* (never a guess) when the
-feed is missing. Scorer props are plumbed but **not offered**, and the reason
-first given here was wrong. It is not that the roster feed is empty:
-re-measured on 2026-10-18, `df_li_1_<id>` answers with the full starting XI for
-both sides — formation (`LD`), player name (`LI`), player id (`LP`) and position
-(`LPG`) — 11–13 KB per match, with only the occasional fixture returning nothing
-(one of five sampled). The remaining work is the market, not the data: an
-anytime-scorer line (a few selections per side, won when the incidents feed
-carries `IK=Goal` for that player's `IM`) priced from the side's
-remaining-goal rate — the same shape as `count_over`. It stays unoffered until
-that is built, tested and settled from the incidents feed, rather than quoted on
-an invented number.
+feed is missing.
+
+**The anytime-scorer market is now built too** (decision 0061): one list per
+side, priced from the side's *remaining* goals shared among the starting XI by
+role, offered in-play only and suspended near the whistle, and settled from the
+incidents feed's non-own goals. The lineups feed `df_li_1_<id>` answers with the
+full starting XI for both sides — formation (`LD`), name (`LI`), id (`LP`),
+shirt (`LJ`), **lineup slot (`LL`)** and the publisher's own `Goalkeeper`/`(G)`
+marker — 11–13 KB per match, with the occasional fixture returning nothing. The
+trap this decision records is that the feed lists a team **alphabetically**, so
+the slot, not the feed order, is what fixes a player's role. The corrected note
+about the earlier reasoning: `LPG` is not a position (it is `men`), and the
+earlier "scorer props stay unoffered" line is superseded by 0061.
 
 The sport tabs get inline **SVG** icons (no emoji, no two-letter glyphs), a
 stats panel (possession/shots/corners/cards bars) inside the "mais mercados"
@@ -206,7 +208,7 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
 | 1 | Crypto | NOWPayments charge → address/QR → provider-confirmed → wallet credited once | deferred until keys |
 | 2 | Behaviour | forcing win/lose and a win-rate moves the wallet; painel shows saldo | deploy |
 | 3 | Asaas | prod keys → real Pix credits once via webhook | deferred until keys |
-| 4 | Sports | cards/faltas/totals markets render, price and settle; SVG icons | deploy |
+| 4 | Sports | cards/faltas/totals/scorer markets render, price and settle; SVG icons | deploy |
 | 5 | Providers | each provider's live harness moves our saldo | deploy |
 | 6 | Wheel | RTP exactly 97%, playable, settles | deploy |
 | 7 | Test deposits | a test account funds itself and the wallet moves | deploy |

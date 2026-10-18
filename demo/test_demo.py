@@ -1720,9 +1720,43 @@ INCIDENT_FEED = ("AC\u00f71st Half\u00acIG\u00f70\u00acIH\u00f72\u00ac"
                  "IF\u00f7Juan M.\u00acIK\u00f7Yellow Card\u00acIM\u00f7def\u00ac")
 
 
+def _lineup_feed() -> str:
+    """A `df_li_1_` feed shaped like the real one: a header entity that also
+    carries `LC÷1`, the home XI, the `LC÷2` side switch, the away XI, then the
+    substitutes and coaches sections that must not become a scorer list.
+
+    The real feed lists a team alphabetically, so the home XI here is emitted in
+    reverse slot order with its `LL` slots and the away XI in feed order with no
+    slots at all — the sort and its fallback, one per side.
+    """
+    def player(prefix: str, i: int, slot: str) -> str:
+        return (f"~LH\u00f7{i}\u00ac" + (f"LL\u00f7{slot}\u00ac" if slot else "")
+                + f"LP\u00f7{prefix}{i}\u00acLI\u00f7{prefix.title()} {i}\u00ac"
+                "LPG\u00f7men\u00ac")
+
+    def xi(prefix: str, slots: bool) -> str:
+        order = list(reversed(range(11))) if slots else list(range(11))
+        return "".join(player(prefix, i, str(i + 1) if slots else "")
+                       for i in order)
+
+    return ("LA\u00f7Formation\u00acLB\u00f7Starting Lineups\u00acLGT\u00f71\u00ac"
+            "LGK\u00f71\u00acLC\u00f71\u00ac~LRH\u00f77.1\u00acLD\u00f71-4-3-3\u00ac"
+            + xi("h", True)
+            + "~LC\u00f72\u00ac~LRH\u00f76.2\u00acLD\u00f71-4-4-2\u00ac"
+            + xi("a", False)
+            + "~LB\u00f7Substitutes\u00acLGT\u00f71\u00acLGK\u00f72\u00ac"
+            "LC\u00f71\u00ac~LH\u00f711\u00acLP\u00f7sub0\u00acLI\u00f7Sub 0\u00ac"
+            + "~LB\u00f7Coaches\u00acLGT\u00f74\u00acLC\u00f71\u00ac"
+            "~LH\u00f70\u00acLP\u00f7coach0\u00acLI\u00f7Coach H.\u00ac")
+
+
+LINEUP_FEED = _lineup_feed()
+
+
 class MatchStatsTest(unittest.TestCase):
-    """The per-match stats/incidents feeds: what the stats panel shows and
-    what the counting markets settle against. Deterministic, no network."""
+    """The per-match stats/incidents/lineups feeds: what the stats panel shows
+    and what the counting and scorer markets settle against. Deterministic, no
+    network."""
 
     def test_parse_stats_reads_sections_and_maps_names(self):
         from frame.verticals.sports import stats_engine as SE
@@ -1842,6 +1876,192 @@ class MatchStatsTest(unittest.TestCase):
         kinds = {m.kind for m in engine.markets(fix.key)}
         self.assertIn("corners", kinds)
         self.assertIn("cards", kinds)
+
+    def test_parse_lineups_reads_both_elevens_and_their_roles(self):
+        from frame.verticals.sports import stats_engine as SE
+        lx = SE.parse_lineups(LINEUP_FEED)
+        self.assertEqual(len(lx["home"]), 11)
+        self.assertEqual(len(lx["away"]), 11)
+        # the feed lists the home XI backwards; the slot sorts it into playing
+        # order, so the keeper is first whatever order the feed used
+        self.assertEqual([p["name"] for p in lx["home"]][0], "H 0")
+        self.assertEqual([p["slot"] for p in lx["home"]],
+                         [str(i + 1) for i in range(11)])
+        # the formation is read as line lengths, keeper first
+        self.assertEqual([p["role"] for p in lx["home"]],
+                         ["GK"] + ["DEF"] * 4 + ["MID"] * 3 + ["FWD"] * 3)
+        # the away XI ships no slots, so the feed order is what shapes it
+        self.assertEqual([p["name"] for p in lx["away"]][0], "A 0")
+        self.assertEqual([p["role"] for p in lx["away"]],
+                         ["GK"] + ["DEF"] * 4 + ["MID"] * 4 + ["FWD"] * 2)
+        # a substitute is not part of the XI, and neither is a coach
+        names = [p["name"] for p in lx["home"] + lx["away"]]
+        self.assertNotIn("Sub 0", names)
+        self.assertNotIn("Coach H.", names)
+        self.assertEqual(SE.parse_lineups(""), {"home": [], "away": []})
+
+    def test_engine_reads_the_lineups_feed_on_its_own(self):
+        import os
+        from frame.verticals.sports import stats_engine as SE
+
+        def fetch(url):
+            return LINEUP_FEED if SE.LINEUPS_KIND in url else STATS_FEED
+
+        engine = SE.MatchStatsEngine(
+            cache_path=os.path.join(tempfile.mkdtemp(), "stats.json"),
+            fetcher=fetch)
+        self.assertEqual(len(engine.lineups("m1")["home"]), 11)
+        # `fresh` tells a readable feed apart from an unread or stale one,
+        # which is what keeps a scorer leg pending instead of settling it lost
+        self.assertTrue(engine.fresh("m1", "lineups"))
+        self.assertFalse(engine.fresh("m1", "incidents"))
+
+    def test_marketboard_quotes_the_scorer_list_only_with_a_roster(self):
+        from frame.verticals.sports import stats_engine as SE
+        from frame.verticals.sports.marketboard import quote_markets
+        roster = SE.parse_lineups(LINEUP_FEED)
+        kwargs = dict(live=True, minute=55, home_score=1, away_score=0)
+        pre = {m.kind for m in quote_markets("x", "soccer", "A", "B",
+                                             roster=roster)}
+        self.assertNotIn("scorer-h", pre)              # in-play only
+        live = {m.kind: m for m in quote_markets("x", "soccer", "A", "B",
+                                                 roster=roster, **kwargs)}
+        for kind in ("scorer-h", "scorer-a"):
+            self.assertIn(kind, live, kind)
+            self.assertTrue(2 <= len(live[kind].selections) <= 4, kind)
+            self.assertTrue(all(p > 1.01 for p in live[kind].prices), kind)
+        # the forwards are the likeliest, so the keeper never makes the list
+        self.assertNotIn("H 0", live["scorer-h"].selections)
+        self.assertNotIn("A 0", live["scorer-a"].selections)
+        # no roster behind the list: not offered, because it could not settle
+        without = {m.kind for m in quote_markets("x", "soccer", "A", "B",
+                                                 **kwargs)}
+        self.assertNotIn("scorer-h", without)
+        # with the clock all but gone the list is suspended, not quoted at
+        # three hundred
+        late = {m.kind for m in quote_markets("x", "soccer", "A", "B",
+                                              roster=roster, live=True,
+                                              minute=90, home_score=1,
+                                              away_score=0)}
+        self.assertNotIn("scorer-h", late)
+
+    def test_a_scorer_list_settles_on_who_actually_scored(self):
+        from frame.verticals.sports.settlement import resolve
+        scorers = {"home": ["H 9"], "away": ["A 3"]}
+        self.assertEqual(resolve("scorer-h", "H 9", "A", "B", 1, 0,
+                                 scorers=scorers), "won")
+        self.assertEqual(resolve("scorer-h", "H 8", "A", "B", 1, 0,
+                                 scorers=scorers), "lost")
+        self.assertEqual(resolve("scorer-a", "A 3", "A", "B", 1, 0,
+                                 scorers=scorers), "won")
+        # a name on the other side's list is still scored by the other side
+        self.assertEqual(resolve("scorer-a", "H 9", "A", "B", 1, 0,
+                                 scorers=scorers), "lost")
+        # a goalless final loses every leg: an empty list is a real answer
+        self.assertEqual(resolve("scorer-h", "H 9", "A", "B", 0, 0,
+                                 scorers={"home": [], "away": []}), "lost")
+        # the feed was never read: pending, never an invented verdict
+        self.assertIsNone(resolve("scorer-h", "H 9", "A", "B", 1, 0))
+        self.assertIsNone(resolve("scorer-h", "H 9", "A", "B", 1, 0,
+                                  scorers=[]))
+
+    def test_a_live_soccer_fixture_carries_its_scorer_list(self):
+        import os
+        import time as _time
+        from frame.verticals.sports.flashscore_engine import (
+            FlashscoreSportsEngine)
+        from frame.verticals.sports import stats_engine as SE
+        kickoff = int(_time.time()) - 55 * 60   # 55 minutes into the match
+        board = ("SA\u00f71\u00ac~ZA\u00f7BRAZIL: Serie A\u00ac"
+                 "ZY\u00f7Brazil\u00ac~AA\u00f7m1\u00ac"
+                 f"AD\u00f7{kickoff}\u00ac"
+                 "AB\u00f72\u00acAE\u00f7Flamengo\u00acAF\u00f7Santos\u00ac"
+                 "AG\u00f71\u00acAH\u00f70\u00ac")
+
+        def fetch(url):
+            if SE.LINEUPS_KIND in url:
+                return LINEUP_FEED
+            return STATS_FEED if SE.STATS_KIND in url else board
+
+        tmp = tempfile.mkdtemp()
+        engine = FlashscoreSportsEngine(
+            cache_path=os.path.join(tmp, "board.json"),
+            results_cache=os.path.join(tmp, "results.json"),
+            fetcher=fetch, sports={1: "soccer"})
+        engine.stats_engine = SE.MatchStatsEngine(
+            cache_path=os.path.join(tmp, "stats.json"), fetcher=fetch)
+        fix = engine.fixtures()[0]
+        kinds = {m.kind for m in engine.markets(fix.key)}
+        self.assertIn("scorer-h", kinds)
+        self.assertIn("scorer-a", kinds)
+
+
+# one goal for each side, plus an own goal that belongs to neither scorer's list
+GOAL_FEED = ("AC\u00f71st Half\u00ac~III\u00f7x\u00acIA\u00f71\u00acIB\u00f712'\u00ac"
+             "IF\u00f7Home 9\u00acIK\u00f7Goal\u00acIM\u00f7h9\u00ac"
+             "~III\u00f7y\u00acIA\u00f72\u00acIB\u00f720'\u00ac"
+             "IF\u00f7Away 3\u00acIK\u00f7Goal\u00acIM\u00f7a3\u00ac"
+             "~III\u00f7z\u00acIA\u00f72\u00acIB\u00f731'\u00ac"
+             "IF\u00f7Home 4\u00acIK\u00f7Own Goal\u00acIM\u00f7h4\u00ac")
+
+
+class ScorerSettleTest(unittest.TestCase):
+    """The server half of the scorer market: the incidents feed is read for the
+    finished fixture, an own goal is nobody's, and an unread feed leaves the
+    leg pending instead of settling it lost."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+
+    def _engine(self, raw: str):
+        from frame.verticals.sports import stats_engine as SE
+        return SE.MatchStatsEngine(
+            cache_path=os.path.join(self.tmp, "stats.json"),
+            fetcher=lambda url: raw)
+
+    def _broken_engine(self):
+        from frame.verticals.sports import stats_engine as SE
+
+        def broken(url):
+            raise RuntimeError("feed down")
+
+        return SE.MatchStatsEngine(
+            cache_path=os.path.join(self.tmp, "stats.json"), fetcher=broken)
+
+    def _index(self):
+        return {"fs:m1": {"key": "fs:m1", "status": "STATUS_FINAL",
+                          "home": "Casa", "away": "Fora",
+                          "home_score": 1, "away_score": 1}}
+
+    def test_scorers_are_split_by_side_and_own_goals_are_nobody(self):
+        self.demo._scorers_engine = self._engine(GOAL_FEED)
+        self.assertEqual(self.demo._scorers_for("fs:m1"),
+                         {"home": ["Home 9"], "away": ["Away 3"]})
+
+    def test_a_scorer_leg_settles_on_the_real_scorers(self):
+        self.demo._scorers_engine = self._engine(GOAL_FEED)
+        won = [{"fixture_key": "fs:m1", "market_kind": "scorer-h",
+                "selection": "Home 9", "line": None}]
+        self.assertEqual(self.demo._settle_verdict(won, self._index())[0], "won")
+        lost = [{"fixture_key": "fs:m1", "market_kind": "scorer-h",
+                 "selection": "Home 4", "line": None}]
+        self.assertEqual(self.demo._settle_verdict(lost, self._index())[0],
+                         "lost")
+
+    def test_a_scorer_leg_stays_pending_without_the_incidents_feed(self):
+        self.demo._scorers_engine = self._broken_engine()
+        self.assertIsNone(self.demo._scorers_for("fs:m1"))
+        self.assertIsNone(self.demo._scorers_for(""))
+        legs = [{"fixture_key": "fs:m1", "market_kind": "scorer-h",
+                 "selection": "Home 9", "line": None}]
+        self.assertEqual(self.demo._settle_verdict(legs, self._index()),
+                         ("", ""))
+        # and a non-scorer market is untouched by the missing feed
+        other = [{"fixture_key": "fs:m1", "market_kind": "1x2",
+                  "selection": "Empate", "line": None}]
+        self.assertEqual(self.demo._settle_verdict(other, self._index())[0],
+                         "won")
 
 
 def _forced_bet_id(prefix: str, fixture: str, selection: str, price: float,

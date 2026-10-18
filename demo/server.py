@@ -621,6 +621,10 @@ class Demo:
         # rounds in flight, keyed by (provider, RGS session id)
         self.rgs_rounds: dict[tuple[str, str], dict] = {}
         self.orphan_rounds: list[dict] = []
+        # the anytime-scorer market's settlement feed: the per-match incidents
+        # are read lazily, and only for a final fixture whose scorer leg is
+        # being settled
+        self._scorers_engine = None
         # crash "live" rounds in flight, keyed by the public token: the
         # secret draw seed (round_id) and the secret bust are held server
         # side and only revealed when the round settles
@@ -2399,6 +2403,37 @@ class Demo:
         except Exception:
             return {}
 
+    def _scorers_for(self, fixture_key: object) -> dict | None:
+        """Who scored in a finished fixture, `{"home": [...], "away": [...]}`.
+
+        Read from the incidents feed (non-own goals only — an own goal is not
+        the player's own) and `None` when that feed was never read for the
+        match, so a scorer leg stays *pending* rather than settling lost on a
+        gap. An empty pair of lists is a real answer: a goalless final.
+        """
+        from frame.verticals.sports.stats_engine import MatchStatsEngine
+        match_id = str(fixture_key or "")
+        if match_id.startswith("fs:"):
+            match_id = match_id[3:]
+        if not match_id:
+            return None
+        try:
+            if self._scorers_engine is None:
+                self._scorers_engine = MatchStatsEngine()
+            events = self._scorers_engine.incidents(match_id)
+            # an empty list is a real answer (a goalless final); a feed that
+            # could not be refreshed is not — stay pending rather than settle
+            # a scorer leg on a snapshot taken before a late goal
+            if not self._scorers_engine.fresh(match_id, "incidents"):
+                return None
+        except Exception:
+            return None
+        out: dict[str, list[str]] = {"home": [], "away": []}
+        for event in events:
+            if event.get("is_goal") and event.get("side") in out:
+                out[event["side"]].append(event.get("player"))
+        return out
+
     def _settle_verdict(self, legs: list[dict], index: dict) -> tuple[str, str]:
         """(verdict, note) from the real results, or ("", "") while any leg
         is undetermined — never guessed."""
@@ -2413,9 +2448,15 @@ class Demo:
             hs, as_ = fix.get("home_score"), fix.get("away_score")
             if "FINAL" not in status or hs is None or as_ is None:
                 return "", ""
+            scorers = None
+            if str(leg.get("market_kind") or "").lower() in ("scorer-h", "scorer-a"):
+                scorers = self._scorers_for(leg.get("fixture_key"))
+                if scorers is None:
+                    return "", ""  # feed unread: stay pending, never guess
             verdict = resolve(leg.get("market_kind"), leg.get("selection"),
                               fix.get("home"), fix.get("away"), hs, as_,
-                              leg.get("line"), stats=fix.get("stats"))
+                              leg.get("line"), stats=fix.get("stats"),
+                              scorers=scorers)
             if verdict is None:
                 return "", ""
             notes.append(f"{fix.get('home')} {hs}:{as_} {fix.get('away')}"

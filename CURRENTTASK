@@ -36,19 +36,22 @@ and self-service test deposits for test accounts.
   among `.env.asaas` / `.env.asaasprod` / `.env.asaas.sandbox` (so a half-filled
   prod file cannot pair a prod customer with a sandbox key) and carries the
   crypto settings too. Production flip awaits the owner's prod keys.
-- **SPORTS: A STATS FEED AND HONEST COUNT MARKETS (0057 §4).** New
-  `frame/verticals/sports/stats_engine.py` reads `df_st_1_<id>` (possession,
-  shots, corners, cards, fouls) and `df_sui_1_<id>` (scorers), cached and
-  budgeted. The board adds **in-play cards/corners/fouls over/under** markets
-  (`pricing.count_over`, the line moving on the .5 grid) and
-  `settlement.resolve` decides them from the final stats — pending, never a
-  guess, without them. Scorer props stay unoffered — but **not** for lack of a
-  roster: re-measured 2026-10-18, `df_li_1_<id>` returns the full starting XI
-  for both sides, so the remaining work is the market (pricing + settling from
-  the incidents feed), not the data.
+- **SPORTS: A STATS FEED, COUNT MARKETS, AND THE SCORER LIST (0057 §4, 0061).**
+  New `frame/verticals/sports/stats_engine.py` reads `df_st_1_<id>` (possession,
+  shots, corners, cards, fouls), `df_sui_1_<id>` (scorers) and `df_li_1_<id>`
+  (the two starting XIs), cached and budgeted. The board adds **in-play
+  cards/corners/fouls over/under** markets (`pricing.count_over`, the line
+  moving on the .5 grid) plus the **anytime-scorer list** — one per side, priced
+  from the side's remaining goals shared among the XI by role, suspended near
+  the whistle, and settled from the incidents feed's non-own goals.
+  `settlement.resolve` decides both from the final feeds — pending, never a
+  guess, without them. The lineups feed lists a team **alphabetically**, so the
+  `LL` lineup slot (not the feed order) is what fixes a player's role; the
+  feed's own `LS÷Goalkeeper`/`LR÷(G)` marker agreed with our slot-1 keeper on
+  13/13 sides that carried one.
   Sport tabs now use inline **SVG** icons (no emoji/glyphs), a stats panel shows
   inside the "mais mercados" drawer, and tabs/selections/odds were enlarged.
-  `MatchStatsTest` (7).
+  `MatchStatsTest` (12), `ScorerSettleTest` (3).
 - **PROVIDERS RE-VERIFIED LIVE (0057 §5).** New `scripts/live_providers.py`
   funds a player, opens a wallet session per game, fetches the launcher and asks
   what the old byte-count sweep never did: does **our** wallet answer and debit?
@@ -106,9 +109,23 @@ and self-service test deposits for test accounts.
 - **RODA DA SORTE IS 97% BY CONSTRUCTION (0057 §6).** 100 equal sectors whose
   ladder sums to 97 (the prior ladder was 137%); animated SVG `WheelPanel`,
   cover, cert `BR-DEMO-0011`. `WheelTest` (7).
-- Suites: `frame` 50/50 · `demo` 358 tests with only the 6 pre-existing
+- **THE SCORER MARKET IS BUILT (session 5, decision `0061`).** The held-back
+  "player X scores" market ships: `stats_engine.parse_lineups` reads both
+  elevens from `df_li_1_<id>`, `pricing.scorer_probs`/`price_independent` price
+  a per-side list from the side's *remaining* goals shared among the XI by role,
+  `marketboard` quotes `scorer-h`/`scorer-a` in-play only (both elevens
+  required, suspended below `MIN_SCORER_LAMBDA`), and `settlement.resolve` +
+  `Demo._scorers_for` settle them on the incidents feed's non-own goals —
+  staying **pending** when that feed could not be refreshed, because an empty
+  list is a real answer and a stale one is a lie. The trap: the feed lists a
+  team **alphabetically**, so the `LL` lineup slot, not the feed order, is what
+  fixes a role (the feed's own `LS÷Goalkeeper`/`LR÷(G)` marker agreed with our
+  slot-1 keeper 13/13). Live board: `Estudiantes L.P. 1:0 San Lorenzo (34') →
+  Sosa J. @2.67, Iacovich F. @6.76 …` — the forward/midfielder gap the role
+  split is supposed to make. `MatchStatsTest` (12), `ScorerSettleTest` (3).
+- Suites: `frame` 50/50 · `demo` 366 tests with only the 6 pre-existing
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
-  `npm run build` OK. Decisions `0057`, `0058`, `0059`, `0060`.
+  `npm run build` OK. Decisions `0057`, `0058`, `0059`, `0060`, `0061`.
 - DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
   per-invoice IPN URL) → `167acef` (Pragmatic host fix) → `f42c05b` (serve the
   client bundle through us, 0058) → `21826e4` → `97c0fb1` (0059 forensics +

@@ -16,6 +16,12 @@ are priced by `pricing` with the same exact-overround rule as the rest of the
 book. When a fixture is live the result market is tilted by the running score
 through `pricing.inplay_probs`, so a 2-0 lead shortens the leader instead of
 leaving the pre-match price untouched.
+
+Soccer adds the **anytime scorer** list once the lineups feed has given us both
+elevens: one market per side, priced from the goals that side has left in it
+(`pricing.scorer_probs`) and settled on the incidents feed's actual scorers.
+The list is a handful of the likeliest starters, not the whole XI — a row a
+bettor reads, not a data dump.
 """
 
 from __future__ import annotations
@@ -27,6 +33,14 @@ from .contract import Market
 from . import pricing as P
 
 SOCCER_TOTAL_LINE = 2.5
+# the anytime-scorer list: how many starters one side shows. Enough to be a
+# real market, few enough that a board row stays readable.
+SCORER_LIST = 4
+# the least expected remaining goals a side needs for its scorer list to be
+# worth quoting. With the clock all but gone the model's chances collapse to
+# nothing and a "list" of ~300.00 prices is noise, so the market is suspended
+# near the whistle exactly as a real board suspends it.
+MIN_SCORER_LAMBDA = 0.2
 
 # sports whose rules can end tied: three-way result (1 X 2)
 DRAW_SPORTS = {"soccer", "futsal", "handball", "hockey", "rugby", "football"}
@@ -83,7 +97,8 @@ def _half_line(line: float) -> tuple[float, float]:
 def quote_markets(fixture_key: str, sport: str, home: str, away: str,
                   live: bool = False, minute: float = 0.0,
                   bucket: int | None = None, home_score: int | None = None,
-                  away_score: int | None = None, stats: dict | None = None) -> list[Market]:
+                  away_score: int | None = None, stats: dict | None = None,
+                  roster: dict | None = None) -> list[Market]:
     """The book for one fixture. Deterministic per 30s bucket; a live fixture
     adds the minute-scaled drift and tilts the result market by the score.
 
@@ -92,6 +107,10 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
     over/under line, priced from the count so far and the time left; without it
     the market is simply not offered — a count with no feed behind it cannot be
     settled, so it must not be quoted.
+
+    `roster` is the two starting XIs (`stats_engine.parse_lineups`). With it the
+    board adds the anytime-scorer lists; without it they are simply not offered,
+    for the same reason: no roster, no settlement.
     """
     if bucket is None:
         bucket = int(time.time()) // 30
@@ -129,6 +148,51 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
 
     def match_section():
         return (stats or {}).get("match") or stats or {}
+
+    def scorer_lines():
+        """The anytime-scorer lists for the two sides, in-play only.
+
+        Priced from the goals each side has *left* in it — the strength model's
+        full-match rate scaled by the clock — shared among the XI by role. So
+        the list shortens as the clock runs and shortens for the weaker side,
+        and is suspended once a side has too little of the match left to have a
+        list worth quoting. Offered only with both elevens in hand: a scorer
+        list we could not settle from the incidents feed is not a market we may
+        quote.
+        """
+        if not live or not isinstance(roster, dict):
+            return []
+        frac = max(0.0, min(1.0, minute / LIVE_CAP["soccer"]))
+        lam_h, lam_a = P.soccer_expected(home, away)
+        out = []
+        for side, kind, xi, full in (("home", "scorer-h", roster.get("home"), lam_h),
+                                     ("away", "scorer-a", roster.get("away"), lam_a)):
+            eleven = list(xi or [])
+            remaining = full * (1.0 - frac)
+            if len(eleven) < 2 or remaining < MIN_SCORER_LAMBDA:
+                continue
+            probs = P.scorer_probs(eleven, remaining)
+            picks: list[str] = []
+            quotes: list[float] = []
+            taken: set[str] = set()
+            for i in sorted(range(len(eleven)), key=lambda j: (-probs[j], j)):
+                name = str(eleven[i].get("name") or "").strip()
+                if not name or name.casefold() in taken:
+                    continue
+                taken.add(name.casefold())
+                picks.append(name)
+                quotes.append(probs[i])
+                if len(picks) >= SCORER_LIST:
+                    break
+            if len(picks) < 2:
+                continue
+            out.append(Market(
+                key=f"{fixture_key}:{kind}", fixture_key=fixture_key, kind=kind,
+                selections=tuple(picks),
+                prices=P.price_independent(fixture_key, kind, quotes,
+                                           margin=P.margin_for(sport, kind),
+                                           bucket=bucket, minute=minute)))
+        return out
 
     def result_extras(three):
         """dnb + ah derived from a (home, draw, away) result vector."""
@@ -170,6 +234,7 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
         extras.extend(result_extras(adj))
         extras.extend(count_lines(
             match_section(), minute / LIVE_CAP["soccer"] if live else 0.0))
+        extras.extend(scorer_lines())
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=SOCCER_TOTAL_LINE))
         return [result, totals[0], *extras]

@@ -131,6 +131,8 @@ const KIND_LABEL = {
   cards: "Cartões amarelos",
   corners: "Escanteios",
   fouls: "Faltas",
+  "scorer-h": "Marcador a qualquer momento · Casa",
+  "scorer-a": "Marcador a qualquer momento · Fora",
 };
 
 // The stats panel rows, in the order a real match screen prints them. Each is

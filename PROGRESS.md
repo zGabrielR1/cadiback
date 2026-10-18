@@ -1,5 +1,44 @@
 # PROGRESS
 
+## DONE (2026-10-18 — the anytime-scorer market, decision 0061)
+
+- **"PLAYER X SCORES" SHIPS.** Item 4 of 0057 held this market back for want of
+  two feeds; both are now read. `stats_engine.parse_lineups` turns
+  `df_li_1_<id>` into both starting elevens, `pricing.scorer_probs` +
+  `price_independent` price one list per side from that side's **remaining**
+  goals shared among the XI by role, and `settlement.resolve` decides it on the
+  incidents feed's **non-own** goals. Kinds `scorer-h`/`scorer-a`, in-play
+  soccer only, the four likeliest distinct names per side.
+- **The trap was the feed's order.** Flashscore lists a team **alphabetically**
+  by surname, so a player's position in the feed says nothing about his position
+  on the pitch; `Anderson M., Duke B., Duran R., Gray H.` under a `1-4-3-3`
+  reads like a formation order and is not. The `LL` lineup slot (1 = keeper)
+  orders the XI and the formation splits it into roles, and where the feed
+  carries its own `LS÷Goalkeeper` / `LR÷(G)` marker our slot-1 keeper was that
+  keeper **13/13** sides.
+- **A missing feed stays pending; a stale one must not settle a late goal.**
+  `Demo._scorers_for` requires the incidents read to be *fresh*
+  (`MatchStatsEngine.fresh`), because an empty list is a real answer (a goalless
+  final) and a snapshot from before a late goal is a lie. The engine's budget
+  rises 24 → 36 per window, since a live soccer fixture now costs it up to three
+  reads (stats, lineups, incidents).
+- **Suspension, like a real board.** `MIN_SCORER_LAMBDA = 0.2`: once a side has
+  too little of the match left, the list is suspended rather than quoting the
+  ~300.00 the collapsing model produces at 90+'. Live: `Estudiantes L.P. 1:0 San
+  Lorenzo (34') → Sosa J. @2.67, Iacovich F. @6.76, Kociubinski B. @6.75,
+  Monsalve M. @6.71` — the sole forward against four midfielders, which is the
+  role split doing its job.
+- Surface: `stats_engine` (`LINEUPS_KIND`, `parse_lineups`, `lineups`, `fresh`,
+  `_roles`), `pricing` (`SCORER_WEIGHT`, `soccer_expected`, `scorer_probs`,
+  `price_independent`), `marketboard` (`roster`, `scorer_lines`),
+  `flashscore_engine` (`_roster_for`), `settlement` (`SCORER_KINDS`, `scorers`),
+  `demo/server.py` (`_scorers_for`), `SportsHome.jsx` (two labels). Tests:
+  `MatchStatsTest` (12), `ScorerSettleTest` (3).
+- Suites: `frame` 50/50 · `demo` 366 with only the 6 pre-existing `sqlalchemy`
+  errors · `verify.py` 0 · export rebuilt. Decision `0061`.
+- Still open: the starting XI only (a substitute who scores wins nothing — the
+  list is over the eleven), and **Asaas prod keys** remain the one owner item.
+
 ## DONE (2026-10-18 — operator arc hardening: crypto, behaviour, sports stats, providers, wheel, test deposits, decision 0057)
 
 - **Cryptocurrency is a real rail** (NOWPayments, §1). New `demo/crypto.py`
@@ -35,9 +74,9 @@
   moving on the .5 grid) settle from the final stats — pending, never a guess,
   without them. Sport tabs use inline **SVG** icons (no emoji); a stats panel
   sits in the "mais mercados" drawer; tabs/selections/odds enlarged. Test:
-  `MatchStatsTest` (7). Scorer props remain unoffered — but not for lack of a
-  roster: `df_li_1_<id>` returns the full starting XI (re-measured 2026-10-18),
-  so the open work is the market, not the data.
+  `MatchStatsTest` (7). Scorer props were held back then — and the reason
+  recorded (an empty roster feed) was wrong: `df_li_1_<id>` returns the full
+  starting XI. The market itself now ships in decision `0061`.
 - **Providers re-verified live** (§5). New `scripts/live_providers.py` proves our
   wallet answers and debits; live 2026-10-18 wired **22/22** sampled games across
   hacksaw, pg_soft, pragmatic_play, play_n_go and spribe (evolution launcher

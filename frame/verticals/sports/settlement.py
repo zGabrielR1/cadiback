@@ -31,6 +31,9 @@ _UNDER = {"menos", "under", "baixo", "-"}
 # settled on (stats_engine). A count market with no stats behind it stays
 # undetermined (None), never a guess.
 COUNT_STATS = {"cards": "yellow_cards", "corners": "corners", "fouls": "fouls"}
+# The anytime-scorer kinds and whose XI they list (marketboard). A scorer leg
+# is decided by the incidents feed's actual scorers, not by the scoreline.
+SCORER_KINDS = {"scorer-h": "home", "scorer-a": "away"}
 
 
 def _count_total(kind: str, stats: object) -> int | None:
@@ -62,12 +65,15 @@ def _fragment(kind: object) -> str:
 
 def resolve(kind: object, selection: object, home: object, away: object,
             home_score: object, away_score: object,
-            line: object = None, stats: object = None) -> str | None:
+            line: object = None, stats: object = None,
+            scorers: object = None) -> str | None:
     """The verdict for one market against one real final score.
 
     A counting market (`cards`, `corners`, `fouls`) is decided by the final
-    match stats rather than the scoreline, so it needs `stats`; without it the
-    verdict is undetermined.
+    match stats rather than the scoreline, so it needs `stats`; an
+    anytime-scorer market is decided by who actually scored, so it needs
+    `scorers`. Without the feed it needs the verdict is undetermined — an empty
+    scorers list is a real answer (a goalless final), a missing one is not.
     """
     pick = _norm(selection)
     if not pick:
@@ -131,6 +137,16 @@ def resolve(kind: object, selection: object, home: object, away: object,
         if pick in _AWAY or pick == other:
             return "won" if edge < 0 else ("push" if edge == 0 else "lost")
         return None
+
+    if text in SCORER_KINDS:
+        # an anytime-scorer leg: won when the incidents feed has this player
+        # scoring, lost otherwise. A dict is the feed's answer even when it is
+        # empty (a goalless final loses every leg); None means we never read it
+        # and the leg stays pending.
+        if not isinstance(scorers, dict):
+            return None
+        names = {_norm(n) for n in (scorers.get(SCORER_KINDS[text]) or [])}
+        return "won" if pick in names else "lost"
 
     if text in COUNT_STATS:
         count = _count_total(text, stats)

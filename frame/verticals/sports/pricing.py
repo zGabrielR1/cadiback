@@ -39,12 +39,17 @@ SPORT_MARGIN = {
 }
 # Added on top of the sport's margin for the derivative kinds.
 KIND_MARGIN = {"dc": 0.02, "btts": 0.02, "total-h1": 0.01, "total-h2": 0.01,
-               "ah": 0.01, "dnb": 0.01}
+               "ah": 0.01, "dnb": 0.01, "scorer-h": 0.05, "scorer-a": 0.05}
 # The power `k`: >1 puts relatively more margin on the long side (a real book's
 # favourite–longshot bias). 1.0 is a flat multiplicative margin.
 KIND_BIAS = {"1x2": 1.12, "moneyline": 1.12, "total": 1.15, "total-h1": 1.0,
              "total-h2": 1.0, "dc": 1.0, "btts": 1.0, "dnb": 1.05, "ah": 1.1}
 DEFAULT_MARGIN = 0.055
+
+# How a side's goals are shared among its eleven, by role from the keeper out.
+# A forward is ~a hundred times likelier than the keeper to get one and ~ten
+# times likelier than a defender, which is the shape a real scorer list has.
+SCORER_WEIGHT = {"GK": 0.01, "DEF": 0.10, "MID": 0.35, "FWD": 1.00}
 
 
 def _hash(text: str) -> int:
@@ -98,6 +103,29 @@ def soccer_probs(home: str, away: str) -> tuple[float, float, float]:
 
 def _soccer_lambdas(sh: float, sa: float) -> tuple[float, float]:
     return 1.45 * (sh / sa), 1.20 * (sa / sh)
+
+
+def soccer_expected(home: str, away: str) -> tuple[float, float]:
+    """(home, away) expected full-match goals from the strength model."""
+    return _soccer_lambdas(team_strength(home), team_strength(away))
+
+
+def scorer_probs(players, lam: float) -> list[float]:
+    """P(each listed starter scores at least once) over what is left of the
+    match.
+
+    `lam` is the side's expected *remaining* goals; the caller scales the full
+    match's rate by the clock. Those goals are shared among the eleven by role
+    (`SCORER_WEIGHT`) and each player's chances are independent Poissons, so
+    ``P = 1 - e^{-share·λ}`` — monotone in the time left and in the role, and
+    never high enough to quote a certainty.
+    """
+    weights = [SCORER_WEIGHT.get(str(p.get("role") or "MID").upper(), 0.35)
+               for p in players]
+    total = sum(weights)
+    if total <= 0.0 or float(lam) <= 0.0:
+        return [0.0] * len(players)
+    return [1.0 - math.exp(-(w / total) * float(lam)) for w in weights]
 
 
 def match_probs(home: str, away: str, base: float) -> tuple[float, float, float]:
@@ -262,6 +290,29 @@ def price_market(fixture_key: str, kind: str, probs, *, margin: float,
 def overround(prices) -> float:
     """The book's margin: sum of implied probabilities minus one."""
     return sum(1.0 / float(p) for p in prices if float(p) > 0) - 1.0
+
+
+def price_independent(fixture_key: str, kind: str, probs, *, margin: float,
+                      bucket: int | None = None,
+                      minute: float = 0.0) -> tuple[float, ...]:
+    """Prices for *independent* selections — an anytime-scorer list.
+
+    `price_market` renormalizes, which is right when the selections are
+    exhaustive (a 1x2, an over/under: exactly one wins) and wrong for a list a
+    player can win alongside others, where the implied probabilities do not sum
+    to one. Here each leg carries its own margin, so the book holds `margin`
+    per leg — the shape a real scorer list is delivered in — and the prices
+    move on the same 30s wobble as the rest of the board.
+    """
+    if bucket is None:
+        bucket = int(time.time()) // 30
+    out = []
+    for i, prob in enumerate(probs):
+        quote = min(0.97, max(0.003, float(prob)))
+        quote *= 1.0 + 0.5 * drift(f"{fixture_key}:{kind}:{i}", bucket, minute)
+        implied = min(0.97, quote) * (1.0 + margin)
+        out.append(max(1.01, round(1.0 / implied, 2)))
+    return tuple(out)
 
 
 def handicap_two_way(p_home: float, p_away: float, hcap: float,

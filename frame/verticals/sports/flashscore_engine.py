@@ -282,6 +282,20 @@ class FlashscoreSportsEngine:
             return {}
         return self._stats_reader().match_stats(str(row["key"]))
 
+    def _roster_for(self, row: dict) -> dict:
+        """The two starting XIs for one fixture, or `{}`.
+
+        Only the live soccer board quotes an anytime-scorer list, so only those
+        fixtures are asked for lineups: a scheduled XI is published an hour out
+        but nothing on the board would price it, and the budget is better spent
+        on the matches that are actually running.
+        """
+        if row.get("status") != "IN_PROGRESS":
+            return {}
+        if str(row.get("sport") or "") != "soccer":
+            return {}
+        return self._stats_reader().lineups(str(row["key"]))
+
     def _row(self, fixture_key: str) -> dict | None:
         self._refresh()
         for row in self._events:
@@ -359,7 +373,8 @@ class FlashscoreSportsEngine:
                                 row["away"], live=live, minute=minute,
                                 home_score=row.get("home_score"),
                                 away_score=row.get("away_score"),
-                                stats=self._stats_for(row))
+                                stats=self._stats_for(row),
+                                roster=self._roster_for(row))
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

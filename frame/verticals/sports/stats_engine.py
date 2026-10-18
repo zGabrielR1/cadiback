@@ -6,12 +6,15 @@ who plays and the running score; these two feeds carry *what happened*:
     stats      df_st_1_<matchId>   possession, shots, corners, cards, fouls
     incidents  df_sui_1_<matchId>  goals, bookings and substitutions, with the
                                    player's name, id, side and minute
+    lineups    df_li_1_<matchId>   the two starting XIs, keeper first, with
+                                   each side's formation
 
-Both are keyless and share the fixtures feed's `x-fsign` header. They are read
-only to *describe* a live match (a stats panel) and to *settle* the count
-markets the board quotes (`cards`, `corners`, `fouls`) — never to invent a
-price. Cache-first and fail-open to the last good snapshot, like every other
-engine here: an unreachable feed costs nothing but freshness.
+All three are keyless and share the fixtures feed's `x-fsign` header. They are
+read only to *describe* a live match (a stats panel, a scorer list) and to
+*settle* the markets the board quotes (`cards`, `corners`, `fouls`, an
+anytime-scorer list) — never to invent a price. Cache-first and fail-open to
+the last good snapshot, like every other engine here: an unreachable feed costs
+nothing but freshness.
 
 The whole surface is stdlib and the transport is injectable, so the parsers are
 testable against the real field shapes without a network.
@@ -35,11 +38,13 @@ HEADERS = {"User-Agent": "Mozilla/5.0", "Accept": "*/*",
            "x-fsign": "SW9D1eZo", "Referer": "https://www.flashscore.com/"}
 STATS_KIND = "df_st_1_"
 INCIDENTS_KIND = "df_sui_1_"
+LINEUPS_KIND = "df_li_1_"
 TTL = 90
-# a stats read is one request per match, so a board of 160 fixtures cannot ask
-# for all of them: the engine spends a bounded budget per TTL window and then
-# serves cache-only until the window rolls
-DEFAULT_BUDGET = 24
+# a stats read is one request per match *per feed*, so a board of 160 fixtures
+# cannot ask for all of them: the engine spends a bounded budget per TTL window
+# and then serves cache-only until the window rolls. Three feeds per live
+# soccer match (stats, lineups, incidents) is why the budget is not tiny.
+DEFAULT_BUDGET = 36
 
 # Flashscore names a stat in `SG`; this maps the ones we show/quote. A stat we
 # do not map is still parsed (the caller can read it) but is not surfaced.
@@ -54,6 +59,8 @@ STAT_NAMES = {
     "fouls": "fouls",
 }
 SECTIONS = {"match": "match", "1st half": "h1", "2nd half": "h2"}
+# the lineups feed's team marker (`LC`): 1 is the home side, 2 the away side
+_LINEUP_SIDES = {"1": "home", "2": "away"}
 
 
 class StatsError(RuntimeError):
@@ -158,12 +165,86 @@ def parse_incidents(raw: str) -> list[dict]:
     return out
 
 
-# field name -> (feed kind, parser, empty value). The two feeds are fetched
+# the role a formation digit counts, from the goalkeeper out. A formation is
+# the line lengths in playing order ("1-4-3-3"), so its digits map straight
+# onto the lineup slots (1 = keeper), which is the order `parse_lineups`
+# returns an XI in.
+def _roles(formation: str, count: int) -> list[str]:
+    """The per-player roles of an XI of `count` players, in lineup order.
+
+    The feed gives the shape, not the positions: `1-4-3-3` is a keeper, four
+    defenders, three midfielders, three forwards, in that order. A shape that
+    omits the keeper (ten digits) is padded, and anything unparseable falls back
+    to eleven midfielders — a guess at the *shape* of a weight, never a fact.
+    """
+    parts = [int(p) for p in str(formation or "").split("-") if p.strip().isdigit()]
+    if sum(parts) == count - 1:
+        parts = [1] + parts
+    if not parts or sum(parts) != count:
+        return ["MID"] * count
+    last = len(parts) - 1
+    roles: list[str] = []
+    for i, size in enumerate(parts):
+        role = ("GK" if i == 0 else
+                "FWD" if i == last else
+                "DEF" if i == 1 else "MID")
+        roles.extend([role] * size)
+    return roles
+
+
+def parse_lineups(raw: str) -> dict:
+    """The two starting XIs from the `df_li_1_` feed, in playing order.
+
+    The feed is `~`-grouped like the incidents one. `LB` opens a section
+    (`Starting Lineups`, `Substitutes`, `Coaches`), `LC` marks the side
+    (1 = home, 2 = away) and each player carries `LP` (id), `LI` (name), `LJ`
+    (shirt), `LL` (lineup slot, 1 = keeper) and the section's `LD` (formation,
+    on the section's first entity). Only the starting elevens are returned: a
+    substitute is a fact about the bench, not a scorer market. `{}` when the
+    feed is empty.
+
+    The feed lists a team **alphabetically** by surname, so the slot — not the
+    position in the feed — is what fixes a player's role. When the slots are
+    there the XI is sorted by them; when they are not the feed order is kept
+    and the formation still shapes the roles.
+    """
+    out: dict[str, list[dict]] = {"home": [], "away": []}
+    formation: dict[str, str] = {"home": "", "away": ""}
+    section = ""
+    side = "home"
+    for ent in _records(raw):
+        label = str(ent.get("LB") or "").strip()
+        if label:
+            section = label
+        team = str(ent.get("LC") or "").strip()
+        if team in _LINEUP_SIDES:
+            side = _LINEUP_SIDES[team]
+        shape = str(ent.get("LD") or "").strip()
+        if shape:
+            formation[side] = shape
+        player_id = str(ent.get("LP") or "").strip()
+        name = str(ent.get("LI") or "").strip()
+        if player_id and name and section.strip().lower().startswith("starting"):
+            out[side].append({"id": player_id, "name": name,
+                              "shirt": str(ent.get("LJ") or "").strip(),
+                              "slot": str(ent.get("LL") or "").strip()})
+    for key in ("home", "away"):
+        eleven = out[key]
+        slots = [p["slot"] for p in eleven]
+        if len(eleven) > 1 and set(slots) == {str(i) for i in range(1, len(eleven) + 1)}:
+            eleven.sort(key=lambda p: int(p["slot"]))
+        for player, role in zip(eleven, _roles(formation[key], len(eleven))):
+            player["role"] = role
+    return out
+
+
+# field name -> (feed kind, parser, empty value). The feeds are fetched
 # independently so a board that only needs the stats (the count markets) never
-# pays for the incidents feed, and vice versa.
+# pays for the lineups or the incidents feed, and vice versa.
 FIELDS = {
     "stats": (STATS_KIND, parse_stats, dict),
     "incidents": (INCIDENTS_KIND, parse_incidents, list),
+    "lineups": (LINEUPS_KIND, parse_lineups, dict),
 }
 
 
@@ -262,6 +343,24 @@ class MatchStatsEngine:
 
     def incidents(self, match_id: str) -> list[dict]:
         return list(self._field(match_id, "incidents") or [])
+
+    def lineups(self, match_id: str) -> dict:
+        """The two starting XIs for one match — `{}` when unknown."""
+        value = self._field(match_id, "lineups") or {}
+        return {side: [dict(p) for p in (value.get(side) or [])]
+                for side in ("home", "away")}
+
+    def fresh(self, match_id: str, name: str) -> bool:
+        """Whether `name`'s cached value is within its TTL *now*.
+
+        An empty `incidents` list is a real answer — a goalless final — where a
+        missing one is not, and a stale one is not either: a snapshot taken
+        before a late goal would settle a scorer leg on a lie. A caller that
+        must not settle on a gap asks this after the read, and stays pending
+        when the feed could not be refreshed.
+        """
+        self._load()
+        return self._fresh((self._matches.get(str(match_id)) or {}).get(name))
 
     def match_stats(self, match_id: str) -> dict:
         """The Match (full-time) section alone — the shape `settlement` reads."""
