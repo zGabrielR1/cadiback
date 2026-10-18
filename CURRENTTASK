@@ -81,7 +81,8 @@ and self-service test deposits for test accounts.
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
   `npm run build` OK. Decisions `0057`, `0058`.
 - DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
-  per-invoice IPN URL) → `167acef` (Pragmatic host fix), pushed to
+  per-invoice IPN URL) → `167acef` (Pragmatic host fix) → `f42c05b` (serve the
+  client bundle through us, 0058), pushed to
   `github.com/zGabrielR1/cadiback`; Render service `cadiback` auto-built each —
   live at `https://cadiback.onrender.com`. Verified against the deploy: health
   `ok` (Asaas `configured/sandbox`, **crypto `configured/production`**),
