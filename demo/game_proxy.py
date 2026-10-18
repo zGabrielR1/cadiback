@@ -1107,7 +1107,15 @@ _BRIDGE = r"""
       } catch (e) {}
     }, 500);
   }
-  function __ppDomain() { return 'demogamesfree.pragmaticplay.net'; }
+  // The client builds its server calls as `schema://GetDomain() + <path>`,
+  // and `<path>` is the money URL our proxy rewrote (an absolute URL on our
+  // origin whose path is /g/<id>/_abs/<host>/...). Returning the publisher's
+  // host here made the client prepend *it* to our path, so every gameService
+  // call flew to https://<publisher>/g/<id>/_abs/... and failed — the launcher
+  // answered our saldo while the spin itself never landed. Our host is what
+  // the call has to resolve against; the publisher's identity survives in the
+  // rewritten paths and in the asset URLs, which are untouched.
+  function __ppDomain() { return location.host; }
 
   // --- socket money tap ---------------------------------------------------
   // Some publishers drive the round over a socket the page itself holds

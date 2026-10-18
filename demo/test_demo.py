@@ -4384,6 +4384,18 @@ class GameProxyTest(unittest.TestCase):
             js, game_proxy.rewrite_urls(js, "text/javascript",
                                         self.GAME, ""))
 
+    def test_pragmatic_server_calls_resolve_to_our_host(self):
+        """The Unity client builds every server call as
+        `schema://GetDomain()+<path>`, where <path> is the money URL we
+        rewrote (an absolute URL on our origin). Pinning GetDomain to the
+        publisher's host made the client prepend *that* to our path, so the
+        spin flew to https://<publisher>/g/<id>/_abs/... and failed — the
+        launcher answered our saldo while the game never spent it."""
+        from demo import game_proxy
+        js = game_proxy.bridge_script().decode("utf-8")
+        self.assertIn("function __ppDomain() { return location.host; }", js)
+        self.assertNotIn("return 'demogamesfree.pragmaticplay.net'", js)
+
     def test_balance_is_replaced_with_ours(self):
         from demo import game_proxy
         body = (b"action=doInit&balance=100,000.00&balance_cash=100,000.00"
