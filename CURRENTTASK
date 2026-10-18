@@ -106,7 +106,7 @@ and self-service test deposits for test accounts.
 - DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
   per-invoice IPN URL) → `167acef` (Pragmatic host fix) → `f42c05b` (serve the
   client bundle through us, 0058) → `21826e4` → `97c0fb1` (0059 forensics +
-  `PP_RAW_CLIENT`), pushed to
+  `PP_RAW_CLIENT`) → `0f64053` (Spribe SFS round tap, **0060**), pushed to
   `github.com/zGabrielR1/cadiback`; Render service `cadiback` auto-built each —
   live at `https://cadiback.onrender.com`. Verified against the deploy: health
   `ok` (Asaas `configured/sandbox`, **crypto `configured/production`**),
