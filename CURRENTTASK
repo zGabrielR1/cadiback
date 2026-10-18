@@ -63,12 +63,23 @@ and self-service test deposits for test accounts.
   Play'n GO Book of Dead load fully with our saldo in the HUD and a trusted click
   places a bet. Still open: Pragmatic's splash parks at ~90% off-origin, and
   Spribe settles over a binary AMF socket our tap does not decode.
+- **THE PRAGMATIC STALL WAS PARTLY OUR REGRESSION (session 3, decision `0058`).**
+  `patch_unity_client` was **dead code**: the client XHRs `build.js` straight off
+  the publisher's CDN and evals it, so the browser never ran the patched body.
+  The bridge now rewrites exactly that one request to `_abs/` (verified in Python:
+  the served body is byte-for-byte `patch_unity_client(original)`), and every
+  other asset deliberately stays on the CDN. Boot exceptions drop to **zero**,
+  all 93 textures load, and `evtConnectionReady`/`evtInitRequest` now fire where
+  they never did. `ServerOptions.serverUrl` is pinned to the document origin
+  (no-op live; it is what makes a local reproduction possible). Still open: the
+  importer's cross-file `listOfStages` references deserialize empty, so
+  `XT.RegisterAndInit` never runs.
 - **RODA DA SORTE IS 97% BY CONSTRUCTION (0057 §6).** 100 equal sectors whose
   ladder sums to 97 (the prior ladder was 137%); animated SVG `WheelPanel`,
   cover, cert `BR-DEMO-0011`. `WheelTest` (7).
-- Suites: `frame` 50/50 · `demo` 356 tests with only the 6 pre-existing
+- Suites: `frame` 50/50 · `demo` 357 tests with only the 6 pre-existing
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
-  `npm run build` OK. Decision `0057`.
+  `npm run build` OK. Decisions `0057`, `0058`.
 - DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
   per-invoice IPN URL) → `167acef` (Pragmatic host fix), pushed to
   `github.com/zGabrielR1/cadiback`; Render service `cadiback` auto-built each —

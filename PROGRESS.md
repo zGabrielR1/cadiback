@@ -49,6 +49,15 @@
   Aviator and Play'n GO Book of Dead load fully with our saldo in the HUD and
   take a real bet click. Open: Pragmatic's splash still parks off-origin; Spribe
   settles over a binary AMF socket our tap does not decode.
+- **Pragmatic's stall was partly our regression** (session 3, **decision 0058**).
+  `patch_unity_client` was dead code — the client XHRs `build.js` off the
+  publisher's CDN and evals it, so the patched body was never the running code.
+  The bridge now rewrites exactly that request to `_abs/` (the served body is
+  byte-verified as `patch_unity_client(original)`); every other asset stays on
+  the CDN on purpose. Boot exceptions drop to zero, all 93 textures load, and
+  `evtConnectionReady`/`evtInitRequest` fire where they never did. Still open:
+  the importer's cross-file `listOfStages` references deserialize empty, so
+  `XT.RegisterAndInit` never runs and the splash remains.
 - **Roda da Sorte is 97% by construction** (§6). 100 equal sectors summing to 97
   (the prior ladder was 137%); animated SVG `WheelPanel`, cover, cert
   `BR-DEMO-0011`. Test: `WheelTest` (7).

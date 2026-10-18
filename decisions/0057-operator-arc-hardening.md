@@ -161,7 +161,12 @@ harness was right to withhold judgement. Loading the launchers in a browser:
   `gameService` `doInit`, `saveSettings.do`, `reloadBalance.do` and
   `announcements` now answer **200 on our host**. The loader still parks on the
   Pragmatic splash (~90%) off-origin, so a spin is not yet observed: the
-  remaining work is the Unity loader, not the wallet.
+  remaining work is the Unity loader, not the wallet. Session 3 then found that
+  the loader stall was partly *our* regression — the client was running an
+  unpatched bundle, because the patched one was never actually served (see
+  **0058**); fixing that removed every boot exception and restored the XT
+  connection callbacks, though the splash remains (the importer's cross-file
+  `listOfStages` references still deserialize empty).
 - **Spribe (Aviator) and Play'n GO (Book of Dead) load fully** through our
   proxy, with **our** saldo in the HUD (`Saldo: R$ 5000,00`), and a real
   trusted click on *Aposta* places the bet (the button flips to *Cancelar ·
@@ -252,10 +257,36 @@ Browser: Spribe Aviator and Play'n GO Book of Dead load fully with our saldo in
 the HUD; Pragmatic's server calls now 200 on our host (previously failing at the
 publisher).
 
+**Update, session 3 (2026-10-18).** The Pragmatic stall was root-caused to a
+defect of ours, not of the client: `patch_unity_client` was **dead code**
+because the client fetches `build.js` straight off the publisher's CDN, so the
+patched body was never the running code (decision 0058). The bridge now routes
+that single XHR through `_abs`, and the served bundle is byte-verified to be
+exactly the patched original. Effect: boot exceptions drop to **zero**, all 93
+textures load, the import completes and the XT connection callbacks
+(`evtConnectionReady`, `evtInitRequest`) now fire where they never did before.
+`ServerOptions.serverUrl` is also pinned to the document origin (a no-op live;
+it is what makes a local reproduction possible). Gates: `frame.selftest` 50/50 ·
+`demo.test_demo` 357 tests, only the 6 pre-existing `sqlalchemy` errors ·
+`verify.py` 0 problems.
+
 **Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` still
 holds only the customer id. Everything else that waited on the owner is now
 done: the NOWPayments key + IPN secret are in and live, and no dashboard IPN
 step is needed (the invoice carries `ipn_callback_url`). Two provider items stay
-open and are code, not credentials: Pragmatic's Unity loader parks at ~90%
-off-origin, and Spribe settles its round over a binary AMF socket our tap does
-not decode.
+open and are code, not credentials:
+
+- **Pragmatic's Unity loader still parks on the splash.** The remaining cause is
+  now named: `GameLogicRuntime.listOfStages` is an array of cross-file component
+  references that deserializes **empty** off-origin, so `GameLogicRuntime.Start`
+  never calls the stage `UHTInit`s and `XT.RegisterAndInit` never runs
+  (`Evt_ToServer_RequestInit` is never registered, `OnRequestInit` /
+  `OnConnectionReady` never run, `Localize`/`Blocking`/`SymbolsManagers` never
+  start). Injecting the stage list at runtime does not restore registration.
+  The wallet side is done and proven: `/api/wallet/status` answers, the saldo is
+  painted in the HUD over the splash, and `gameService`/`saveSettings.do`/
+  `reloadBalance.do`/`announcements` all answer 200 on our host.
+- **Spribe settles its round over a binary AMF socket**
+  (`app-demo.spribegaming.com/BlueBox/websocket`) our tap does not decode.
+  Spribe Aviator and Play'n GO Book of Dead otherwise load fully with our saldo
+  and take a real trusted bet click.

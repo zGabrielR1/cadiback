@@ -705,11 +705,31 @@ _BRIDGE = r"""
     return watch(_fetch.apply(this, arguments), url, init);
   };
 
+  // The Unity client fetches its own bundle (build.js) with an XHR off the
+  // publisher's CDN and evals the body. Everything the proxy knows about that
+  // client (index-based reference resolution, the config-file fallback, the
+  // animation-curve repair — game_proxy.patch_unity_client) only reaches it if
+  // that one URL is fetched through us; loaded straight off the CDN it runs
+  // unpatched and dies in the importer (decision 0058). Rewrite just the
+  // bundle: every other asset deliberately stays on the CDN, because proxying
+  // the asset tree changes the import order (decision 0028).
+  function pp_proxied_client_script(url) {
+    if (typeof url !== 'string') return url;
+    if (!cfg.game_id || cfg.game_id.indexOf('pp:') !== 0) return url;
+    if (!/^https?:\/\/demogamesfree\.pragmaticplay\.net\/.*\/build\.js(\?|$)/.test(url)) {
+      return url;
+    }
+    return location.origin + '/g/' + cfg.game_id + '/_abs/' +
+      url.replace(/^https?:\/\//, '');
+  }
+
   if (window.XMLHttpRequest) {
     var _open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url) {
+      url = pp_proxied_client_script(url);
       this.__url = url; this.__method = (method || 'GET').toUpperCase();
-      return _open.apply(this, arguments);
+      var rest = Array.prototype.slice.call(arguments, 2);
+      return _open.apply(this, [method, url].concat(rest));
     };
     var _send = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function (body) {
@@ -741,6 +761,15 @@ _BRIDGE = r"""
           }
           if (window.ServerOptions && window.ServerOptions.serverUrl &&
               window.ServerOptions.serverUrl.indexOf(PP_HOST) >= 0) {
+            window.ServerOptions.serverUrl = window.ServerOptions.serverUrl
+              .replace(/^https?:\/\/[^/]+/, location.origin);
+          }
+          // The client hardcodes https:// + GetDomain(); on a plain-http
+          // origin (local dev) that is an unreachable TLS target. serverUrl
+          // is meant to be the document origin, so pin it there.
+          if (window.ServerOptions && window.ServerOptions.serverUrl &&
+              window.ServerOptions.serverUrl.replace(/^https?:\/\//, '')
+                    .split('/')[0] !== location.host) {
             window.ServerOptions.serverUrl = window.ServerOptions.serverUrl
               .replace(/^https?:\/\/[^/]+/, location.origin);
           }
