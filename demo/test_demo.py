@@ -4248,6 +4248,19 @@ class SocketRoundTest(unittest.TestCase):
         self.assertIn("wallet/round", js)     # settlement goes to the wallet
         self.assertIn("Saldo insuficiente", js)
 
+    def test_the_bridge_taps_spribes_own_socket(self):
+        """Decision 0060: Spribe runs the round over an SFS2X socket the page
+        holds, so the tap reads the account saldo straight out of its frames
+        and mirrors each round through the same /wallet/round."""
+        from demo import game_proxy
+        js = game_proxy.bridge_script().decode("utf-8")
+        self.assertIn("spribeWatch", js)
+        self.assertIn("BlueBox", js)             # the socket the tap rides
+        self.assertIn("newBalance", js)          # the saldo the frames carry
+        self.assertIn("roundChartInfo", js)      # the crash that keeps a loss
+        self.assertIn("DecompressionStream", js)  # the join answer is zlib
+        self.assertIn("spribegaming", js)        # only that publisher is tapped
+
 
 class GameProxyTest(unittest.TestCase):
     """Publisher game proxy (decision 0022): a same-origin front so the game's

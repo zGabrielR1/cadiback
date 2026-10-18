@@ -172,10 +172,10 @@ harness was right to withhold judgement. Loading the launchers in a browser:
 - **Spribe (Aviator) and Play'n GO (Book of Dead) load fully** through our
   proxy, with **our** saldo in the HUD (`Saldo: R$ 5000,00`), and a real
   trusted click on *Aposta* places the bet (the button flips to *Cancelar ·
-  esperando a próxima rodada*). The round did not settle our ledger in the
-  probe window — Spribe drives its round over a binary AMF socket
-  (`app-demo.spribegaming.com/BlueBox/websocket`) that our socket tap does not
-  decode — so this is the next concrete provider item.
+  esperando a próxima rodada*). Session 4 then made Spribe's round **settle our
+  ledger** — it is not AMF but SFS2X binary, and the tap now reads the round's
+  stake and payout straight out of its frames (**decision 0060**, verified live
+  below).
 
 ### 6. Roda da Sorte is derived, not typed
 
@@ -217,8 +217,9 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
 - [x] 4 sports — stats engine + in-play cards/corners/fouls markets + settle + SVG icons + stats panel; tests (`MatchStatsTest`); **live**: the board carries
       per-match stats and prices the count lines (below).
 - [x] 5 providers — live harness wired 22/22 sampled games (evolution launcher 502); **browser pass done**: Pragmatic's server-call host fixed and verified
-      live, Spribe + Play'n GO load fully with our saldo. Remaining: Pragmatic's
-      splash still parks off-origin, and Spribe's AMF socket round is untapped.
+      live, Spribe + Play'n GO load fully with our saldo, and **Spribe now
+      settles our ledger** (SFS2X socket tap, decision 0060, verified live below).
+      Remaining: Pragmatic's splash still parks off-origin (0059).
 - [x] 6 wheel — exactly 97% RTP; tests (`WheelTest`), cover, SVG panel; **live**: the catalog lists `demo:roda-da-sorte`.
 - [x] 7 test deposits — code + tests (`TestDepositTest`); **verified live** (below).
 
@@ -289,11 +290,24 @@ are all eliminated as causes, with evidence. Full forensics, the
 `PP_RAW_CLIENT=1` diagnostic switch and the two traps that cost real time are in
 **decision 0059**.
 
+**Spribe also closed out this session (decision 0060).** Its round is now
+settled on our books: it is not an AMF socket but SmartFoxServer's SFS2X binary
+protocol, whose string keys are literal, so the account saldo reads straight out
+of a frame (a `newBalance` drop is the stake, a rise is the cash-out, and a
+`roundChartInfo` with a round pending is the crash that keeps the stake). The
+join answer that opens the saldo is zlib (`flag 0xa0`) and is inflated with the
+browser's own `DecompressionStream`. Verified live: a R$1 loss lands `stake 100
+/ payout 0` and moves `500000 → 499900`; ten cash-outs at 1.01×–1.09× land
+`stake 100 / payout 104`, and the balance reconciles exactly (`498500 − 481 =
+498019 = Σpayout − Σstake`). Gates (session 4): `frame.selftest` 50/50 ·
+`demo.test_demo` **358** tests with only the 6 pre-existing `sqlalchemy` errors ·
+`verify.py` 0 problems; the bridge script is `node --check` clean.
+
 **Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` still
 holds only the customer id. Everything else that waited on the owner is now
 done: the NOWPayments key + IPN secret are in and live, and no dashboard IPN
-step is needed (the invoice carries `ipn_callback_url`). Two provider items stay
-open and are code, not credentials:
+step is needed (the invoice carries `ipn_callback_url`). One provider item stays
+open and is code, not credentials:
 
 - **Pragmatic's client still parks on the splash** (see the session-4 update
   above and decision 0059). The wallet side is done and proven:
@@ -301,7 +315,3 @@ open and are code, not credentials:
   and `gameService`/`saveSettings.do`/`reloadBalance.do`/`announcements` all
   answer 200 on our host. What is missing is the publisher's own scene
   activation, not our money path.
-- **Spribe settles its round over a binary AMF socket**
-  (`app-demo.spribegaming.com/BlueBox/websocket`) our tap does not decode.
-  Spribe Aviator and Play'n GO Book of Dead otherwise load fully with our saldo
-  and take a real trusted bet click.

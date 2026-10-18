@@ -1350,14 +1350,116 @@ _BRIDGE = r"""
     });
   }
 
+  // --- Spribe tap ----------------------------------------------------------
+  // Spribe runs the round over a SmartFoxServer socket the page holds
+  // (wss://<game>-demo.spribegaming.com/BlueBox/websocket); the bet is not an
+  // HTTP call we can read. The frames are SFS2X binary — a type-tagged stream
+  // whose string keys are literal, so the account balance reads straight out
+  // of a frame as the big-endian double that follows the key "balance" (the
+  // opening saldo, in the join answer) or "newBalance" (after every change).
+  // A drop is the stake leaving that saldo, a later rise is our cash-out's
+  // payout, and the round's chart line is posted at the crash, when the stake
+  // is gone. Each is mirrored onto OUR books through /wallet/round, the same
+  // idempotent write the other taps use. The publisher's server is untouched;
+  // we only read what the page already receives.
+  function bytesOf(data) {
+    try {
+      if (data instanceof ArrayBuffer) return new Uint8Array(data);
+      if (data && data.buffer instanceof ArrayBuffer)
+        return new Uint8Array(data.buffer, data.byteOffset || 0,
+                              data.byteLength);
+    } catch (e) {}
+    return null;
+  }
+
+  function asciiAt(buf, i, s) {
+    if (i < 0 || i + s.length > buf.length) return false;
+    for (var j = 0; j < s.length; j++)
+      if (buf[i + j] !== s.charCodeAt(j)) return false;
+    return true;
+  }
+
+  function hasString(buf, s) {
+    for (var i = 0; i + s.length <= buf.length; i++)
+      if (asciiAt(buf, i, s)) return true;
+    return false;
+  }
+
+  // An SFS key is <len:2><utf8> and a DOUBLE is a 0x07 tag then 8 bytes big
+  // endian. Anchor on the literal key so nothing has to be re-encoded.
+  function doubleForKey(buf, dv, key) {
+    for (var i = 2; i + key.length + 9 <= buf.length; i++) {
+      if (!asciiAt(buf, i, key)) continue;
+      if (((buf[i - 2] << 8) | buf[i - 1]) !== key.length) continue;
+      if (buf[i + key.length] !== 7) continue;
+      return dv.getFloat64(i + key.length + 1, false);
+    }
+    return null;
+  }
+
+  function spribeWatch(ws) {
+    var last = null, pending = null, chain = Promise.resolve();
+
+    function handle(buf) {
+      var dv;
+      try { dv = new DataView(buf.buffer, buf.byteOffset || 0, buf.byteLength); }
+      catch (e) { return null; }
+      var bal = doubleForKey(buf, dv, 'newBalance');
+      if (bal === null) bal = doubleForKey(buf, dv, 'balance');
+      if (bal !== null) {
+        var now = Math.round(bal * 100);
+        if (last === null) { last = now; return null; }
+        var delta = now - last;
+        last = now;
+        if (delta < 0) {
+          if (pending) reportRound(pending, 0);
+          pending = -delta;
+        } else if (delta > 0 && pending) {
+          reportRound(pending, delta);
+          pending = null;
+        }
+        return null;
+      }
+      // A large SFS frame is zlib (the flag is 0xa0): the join answer carries
+      // the opening saldo, so it has to be inflated before it can be read.
+      if ((buf[0] === 0xa0 || buf[3] === 0x78) &&
+          typeof DecompressionStream !== 'undefined') {
+        try {
+          return new Response(new Blob([buf.subarray(3)]).stream()
+            .pipeThrough(new DecompressionStream('deflate')))
+            .arrayBuffer()
+            .then(function (ab) { handle(new Uint8Array(ab)); })
+            .catch(function () {});
+        } catch (e) { return null; }
+      }
+      // the crash posts the round's chart line with the stake still down
+      if (pending && hasString(buf, 'roundChartInfo')) {
+        reportRound(pending, 0);
+        pending = null;
+      }
+      return null;
+    }
+
+    ws.addEventListener('message', function (ev) {
+      var buf = bytesOf(ev.data);
+      if (!buf) return;
+      // serialise: an inflated frame must not overtake the ones after it
+      chain = chain.then(function () { return handle(buf); })
+                   .catch(function () {});
+    });
+  }
+
   if (window.WebSocket) {
     var NativeSocket = window.WebSocket;
     var PatchedSocket = function (url, protocols) {
       var socket = protocols === undefined ? new NativeSocket(url)
                                            : new NativeSocket(url, protocols);
       try {
-        // only the publisher's game hub carries the round protocol
-        if (String(url || socket.url).indexOf('gamehub') >= 0) watchSocket(socket);
+        // each publisher's own transport carries its round protocol
+        var u = String(url || socket.url);
+        if (u.indexOf('gamehub') >= 0) watchSocket(socket);
+        else if (u.indexOf('spribegaming') >= 0 || u.indexOf('BlueBox') >= 0)
+          spribeWatch(socket);
       } catch (e) {}
       return socket;
     };

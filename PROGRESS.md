@@ -47,8 +47,18 @@
   `https://<publisher>/g/<id>/_abs/…`. Returning `location.host` lands them on us
   (verified live: `doInit`, `saveSettings.do`, `reloadBalance.do` → 200). Spribe
   Aviator and Play'n GO Book of Dead load fully with our saldo in the HUD and
-  take a real bet click. Open: Pragmatic's splash still parks off-origin; Spribe
-  settles over a binary AMF socket our tap does not decode.
+  take a real bet click. Open: Pragmatic's splash still parks off-origin
+  (characterised in decision 0059).
+- **Spribe's round now settles on our books** (session 4, **decision 0060**).
+  Its socket is not AMF but SmartFoxServer SFS2X binary, and its string keys are
+  literal, so the account saldo reads straight out of a frame: a `newBalance`
+  drop is the stake, a rise is the cash-out, and a `roundChartInfo` with a round
+  pending is the crash that keeps the stake. The join answer that opens the
+  saldo is zlib (`flag 0xa0`), inflated with the browser's own
+  `DecompressionStream`. Verified live: a R$1 loss posts `stake 100 / payout 0`
+  and moves the ledger `500000 → 499900`; ten cash-outs at 1.01×–1.09× post
+  `stake 100 / payout 104` and the balance reconciles exactly
+  (`498500 − 481 = 498019 = Σpayout − Σstake`).
 - **Pragmatic's stall was partly our regression** (session 3, **decision 0058**).
   `patch_unity_client` was dead code — the client XHRs `build.js` off the
   publisher's CDN and evals it, so the patched body was never the running code.
