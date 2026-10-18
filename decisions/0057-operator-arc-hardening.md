@@ -60,6 +60,20 @@ and `POST|GET /api/webhooks/crypto`. The cashier shows the asset, receiving
 address, amount and polls. While unconfigured the instant demo credit stays,
 exactly like the Pix rail. Runbook `docs/crypto.md`.
 
+**Credentials landed (2026-10-18) and the rail is live.** The owner pasted the
+NOWPayments API key and IPN secret into `.env.crypto` as two *bare* lines (no
+`KEY=`), which the `KEY=value` parser read as nothing — the tab stayed hidden.
+`read_env_pairs()` now classifies a bare line by shape (the dashed one is the
+API key, the other the IPN secret; order-independent), and both the server and
+`render_deploy.read_crypto_env` share that one parser so they cannot disagree.
+Verified live: `GET /api/config` → `crypto_enabled: true`, and a real invoice
+opened through the deploy (`POST /api/deposit/crypto`, 200 →
+`pay_address TWvqUHd4AWx…`, `PENDING`, nothing posted, `env: production`),
+cross-checked against NOWPayments directly (`payment_status: waiting`). Each
+invoice now carries `ipn_callback_url` for this host, so the rail hears back
+without a dashboard step. A bad `x-nowpayments-sig` is refused (401); a
+correctly-signed IPN for an unknown deposit applies nothing.
+
 ### 2. Behaviour control is a real controller, and the saldo is visible
 
 `outcome_bias` ∈ {`normal`, `always_win`, `always_lose`, `win_rate`} plus
@@ -83,9 +97,13 @@ The resolver picks the first file with a *complete* triple
 prod file cannot pair a prod customer with a sandbox key. Checked 2026-10-18:
 `.env.asaasprod` still has only `ASAAS_CUSTOMER_ID` (the key, secret and base
 URL are blank), so the resolver correctly falls through to
-`.env.asaas.sandbox` and carries all four settings. The deploy itself is
-**blocked this session** on the working tree not being a git checkout (no
-remote for `render_deploy.py` to name), not on code.
+`.env.asaas.sandbox` and carries all four settings. The deploy path is a
+**push**: the working tree is not a git checkout, so the service builds from
+`github.com/zGabrielR1/cadiback` (`main`) and a push to it redeploys
+(`autoDeploy: yes`). Do **not** run `render_deploy.py`'s env-var sync against
+the live service — it replaces the whole set and would drop dashboard-only vars
+(Authgear, Turnstile, Resend, Supabase). New settings are merged in additively
+via the Render API instead.
 
 ### 4. Sports: a stats feed, honest count markets, and real icons
 
@@ -128,6 +146,30 @@ game's own in-page spin calls land here — because RGS-interposed pages live on
 the publisher's CDN by design; that final hop needs a browser and is the
 deploy-time check. Pragmatic Play is included and passes the harness.
 
+**Browser pass (2026-10-18, real Chromium over CDP against the deploy).** The
+harness was right to withhold judgement. Loading the launchers in a browser:
+
+- **Pragmatic Play — a real defect found and fixed.** The launcher page, the
+  bridge and `/api/wallet/status` were all fine, and our saldo was painted in
+  the HUD, but every `gameService` POST flew to
+  `https://demogamesfree.pragmaticplay.net/g/<id>/_abs/...` and failed
+  (`ERR_FAILED`). Cause: the Unity client builds each server call as
+  `schema://GetDomain()+<path>`, and `<path>` is the money URL *we* rewrote — an
+  absolute URL on our origin. The patcher pinned `GetDomain()` to the
+  publisher's host, so the client prepended that host to our path. Returning
+  `location.host` makes the call resolve against us; verified live —
+  `gameService` `doInit`, `saveSettings.do`, `reloadBalance.do` and
+  `announcements` now answer **200 on our host**. The loader still parks on the
+  Pragmatic splash (~90%) off-origin, so a spin is not yet observed: the
+  remaining work is the Unity loader, not the wallet.
+- **Spribe (Aviator) and Play'n GO (Book of Dead) load fully** through our
+  proxy, with **our** saldo in the HUD (`Saldo: R$ 5000,00`), and a real
+  trusted click on *Aposta* places the bet (the button flips to *Cancelar ·
+  esperando a próxima rodada*). The round did not settle our ledger in the
+  probe window — Spribe drives its round over a binary AMF socket
+  (`app-demo.spribegaming.com/BlueBox/websocket`) that our socket tap does not
+  decode — so this is the next concrete provider item.
+
 ### 6. Roda da Sorte is derived, not typed
 
 The wheel is **100 equal sectors** whose multiplier ladder sums to exactly 97,
@@ -158,14 +200,18 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
 ## Status
 
 - [x] Decision logged; prior-run leftovers triaged.
-- [x] 1 crypto — code + tests (`CryptoTest`, `CryptoDepositTest`); live half awaits NOWPayments keys.
+- [x] 1 crypto — code + tests (`CryptoTest`, `CryptoDepositTest`); **live**:
+      configured on production, a real invoice opened through the deploy, the
+      IPN verified.
 - [x] 2 behaviour — code + tests (`BehaviourTest`); **verified live** (below).
 - [ ] 3 asaas — **plumbing fixed** (env-file resolution in `render_deploy.py`) and
       carried to the live service (health reports `asaas: configured / sandbox`);
       production awaits the owner's prod keys.
 - [x] 4 sports — stats engine + in-play cards/corners/fouls markets + settle + SVG icons + stats panel; tests (`MatchStatsTest`); **live**: the board carries
       per-match stats and prices the count lines (below).
-- [x] 5 providers — live harness wired 22/22 sampled games (evolution launcher 502); browser hop is the deploy check.
+- [x] 5 providers — live harness wired 22/22 sampled games (evolution launcher 502); **browser pass done**: Pragmatic's server-call host fixed and verified
+      live, Spribe + Play'n GO load fully with our saldo. Remaining: Pragmatic's
+      splash still parks off-origin, and Spribe's AMF socket round is untapped.
 - [x] 6 wheel — exactly 97% RTP; tests (`WheelTest`), cover, SVG panel; **live**: the catalog lists `demo:roda-da-sorte`.
 - [x] 7 test deposits — code + tests (`TestDepositTest`); **verified live** (below).
 
@@ -192,8 +238,24 @@ Render service `cadiback` (`autoDeploy: yes`) built it and it is **live** at
 | `POST /api/admin/set-behaviour {always_win}` | 200, `outcome_bias: always_win`, rate 100 |
 | `GET /api/admin/player` | `balance.available_minor` 7000, `balance.test_deposits_minor` 7000, `player.outcome_bias` `always_win` |
 
-**Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` is
-still blank but for the customer id; NOWPayments API key + IPN secret (§1 live);
-and a **browser pass** over the deployed provider launchers and the wheel/crypto
-UI (§5 and §1's front half — a headless browser over CDP, `scripts/capture_session.mjs`,
-is the tool).
+**Update, session 2 (2026-10-18).** Pushed `72ddf69` (bare-`.env.crypto` reader
++ per-invoice IPN URL) and `167acef` (Pragmatic host fix); both built and are
+**live**. Gates: `frame.selftest` 50/50 · `demo.test_demo` **356** tests, only
+the 6 pre-existing `sqlalchemy` errors · `verify.py` 0 problems.
+
+Live, session 2: `GET /api/config` → `crypto_enabled: true` (6 coins); a real
+NOWPayments invoice opened through the deploy and cross-checked upstream; a
+bad-signature IPN refused (401) and a good-signature IPN for an unknown deposit
+applied nothing; the admin dashboard read back `available_minor: 500000`,
+`test_deposits_minor: 500000` for a live test account, which was then deleted.
+Browser: Spribe Aviator and Play'n GO Book of Dead load fully with our saldo in
+the HUD; Pragmatic's server calls now 200 on our host (previously failing at the
+publisher).
+
+**Still open (needs the owner):** Asaas prod keys (§3) — `.env.asaasprod` still
+holds only the customer id. Everything else that waited on the owner is now
+done: the NOWPayments key + IPN secret are in and live, and no dashboard IPN
+step is needed (the invoice carries `ipn_callback_url`). Two provider items stay
+open and are code, not credentials: Pragmatic's Unity loader parks at ~90%
+off-origin, and Spribe settles its round over a binary AMF socket our tap does
+not decode.

@@ -8,7 +8,12 @@
   payment and checks asset + amount before posting. Routes `/api/deposit/crypto`,
   `/status` and `POST|GET /api/webhooks/crypto`; the cashier shows the coin,
   address and a poll. Config-gated; unconfigured keeps the instant credit.
-  Runbook `docs/crypto.md`. Tests: `CryptoTest` (7), `CryptoDepositTest` (12).
+  Runbook `docs/crypto.md`. Tests: `CryptoTest` (8), `CryptoDepositTest` (13).
+  **Live now (session 2):** the owner's key + IPN secret load from a bare
+  two-line `.env.crypto` (classified by shape, order-independent), `/api/config`
+  reports `crypto_enabled: true`, a real invoice opened through the deploy
+  (`pay_address`, `PENDING`, nothing posted), and every invoice now carries
+  `ipn_callback_url` for our host — no dashboard step needed.
 - **Admin win/loss control that is actually read** (§2). New `demo/behaviour.py`
   (`normal` / `always_win` / `always_lose` / `win_rate` + `win_rate_percent`)
   drives every operator-decided settlement; a forced win is a **real** winning
@@ -35,19 +40,29 @@
   wallet answers and debits; live 2026-10-18 wired **22/22** sampled games across
   hacksaw, pg_soft, pragmatic_play, play_n_go and spribe (evolution launcher
   502'd from this host). `demo/_sweep.py`'s hardcoded Windows path fixed.
+  **Browser pass (session 2):** a real Chromium over CDP against the deploy found
+  and fixed a genuine Pragmatic defect — the client built server calls as
+  `schema://GetDomain()+<path>` and the patcher pinned `GetDomain()` to the
+  publisher's host, so every `gameService` POST failed at
+  `https://<publisher>/g/<id>/_abs/…`. Returning `location.host` lands them on us
+  (verified live: `doInit`, `saveSettings.do`, `reloadBalance.do` → 200). Spribe
+  Aviator and Play'n GO Book of Dead load fully with our saldo in the HUD and
+  take a real bet click. Open: Pragmatic's splash still parks off-origin; Spribe
+  settles over a binary AMF socket our tap does not decode.
 - **Roda da Sorte is 97% by construction** (§6). 100 equal sectors summing to 97
   (the prior ladder was 137%); animated SVG `WheelPanel`, cover, cert
   `BR-DEMO-0011`. Test: `WheelTest` (7).
-- Suites: frame 50/50; demo 354 tests with only the 6 pre-existing `sqlalchemy`
+- Suites: frame 50/50; demo 356 tests with only the 6 pre-existing `sqlalchemy`
   (Postgres seam) errors; `verify.py` 0 problems; frontend `npm run build` OK.
-- **Deployed and live** (`2da35e9` → Render `cadiback`, `https://cadiback.onrender.com`).
-  Live checks: storefront 200; health `ok` with Asaas `configured (sandbox)` and
-  the crypto rail present-but-unconfigured; `/api/sports` 320 fixtures, 13
-  carrying per-match stats and pricing their count lines, 0 upstream errors;
-  `/api/catalog` lists `demo:roda-da-sorte`; a live admin pass created a test
-  account, credited a **test deposit (saldo moved to 5000)**, guarded the replay,
-  set `always_win`, and read `balance.available_minor` +
-  `balance.test_deposits_minor` back from `/api/admin/player`.
+- **Deployed and live** (`2da35e9` → `6e7d787` → `72ddf69` → `167acef` → Render
+  `cadiback`, `https://cadiback.onrender.com`). Live checks: storefront 200;
+  health `ok` with Asaas `configured (sandbox)` and crypto
+  `configured (production)`; `/api/sports` 320 fixtures, per-match stats priced
+  into count lines, 0 upstream errors; `/api/catalog` lists `demo:roda-da-sorte`;
+  a live admin pass created a test account, credited a **test deposit**, guarded
+  the replay, set `always_win`, and read `balance.available_minor` +
+  `balance.test_deposits_minor` back; a real NOWPayments invoice opened through
+  the deploy and was cross-checked upstream.
 
 ## DONE (2026-10-17 — Authgear social login + a real sports book, decisions 0054–0055)
 

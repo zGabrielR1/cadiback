@@ -12,8 +12,12 @@ and self-service test deposits for test accounts.
   re-reads the payment from the provider and checks the asset + amount before a
   centavo posts. Routes `/api/deposit/crypto`, `/api/deposit/crypto/status`,
   `POST|GET /api/webhooks/crypto`. The cashier shows the coin, address, amount
-  and a poll. Unconfigured stays the instant demo credit. `CryptoTest` (7) +
-  `CryptoDepositTest` (12); runbook `docs/crypto.md`. Live half awaits the key.
+  and a poll. Unconfigured stays the instant demo credit. `CryptoTest` (8) +
+  `CryptoDepositTest` (13); runbook `docs/crypto.md`. **LIVE (session 2):** the
+  owner's key + IPN secret now load (a bare two-line `.env.crypto` is read by
+  shape, order-independent), `/api/config` reports `crypto_enabled: true`, a
+  real invoice opened through the deploy (`pay_address`, `PENDING`, nothing
+  posted), and each invoice carries `ipn_callback_url` for our host.
 - **BEHAVIOUR CONTROL IS READ, NOT JUST WRITTEN (0057 §2).** `demo/behaviour.py`
   (`normal` / `always_win` / `always_lose` / `win_rate` + `win_rate_percent`)
   is applied by every operator-decided settlement (`Demo.spin` for slots,
@@ -49,20 +53,35 @@ and self-service test deposits for test accounts.
   pragmatic_play, play_n_go, spribe); evolution's launcher 502'd (upstream
   `URLError` from this host). The harness states plainly that the in-page spin
   hop still needs a browser. `demo/_sweep.py`'s hardcoded Windows path fixed.
+  **Browser pass (session 2, real Chromium over CDP against the deploy):** found
+  and fixed a real Pragmatic defect — the Unity client built its server calls as
+  `schema://GetDomain()+<our rewritten path>`, and the patcher pinned
+  `GetDomain()` to the publisher's host, so every `gameService` POST flew off to
+  `https://<publisher>/g/<id>/_abs/…` (`ERR_FAILED`). Returning `location.host`
+  makes them land on us — verified live (`doInit`, `saveSettings.do`,
+  `reloadBalance.do`, `announcements` all 200 on our origin). Spribe Aviator and
+  Play'n GO Book of Dead load fully with our saldo in the HUD and a trusted click
+  places a bet. Still open: Pragmatic's splash parks at ~90% off-origin, and
+  Spribe settles over a binary AMF socket our tap does not decode.
 - **RODA DA SORTE IS 97% BY CONSTRUCTION (0057 §6).** 100 equal sectors whose
   ladder sums to 97 (the prior ladder was 137%); animated SVG `WheelPanel`,
   cover, cert `BR-DEMO-0011`. `WheelTest` (7).
-- Suites: `frame` 50/50 · `demo` 354 tests with only the 6 pre-existing
+- Suites: `frame` 50/50 · `demo` 356 tests with only the 6 pre-existing
   `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
   `npm run build` OK. Decision `0057`.
-- DEPLOYED: `2da35e9` pushed to `github.com/zGabrielR1/cadiback`; Render service
-  `cadiback` auto-built it — live at `https://cadiback.onrender.com`. Verified
-  against the deploy: health `ok` (Asaas `configured/sandbox`, crypto
-  present-but-unconfigured with 6 coins), `/api/sports` priced per-match count
-  lines from live stats, `/api/catalog` lists `demo:roda-da-sorte`, and an admin
-  pass moved a test account's saldo with a test deposit (and guarded the replay).
-- OPEN: Asaas prod keys + NOWPayments key/IPN (owner); a browser pass over the
-  deployed provider launchers and the wheel/crypto UI.
+- DEPLOYED: `2da35e9` → `6e7d787` → `72ddf69` (bare `.env.crypto` reader +
+  per-invoice IPN URL) → `167acef` (Pragmatic host fix), pushed to
+  `github.com/zGabrielR1/cadiback`; Render service `cadiback` auto-built each —
+  live at `https://cadiback.onrender.com`. Verified against the deploy: health
+  `ok` (Asaas `configured/sandbox`, **crypto `configured/production`**),
+  `/api/sports` priced per-match count lines from live stats, `/api/catalog`
+  lists `demo:roda-da-sorte`, an admin pass created a test account and moved its
+  saldo with a test deposit (dashboard `available_minor` 500000,
+  `test_deposits_minor` 500000), and a real NOWPayments invoice opened through
+  the deploy.
+- OPEN (owner): **Asaas prod keys** — `.env.asaasprod` still holds only the
+  customer id. Nothing else waits on the owner. Remaining provider items are
+  code: Pragmatic's off-origin splash, Spribe's AMF socket round.
 
 CURRENTTASK (previous): Authgear social login (Google/Facebook + CPF, decision 0054) and a
 better sports book (per-market overround, draw-no-bet + asian handicap,

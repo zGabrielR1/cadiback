@@ -25,6 +25,7 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/asaas.md` | Real Pix via Asaas: credentials, webhook registration, production swap |
 | `docs/crypto.md` | Real crypto via NOWPayments: credentials, IPN signing, production swap |
+| `docs/needed-from-owner.md` | The short list of what is waiting on the owner (currently: Asaas prod keys only) |
 | `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
 | `docs/oauth.md` | Social login (Authgear): credentials, the CPF-completion flow, the no-op-when-unconfigured rule, the Authgear-portal steps |
