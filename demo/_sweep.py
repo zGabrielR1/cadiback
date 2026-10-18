@@ -9,6 +9,7 @@ publisher's page still comes back through us intact.
 """
 import collections
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -17,7 +18,7 @@ import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-sys.path.insert(0, r"D:\Downloads\stuff\ppp\pentesting\betting\operator")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import demo.server as S
 from demo import provider_demos
 

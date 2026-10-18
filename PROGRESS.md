@@ -1,5 +1,46 @@
 # PROGRESS
 
+## DONE (2026-10-18 — operator arc hardening: crypto, behaviour, sports stats, providers, wheel, test deposits, decision 0057)
+
+- **Cryptocurrency is a real rail** (NOWPayments, §1). New `demo/crypto.py`
+  mirrors the Asaas rail: stdlib, injectable transport, no cross-host redirect,
+  and the **IPN is a hint, never proof** — every confirmation re-reads the
+  payment and checks asset + amount before posting. Routes `/api/deposit/crypto`,
+  `/status` and `POST|GET /api/webhooks/crypto`; the cashier shows the coin,
+  address and a poll. Config-gated; unconfigured keeps the instant credit.
+  Runbook `docs/crypto.md`. Tests: `CryptoTest` (7), `CryptoDepositTest` (12).
+- **Admin win/loss control that is actually read** (§2). New `demo/behaviour.py`
+  (`normal` / `always_win` / `always_lose` / `win_rate` + `win_rate_percent`)
+  drives every operator-decided settlement; a forced win is a **real** winning
+  draw found against the game's own engine, never a fabricated one. Publisher
+  rounds scale the payout we post and record `biased`/`bias_mode`. The painel
+  shows the mode, the slider and the live saldo. Test: `BehaviourTest` (9).
+- **Test deposits move the wallet** (§7). A test account funds itself through the
+  normal deposit path as a genuine, `test`-tagged deposit; the painel credit
+  posts the same way; a test account never touches the real rail. Test:
+  `TestDepositTest` (5).
+- **Asaas plumbing fixed** (§3). The deploy read `.env.asaas`, which never
+  existed; `render_deploy.py` now resolves the first *complete* credential file
+  (`.env.asaas` / `.env.asaasprod` / `.env.asaas.sandbox`) and carries crypto
+  settings too. Production flip awaits the owner's keys.
+- **Sports: a stats feed and honest count markets** (§4). New
+  `frame/verticals/sports/stats_engine.py` reads Flashscore's per-match stats
+  (`df_st_1_`) and incidents (`df_sui_1_`), cached and budgeted. New in-play
+  **cards / corners / fouls** over/under markets (`pricing.count_over`, the line
+  moving on the .5 grid) settle from the final stats — pending, never a guess,
+  without them. Sport tabs use inline **SVG** icons (no emoji); a stats panel
+  sits in the "mais mercados" drawer; tabs/selections/odds enlarged. Test:
+  `MatchStatsTest` (7). Scorer props remain an honest gap (lineups empty).
+- **Providers re-verified live** (§5). New `scripts/live_providers.py` proves our
+  wallet answers and debits; live 2026-10-18 wired **22/22** sampled games across
+  hacksaw, pg_soft, pragmatic_play, play_n_go and spribe (evolution launcher
+  502'd from this host). `demo/_sweep.py`'s hardcoded Windows path fixed.
+- **Roda da Sorte is 97% by construction** (§6). 100 equal sectors summing to 97
+  (the prior ladder was 137%); animated SVG `WheelPanel`, cover, cert
+  `BR-DEMO-0011`. Test: `WheelTest` (7).
+- Suites: frame 50/50; demo 354 tests with only the 6 pre-existing `sqlalchemy`
+  (Postgres seam) errors; `verify.py` 0 problems; frontend `npm run build` OK.
+
 ## DONE (2026-10-17 — Authgear social login + a real sports book, decisions 0054–0055)
 
 - **Google/Facebook login through Authgear** (new `foundry/oauth`, vendored):

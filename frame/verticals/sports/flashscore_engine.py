@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 from .contract import BetReceipt, Fixture, Market, Quote
 from . import marketboard as MB
 from . import locale_pt as PT
+from . import stats_engine as SE
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
@@ -53,6 +54,10 @@ FS_STATUS = {"1": "STATUS_SCHEDULED", "2": "IN_PROGRESS", "3": "STATUS_FINAL"}
 LIVE_CAP = {"soccer": 90, "futsal": 40, "handball": 60, "basketball": 48,
             "hockey": 60, "rugby": 80, "football": 60}
 RANK = {"IN_PROGRESS": 0, "STATUS_SCHEDULED": 1, "STATUS_FINAL": 2}
+
+# Sports whose per-match stats feed we read (cards, corners, fouls). A sport
+# without a stats feed simply never carries those markets.
+STATS_SPORTS = {"soccer", "futsal"}
 
 # settlement's archive: yesterday's finals, pulled lazily with its own cache
 # so the board never pays ten extra requests for a lookup it rarely needs
@@ -157,6 +162,10 @@ class FlashscoreSportsEngine:
     fetcher: object = None
     results_cache: str = RESULTS_CACHE
     sports: dict = field(default_factory=lambda: dict(SPORTS))
+    # the per-match stats reader (cards/corners/fouls + the stats panel); its
+    # own bounded, cached transport, lazily built so a board that never asks
+    # for stats never constructs it
+    stats_engine: object = None
     _events: list[dict] = field(default_factory=list)
     _fetched_at: float = 0.0
     _results: list[dict] = field(default_factory=list)
@@ -255,7 +264,23 @@ class FlashscoreSportsEngine:
                         home=r["home"], away=r["away"],
                         kickoff_date=r["kickoff"], status=r["status"],
                         home_score=r["home_score"], away_score=r["away_score"],
-                        progress=self._progress(r)) for r in self._events]
+                        progress=self._progress(r),
+                        stats=self._stats_for(r)) for r in self._events]
+
+    def _stats_reader(self):
+        if self.stats_engine is None:
+            self.stats_engine = SE.MatchStatsEngine()
+        return self.stats_engine
+
+    def _stats_for(self, row: dict) -> dict:
+        """The Match-section stats for one fixture, or `{}`. A scheduled match
+        has no stats yet and a sport with no stats feed is never asked, so the
+        budget is spent only on the fixtures the panel can actually show."""
+        if row.get("status") == "STATUS_SCHEDULED":
+            return {}
+        if str(row.get("sport") or "") not in STATS_SPORTS:
+            return {}
+        return self._stats_reader().match_stats(str(row["key"]))
 
     def _row(self, fixture_key: str) -> dict | None:
         self._refresh()
@@ -333,7 +358,8 @@ class FlashscoreSportsEngine:
         return MB.quote_markets(fixture_key, str(row["sport"]), row["home"],
                                 row["away"], live=live, minute=minute,
                                 home_score=row.get("home_score"),
-                                away_score=row.get("away_score"))
+                                away_score=row.get("away_score"),
+                                stats=self._stats_for(row))
 
     def quote(self, market_key: str) -> Quote | None:
         fixture_key = market_key.rsplit(":", 1)[0]

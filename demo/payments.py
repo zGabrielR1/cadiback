@@ -1,10 +1,11 @@
 """Demo payments: personal-info validation + Pix payout stub. Stdlib only.
 
 Deposit methods are Pix / TED / debit / prepaid — the Portaria 615/2024
-allowlist. Anything else (credit, crypto, cash, boleto) is rejected by name,
-not by silence. Pix keys follow the BCB shapes (CPF / CNPJ / email / phone /
-EVP). The account holder must be the player (own-name rule). All money still
-moves through ``frame.wallet.Books`` so every demo real balances to zero.
+allowlist — plus the crypto coins (decision 0057) that settled as an accepted
+rail. Anything else (credit, cash, boleto) is rejected by name, not by silence.
+Pix keys follow the BCB shapes (CPF / CNPJ / email / phone / EVP). The account
+holder must be the player (own-name rule). All money still moves through
+``frame.wallet.Books`` so every demo real balances to zero.
 """
 
 from __future__ import annotations
@@ -16,7 +17,9 @@ from frame.core.ids import normalize
 from frame.wallet.books import DuplicatePosting
 
 PIX_METHODS = ("pix", "ted", "debit", "prepaid")
-REJECTED_METHODS = ("credit", "crypto", "cash", "boleto", "pix_credito")
+CRYPTO_METHODS = ("crypto", "bitcoin", "btc", "ethereum", "eth", "usdt", "usdc", "litecoin", "ltc")
+PAYMENT_METHODS = PIX_METHODS + CRYPTO_METHODS
+REJECTED_METHODS = ("credit", "cash", "boleto", "pix_credito")
 
 _EMAIL = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 _PHONE = re.compile(r"^\+?55?\d{10,11}$")
@@ -191,19 +194,19 @@ def mask_pix_key(raw: str) -> str:
 
 def check_deposit_method(method: str) -> str:
     name = (method or "").strip().lower()
-    if name in PIX_METHODS:
+    if name in PIX_METHODS or name in CRYPTO_METHODS:
         return name
     if name in REJECTED_METHODS or not name:
         raise PaymentError(
             f"method {name or 'empty'} is prohibited "
-            "(Portaria 615/2024: Pix/TED/debit/prepaid only, no credit, "
-            "no crypto, no Pix Credito)"
+            "(Portaria 615/2024: Pix/TED/debit/prepaid or crypto only, "
+            "no credit, no cash, no boleto, no Pix Credito)"
         )
     raise PaymentError(f"unknown deposit method: {name}")
 
 
 def process_deposit(books, exclusions, limits, player_id, amount_minor, method,
-                    deposit_today_minor=0, deposit_id=None):
+                    deposit_today_minor=0, deposit_id=None, metadata=None):
     """Validate then post a demo deposit, idempotent on ``deposit_id``.
 
     The caller supplies the id. Keying on a running total made a retry a new
@@ -221,7 +224,7 @@ def process_deposit(books, exclusions, limits, player_id, amount_minor, method,
         raise PaymentError(f"limit breached: {', '.join(breached)}")
     key = f"demo:deposit:{player_id}:{deposit_id}"
     try:
-        return books.deposit(key, player_id, amount_minor)
+        return books.deposit(key, player_id, amount_minor, metadata=metadata)
     except DuplicatePosting:
         existing = next((p for p in books.postings if p.key == key), None)
         return existing if existing is not None else False

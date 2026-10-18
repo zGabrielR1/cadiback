@@ -25,6 +25,7 @@ import PlinkoPanel from "./components/PlinkoPanel";
 import MinesPanel from "./components/MinesPanel";
 import DicePanel from "./components/DicePanel";
 import KenoPanel from "./components/KenoPanel";
+import WheelPanel from "./components/WheelPanel";
 
 /** Page shell (F1): owns view routing, view-local UI state and the wallet
  * action handlers; every visual block lives in components/ and shared
@@ -33,7 +34,8 @@ export default function Page() {
   const session = useSession();
   const {
     player, setPlayer, profile,
-    history, health, asaasAvailable, serverConfig,
+    history, health, asaasAvailable,
+    cryptoAvailable, cryptoCoins, serverConfig,
     refreshError, busy, setBusy, refresh,
   } = session;
 
@@ -114,6 +116,10 @@ export default function Page() {
   // The open Asaas Pix charge, if any: the cashier shows its QR and polls
   // until the provider confirms, then credits through the books.
   const [pixCharge, setPixCharge] = useState(null);
+  // The open NOWPayments invoice, if any: the cashier shows the pay address
+  // and polls until the provider confirms, then credits through the books.
+  const [cryptoCharge, setCryptoCharge] = useState(null);
+  const [cryptoCoin, setCryptoCoin] = useState("");
 
   const anyModal = cashOpen || acctOpen || !!activeOfficialGame;
   useEffect(() => {
@@ -163,6 +169,37 @@ export default function Page() {
       clearInterval(timer);
     };
   }, [pixCharge && pixCharge.deposit_id, pixCharge && pixCharge.posted,
+      cashOpen, player, refresh]);
+
+  // Poll the open crypto invoice until NOWPayments confirms it. Crypto
+  // confirmations are slow (a block or two), so the interval is longer; the
+  // server settles idempotently, so the poll cannot credit twice.
+  useEffect(() => {
+    if (!cryptoCharge || cryptoCharge.posted || !cashOpen || !player) return undefined;
+    let stop = false;
+    const check = async () => {
+      try {
+        const row = await api("POST", "/api/deposit/crypto/status", {
+          player,
+          deposit_id: cryptoCharge.deposit_id,
+        });
+        if (stop) return;
+        setCryptoCharge(row);
+        if (row.posted) {
+          setReceipt("Depósito confirmado: " + BRL(row.amount_minor));
+          await refresh();
+        }
+      } catch (e) {
+        /* transient: the next tick tries again */
+      }
+    };
+    const timer = setInterval(check, 10000);
+    check();
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+  }, [cryptoCharge && cryptoCharge.deposit_id, cryptoCharge && cryptoCharge.posted,
       cashOpen, player, refresh]);
 
   useEffect(() => {
@@ -561,7 +598,13 @@ export default function Page() {
     setBusy(true);
     try {
       const amount = Math.round(parseFloat(depositAmount.replace(",", ".")) * 100);
-      if (asaasAvailable && method === "pix") {
+      // A test account never touches the real rail: its deposits are the
+      // instant, tagged test credit even when Asaas is configured.
+      const realPix = asaasAvailable && method === "pix"
+        && !(profile && profile.is_test);
+      const realCrypto = cryptoAvailable && method === "crypto"
+        && !(profile && profile.is_test);
+      if (realPix) {
         // Real Pix: open the charge and let the poll effect confirm it. The
         // modal stays open showing the QR instead of crediting instantly.
         const charge = await api("POST", "/api/deposit/pix", {
@@ -572,6 +615,18 @@ export default function Page() {
         });
         setReceipt("");
         setPixCharge(charge);
+      } else if (realCrypto) {
+        // Real crypto: open a NOWPayments invoice, show the pay address, and
+        // poll until the provider confirms.
+        const charge = await api("POST", "/api/deposit/crypto", {
+          player,
+          amount_minor: amount,
+          method: "crypto",
+          pay_currency: cryptoCoin || (cryptoCoins[0] && cryptoCoins[0].code) || "usdttrc20",
+          deposit_id: newDepositId(),
+        });
+        setReceipt("");
+        setCryptoCharge(charge);
       } else {
         await api("POST", "/api/deposit", {
           player,
@@ -851,6 +906,18 @@ export default function Page() {
                   onSpin={spin}
                   onClose={() => setCurrent(null)}
                 />
+              ) : currentGame.game_id === "demo:roda-da-sorte" ? (
+                <WheelPanel
+                  game={currentGame}
+                  lastRow={lastRow}
+                  win={win}
+                  message={message}
+                  stake={stake}
+                  busy={busy}
+                  onStake={setStake}
+                  onSpin={spin}
+                  onClose={() => setCurrent(null)}
+                />
               ) : currentGame.game_id === "demo:keno" ? (
                 <KenoPanel
                   game={currentGame}
@@ -967,9 +1034,15 @@ export default function Page() {
         busy={busy}
         onDeposit={deposit}
         onWithdraw={withdraw}
-        asaasAvailable={asaasAvailable}
+        asaasAvailable={asaasAvailable && !(profile && profile.is_test)}
         pixCharge={pixCharge}
         onResetPix={() => setPixCharge(null)}
+        cryptoAvailable={cryptoAvailable && !(profile && profile.is_test)}
+        cryptoCharge={cryptoCharge}
+        onResetCrypto={() => setCryptoCharge(null)}
+        cryptoCoins={cryptoCoins}
+        cryptoCoin={cryptoCoin}
+        onCryptoCoin={setCryptoCoin}
         onClose={() => setCashOpen(false)}
       />
 

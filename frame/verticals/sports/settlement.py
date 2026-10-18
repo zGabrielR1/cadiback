@@ -27,6 +27,25 @@ _AWAY = {"fora", "away", "2", "visitante"}
 _OVER = {"mais", "over", "cima", "+"}
 _UNDER = {"menos", "under", "baixo", "-"}
 
+# Kind -> the match-stats key whose two sides sum to the count the market is
+# settled on (stats_engine). A count market with no stats behind it stays
+# undetermined (None), never a guess.
+COUNT_STATS = {"cards": "yellow_cards", "corners": "corners", "fouls": "fouls"}
+
+
+def _count_total(kind: str, stats: object) -> int | None:
+    key = COUNT_STATS.get(kind)
+    if not key or not isinstance(stats, dict):
+        return None
+    section = stats.get("match") or stats
+    pair = section.get(key) if isinstance(section, dict) else None
+    if not pair:
+        return None
+    try:
+        return int(round(sum(float(v or 0) for v in pair)))
+    except (TypeError, ValueError):
+        return None
+
 
 def _norm(text: object) -> str:
     return str(text or "").strip().casefold()
@@ -43,8 +62,13 @@ def _fragment(kind: object) -> str:
 
 def resolve(kind: object, selection: object, home: object, away: object,
             home_score: object, away_score: object,
-            line: object = None) -> str | None:
-    """The verdict for one market against one real final score."""
+            line: object = None, stats: object = None) -> str | None:
+    """The verdict for one market against one real final score.
+
+    A counting market (`cards`, `corners`, `fouls`) is decided by the final
+    match stats rather than the scoreline, so it needs `stats`; without it the
+    verdict is undetermined.
+    """
     pick = _norm(selection)
     if not pick:
         return None
@@ -106,6 +130,22 @@ def resolve(kind: object, selection: object, home: object, away: object,
             return "won" if edge > 0 else ("push" if edge == 0 else "lost")
         if pick in _AWAY or pick == other:
             return "won" if edge < 0 else ("push" if edge == 0 else "lost")
+        return None
+
+    if text in COUNT_STATS:
+        count = _count_total(text, stats)
+        if count is None:
+            return None
+        try:
+            bound = float(line)
+        except (TypeError, ValueError):
+            return None
+        if count == bound:
+            return "push"
+        if pick in _OVER:
+            return "won" if count > bound else "lost"
+        if pick in _UNDER:
+            return "won" if count < bound else "lost"
         return None
 
     fragment = _fragment(kind)

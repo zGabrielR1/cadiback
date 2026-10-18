@@ -16,12 +16,15 @@ No real money moves; no commercial legal or regulatory obligations.
 | `frame/` | Core double-entry wallet, ledger, and rules (45 checks) |
 | `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (282 checks) |
 | `demo/asaas.py` | Real Pix through Asaas: charge, QR, provider-confirmed settlement |
+| `demo/crypto.py` | Real crypto through NOWPayments: invoice, address, IPN-confirmed settlement |
+| `scripts/live_providers.py` | Live provider harness: launch each publisher and prove our wallet answers + debits |
 | `foundry/` | Vendored modules from the foundry kit (stdlib only) — email, Turnstile and OAuth today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decisions 0047, 0048, 0054) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
 | `Dockerfile`, `render.yaml` | The deploy: one container, built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/asaas.md` | Real Pix via Asaas: credentials, webhook registration, production swap |
+| `docs/crypto.md` | Real crypto via NOWPayments: credentials, IPN signing, production swap |
 | `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
 | `docs/oauth.md` | Social login (Authgear): credentials, the CPF-completion flow, the no-op-when-unconfigured rule, the Authgear-portal steps |

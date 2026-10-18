@@ -1,4 +1,64 @@
-CURRENTTASK: Authgear social login (Google/Facebook + CPF, decision 0054) and a
+CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
+real crypto rail, admin win/loss behaviour control with the saldo visible, the
+Asaas deploy fixed, a fuller sports channel (stats-derived markets + SVG icons),
+every provider wallet proxy re-verified live, a new original (Roda da Sorte),
+and self-service test deposits for test accounts.
+
+## STATUS
+
+- **CRYPTO IS A REAL RAIL (NOWPayments, 0057 §1).** New `demo/crypto.py`
+  mirrors `demo/asaas.py` — stdlib, injectable transport, no cross-host
+  redirect, and **the IPN webhook is a hint, never proof**: every confirmation
+  re-reads the payment from the provider and checks the asset + amount before a
+  centavo posts. Routes `/api/deposit/crypto`, `/api/deposit/crypto/status`,
+  `POST|GET /api/webhooks/crypto`. The cashier shows the coin, address, amount
+  and a poll. Unconfigured stays the instant demo credit. `CryptoTest` (7) +
+  `CryptoDepositTest` (12); runbook `docs/crypto.md`. Live half awaits the key.
+- **BEHAVIOUR CONTROL IS READ, NOT JUST WRITTEN (0057 §2).** `demo/behaviour.py`
+  (`normal` / `always_win` / `always_lose` / `win_rate` + `win_rate_percent`)
+  is applied by every operator-decided settlement (`Demo.spin` for slots,
+  roulette, arcade originals and the wheel; `settle_rgs_round` for publisher
+  rounds, where bias scales the payout **we post** and the row records
+  `biased`/`bias_mode`). A forced win is a *real* winning draw found by
+  searching derived round ids against the game's own engine — the outcome is
+  never fabricated. The painel shows the mode, the slider and the live
+  `available_minor`/`bonus_minor`. `BehaviourTest` (9).
+- **TEST DEPOSITS MOVE THE WALLET (0057 §7).** A test account funds itself
+  through the normal deposit path, posted as a genuine `deposit` tagged
+  `test`; the painel credit posts the same way (not an `adjustment`); a test
+  account never touches the real Pix/crypto rail. `TestDepositTest` (5).
+- **ASAAS PLUMBING FIXED (0057 §3).** The deploy read `.env.asaas`, which never
+  existed; `render_deploy.py` now resolves the first *complete* credential file
+  among `.env.asaas` / `.env.asaasprod` / `.env.asaas.sandbox` (so a half-filled
+  prod file cannot pair a prod customer with a sandbox key) and carries the
+  crypto settings too. Production flip awaits the owner's prod keys.
+- **SPORTS: A STATS FEED AND HONEST COUNT MARKETS (0057 §4).** New
+  `frame/verticals/sports/stats_engine.py` reads `df_st_1_<id>` (possession,
+  shots, corners, cards, fouls) and `df_sui_1_<id>` (scorers), cached and
+  budgeted. The board adds **in-play cards/corners/fouls over/under** markets
+  (`pricing.count_over`, the line moving on the .5 grid) and
+  `settlement.resolve` decides them from the final stats — pending, never a
+  guess, without them. Scorer props stay an honest gap (lineups feed empty).
+  Sport tabs now use inline **SVG** icons (no emoji/glyphs), a stats panel shows
+  inside the "mais mercados" drawer, and tabs/selections/odds were enlarged.
+  `MatchStatsTest` (7).
+- **PROVIDERS RE-VERIFIED LIVE (0057 §5).** New `scripts/live_providers.py`
+  funds a player, opens a wallet session per game, fetches the launcher and asks
+  what the old byte-count sweep never did: does **our** wallet answer and debit?
+  Live 2026-10-18: **22/22 sampled games wired** (hacksaw, pg_soft,
+  pragmatic_play, play_n_go, spribe); evolution's launcher 502'd (upstream
+  `URLError` from this host). The harness states plainly that the in-page spin
+  hop still needs a browser. `demo/_sweep.py`'s hardcoded Windows path fixed.
+- **RODA DA SORTE IS 97% BY CONSTRUCTION (0057 §6).** 100 equal sectors whose
+  ladder sums to 97 (the prior ladder was 137%); animated SVG `WheelPanel`,
+  cover, cert `BR-DEMO-0011`. `WheelTest` (7).
+- Suites: `frame` 50/50 · `demo` 354 tests with only the 6 pre-existing
+  `sqlalchemy` (Postgres seam) errors · `verify.py` 0 problems · frontend
+  `npm run build` OK. Decision `0057`.
+- OPEN: Asaas prod keys + NOWPayments key/IPN (owner); a browser pass over the
+  deployed provider launchers; the deploy itself.
+
+CURRENTTASK (previous): Authgear social login (Google/Facebook + CPF, decision 0054) and a
 better sports book (per-market overround, draw-no-bet + asian handicap,
 live-score tilt, and an ESPN moneyline overlay, decision 0055).
 

@@ -92,7 +92,7 @@ DEFAULT_ASSET_CACHE = "public, max-age=600"
 ALLOWED_SUFFIXES: tuple[str, ...] = (
     ".pragmaticplay.net", ".pgsoft-games.com", ".hacksawgaming.com",
     ".playngonetwork.com", ".evolution.com", ".spribegaming.com",
-    ".spribe.io",
+    ".spribe.io", ".pg-demo.com",
 )
 
 # Statuses whose Location we hand back to the browser instead of following:

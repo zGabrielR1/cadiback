@@ -54,6 +54,7 @@ from .payments import (
     PaymentError,
     check_deposit_method,
     classify_pix_key,
+    CRYPTO_METHODS,
     mask_pix_key,
     process_deposit,
     process_withdrawal,
@@ -68,16 +69,19 @@ from .auth import AuthError, SessionBook, SessionStore, UserStore
 from .slot import DEMO_RTP_STR, spin, tiers_for
 from .casino import ROULETTE_GAME_ID, roulette_spin
 from .arcade import (ARCADE_GAME_IDS, CRASH_GAME_ID, CRASH_GROWTH_PER_SEC,
-                     CRASH_LIVE_MAX, KENO_GAME_ID, MINES_GAME_ID,
+                     CRASH_LIVE_MAX, KENO_GAME_ID, MINES_GAME_ID, WHEEL_GAME_ID,
                      PLINKO_GAME_ID, arcade_round, crash_bust_multiplier,
                      crash_elapsed_for, crash_live_round,
                      crash_multiplier_at, theoretical_rtp as
                      arcade_theoretical_rtp)
+from . import behaviour
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
 from . import pg_proxy
 from . import rgs_proxy
 from .asaas import AsaasClient, AsaasConfig, resolve_webhook
+from .crypto import (CryptoClient, CryptoConfig, resolve_ipn as
+                     resolve_crypto_ipn, SUPPORTED_COINS)
 from .db import database_url, db_env, make_engine, make_session_factory, using_postgres
 from .risk import RiskPolicy, evaluate_player
 from .vendor import AggregatorError, VendorAggregator, VendorConfig
@@ -296,6 +300,7 @@ DEMO_CATEGORY = {
     "demo:minas": "Crash",
     "demo:dados": "Originais",
     KENO_GAME_ID: "Originais",
+    WHEEL_GAME_ID: "Originais",
 }
 
 
@@ -466,6 +471,21 @@ def demo_registry() -> GameRegistry:
             rtp="97.00",
         )
     )
+    registry.register(
+        GameCertification(
+            game_id=WHEEL_GAME_ID,
+            provider="demo_studio",
+            title="Roda da Sorte",
+            rng_reference="demo-sha256-v1",
+            certificate_id="BR-DEMO-0011",
+            lab="DEMO-LAB",
+            issued_for=BRAZIL,
+            status="certified",
+            sigap_submission="submitted",
+            certified_on="2026-10-17",
+            rtp="97.00",
+        )
+    )
     return registry
 
 
@@ -628,6 +648,16 @@ class Demo:
         self.asaas_path = os.path.join(data_dir, "asaas_charges.json")
         self._asaas_lock = threading.RLock()
         self.asaas_charges: dict[str, dict] = self._load_asaas_charges()
+        # NOWPayments crypto rail (decision 0057). Same discipline as Asaas: an
+        # invoice is a request, the books trust only a fresh read of the
+        # provider, and unconfigured is a normal state (the storefront hides
+        # the crypto tab).
+        self.crypto_config = CryptoConfig.from_env()
+        self.crypto = (CryptoClient(self.crypto_config)
+                       if self.crypto_config.configured else None)
+        self.crypto_path = os.path.join(data_dir, "crypto_charges.json")
+        self._crypto_lock = threading.RLock()
+        self.crypto_charges: dict[str, dict] = self._load_crypto_charges()
         # Postgres (decision 0049): an explicit session factory, or None for
         # files. Never ambiently selected — run() wires it from the real
         # environment, tests inject SQLite or nothing — so importing this
@@ -656,8 +686,10 @@ class Demo:
         # and Facebook buttons. The client is injectable so tests never dial.
         # Links and in-flight states live in memory / a small JSON store; the
         # player row itself is written by the same code the password path uses.
-        self.oauth = oauth if oauth is not None else resolve_oauth(
-            env=authgear_env())
+        if oauth is None:
+            self.oauth = resolve_oauth(env={})
+        else:
+            self.oauth = oauth
         self.oauth_links = Store(os.path.join(data_dir, "oauth_links.json"))
         self._oauth_lock = threading.RLock()
         self.oauth_states: dict[str, dict] = {}
@@ -834,6 +866,9 @@ class Demo:
         config["turnstile_site_key"] = self.turnstile_site_key
         config["oauth_enabled"] = self.oauth_enabled()
         config["oauth_providers"] = self.oauth_status()["providers"]
+        config["asaas_enabled"] = self.asaas_available()
+        config["crypto_enabled"] = self.crypto_available()
+        config["crypto_coins"] = self.crypto_coins()
         return config
 
     # ---- social login (Authgear / OIDC, decision 0054) ----
@@ -1336,6 +1371,57 @@ class Demo:
                 f"para aposta de {stake}")
         return bonus_part
 
+    # -- win/loss behaviour control (painel) --------------------------
+
+    def _bias_profile(self, player_id: str):
+        """The player's outcome dial, normalised: ``(mode, rate)``."""
+        row = self.players.read_all().get(player_id)
+        if not isinstance(row, dict):
+            return behaviour.DEFAULT_MODE, None
+        mode = behaviour.normalize_mode(row.get("outcome_bias"))
+        rate = (behaviour.normalize_rate(row.get("win_rate_percent"))
+                if mode == "win_rate" else None)
+        return mode, rate
+
+    def _payout_for(self, game_id: str, round_id: str, selection,
+                    stake: int) -> int:
+        """The gross payout one frozen draw of ``game_id`` yields.
+
+        Reads the same deterministic engines the settlement does, so a forced
+        win is a *real* winning draw from the game's own paytable, never an
+        invented number."""
+        if game_id == ROULETTE_GAME_ID:
+            result = roulette_spin(game_id, round_id, selection)
+        elif game_id in ARCADE_GAME_IDS:
+            return arcade_round(game_id, round_id, selection,
+                                stake).payout_minor
+        else:
+            result = spin(game_id, round_id)
+        return (int(round(stake * float(result.multiplier)))
+                if result.is_win else 0)
+
+    def _biased_round_id(self, player_id: str, game_id: str, round_id: str,
+                         selection, stake: int):
+        """Resolve the painel's win/loss dial for one in-house round.
+
+        Returns ``(round_id, bias)``. ``bias`` is ``None`` for an unbiased
+        round, or a small dict recorded on the round row so the ledger states
+        the outcome was steered — and whether the steer found a matching draw.
+        """
+        mode, rate = self._bias_profile(player_id)
+        if mode == behaviour.DEFAULT_MODE:
+            return round_id, None
+        want = behaviour.outcome_for(f"{player_id}:{game_id}:{round_id}",
+                                     mode, rate)
+        if want is None:
+            return round_id, None
+        chosen, applied = behaviour.coerce(
+            lambda rid: self._payout_for(game_id, rid, selection, stake),
+            round_id, stake, want)
+        return chosen, {"mode": mode, "applied": applied,
+                        "win_rate_percent": rate}
+
+
     def claim_bonus(self, payload: dict) -> dict:
         player_id = payload["player"]
         kind = payload.get("kind")
@@ -1485,6 +1571,12 @@ class Demo:
         amount = self._minor(payload["amount_minor"])
         method = payload.get("method", "pix")
         deposit_id = payload.get("deposit_id") or uuid.uuid4().hex
+        # A test account funds itself through the same rail, but the posting is
+        # tagged so the painel can tell a test deposit from a real one. The
+        # money still moves through the books like any other deposit.
+        profile = self.players.read_all().get(player_id)
+        is_test = bool(isinstance(profile, dict) and profile.get("is_test"))
+        metadata = {"test": True, "reason": "test deposit"} if is_test else None
         with self.books.lock:
             key = f"demo:deposit:{player_id}:{deposit_id}"
             if any(p.key == key for p in self.books.postings):
@@ -1498,9 +1590,10 @@ class Demo:
                 self.books, self.exclusions, self.limits,
                 player_id, amount, method,
                 deposit_today_minor=today, deposit_id=deposit_id,
+                metadata=metadata,
             )
             self._record_deposit(player_id, amount)
-        return {"seq": posting.seq, "replayed": False,
+        return {"seq": posting.seq, "replayed": False, "test": is_test,
                 "available_minor": self.books.available(player_id)}
 
     def withdraw(self, payload: dict) -> dict:
@@ -1744,6 +1837,175 @@ class Demo:
                     "deposit_id": deposit_id,
                     "available_minor": self.books.available(str(row["player"]))}
 
+    # -- NOWPayments crypto (real invoice; the books stay the source of truth)
+    # A pending invoice is *not* a balance. Money reaches the player only when
+    # NOWPayments independently says the payment finished and the price
+    # matches, which is why the IPN and the poll both route through the same
+    # idempotent confirm. This mirrors the Asaas rail exactly; the one
+    # difference is the source of truth, because a crypto IPN is easier to
+    # forge, so it is treated even more strictly as a hint.
+    def crypto_available(self) -> bool:
+        return self.crypto is not None
+
+    def crypto_env_name(self) -> str:
+        return self.crypto_config.env_name if self.crypto else ""
+
+    def crypto_coins(self) -> list[dict]:
+        return [{"code": code, "label": label}
+                for code, label in SUPPORTED_COINS]
+
+    def _load_crypto_charges(self) -> dict[str, dict]:
+        path = getattr(self, "crypto_path", "")
+        if not path or not os.path.isfile(path):
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                rows = json.load(handle)
+            return rows if isinstance(rows, dict) else {}
+        except (ValueError, OSError):
+            return {}
+
+    def _save_crypto_charges(self) -> None:
+        tmp = self.crypto_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(self.crypto_charges, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp, self.crypto_path)
+
+    def _put_crypto_charge(self, row: dict) -> None:
+        self.crypto_charges[row["deposit_id"]] = row
+        self._save_crypto_charges()
+
+    def _crypto_view(self, deposit_id: str, row: dict) -> dict:
+        player_id = str(row.get("player") or "")
+        return {
+            "deposit_id": deposit_id,
+            "player": player_id,
+            "amount_minor": int(row.get("amount_minor") or 0),
+            "provider_ref": str(row.get("provider_ref") or ""),
+            "status": ("COMPLETED" if row.get("posted")
+                       else str(row.get("provider_status") or "PENDING")),
+            "posted": bool(row.get("posted")),
+            "pay_address": str(row.get("pay_address") or ""),
+            "pay_currency": str(row.get("pay_currency") or ""),
+            "pay_amount": float(row.get("pay_amount") or 0.0),
+            "env": self.crypto_env_name(),
+            "available_minor": self.books.available(player_id),
+        }
+
+    def create_crypto_deposit(self, payload: dict) -> dict:
+        """Open a NOWPayments invoice. Returns the pay address; credits nothing.
+
+        Idempotent on `deposit_id`: a retried request returns the same invoice
+        instead of opening a second one against the same wallet.
+        """
+        if self.crypto is None:
+            raise ValueError("cripto não está configurado neste servidor")
+        player_id = payload["player"]
+        if player_id not in self.players.read_all():
+            raise ValueError(f"unknown player: {player_id}")
+        amount = self._minor(payload["amount_minor"])
+        method = check_deposit_method(payload.get("method", "crypto"))
+        if method not in CRYPTO_METHODS:
+            raise ValueError("o depósito cripto exige um método cripto")
+        coin = str(payload.get("pay_currency") or "").strip().lower()
+        codes = {code for code, _ in SUPPORTED_COINS}
+        if coin not in codes:
+            raise ValueError(f"moeda não suportada: {coin or 'vazio'}")
+        deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
+        with self._crypto_lock:
+            existing = self.crypto_charges.get(deposit_id)
+            if existing and existing.get("player") == player_id:
+                return self._crypto_view(deposit_id, existing)
+            charge = self.crypto.create_payment(
+                txid=deposit_id, amount_cents=amount, pay_currency=coin)
+            row = {
+                "deposit_id": deposit_id,
+                "player": player_id,
+                "amount_minor": amount,
+                "provider_ref": charge.provider_ref,
+                "provider_status": charge.status,
+                "pay_address": charge.pay_address,
+                "pay_currency": charge.pay_currency or coin,
+                "pay_amount": charge.pay_amount,
+                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "posted": False,
+            }
+            self._put_crypto_charge(row)
+            return self._crypto_view(deposit_id, row)
+
+    def _confirm_crypto_charge(self, deposit_id: str, row: dict) -> None:
+        """Post the deposit once, whatever wakes it (IPN or poll)."""
+        with self._crypto_lock:
+            if row.get("posted"):
+                return
+            player_id = str(row["player"])
+            amount = int(row["amount_minor"])
+            with self.books.lock:
+                key = f"demo:deposit:{player_id}:{deposit_id}"
+                if not any(p.key == key for p in self.books.postings):
+                    process_deposit(
+                        self.books, self.exclusions, self.limits,
+                        player_id, amount, "crypto",
+                        deposit_today_minor=self._deposited_today(player_id),
+                        deposit_id=deposit_id,
+                    )
+                    self._record_deposit(player_id, amount)
+            row["posted"] = True
+            row["provider_status"] = "PAID"
+            row["paid_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            self._put_crypto_charge(row)
+
+    def crypto_deposit_status(self, payload: dict) -> dict:
+        """Poll one invoice; confirm it if the provider now says it is paid."""
+        player_id = payload["player"]
+        deposit_id = str(payload["deposit_id"])
+        with self._crypto_lock:
+            row = self.crypto_charges.get(deposit_id)
+            if not row or row.get("player") != player_id:
+                raise ValueError("cobrança cripto não encontrada")
+            if not row.get("posted") and self.crypto is not None \
+                    and row.get("provider_ref"):
+                charge = self.crypto.get_payment(str(row["provider_ref"]))
+                row["provider_status"] = charge.status
+                if charge.status == "PAID" \
+                        and charge.amount_cents == int(row["amount_minor"]):
+                    self._confirm_crypto_charge(deposit_id, row)
+                else:
+                    self._put_crypto_charge(row)
+            return self._crypto_view(deposit_id, row)
+
+    def crypto_webhook(self, payload: dict, headers: dict) -> dict:
+        """Verify the IPN, then confirm from provider truth — never the event."""
+        if self.crypto is None:
+            raise ValueError("cripto não está configurado neste servidor")
+        if not self.crypto.verify_ipn(headers, payload):
+            raise PermissionError("invalid NOWPayments IPN signature")
+        event = resolve_crypto_ipn(payload)
+        if not event["paid"]:
+            return {"received": True, "event": event["event"], "applied": False}
+        deposit_id = event["deposit_id"]
+        with self._crypto_lock:
+            row = self.crypto_charges.get(deposit_id)
+            if not row:
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "unknown deposit"}
+            if event["provider_ref"] and row.get("provider_ref") \
+                    and event["provider_ref"] != row["provider_ref"]:
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "provider ref mismatch"}
+            if int(row["amount_minor"]) != int(event["amount_cents"]):
+                return {"received": True, "event": event["event"],
+                        "applied": False, "reason": "amount mismatch"}
+            if not row.get("posted"):
+                charge = self.crypto.get_payment(str(row["provider_ref"]))
+                if charge.status != "PAID" \
+                        or charge.amount_cents != int(row["amount_minor"]):
+                    raise ValueError("provider has not confirmed the payment")
+                self._confirm_crypto_charge(deposit_id, row)
+            return {"received": True, "event": event["event"], "applied": True,
+                    "deposit_id": deposit_id,
+                    "available_minor": self.books.available(str(row["player"]))}
+
     # -- slot ---------------------------------------------------------
     def spin(self, payload: dict) -> dict:
         player_id = payload["player"]
@@ -1754,6 +2016,8 @@ class Demo:
         cert = self.registry.assert_launchable(game_id)  # BR cert gate
         self.exclusions.assert_playable(player_id)
         round_id = payload.get("round_id") or uuid.uuid4().hex[:12]
+        round_id, bias = self._biased_round_id(
+            player_id, game_id, round_id, payload.get("selection"), stake)
         if game_id == ROULETTE_GAME_ID:
             # table game: the ball is drawn from the same
             # sha256 discipline, but a table game needs a
@@ -1826,6 +2090,11 @@ class Demo:
             "available_minor": self.books.available(player_id),
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
+        if bias is not None:
+            row["biased"] = bias["applied"]
+            row["bias_mode"] = bias["mode"]
+            if bias["win_rate_percent"] is not None:
+                row["win_rate_percent"] = bias["win_rate_percent"]
         self._append_round(row)
         return row
 
@@ -2142,7 +2411,7 @@ class Demo:
                 return "", ""
             verdict = resolve(leg.get("market_kind"), leg.get("selection"),
                               fix.get("home"), fix.get("away"), hs, as_,
-                              leg.get("line"))
+                              leg.get("line"), stats=fix.get("stats"))
             if verdict is None:
                 return "", ""
             notes.append(f"{fix.get('home')} {hs}:{as_} {fix.get('away')}"
@@ -2809,6 +3078,99 @@ class Demo:
         self.pix_keys.pop(player_id, None)
         return {"deleted": player_id, "by": admin["username"]}
 
+    def admin_adjust_player(self, token: str, body: dict) -> dict:
+        """Manual wallet adjustment (win/loss simulation or correction).
+
+        Posts a balanced adjustment through the books so the player's saldo
+        moves and the ledger stays integral. Positive amounts credit the
+        player, negative amounts debit. Admin only; idempotent on
+        ``adjustment_id``."""
+        admin = self._require_admin(token)
+        player_id = str((body or {}).get("player_id") or "")
+        data = self.players.read_all()
+        if player_id not in data:
+            raise ValueError("jogador não encontrado")
+        amount = int((body or {}).get("amount_minor") or 0)
+        if amount == 0:
+            raise ValueError("informe um valor diferente de zero")
+        if amount > 10_000_000 or amount < -10_000_000:
+            raise ValueError("valor fora do limite")
+        reason = str((body or {}).get("reason") or "admin adjustment").strip()[:120]
+        adj_id = str((body or {}).get("adjustment_id") or uuid.uuid4().hex[:12])
+        key = f"demo:adj:{player_id}:{adj_id}"
+        with self.books.lock:
+            if any(p.key == key for p in self.books.postings):
+                return {"adjusted": player_id, "replayed": True,
+                        "available_minor": self.books.available(player_id),
+                        "by": admin["username"]}
+            posting = self.books.net(key, player_id, amount, reason)
+            self.books.assert_balanced()
+        return {"adjusted": player_id, "adjustment_id": adj_id,
+                "amount_minor": amount, "reason": reason,
+                "available_minor": self.books.available(player_id),
+                "seq": posting.seq, "by": admin["username"]}
+
+    def admin_test_deposit(self, token: str, body: dict) -> dict:
+        """Credit a test account's wallet with a test deposit.
+
+        Only test accounts (is_test) may receive a test deposit, so the
+        rail cannot be used to inject real money into a public account.
+        The amount posts as a genuine ``deposit`` (not an adjustment) so the
+        wallet, the first-deposit rule and the promos all react to it, tagged
+        ``test`` so the painel can tell it from a real one."""
+        admin = self._require_admin(token)
+        player_id = str((body or {}).get("player_id") or "")
+        data = self.players.read_all()
+        row = data.get(player_id)
+        if not isinstance(row, dict) or not row.get("is_test"):
+            raise ValueError("conta de teste não encontrada")
+        amount = int((body or {}).get("amount_minor") or 0)
+        if amount <= 0:
+            raise ValueError("valor do depósito de teste deve ser positivo")
+        if amount > 10_000_000:
+            raise ValueError("valor fora do limite")
+        dep_id = str((body or {}).get("deposit_id") or uuid.uuid4().hex[:12])
+        key = f"demo:testdep:{player_id}:{dep_id}"
+        with self.books.lock:
+            if any(p.key == key for p in self.books.postings):
+                return {"deposited": player_id, "replayed": True,
+                        "available_minor": self.books.available(player_id),
+                        "by": admin["username"]}
+            posting = self.books.deposit(
+                key, player_id, amount,
+                metadata={"test": True, "reason": "admin test deposit",
+                          "by": admin["username"]})
+            self.books.assert_balanced()
+            self._record_deposit(player_id, amount)
+        return {"deposited": player_id, "deposit_id": dep_id,
+                "amount_minor": amount,
+                "available_minor": self.books.available(player_id),
+                "seq": posting.seq, "by": admin["username"]}
+
+    def admin_set_behaviour(self, token: str, body: dict) -> dict:
+        """Set how a player's wins/losses are steered, for testing.
+
+        mode in {normal, always_win, always_lose, win_rate}. A win_rate also
+        carries ``win_rate_percent`` (0..100). Stored on the player row and
+        read by every operator-decided settlement (see ``behaviour.py``)."""
+        admin = self._require_admin(token)
+        player_id = str((body or {}).get("player_id") or "")
+        data = self.players.read_all()
+        if player_id not in data or not isinstance(data[player_id], dict):
+            raise ValueError("jogador não encontrado")
+        mode = str((body or {}).get("mode") or "normal").strip().lower()
+        if mode not in behaviour.MODES:
+            raise ValueError(
+                "modo inválido (normal/always_win/always_lose/win_rate)")
+        rate = behaviour.normalize_rate((body or {}).get("win_rate_percent"))
+        data[player_id]["outcome_bias"] = mode
+        data[player_id]["win_rate_percent"] = rate
+        data[player_id]["updated_at"] = datetime.now(timezone.utc).isoformat(
+            timespec="seconds")
+        self.players.write_all(data)
+        return {"player_id": player_id, "outcome_bias": mode,
+                "win_rate_percent": rate, "by": admin["username"]}
+
     def admin_player_dashboard(self, token: str, player_id: str) -> dict:
         """Per-player drill-down for the painel: a human-facing summary of
         one account drawn from the same stores the rest of the demo uses.
@@ -2833,9 +3195,13 @@ class Demo:
                 payout_day += int(r.get("payout_minor", 0) or 0)
         with self.books.lock:
             deposits = 0
+            test_deposits = 0
             for p in self.books.postings:
                 if p.kind == "deposit" and p.metadata.get("player") == player_id:
-                    deposits += sum(a for acc, a in p.legs if acc == PLAYER_BALANCE)
+                    amount = sum(a for acc, a in p.legs if acc == PLAYER_BALANCE)
+                    deposits += amount
+                    if p.metadata.get("test"):
+                        test_deposits += amount
         risk = self.risk(player_id)
         wins = sum(1 for r in rounds if int(r.get("payout_minor", 0) or 0) > 0)
         return {
@@ -2844,15 +3210,21 @@ class Demo:
             "player": {
                 "player_id": player_id,
                 "name": str(profile.get("name", "")),
+                "is_test": bool(profile.get("is_test", False)),
                 "cpf_masked": str(profile.get("cpf_masked", "")),
                 "pix_masked": str(profile.get("pix_masked", "")),
                 "pix_kind": str(profile.get("pix_kind", "")),
+                "outcome_bias": behaviour.normalize_mode(
+                    profile.get("outcome_bias")),
+                "win_rate_percent": behaviour.normalize_rate(
+                    profile.get("win_rate_percent")),
                 "updated_at": str(profile.get("updated_at", "")),
             },
             "balance": {
                 "available_minor": self.books.available(player_id),
                 "bonus_minor": self.books.bonus_available(player_id),
                 "deposits_minor": deposits,
+                "test_deposits_minor": test_deposits,
                 "first_deposit_minor": (
                     int(self._deposit_amounts(player_id)[0])
                     if self._deposit_amounts(player_id)
@@ -2892,6 +3264,8 @@ class Demo:
                     "type": str(r.get("type", "") or ""),
                     "market_kind": str(r.get("market_kind", "") or ""),
                     "selection": str(r.get("selection", "") or ""),
+                    "biased": bool(r.get("biased")),
+                    "bias_mode": str(r.get("bias_mode", "") or ""),
                     "ts": str(r.get("ts", "")),
                 }
                 for r in rounds[-12:]
@@ -3116,6 +3490,7 @@ class Demo:
                         "away_score": fix.away_score,
                         "progress": fix.progress or _sports_progress(
                             fix.kickoff_date, fix.status, fix.sport),
+                        "stats": fix.stats or {},
                         "markets": markets,
                     })
                 if fixtures:
@@ -3450,6 +3825,14 @@ class Demo:
         if player_id not in self.players.read_all():
             raise KeyError(f"unknown player: {player_id}")
         self.exclusions.assert_playable(player_id)
+        # the publisher owns its round, so the painel's dial scales the payout
+        # *we post* here rather than the draw itself; the row records that the
+        # win was steered (see decisions/0057).
+        mode, rate = self._bias_profile(player_id)
+        bias_key = f"{player_id}:rgs:{game_id}:{round_id}"
+        want = behaviour.outcome_for(bias_key, mode, rate)
+        if want is not None:
+            win = behaviour.publisher_win(win, stake, mode, rate, bias_key)
         key = f"rgs:{game_id}:{round_id}"
         with self.books.lock:
             if any(p.key.startswith(key) for p in self.books.postings):
@@ -3465,7 +3848,7 @@ class Demo:
             if demo["game_id"] == game_id:
                 title = demo.get("title") or game_id
                 break
-        self._append_round({
+        row = {
             "round_id": round_id, "player": player_id, "game_id": game_id,
             "title": title, "stake_minor": stake, "tier": "publicado",
             "multiplier": (f"{win / stake:.2f}" if stake else "0"),
@@ -3473,7 +3856,13 @@ class Demo:
             "available_minor": self.books.available(player_id),
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "type": "publisher",
-        })
+        }
+        if want is not None:
+            row["biased"] = True
+            row["bias_mode"] = mode
+            if rate is not None:
+                row["win_rate_percent"] = rate
+        self._append_round(row)
         return {"settled": True, "round_id": round_id, "payout_minor": win,
                 **self._wallet_view(player_id)}
 
@@ -4056,6 +4445,36 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send(200, result)
 
+    def _serve_crypto_webhook(self) -> None:
+        """NOWPayments IPN: verify the HMAC, confirm from provider truth.
+
+        Same status discipline as the Asaas callback: a 5xx asks the provider
+        to retry, a 401/400 is terminal, and an unconfigured server answers 503.
+        """
+        if not DEMO.crypto_available():
+            self._send(503, {"error": "cripto não está configurado"})
+            return
+        raw = self._raw_body()
+        try:
+            payload = json.loads(raw.decode("utf-8")) if raw else {}
+        except (ValueError, UnicodeDecodeError):
+            self._send(400, {"error": "invalid json"})
+            return
+        if not isinstance(payload, dict):
+            self._send(400, {"error": "invalid payload"})
+            return
+        headers = {k.lower(): v for k, v in self.headers.items()}
+        try:
+            result = DEMO.crypto_webhook(payload, headers)
+        except PermissionError as exc:
+            self._send(401, {"error": str(exc)})
+        except (KeyError, ValueError) as exc:
+            self._send(400, {"error": str(exc)})
+        except Exception as exc:  # a transport fault: let the provider retry
+            self._send(500, {"error": f"internal error: {type(exc).__name__}"})
+        else:
+            self._send(200, result)
+
     def _bearer(self) -> str:
         """Painel session token from `Authorization: Bearer …`, or ""."""
         header = self.headers.get("Authorization") or ""
@@ -4182,6 +4601,9 @@ class Handler(BaseHTTPRequestHandler):
                                  "pg_soft": pg_proxy.stats(),
                                  "asaas": {"configured": DEMO.asaas_available(),
                                            "env": DEMO.asaas_env_name()},
+                                 "crypto": {"configured": DEMO.crypto_available(),
+                                            "env": DEMO.crypto_env_name(),
+                                            "coins": DEMO.crypto_coins()},
                                  "mail": DEMO.mail_status(),
                                  "turnstile": DEMO.turnstile_status(),
                                  "oauth": DEMO.oauth_status(),
@@ -4191,6 +4613,9 @@ class Handler(BaseHTTPRequestHandler):
                 # answers 200 proves reachability without trusting anything.
                 self._send(200, {"status": "ok",
                                  "configured": DEMO.asaas_available()})
+            elif parsed.path == "/api/webhooks/crypto":
+                self._send(200, {"status": "ok",
+                                 "configured": DEMO.crypto_available()})
             elif parsed.path == "/api/player":
                 from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)
@@ -4328,6 +4753,9 @@ class Handler(BaseHTTPRequestHandler):
             if urlparse(self.path).path == "/api/webhooks/asaas":
                 self._serve_asaas_webhook()
                 return
+            if urlparse(self.path).path == "/api/webhooks/crypto":
+                self._serve_crypto_webhook()
+                return
             if not self._same_origin():
                 import sys
 
@@ -4362,6 +4790,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.create_pix_deposit(self._body()))
             elif path == "/api/deposit/pix/status":
                 self._send(200, DEMO.pix_deposit_status(self._body()))
+            elif path == "/api/deposit/crypto":
+                self._send(200, DEMO.create_crypto_deposit(self._body()))
+            elif path == "/api/deposit/crypto/status":
+                self._send(200, DEMO.crypto_deposit_status(self._body()))
             elif path == "/api/withdraw":
                 self._send(200, DEMO.withdraw(self._body()))
             elif path == "/api/spin":
@@ -4445,6 +4877,15 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/admin/mail/test":
                 self._send(200, DEMO.admin_mail_test(
                     self._bearer(), self._body()))
+            elif path == "/api/admin/adjust-player":
+                self._send(200, DEMO.admin_adjust_player(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/test-deposit":
+                self._send(200, DEMO.admin_test_deposit(
+                    self._bearer(), self._body()))
+            elif path == "/api/admin/set-behaviour":
+                self._send(200, DEMO.admin_set_behaviour(
+                    self._bearer(), self._body()))
             else:
                 self._send(404, {"error": "not found"})
         except AuthError as exc:
@@ -4487,7 +4928,8 @@ def run(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
     global DEMO
     # Postgres wiring (decision 0049): files stay the default when DATABASE_URL
     # is unset; with it, the ported stores read the database instead.
-    DEMO = Demo(db=_ambient_db())
+    DEMO = Demo(db=_ambient_db(),
+                oauth=resolve_oauth(env=authgear_env()))
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"operator demo (NO REAL MONEY) on http://{host}:{port}")
     stop = threading.Event()

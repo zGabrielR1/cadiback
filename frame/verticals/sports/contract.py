@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 
@@ -23,6 +23,11 @@ class Fixture:
     away_score: int | None = None
     # the in-play clock/state label ("67'", "HT", "3ºQ"); empty when not live
     progress: str = ""
+    # the parsed match-stats section (`{stat_key: (home, away)}`) when the
+    # source read one; empty when the source ships no per-match stats. The
+    # board quotes its counting markets off this and settlement settles them
+    # against it, so it is a fact, never a derived guess.
+    stats: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

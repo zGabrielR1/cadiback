@@ -60,18 +60,91 @@ export default function AdminPanel({ session, onSession }) {
   const [playerDetail, setPlayerDetail] = useState(null);
   const [playerBusy, setPlayerBusy] = useState(false);
   const [playerLoader, setPlayerLoader] = useState(false);
+  const [adjAmount, setAdjAmount] = useState("");
+  const [adjReason, setAdjReason] = useState("simulação de ganho/perda");
+  const [adjMsg, setAdjMsg] = useState("");
+  const [behMode, setBehMode] = useState("normal");
+  const [behRate, setBehRate] = useState(50);
+  const [behMsg, setBehMsg] = useState("");
+  const [testDepAmount, setTestDepAmount] = useState("");
+  const [testDepMsg, setTestDepMsg] = useState("");
 
   const openPlayer = (pid) => {
     setPlayerDetail(null);
     setPlayerLoader(true);
     let alive = true;
     api("GET", "/api/admin/player?id=" + encodeURIComponent(pid))
-      .then((d) => { if (alive) setPlayerDetail(d); })
+      .then((d) => {
+        if (!alive) return;
+        setPlayerDetail(d);
+        // seed the behaviour controls from the account's current dial
+        const p = (d && d.player) || {};
+        setBehMode(p.outcome_bias || "normal");
+        setBehRate(p.win_rate_percent == null ? 50 : p.win_rate_percent);
+      })
       .catch((e) => { if (!isAuthError(e.message)) { if (alive) setError(e.message); } else onSession(null); })
       .finally(() => { alive && setPlayerLoader(false); });
   };
 
   const closePlayer = () => { setPlayerDetail(null); setPlayerLoader(false); };
+
+  const doAdjust = async () => {
+    if (!playerDetail) return;
+    setPlayerBusy(true);
+    setAdjMsg("");
+    try {
+      const amt = Math.round(100 * parseFloat(String(adjAmount).replace(",", ".")));
+      await api("POST", "/api/admin/adjust-player", {
+        player_id: playerDetail.player.player_id,
+        amount_minor: amt,
+        reason: adjReason,
+      });
+      setAdjMsg("Saldo ajustado.");
+      openPlayer(playerDetail.player.player_id);
+    } catch (e) {
+      setAdjMsg(e.message);
+    } finally {
+      setPlayerBusy(false);
+    }
+  };
+
+  const doSetBehaviour = async () => {
+    if (!playerDetail) return;
+    setPlayerBusy(true);
+    setBehMsg("");
+    try {
+      await api("POST", "/api/admin/set-behaviour", {
+        player_id: playerDetail.player.player_id,
+        mode: behMode,
+        win_rate_percent: behRate,
+      });
+      setBehMsg("Comportamento atualizado.");
+      openPlayer(playerDetail.player.player_id);
+    } catch (e) {
+      setBehMsg(e.message);
+    } finally {
+      setPlayerBusy(false);
+    }
+  };
+
+  const doTestDeposit = async () => {
+    if (!playerDetail) return;
+    setPlayerBusy(true);
+    setTestDepMsg("");
+    try {
+      const amt = Math.round(100 * parseFloat(String(testDepAmount).replace(",", ".")));
+      await api("POST", "/api/admin/test-deposit", {
+        player_id: playerDetail.player.player_id,
+        amount_minor: amt,
+      });
+      setTestDepMsg("Depósito de teste creditado.");
+      openPlayer(playerDetail.player.player_id);
+    } catch (e) {
+      setTestDepMsg(e.message);
+    } finally {
+      setPlayerBusy(false);
+    }
+  };
 
   // login
   const [loginUser, setLoginUser] = useState("");
@@ -738,6 +811,55 @@ export default function AdminPanel({ session, onSession }) {
               <div className="lbl">1ª aposta</div>
               <div className="val">{BRL(playerDetail.balance.first_deposit_minor)}</div>
             </div>
+            {playerDetail.balance.test_deposits_minor > 0 ? (
+              <div>
+                <div className="lbl">Depósitos de teste</div>
+                <div className="val">{BRL(playerDetail.balance.test_deposits_minor)}</div>
+              </div>
+            ) : null}
+          </div>
+          <div className="ap-adjust" style={{ marginTop: 12, padding: 10, border: "1px solid var(--line)", borderRadius: 8 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Ajustar saldo / simular ganho ou perda</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input style={{ width: 120 }} value={adjAmount} onChange={(e) => setAdjAmount(e.target.value)} placeholder="R$ (ex 10.00)" />
+              <input style={{ flex: 1, minWidth: 180 }} value={adjReason} onChange={(e) => setAdjReason(e.target.value)} placeholder="motivo" />
+              <button className="ghost-sm" disabled={playerBusy} onClick={doAdjust}>Aplicar ajuste</button>
+            </div>
+            {adjMsg ? <div style={{ fontSize: 12, marginTop: 4, color: "var(--mut)" }}>{adjMsg}</div> : null}
+            <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 12.5 }}>Comportamento (ganho/perda):</span>
+              <select value={behMode} onChange={(e) => setBehMode(e.target.value)}>
+                <option value="normal">normal</option>
+                <option value="always_win">sempre ganha</option>
+                <option value="always_lose">sempre perde</option>
+                <option value="win_rate">taxa de ganho</option>
+              </select>
+              {behMode === "win_rate" ? (
+                <>
+                  <input type="number" min="0" max="100" style={{ width: 72 }}
+                    value={behRate}
+                    onChange={(e) => setBehRate(Number(e.target.value))} />
+                  <span style={{ fontSize: 12.5 }}>% de vitórias</span>
+                </>
+              ) : null}
+              <button className="ghost-sm" disabled={playerBusy} onClick={doSetBehaviour}>Aplicar</button>
+              <span style={{ fontSize: 12, color: "var(--mut)" }}>
+                atual: {playerDetail.player.outcome_bias === "always_win" ? "sempre ganha"
+                  : playerDetail.player.outcome_bias === "always_lose" ? "sempre perde"
+                  : playerDetail.player.outcome_bias === "win_rate"
+                    ? `taxa de ganho (${playerDetail.player.win_rate_percent}%)`
+                    : "normal"}
+              </span>
+              {behMsg ? <span style={{ fontSize: 12, color: "var(--mut)" }}>{behMsg}</span> : null}
+            </div>
+            {playerDetail.player.is_test ? (
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: 12.5 }}>Depósito de teste:</span>
+                <input style={{ width: 120 }} value={testDepAmount} onChange={(e) => setTestDepAmount(e.target.value)} placeholder="R$ (ex 50.00)" />
+                <button className="ghost-sm" disabled={playerBusy} onClick={doTestDeposit}>Creditar</button>
+                {testDepMsg ? <span style={{ fontSize: 12, color: "var(--mut)" }}>{testDepMsg}</span> : null}
+              </div>
+            ) : null}
           </div>
           <div className="ap-rtp">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -795,6 +917,13 @@ export default function AdminPanel({ session, onSession }) {
                           {r.type === "sports" && r.tier === "pendente"
                             ? " (pendente)"
                             : ""}
+                          {r.biased ? (
+                            <span style={{ marginLeft: 6, fontSize: 11, color: "var(--mut)" }}>
+                              · {r.bias_mode === "always_win" ? "forçado ganho"
+                                : r.bias_mode === "always_lose" ? "forçado perda"
+                                : "ajustado"}
+                            </span>
+                          ) : null}
                         </td>
                         <td style={{ color: "var(--mut)" }}>
                           {r.ts ? r.ts.slice(0, 10) : "—"}

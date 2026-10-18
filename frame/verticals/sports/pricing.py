@@ -136,6 +136,22 @@ def total_probs_over(home: str, away: str, line: float,
     return 1.0 - _poisson_cdf(lt, int(line))
 
 
+def count_over(current: float, mean: float, frac: float,
+               line: float) -> float:
+    """P(a counting market finishes over `line`) for in-play.
+
+    `mean` is the expected full-match count (cards, corners, fouls); `frac` is
+    how much of the match has been played; `current` is the count so far. The
+    remainder is an independent Poisson, so the live book tightens as the
+    clock runs and there is less time left to add to the tally. Clamped away
+    from the two extremes so a book never quotes a certainty.
+    """
+    remaining = max(0.0, float(mean) * (1.0 - max(0.0, min(1.0, float(frac)))))
+    need = int(math.floor(float(line) - float(current)))
+    over = 1.0 - _poisson_cdf(remaining, need)
+    return min(0.98, max(0.02, over))
+
+
 def nfl_probs(home: str, away: str) -> float:
     """Home win probability via logistic on the strength gap."""
     gap = team_strength(home) - team_strength(away)

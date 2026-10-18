@@ -45,6 +45,19 @@ services:
         sync: false
       - key: ASAAS_BASE_URL
         value: https://sandbox.asaas.com/api/v3
+      # NOWPayments crypto rail (decision 0057, docs/crypto.md). Real crypto
+      # when the key is set; the crypto tab stays hidden otherwise. `sync: false`
+      # keeps the secrets out of the repository — enter them in the dashboard,
+      # or let scripts/render_deploy.py carry them from the local gitignored
+      # .env.crypto. Never put a key in this file.
+      - key: CRYPTO_API_KEY
+        sync: false
+      - key: CRYPTO_IPN_SECRET
+        sync: false
+      - key: CRYPTO_BASE_URL
+        value: https://api.nowpayments.io/v1
+      - key: CRYPTO_PRICE_CURRENCY
+        value: brl
       # Resend email (decision 0047, docs/mail.md). Optional: with no key the
       # server logs instead of sending (the console mailer), so a deploy
       # without email stays healthy. `sync: false` keeps the key out of the

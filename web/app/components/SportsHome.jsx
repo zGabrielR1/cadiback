@@ -8,19 +8,112 @@ const SPORT_ORDER = [
 ];
 
 const SPORT_META = {
-  soccer: { label: "Futebol", icon: "⚽" },
-  basketball: { label: "Basquete", icon: "🏀" },
-  tennis: { label: "Tênis", icon: "🎾" },
-  hockey: { label: "Hóquei", icon: "🏒" },
-  volleyball: { label: "Vôlei", icon: "🏐" },
-  futsal: { label: "Futsal", icon: "🥅" },
-  handball: { label: "Handebol", icon: "🤾" },
-  esports: { label: "e-Sports", icon: "🎮" },
-  baseball: { label: "Beisebol", icon: "⚾" },
-  football: { label: "F. Americano", icon: "🏈" },
-  rugby: { label: "Rúgbi", icon: "🏉" },
-  cricket: { label: "Críquete", icon: "🏏" },
+  soccer: { label: "Futebol" },
+  basketball: { label: "Basquete" },
+  tennis: { label: "Tênis" },
+  hockey: { label: "Hóquei" },
+  volleyball: { label: "Vôlei" },
+  futsal: { label: "Futsal" },
+  handball: { label: "Handebol" },
+  esports: { label: "e-Sports" },
+  baseball: { label: "Beisebol" },
+  football: { label: "F. Americano" },
+  rugby: { label: "Rúgbi" },
+  cricket: { label: "Críquete" },
 };
+
+// Inline SVG sport marks. Deliberately drawn (not emoji) so the tab strip is
+// one visual language at every size and renders identically on every platform.
+const SPORT_PATHS = {
+  soccer: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.2l3 2.2-1.1 3.5h-3.8L9 9.4z" />
+      <path d="M12 3.2v4M4.4 9.6l4.6-.2M19.6 9.6l-4.6-.2M7 19.6l2.6-4.5M17 19.6l-2.6-4.5" />
+    </>
+  ),
+  basketball: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3v18M6 5.2c3 3 3 10.6 0 13.6M18 5.2c-3 3-3 10.6 0 13.6" />
+    </>
+  ),
+  tennis: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M6.2 5.8C9.6 9.2 9.6 14.8 6.2 18.2M17.8 5.8C14.4 9.2 14.4 14.8 17.8 18.2" />
+    </>
+  ),
+  hockey: (
+    <>
+      <path d="M5 4v8.5a4.5 4.5 0 0 0 4.5 4.5H18" />
+      <circle cx="17.5" cy="18" r="2.2" />
+    </>
+  ),
+  volleyball: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3c3.5 4.5 3.5 13.5 0 18M3.4 9.4c4.8.4 12.4 4 15.2 8M20.6 9.4c-4.8.4-12.4 4-15.2 8" />
+    </>
+  ),
+  futsal: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.2l3 2.2-1.1 3.5h-3.8L9 9.4z" />
+      <path d="M8.5 4.6l3.5 2.6M15.5 4.6L12 7.2" />
+    </>
+  ),
+  handball: (
+    <>
+      <circle cx="12" cy="8.4" r="5.4" />
+      <path d="M12 3v10.8M7 6.4l4 3M17 6.4l-4 3M6 20.5c2-3.4 10-3.4 12 0" />
+    </>
+  ),
+  esports: (
+    <>
+      <path d="M4 8.5h16a2 2 0 0 1 2 2.2l-.6 4.4a2.4 2.4 0 0 1-4.2 1.3L15.4 15H8.6l-1.8 1.4A2.4 2.4 0 0 1 2.6 15.1L2 10.7a2 2 0 0 1 2-2.2z" />
+      <path d="M7 11.5v3M5.5 13h3M16.6 12.4h.01M18.4 14.2h.01" />
+    </>
+  ),
+  baseball: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 4.4c2.4 2.6 2.4 12.6 0 15.2M16 4.4c-2.4 2.6-2.4 12.6 0 15.2" />
+    </>
+  ),
+  football: (
+    <>
+      <path d="M12 4c4.4 0 8 3.4 8 8s-3.6 8-8 8-8-3.4-8-8 3.6-8 8-8z" />
+      <path d="M12 6.6v10.8M8.2 9.6l7.6 4.8M15.8 9.6l-7.6 4.8" />
+    </>
+  ),
+  rugby: (
+    <>
+      <path d="M12 4.2c3.4 1 6 4.6 6 7.8s-2.6 6.8-6 7.8c-3.4-1-6-4.6-6-7.8s2.6-6.8 6-7.8z" />
+      <path d="M10.4 9.6h3.2M10 12h4M10.4 14.4h3.2" />
+    </>
+  ),
+  cricket: (
+    <>
+      <path d="M6 20l8-14" />
+      <path d="M11.5 4.5l3 1.8" />
+      <circle cx="17.5" cy="7.5" r="2.2" />
+    </>
+  ),
+};
+
+function SportIcon({ sport, size = 22 }) {
+  const inner = SPORT_PATHS[sport] || (
+    <circle cx="12" cy="12" r="8.5" />
+  );
+  return (
+    <svg className="sx-icon" width={size} height={size} viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="1.7"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {inner}
+    </svg>
+  );
+}
 
 const PRIMARY_KINDS = new Set(["1x2", "moneyline"]);
 const TOTAL_KIND = "total";
@@ -35,7 +128,21 @@ const KIND_LABEL = {
   btts: "Ambas marcam",
   dnb: "Empate anula",
   ah: "Handicap",
+  cards: "Cartões amarelos",
+  corners: "Escanteios",
+  fouls: "Faltas",
 };
+
+// The stats panel rows, in the order a real match screen prints them. Each is
+// a stat key from the match-stats feed; a key the feed omits is not shown.
+const STAT_ROWS = [
+  ["possession", "Posse de bola", "%"],
+  ["shots", "Finalizações", ""],
+  ["shots_on_target", "No gol", ""],
+  ["corners", "Escanteios", ""],
+  ["yellow_cards", "Cartões amarelos", ""],
+  ["fouls", "Faltas", ""],
+];
 
 // the sports whose live clock is minutes — a set/innings sport shows the live
 // dot without a misleading number. Same caps the backend derives.
@@ -61,7 +168,7 @@ function liveLabel(f, nowMs) {
 }
 
 function meta(sport) {
-  return SPORT_META[sport] || { label: sport || "Outros", icon: "🎯" };
+  return SPORT_META[sport] || { label: sport || "Outros" };
 }
 
 function isLive(f) {
@@ -103,6 +210,35 @@ function tick(kind, i, selections) {
 function pricedMarkets(f) {
   return (f.markets || []).filter(
     (m) => m.prices && m.prices.length === m.selections.length && m.prices.length > 0
+  );
+}
+
+/** The match-stats panel: a two-sided bar per stat the feed carried. Purely
+ *  descriptive — it shows what happened, and the count markets settle off the
+ *  same numbers. Renders nothing when the source shipped no stats. */
+function Stats({ stats }) {
+  if (!stats || typeof stats !== "object") return null;
+  const rows = STAT_ROWS.filter(([key]) => Array.isArray(stats[key]));
+  if (rows.length === 0) return null;
+  return (
+    <div className="sx-stats">
+      {rows.map(([key, label, unit]) => {
+        const home = Number(stats[key][0] || 0);
+        const away = Number(stats[key][1] || 0);
+        const total = home + away || 1;
+        const hp = Math.round((home / total) * 100);
+        return (
+          <div className="sx-stat" key={key}>
+            <span className="sx-stat-h">{home}{unit}</span>
+            <span className="sx-stat-label">
+              {label}
+              <i className="sx-stat-bar"><b style={{ width: hp + "%" }} /></i>
+            </span>
+            <span className="sx-stat-a">{away}{unit}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -197,8 +333,9 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
         ) : null}
       </div>
 
-      {open && extras.length > 0 ? (
+      {open ? (
         <div className="sx-extra">
+          <Stats stats={f.stats} />
           {extras.map((m) => (
             <div className="sx-extra-row" key={m.key}>
               <span className="sx-extra-kind">
@@ -332,8 +469,8 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                   className={"sx-tab" + (s === activeSport ? " on" : "")}
                   onClick={() => setSport(s)}
                 >
-                  <span className="sx-tab-icon">{info.icon}</span>
-                  {info.label}
+                  <SportIcon sport={s} size={26} />
+                  <span className="sx-tab-text">{info.label}</span>
                   <span className="sx-tab-count">{count}</span>
                   {live ? <span className="sx-tab-live">{live}</span> : null}
                 </button>
@@ -346,7 +483,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
               className={"sx-filter" + (liveOnly ? " on" : "")}
               onClick={() => onLive && onLive(!liveOnly)}
             >
-              {liveOnly ? "● somente ao vivo" : "○ mostrar só ao vivo"}
+              {liveOnly ? "somente ao vivo" : "mostrar só ao vivo"}
             </button>
             <span className="sx-controls-note">
               {shown.length} partidas · {groups.length} países

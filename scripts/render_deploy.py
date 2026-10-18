@@ -165,9 +165,24 @@ ENV_FILE = os.path.join(ROOT, ".env.render")
 # The Asaas Pix rail (decision 0045, docs/asaas.md). These are secrets, so the
 # repository only ever holds `sync: false` placeholders in `render.yaml`; the
 # real values travel from here at deploy time.
-ASAAS_ENV_FILE = os.path.join(ROOT, ".env.asaas")
+#
+# The credentials have lived in three file names over time: `.env.asaas` (the
+# original), `.env.asaasprod` (the production swap) and `.env.asaas.sandbox`
+# (the first sandbox run). The resolver below picks the first file carrying a
+# *complete* set — key, customer and base URL — so a half-filled production
+# file never pairs a prod customer with a sandbox key. That mismatch was why a
+# deploy "had no Asaas": the script read `.env.asaas`, which never existed.
+ASAAS_ENV_CANDIDATES = (".env.asaas", ".env.asaasprod", ".env.asaas.sandbox")
+ASAAS_ENV_FILE = os.path.join(ROOT, ASAAS_ENV_CANDIDATES[0])
 ASAAS_KEYS = ("ASAAS_API_KEY", "ASAAS_CUSTOMER_ID", "ASAAS_WEBHOOK_SECRET",
               "ASAAS_BASE_URL")
+
+# NOWPayments crypto (decision 0057, docs/crypto.md). Same shape: secrets in a
+# gitignored `.env.crypto`, `sync: false` placeholders in the repository, and
+# an absent file simply means the storefront hides the crypto tab.
+CRYPTO_ENV_FILE = os.path.join(ROOT, ".env.crypto")
+CRYPTO_KEYS = ("CRYPTO_API_KEY", "CRYPTO_IPN_SECRET", "CRYPTO_BASE_URL",
+               "CRYPTO_PRICE_CURRENCY")
 
 # Resend email (decision 0047, docs/mail.md). Same shape: the repository holds
 # `sync: false` placeholders, the real key travels from the local gitignored
@@ -286,19 +301,51 @@ def _env_pairs(path: str) -> dict[str, str]:
     return values
 
 
+def resolve_asaas_env_file() -> str:
+    """The Asaas credential file to read, by the completeness rule above."""
+    for name in ASAAS_ENV_CANDIDATES:
+        path = os.path.join(ROOT, name)
+        if not os.path.isfile(path):
+            continue
+        values = _env_pairs(path)
+        if all(values.get(key) for key in
+               ("ASAAS_API_KEY", "ASAAS_CUSTOMER_ID", "ASAAS_BASE_URL")):
+            return path
+    for name in ASAAS_ENV_CANDIDATES:
+        path = os.path.join(ROOT, name)
+        if os.path.isfile(path):
+            return path
+    return ASAAS_ENV_FILE
+
+
 def read_asaas_env() -> list[dict]:
     """The Asaas settings to carry to the host, secrets included.
 
-    The environment wins over the gitignored `.env.asaas`. A setting that is
-    absent everywhere is simply not sent, so a deploy without credentials
+    The environment wins over the gitignored credentials file. A setting that
+    is absent everywhere is simply not sent, so a deploy without credentials
     keeps the instant demo credit instead of half-configuring the rail.
     """
-    values = _env_pairs(ASAAS_ENV_FILE)
+    values = _env_pairs(resolve_asaas_env_file())
     for name in ASAAS_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()
     return [{"key": name, "value": values[name]}
             for name in ASAAS_KEYS if values.get(name)]
+
+
+def read_crypto_env() -> list[dict]:
+    """The NOWPayments settings to carry to the host.
+
+    Same rule as every other rail: the environment wins over the gitignored
+    `.env.crypto`, and a setting absent everywhere is simply not sent — so a
+    deploy without a key hides the crypto tab instead of half-configuring it.
+    """
+    values = _env_pairs(CRYPTO_ENV_FILE)
+    for name in CRYPTO_KEYS:
+        if os.environ.get(name, "").strip():
+            values[name] = os.environ[name].strip()
+    return [{"key": name, "value": values[name]}
+            for name in CRYPTO_KEYS if values.get(name)]
 
 
 def read_resend_env() -> list[dict]:
@@ -376,8 +423,8 @@ def read_authgear_env() -> list[dict]:
 
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
-    return (SERVICE["envVars"] + read_asaas_env() + read_resend_env()
-            + read_turnstile_env() + read_supabase_env()
+    return (SERVICE["envVars"] + read_asaas_env() + read_crypto_env()
+            + read_resend_env() + read_turnstile_env() + read_supabase_env()
             + read_authgear_env())
 
 
@@ -659,9 +706,15 @@ def run(key: str, repo: str, force: bool) -> int:
     carried = read_asaas_env()
     if carried:
         print(f"carrying {len(carried)} Asaas setting(s) from "
-              f"{os.path.basename(ASAAS_ENV_FILE)}/environment")
+              f"{os.path.basename(resolve_asaas_env_file())}/environment")
     else:
         print("no Asaas credentials found: the deploy uses the instant demo credit")
+    carried_crypto = read_crypto_env()
+    if carried_crypto:
+        print(f"carrying {len(carried_crypto)} crypto setting(s) from "
+              f"{os.path.basename(CRYPTO_ENV_FILE)}/environment")
+    else:
+        print("no crypto credentials found: the storefront hides the crypto tab")
     carried_mail = read_resend_env()
     if carried_mail:
         print(f"carrying {len(carried_mail)} email setting(s) from "

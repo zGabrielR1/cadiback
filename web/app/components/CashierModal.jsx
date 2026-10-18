@@ -26,10 +26,17 @@ export default function CashierModal({
   asaasAvailable,
   pixCharge,
   onResetPix,
+  cryptoAvailable,
+  cryptoCharge,
+  onResetCrypto,
+  cryptoCoins,
+  cryptoCoin,
+  onCryptoCoin,
   onClose,
 }) {
   const [copied, setCopied] = useState(false);
   const realPix = asaasAvailable && method === "pix";
+  const realCrypto = cryptoAvailable && method === "crypto";
 
   const copyPix = async () => {
     try {
@@ -37,6 +44,15 @@ export default function CashierModal({
       setCopied(true);
     } catch (e) {
       /* clipboard blocked: the textarea below is selectable by hand */
+    }
+  };
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(cryptoCharge.pay_address);
+      setCopied(true);
+    } catch (e) {
+      /* clipboard blocked: the field below is selectable by hand */
     }
   };
 
@@ -111,6 +127,38 @@ export default function CashierModal({
                 Gerar outro código
               </button>
             </div>
+          ) : cryptoCharge ? (
+            <div>
+              <p className="sub" style={{ marginTop: 4 }}>
+                Envie <b>{cryptoCharge.pay_amount} {(cryptoCharge.pay_currency || "").toUpperCase()}</b>{" "}
+                (≈ {BRL(cryptoCharge.amount_minor)}) para o endereço abaixo. O saldo
+                cai quando a rede confirmar.
+              </p>
+              <label htmlFor="cryptoaddr">Endereço de depósito</label>
+              <textarea
+                id="cryptoaddr"
+                readOnly
+                rows={2}
+                value={cryptoCharge.pay_address}
+                onFocus={(e) => e.target.select()}
+                style={{ width: "100%", fontFamily: "monospace", fontSize: 11.5 }}
+              />
+              <button className="ghost" style={{ width: "100%" }} onClick={copyAddress}>
+                {copied ? "Endereço copiado ✓" : "Copiar endereço"}
+              </button>
+              <p className="sub" style={{ marginTop: 8 }}>
+                {cryptoCharge.posted
+                  ? "Pagamento confirmado — saldo creditado."
+                  : "Aguardando a confirmação da rede (leva alguns minutos)…"}
+              </p>
+              <button
+                className="ghost"
+                style={{ width: "100%", marginTop: 8 }}
+                onClick={onResetCrypto}
+              >
+                Gerar outra cobrança
+              </button>
+            </div>
           ) : (
             <div>
               <label htmlFor="method">Método de Depósito</label>
@@ -118,7 +166,19 @@ export default function CashierModal({
                 <option value="pix">Pix Instantâneo</option>
                 <option value="ted">TED</option>
                 <option value="debit">Cartão de Débito</option>
+                <option value="crypto">Criptomoeda</option>
               </select>
+              {realCrypto ? (
+                <>
+                  <label htmlFor="coin">Moeda</label>
+                  <select id="coin" value={cryptoCoin || ((cryptoCoins[0] || {}).code || "")}
+                    onChange={(e) => onCryptoCoin(e.target.value)}>
+                    {cryptoCoins.map((c) => (
+                      <option key={c.code} value={c.code}>{c.label}</option>
+                    ))}
+                  </select>
+                </>
+              ) : null}
               <label htmlFor="dep">Valor (R$)</label>
               <input
                 id="dep"
@@ -127,12 +187,20 @@ export default function CashierModal({
                 onChange={(e) => onDepositAmount(e.target.value)}
               />
               <button disabled={busy} onClick={onDeposit} style={{ marginTop: 12 }}>
-                {realPix ? "Gerar Pix para pagar" : "Confirmar Depósito Demo"}
+                {realPix ? "Gerar Pix para pagar"
+                  : realCrypto ? "Gerar cobrança cripto"
+                  : "Confirmar Depósito Demo"}
               </button>
               {realPix ? (
                 <p className="sub" style={{ marginTop: 8 }}>
                   O Pix é gerado pelo Asaas; o saldo cai quando o pagamento é
                   confirmado.
+                </p>
+              ) : null}
+              {realCrypto ? (
+                <p className="sub" style={{ marginTop: 8 }}>
+                  A cobrança é gerada pela NOWPayments; envie a moeda para o
+                  endereço e o saldo cai quando a rede confirmar.
                 </p>
               ) : null}
             </div>

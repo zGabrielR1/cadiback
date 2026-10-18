@@ -44,6 +44,10 @@ class Player(Base):
     pix_raw: Mapped[str] = mapped_column(default="")
     bank: Mapped[dict] = mapped_column(JSON, default=dict)
     is_test: Mapped[bool] = mapped_column(Boolean, default=False)
+    # the painel's win/loss dial (decision 0057): normal / always_win /
+    # always_lose / win_rate, plus the win rate in whole percent.
+    outcome_bias: Mapped[str] = mapped_column(default="normal")
+    win_rate_percent: Mapped[int] = mapped_column(Integer, default=100)
     created_at: Mapped[object] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
 

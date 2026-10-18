@@ -40,3 +40,7 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.template
+
+# a runtime snapshot the sports stats engine writes (per-match cards, corners,
+# fouls); a live cache, not a committed probe artifact like the fixtures feed
+probes/flashscore-stats-cache.json

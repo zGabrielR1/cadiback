@@ -49,9 +49,11 @@ PLINKO_GAME_ID = "demo:plinko-drops"
 MINES_GAME_ID = "demo:minas"
 DICE_GAME_ID = "demo:dados"
 KENO_GAME_ID = "demo:keno"
+WHEEL_GAME_ID = "demo:roda-da-sorte"
 
 ARCADE_GAME_IDS: frozenset[str] = frozenset({
     CRASH_GAME_ID, PLINKO_GAME_ID, MINES_GAME_ID, DICE_GAME_ID, KENO_GAME_ID,
+    WHEEL_GAME_ID,
 })
 
 HOUSE_EDGE = Fraction(3, 100)
@@ -569,6 +571,50 @@ def keno_theoretical_rtp(spots: int = 5) -> float:
     return keno_rtp(spots)
 
 
+
+# --- wheel (roda da sorte) ----------------------------------------------
+
+# The wheel is 100 equal sectors, so a sector's probability is just its share
+# of the 100. The ladder below sums to exactly 97 sector-multipliers over those
+# 100 sectors (54*0 + 12*0.5 + 6*1 + 12*1.5 + 10*2 + 4*3 + 1*10 + 1*25 = 97),
+# so the RTP is 97% by construction, not by a typed table that can drift. The
+# loss count is the run of `multiplier 0` sectors a spin can land on.
+WHEEL_LADDER: tuple[tuple[float, int], ...] = (
+    (0.0, 54), (0.5, 12), (1.0, 6), (1.5, 12),
+    (2.0, 10), (3.0, 4), (10.0, 1), (25.0, 1),
+)
+WHEEL_SECTORS: tuple[float, ...] = tuple(
+    mult for mult, count in WHEEL_LADDER for _ in range(count))
+
+
+def wheel_sector(game_id: str, round_id: str) -> int:
+    """The landed sector (0..99) — an equal-probability draw."""
+    unit = draw_unit(game_id, round_id)
+    return int(unit * len(WHEEL_SECTORS)) % len(WHEEL_SECTORS)
+
+
+def wheel_sector_multiplier(sector: int) -> float:
+    return WHEEL_SECTORS[sector % len(WHEEL_SECTORS)]
+
+
+def wheel_round(game_id: str, round_id: str, selection: str | None,
+                stake_minor: int) -> ArcadeResult:
+    unit = draw_unit(game_id, round_id)
+    sector = wheel_sector(game_id, round_id)
+    mult = wheel_sector_multiplier(sector)
+    payout = int(round(stake_minor * mult)) if mult > 0 else 0
+    tier = f"setor {sector + 1} · {mult:g}x"
+    return ArcadeResult(
+        game_id=game_id, round_id=round_id, unit=unit, tier=tier,
+        multiplier=f"{mult:.2f}",
+        symbols=(f"setor {sector + 1}", f"{mult:g}x"),
+        payout_minor=payout, is_win=mult >= 1.0)
+
+
+def wheel_rtp() -> float:
+    return sum(WHEEL_SECTORS) / len(WHEEL_SECTORS)
+
+
 def arcade_round(game_id: str, round_id: str, selection: str | None,
                  stake_minor: int) -> ArcadeResult:
     """Dispatch one arcade round. Plinko needs no selection."""
@@ -582,6 +628,8 @@ def arcade_round(game_id: str, round_id: str, selection: str | None,
         return dice_round(game_id, round_id, selection, stake_minor)
     if game_id == KENO_GAME_ID:
         return keno_round(game_id, round_id, selection, stake_minor)
+    if game_id == WHEEL_GAME_ID:
+        return wheel_round(game_id, round_id, selection, stake_minor)
     raise ValueError(f"unknown arcade game: {game_id}")
 
 
@@ -596,4 +644,6 @@ def theoretical_rtp(game_id: str) -> float:
         return float(HOUSE_KEEP)
     if game_id == KENO_GAME_ID:
         return keno_rtp(5)
+    if game_id == WHEEL_GAME_ID:
+        return wheel_rtp()
     raise ValueError(f"unknown arcade game: {game_id}")

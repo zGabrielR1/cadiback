@@ -25,6 +25,9 @@ from demo.arcade import theoretical_rtp as arcade_theoretical_rtp
 from demo.server import DEMO_CATEGORY
 from demo.asaas import (AsaasClient, AsaasConfig, AsaasError, Charge,
                         resolve_webhook)
+from demo.crypto import (CryptoClient, CryptoConfig, CryptoError,
+                         resolve_ipn as resolve_crypto_ipn, sign_ipn,
+                         SUPPORTED_COINS)
 from demo.auth import AuthError
 from demo.payments import (
     PaymentError,
@@ -105,10 +108,11 @@ class BankTest(unittest.TestCase):
             validate_bank_account("01", "1234", "56789-0", "Ana Souza", "Ana Souza")
 
     def test_prohibited_methods_rejected_by_name(self):
-        for method in ("credit", "crypto", "pix_credito", "boleto"):
+        for method in ("credit", "cash", "pix_credito", "boleto"):
             with self.assertRaises(PaymentError):
                 check_deposit_method(method)
         self.assertEqual(check_deposit_method("pix"), "pix")
+        self.assertEqual(check_deposit_method("crypto"), "crypto")
 
 
 def _asaas_transport(payment: dict, qr: dict | None = None):
@@ -127,6 +131,22 @@ def _asaas_transport(payment: dict, qr: dict | None = None):
         calls.append((method, url, idempotency_key))
         if url.endswith("/pixQrCode"):
             return qr
+        return payment
+
+    transport.calls = calls
+    return transport
+
+
+def _crypto_transport(payment: dict):
+    """An injectable NOWPayments transport: records calls, answers canned JSON.
+
+    The real transport is the only thing the tests replace, so the whole
+    crypto deposit path runs without a network or a live key.
+    """
+    calls: list[tuple] = []
+
+    def transport(method, url, api_key, payload, idempotency_key, timeout):
+        calls.append((method, url, idempotency_key))
         return payment
 
     transport.calls = calls
@@ -357,6 +377,275 @@ class AsaasDepositTest(unittest.TestCase):
         self.assertIn("pix-9", revived.asaas_charges)
         view = revived.pix_deposit_status({"player": self.player,
                                            "deposit_id": "pix-9"})
+        self.assertFalse(view["posted"])
+        self.assertEqual(revived.books.available(self.player), 0)
+
+
+class CryptoTest(unittest.TestCase):
+    """The NOWPayments rail's own surface: config, invoice, status map, IPN
+    signing. No network — the transport is injected."""
+
+    def _config(self, **overrides) -> CryptoConfig:
+        base = dict(api_key="np_test",
+                    base_url="https://api.nowpayments.io/v1",
+                    ipn_secret="ipn_test")
+        base.update(overrides)
+        return CryptoConfig(**base)
+
+    def test_config_needs_a_key_and_https(self):
+        self.assertFalse(CryptoConfig.from_env({}).configured)
+        cleartext = CryptoConfig.from_env({
+            "CRYPTO_API_KEY": "k",
+            "CRYPTO_BASE_URL": "http://api.nowpayments.io/v1"})
+        self.assertFalse(cleartext.configured)
+        good = CryptoConfig.from_env({
+            "CRYPTO_API_KEY": "k",
+            "CRYPTO_BASE_URL": "https://api.nowpayments.io/v1/"})
+        self.assertTrue(good.configured)
+        self.assertEqual(good.base_url, "https://api.nowpayments.io/v1")
+        self.assertEqual(good.env_name, "production")
+        self.assertEqual(
+            CryptoConfig(base_url="https://api-sandbox.nowpayments.io/v1").env_name,
+            "sandbox")
+
+    def test_env_file_keeps_only_the_value_before_an_inline_comment(self):
+        path = os.path.join(tempfile.mkdtemp(), ".env.crypto")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("# nowpayments\n")
+            handle.write("CRYPTO_API_KEY=abc\n")
+            handle.write("CRYPTO_IPN_SECRET=sec\n")
+            handle.write("CRYPTO_BASE_URL=https://api.nowpayments.io/v1  # live\n")
+        cfg = CryptoConfig.from_env(env_file=path)
+        self.assertEqual(cfg.api_key, "abc")
+        self.assertEqual(cfg.ipn_secret, "sec")
+        self.assertEqual(cfg.base_url, "https://api.nowpayments.io/v1")
+
+    def test_create_payment_returns_a_pay_address_and_a_deposit_key(self):
+        transport = _crypto_transport({
+            "payment_id": "pay_1", "payment_status": "waiting",
+            "price_amount": 100.0, "pay_address": "TXabc", "pay_currency":
+            "usdttrc20", "pay_amount": 19.5})
+        client = CryptoClient(self._config(), transport=transport)
+        charge = client.create_payment(txid="dep-1", amount_cents=10000,
+                                       pay_currency="usdttrc20")
+        self.assertEqual(charge.provider_ref, "pay_1")
+        self.assertEqual(charge.status, "PENDING")
+        self.assertEqual(charge.amount_cents, 10000)
+        self.assertEqual(charge.pay_address, "TXabc")
+        creates = [c for c in transport.calls if c[0] == "POST"]
+        self.assertEqual(creates[0][2], "dep:dep-1")
+
+    def test_status_map_collapses_to_four_outcomes(self):
+        cases = (("waiting", "PENDING"), ("confirming", "PENDING"),
+                 ("sending", "PENDING"), ("partially_paid", "PENDING"),
+                 ("confirmed", "PAID"), ("finished", "PAID"),
+                 ("failed", "EXPIRED"), ("expired", "EXPIRED"),
+                 ("refunded", "REFUNDED"))
+        for raw, expected in cases:
+            transport = _crypto_transport({"payment_id": "p",
+                                           "payment_status": raw,
+                                           "price_amount": 5.0})
+            client = CryptoClient(self._config(), transport=transport)
+            self.assertEqual(client.get_payment("p").status, expected, raw)
+
+    def test_verify_ipn_refuses_without_a_secret(self):
+        client = CryptoClient(self._config(ipn_secret="ipn_x"),
+                              transport=_crypto_transport({}))
+        body = {"payment_id": "p", "payment_status": "finished",
+                "order_id": "d", "price_amount": 10.0}
+        good = {"x-nowpayments-sig": sign_ipn(body, "ipn_x")}
+        self.assertTrue(client.verify_ipn(good, body))
+        self.assertFalse(client.verify_ipn({"x-nowpayments-sig": "nope"}, body))
+        self.assertFalse(client.verify_ipn({}, body))
+        no_secret = CryptoClient(self._config(ipn_secret=""),
+                                 transport=_crypto_transport({}))
+        self.assertFalse(no_secret.verify_ipn(good, body))
+
+    def test_a_tampered_body_fails_verification(self):
+        client = CryptoClient(self._config(ipn_secret="ipn_x"),
+                              transport=_crypto_transport({}))
+        body = {"payment_id": "p", "payment_status": "finished",
+                "order_id": "d", "price_amount": 10.0}
+        sig = {"x-nowpayments-sig": sign_ipn(body, "ipn_x")}
+        tampered = dict(body, price_amount=1000000.0)
+        self.assertFalse(client.verify_ipn(sig, tampered))
+
+    def test_resolve_ipn_reads_our_own_deposit_id(self):
+        event = resolve_crypto_ipn({
+            "payment_id": "pay_1", "payment_status": "finished",
+            "order_id": "dep-9", "price_amount": 100.0})
+        self.assertEqual(event["deposit_id"], "dep-9")
+        self.assertEqual(event["provider_ref"], "pay_1")
+        self.assertEqual(event["amount_cents"], 10000)
+        self.assertTrue(event["paid"])
+        self.assertFalse(resolve_crypto_ipn({
+            "payment_id": "p", "payment_status": "waiting"})["paid"])
+        self.assertEqual(resolve_crypto_ipn({})["deposit_id"], "")
+
+
+class CryptoDepositTest(unittest.TestCase):
+    """The operator path: an invoice credits only after provider confirmation."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.cfg = CryptoConfig(api_key="np_test",
+                                base_url="https://api.nowpayments.io/v1",
+                                ipn_secret="ipn_test")
+
+    def _install(self, payment: dict):
+        client = CryptoClient(self.cfg, transport=_crypto_transport(payment))
+        self.demo.crypto = client
+        self.demo.crypto_config = self.cfg
+        return client
+
+    def _create(self, deposit_id: str, amount: int = 10000,
+                coin: str = "usdttrc20") -> dict:
+        return self.demo.create_crypto_deposit({
+            "player": self.player, "amount_minor": amount,
+            "method": "crypto", "pay_currency": coin, "deposit_id": deposit_id})
+
+    def test_pending_invoice_is_not_a_balance(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0, "pay_address": "TX1"})
+        view = self._create("cr-1")
+        self.assertFalse(view["posted"])
+        self.assertEqual(view["status"], "PENDING")
+        self.assertEqual(view["amount_minor"], 10000)
+        self.assertEqual(view["pay_address"], "TX1")
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_poll_confirms_exactly_once(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0})
+        self._create("cr-2")
+        self._install({"payment_id": "pay_1", "payment_status": "finished",
+                       "price_amount": 100.0})
+        first = self.demo.crypto_deposit_status({"player": self.player,
+                                                 "deposit_id": "cr-2"})
+        self.assertTrue(first["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        again = self.demo.crypto_deposit_status({"player": self.player,
+                                                 "deposit_id": "cr-2"})
+        self.assertTrue(again["posted"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        self.demo.books.assert_balanced()
+
+    def test_invoice_is_idempotent_on_the_deposit_id(self):
+        transport = _crypto_transport({"payment_id": "pay_1",
+                                       "payment_status": "waiting",
+                                       "price_amount": 100.0})
+        self.demo.crypto = CryptoClient(self.cfg, transport=transport)
+        self.demo.crypto_config = self.cfg
+        first = self._create("same-cr")
+        second = self._create("same-cr")
+        self.assertEqual(first["provider_ref"], second["provider_ref"])
+        creates = [c for c in transport.calls
+                   if c[0] == "POST" and c[1].endswith("/payment")]
+        self.assertEqual(len(creates), 1)
+
+    def _ipn(self, body: dict) -> dict:
+        return {"x-nowpayments-sig": sign_ipn(body, "ipn_test")}
+
+    def test_webhook_refuses_a_bad_signature_and_credits_once(self):
+        self._install({"payment_id": "pay_1", "payment_status": "finished",
+                       "price_amount": 100.0})
+        self._create("cr-3")
+        body = {"payment_id": "pay_1", "payment_status": "finished",
+                "order_id": "cr-3", "price_amount": 100.0}
+        with self.assertRaises(PermissionError):
+            self.demo.crypto_webhook(body, {"x-nowpayments-sig": "wrong"})
+        self.assertEqual(self.demo.books.available(self.player), 0)
+        applied = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertTrue(applied["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        replay = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertTrue(replay["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+
+    def test_webhook_amount_mismatch_never_credits(self):
+        self._install({"payment_id": "pay_1", "payment_status": "finished",
+                       "price_amount": 100.0})
+        self._create("cr-4")
+        body = {"payment_id": "pay_1", "payment_status": "finished",
+                "order_id": "cr-4", "price_amount": 1.0}
+        result = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["reason"], "amount mismatch")
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_webhook_for_an_unknown_deposit_credits_nothing(self):
+        self._install({"payment_id": "pay_x", "payment_status": "finished",
+                       "price_amount": 100.0})
+        body = {"payment_id": "pay_x", "payment_status": "finished",
+                "order_id": "never-created", "price_amount": 100.0}
+        result = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertFalse(result["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_webhook_ignores_an_unpaid_event(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0})
+        self._create("cr-5")
+        body = {"payment_id": "pay_1", "payment_status": "waiting",
+                "order_id": "cr-5", "price_amount": 100.0}
+        result = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertFalse(result["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_partially_paid_event_never_credits(self):
+        self._install({"payment_id": "pay_1", "payment_status": "partially_paid",
+                       "price_amount": 100.0})
+        self._create("cr-6")
+        body = {"payment_id": "pay_1", "payment_status": "partially_paid",
+                "order_id": "cr-6", "price_amount": 100.0}
+        result = self.demo.crypto_webhook(body, self._ipn(body))
+        self.assertFalse(result["applied"])
+        self.assertEqual(self.demo.books.available(self.player), 0)
+
+    def test_invoice_refuses_a_non_crypto_method_and_unknown_player(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0})
+        with self.assertRaises(ValueError):
+            self.demo.create_crypto_deposit(
+                {"player": self.player, "amount_minor": 10000,
+                 "method": "pix", "pay_currency": "btc",
+                 "deposit_id": "cr-7"})
+        with self.assertRaises(ValueError):
+            self.demo.create_crypto_deposit(
+                {"player": "nobody", "amount_minor": 10000,
+                 "method": "crypto", "pay_currency": "btc",
+                 "deposit_id": "cr-8"})
+
+    def test_invoice_refuses_an_unknown_coin(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0})
+        with self.assertRaises(ValueError):
+            self._create("cr-9", coin="doge")
+        codes = {c for c, _ in SUPPORTED_COINS}
+        self.assertIn("btc", codes)
+
+    def test_an_unconfigured_server_refuses_to_charge(self):
+        self.demo.crypto = None
+        with self.assertRaises(ValueError):
+            self._create("cr-10")
+
+    def test_pending_invoice_survives_a_restart_without_crediting(self):
+        self._install({"payment_id": "pay_1", "payment_status": "waiting",
+                       "price_amount": 100.0})
+        self._create("cr-11")
+        revived = Demo(data_dir=self.tmp)
+        revived.crypto = self.demo.crypto
+        revived.crypto_config = self.cfg
+        self.assertIn("cr-11", revived.crypto_charges)
+        view = revived.crypto_deposit_status({"player": self.player,
+                                              "deposit_id": "cr-11"})
         self.assertFalse(view["posted"])
         self.assertEqual(revived.books.available(self.player), 0)
 
@@ -1377,6 +1666,144 @@ class SportsSettlementTest(unittest.TestCase):
         # the archive lives in its own cache — the board's is untouched
         self.assertTrue(os.path.exists(os.path.join(tmp, "results.json")))
         self.assertEqual(engine.fixtures(), engine.fixtures())
+
+
+STATS_FEED = ("SE\u00f7Match\u00ac~SF\u00f7Top stats\u00ac~SD\u00f712\u00ac"
+              "SG\u00f7Ball possession\u00acSH\u00f749%\u00acSI\u00f751%\u00ac"
+              "~SD\u00f716\u00acSG\u00f7Corner kicks\u00acSH\u00f77\u00acSI\u00f79\u00ac"
+              "~SD\u00f723\u00acSG\u00f7Yellow cards\u00acSH\u00f72\u00acSI\u00f71\u00ac"
+              "~SD\u00f711\u00acSG\u00f7Fouls\u00acSH\u00f710\u00acSI\u00f712\u00ac"
+              "~SE\u00f71st Half\u00ac~SD\u00f716\u00acSG\u00f7Corner kicks\u00ac"
+              "SH\u00f71\u00acSI\u00f74\u00ac")
+INCIDENT_FEED = ("AC\u00f71st Half\u00acIG\u00f70\u00acIH\u00f72\u00ac"
+                 "~III\u00f7x\u00acIA\u00f72\u00acIB\u00f743'\u00ac"
+                 "IF\u00f7Carter D.\u00acIK\u00f7Goal\u00acIM\u00f7abc\u00ac"
+                 "~III\u00f7y\u00acIA\u00f71\u00acIB\u00f756'\u00ac"
+                 "IF\u00f7Juan M.\u00acIK\u00f7Yellow Card\u00acIM\u00f7def\u00ac")
+
+
+class MatchStatsTest(unittest.TestCase):
+    """The per-match stats/incidents feeds: what the stats panel shows and
+    what the counting markets settle against. Deterministic, no network."""
+
+    def test_parse_stats_reads_sections_and_maps_names(self):
+        from frame.verticals.sports import stats_engine as SE
+        parsed = SE.parse_stats(STATS_FEED)
+        self.assertEqual(parsed["match"]["possession"], (49, 51))
+        self.assertEqual(parsed["match"]["corners"], (7, 9))
+        self.assertEqual(parsed["match"]["yellow_cards"], (2, 1))
+        self.assertEqual(parsed["match"]["fouls"], (10, 12))
+        self.assertEqual(parsed["h1"]["corners"], (1, 4))
+        self.assertEqual(SE.parse_stats(""), {})
+
+    def test_parse_incidents_marks_side_and_kind(self):
+        from frame.verticals.sports import stats_engine as SE
+        events = SE.parse_incidents(INCIDENT_FEED)
+        self.assertEqual(len(events), 2)
+        goal, card = events
+        self.assertTrue(goal["is_goal"])
+        self.assertEqual(goal["side"], "away")
+        self.assertEqual(goal["player"], "Carter D.")
+        self.assertEqual(goal["minute"], "43'")
+        self.assertFalse(card["is_goal"])
+        self.assertTrue(card["is_card"])
+        self.assertEqual(card["side"], "home")
+
+    def test_engine_caches_a_fetch_and_serves_it_back(self):
+        import os
+        from frame.verticals.sports import stats_engine as SE
+        calls = []
+
+        def fetch(url):
+            calls.append(url)
+            return STATS_FEED if SE.STATS_KIND in url else INCIDENT_FEED
+
+        engine = SE.MatchStatsEngine(
+            cache_path=os.path.join(tempfile.mkdtemp(), "stats.json"),
+            fetcher=fetch)
+        # each feed is fetched on its own, so the stats read is one request
+        self.assertEqual(engine.match_stats("m1")["corners"], (7, 9))
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(engine.match_stats("m1")["corners"], (7, 9))
+        self.assertEqual(len(calls), 1)              # the cache answered
+        self.assertEqual(engine.incidents("m1")[0]["player"], "Carter D.")
+        self.assertEqual(len(calls), 2)              # the incidents feed, once
+        self.assertEqual(engine.incidents("m1")[0]["player"], "Carter D.")
+        self.assertEqual(len(calls), 2)
+
+    def test_engine_is_fail_open_and_respects_its_budget(self):
+        import os
+        from frame.verticals.sports import stats_engine as SE
+
+        def broken(url):
+            raise RuntimeError("feed down")
+
+        engine = SE.MatchStatsEngine(
+            cache_path=os.path.join(tempfile.mkdtemp(), "stats.json"),
+            fetcher=broken, budget=2)
+        self.assertEqual(engine.match_stats("m1"), {})   # never raises
+        spent = engine._spent
+        self.assertLessEqual(spent, 2)
+
+    def test_marketboard_quotes_count_lines_only_in_play(self):
+        from frame.verticals.sports import stats_engine as SE
+        from frame.verticals.sports.marketboard import quote_markets
+        stats = SE.parse_stats(STATS_FEED)["match"]
+        pre = {m.kind for m in quote_markets("x", "soccer", "A", "B")}
+        self.assertNotIn("cards", pre)
+        live = {m.kind: m for m in quote_markets(
+            "x", "soccer", "A", "B", live=True, minute=60,
+            home_score=1, away_score=0, stats=stats)}
+        for kind in ("cards", "corners", "fouls"):
+            self.assertIn(kind, live, kind)
+            self.assertIsNotNone(live[kind].line)
+            self.assertLess(abs(sum(1.0 / p for p in live[kind].prices) - 1.05),
+                            0.01, kind)
+
+    def test_a_count_market_settles_on_the_final_stats(self):
+        from frame.verticals.sports import stats_engine as SE
+        from frame.verticals.sports.settlement import resolve
+        stats = SE.parse_stats(STATS_FEED)
+        # 3 yellow cards, 16 corners in the Match section
+        self.assertEqual(resolve("cards", "Mais", "A", "B", 1, 0,
+                                 line=2.5, stats=stats), "won")
+        self.assertEqual(resolve("cards", "Menos", "A", "B", 1, 0,
+                                 line=2.5, stats=stats), "lost")
+        self.assertEqual(resolve("corners", "Mais", "A", "B", 1, 0,
+                                 line=9.5, stats=stats), "won")
+        self.assertEqual(resolve("corners", "Menos", "A", "B", 1, 0,
+                                 line=9.5, stats=stats), "lost")
+        # no stats behind the line: undetermined, never invented
+        self.assertIsNone(resolve("cards", "Mais", "A", "B", 1, 0, line=2.5))
+        self.assertIsNone(resolve("corners", "Mais", "A", "B", 1, 0,
+                                  line=9.5, stats={"match": {}}))
+
+    def test_a_live_fixture_carries_stats_and_its_count_markets(self):
+        import os
+        from frame.verticals.sports.flashscore_engine import (
+            FlashscoreSportsEngine)
+        from frame.verticals.sports import stats_engine as SE
+        # a board feed with one live soccer match, plus its stats feed
+        board = ("SA\u00f71\u00ac~ZA\u00f7BRAZIL: Serie A\u00ac"
+                 "ZY\u00f7Brazil\u00ac~AA\u00f7m1\u00acAD\u00f71792161000\u00ac"
+                 "AB\u00f72\u00acAE\u00f7Flamengo\u00acAF\u00f7Santos\u00ac"
+                 "AG\u00f71\u00acAH\u00f70\u00ac")
+
+        def fetch(url):
+            return STATS_FEED if SE.STATS_KIND in url else board
+
+        tmp = tempfile.mkdtemp()
+        engine = FlashscoreSportsEngine(
+            cache_path=os.path.join(tmp, "board.json"),
+            results_cache=os.path.join(tmp, "results.json"),
+            fetcher=fetch, sports={1: "soccer"})
+        engine.stats_engine = SE.MatchStatsEngine(
+            cache_path=os.path.join(tmp, "stats.json"), fetcher=fetch)
+        fix = engine.fixtures()[0]
+        self.assertEqual(fix.stats.get("corners"), (7, 9))
+        kinds = {m.kind for m in engine.markets(fix.key)}
+        self.assertIn("corners", kinds)
+        self.assertIn("cards", kinds)
 
 
 def _forced_bet_id(prefix: str, fixture: str, selection: str, price: float,
@@ -5037,6 +5464,258 @@ class KenoTest(unittest.TestCase):
         # and the cert gate lets it through
         self.assertIn(KENO_GAME_ID, demo.registry.launchable_ids())
 
+
+
+class WheelTest(unittest.TestCase):
+    """Roda da Sorte: 100 equal sectors whose ladder sums to exactly 97, so
+    the RTP is 97% by construction (the prior ladder summed to 137%)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.demo.deposit({"player": self.player, "amount_minor": 100000,
+                           "method": "pix", "deposit_id": "wheel-dep"})
+
+    @staticmethod
+    def _sector_with(pred, limit=200000):
+        from demo import arcade
+        for i in range(limit):
+            rid = f"whl-{i}"
+            mult = arcade.wheel_sector_multiplier(
+                arcade.wheel_sector(arcade.WHEEL_GAME_ID, rid))
+            if pred(mult):
+                return rid
+        raise AssertionError("no round id matched the sector predicate")
+
+    def test_the_ladder_is_exactly_97_over_100_sectors(self):
+        from demo import arcade
+        self.assertEqual(len(arcade.WHEEL_SECTORS), 100)
+        weighted = sum(round(mult * count)
+                       for mult, count in arcade.WHEEL_LADDER)
+        self.assertEqual(weighted, 97)
+        self.assertEqual(len(arcade.WHEEL_LADDER), 8)
+
+    def test_the_rtp_is_exactly_97_percent(self):
+        from demo import arcade
+        self.assertAlmostEqual(arcade.wheel_rtp(), 0.97, places=9)
+        self.assertAlmostEqual(
+            arcade_theoretical_rtp(arcade.WHEEL_GAME_ID), 0.97, places=9)
+
+    def test_the_ladder_reconstructs_the_sector_run(self):
+        from demo import arcade
+        rebuilt = tuple(m for m, count in arcade.WHEEL_LADDER
+                        for _ in range(count))
+        self.assertEqual(rebuilt, arcade.WHEEL_SECTORS)
+
+    def test_the_draw_is_deterministic(self):
+        from demo import arcade
+        a = arcade.wheel_round(arcade.WHEEL_GAME_ID, "wdx", None, 500)
+        b = arcade.wheel_round(arcade.WHEEL_GAME_ID, "wdx", None, 500)
+        self.assertEqual(a, b)
+
+    def test_a_winning_sector_settles_through_the_books(self):
+        rid = self._sector_with(lambda m: m >= 1.0)
+        before = self.demo.books.available(self.player)
+        row = self.demo.spin({"player": self.player,
+                              "game_id": "demo:roda-da-sorte",
+                              "stake_minor": 500, "round_id": rid})
+        self.assertGreaterEqual(row["payout_minor"], 500)
+        self.assertEqual(self.demo.books.available(self.player),
+                         before - 500 + row["payout_minor"])
+        self.demo.books.assert_balanced()
+
+    def test_a_loss_sector_pays_nothing(self):
+        rid = self._sector_with(lambda m: m == 0)
+        before = self.demo.books.available(self.player)
+        row = self.demo.spin({"player": self.player,
+                              "game_id": "demo:roda-da-sorte",
+                              "stake_minor": 500, "round_id": rid})
+        self.assertEqual(row["payout_minor"], 0)
+        self.assertEqual(self.demo.books.available(self.player), before - 500)
+        self.demo.books.assert_balanced()
+
+    def test_the_jackpot_sector_pays_25x(self):
+        rid = self._sector_with(lambda m: m == 25.0)
+        row = self.demo.spin({"player": self.player,
+                              "game_id": "demo:roda-da-sorte",
+                              "stake_minor": 200, "round_id": rid})
+        self.assertEqual(row["payout_minor"], 5000)   # 200 x 25
+        self.demo.books.assert_balanced()
+
+
+class BehaviourTest(unittest.TestCase):
+    """The painel's win/loss dial: a forced outcome is a real draw from the
+    game's own paytable, the round says it was steered, and the wallet moves
+    in the direction the dial asked for (decisions/0057)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.token = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.demo.deposit({"player": self.player, "amount_minor": 1000000,
+                           "method": "pix", "deposit_id": "beh-dep"})
+
+    def _set(self, mode, rate=None):
+        body = {"player_id": self.player, "mode": mode}
+        if rate is not None:
+            body["win_rate_percent"] = rate
+        return self.demo.admin_set_behaviour(self.token, body)
+
+    def _dashboard(self):
+        return self.demo.admin_player_dashboard(self.token, self.player)
+
+    def _spin(self, rid, game="demo:neon-gems", selection=None, stake=500):
+        payload = {"player": self.player, "game_id": game,
+                   "stake_minor": stake, "round_id": rid}
+        if selection is not None:
+            payload["selection"] = selection
+        return self.demo.spin(payload)
+
+    def test_default_is_normal_and_the_row_says_nothing(self):
+        row = self._spin("beh-norm")
+        self.assertNotIn("biased", row)
+        self.assertEqual(self._dashboard()["player"]["outcome_bias"], "normal")
+
+    def test_always_win_profits_and_marks_the_round(self):
+        self._set("always_win")
+        for i in range(6):
+            row = self._spin(f"beh-win-{i}")
+            self.assertGreater(row["payout_minor"], 500)
+            self.assertTrue(row["biased"])
+            self.assertEqual(row["bias_mode"], "always_win")
+        self.demo.books.assert_balanced()
+
+    def test_always_lose_zeroes_and_marks_the_round(self):
+        self._set("always_lose")
+        for i in range(6):
+            row = self._spin(f"beh-lose-{i}")
+            self.assertEqual(row["payout_minor"], 0)
+            self.assertTrue(row["biased"])
+        self.demo.books.assert_balanced()
+
+    def test_win_rate_is_roughly_the_requested_share(self):
+        self._set("win_rate", 30)
+        n = 400
+        wins = sum(1 for i in range(n)
+                   if self._spin(f"beh-rate-{i}", stake=200)["payout_minor"] > 200)
+        self.assertAlmostEqual(wins / n, 0.30, delta=0.08)
+
+    def test_arcade_and_roulette_are_steered_too(self):
+        from demo.arcade import DICE_GAME_ID
+        from demo.casino import ROULETTE_GAME_ID
+        self._set("always_win")
+        dice = self._spin("beh-dice", game=DICE_GAME_ID,
+                          selection="under:50.00")
+        self.assertGreater(dice["payout_minor"], 500)
+        roulette = self._spin("beh-rou", game=ROULETTE_GAME_ID, selection="red")
+        self.assertGreater(roulette["payout_minor"], 500)
+        self._set("always_lose")
+        again = self._spin("beh-dice-2", game=DICE_GAME_ID,
+                           selection="under:50.00")
+        self.assertEqual(again["payout_minor"], 0)
+        self.demo.books.assert_balanced()
+
+    def test_a_publisher_round_is_scaled_and_marked(self):
+        self._set("always_win")
+        won = self.demo.settle_rgs_round(self.player, "demo:provider",
+                                         "px:1", 1000, 0)
+        self.assertTrue(won["settled"])
+        self.assertEqual(won["payout_minor"], 2000)   # floored at 2x
+        self._set("always_lose")
+        lost = self.demo.settle_rgs_round(self.player, "demo:provider",
+                                          "px:2", 1000, 5000)
+        self.assertEqual(lost["payout_minor"], 0)
+        self.demo.books.assert_balanced()
+
+    def test_dashboard_exposes_the_mode_and_the_saldo(self):
+        self._set("win_rate", 45)
+        dash = self._dashboard()
+        self.assertEqual(dash["player"]["outcome_bias"], "win_rate")
+        self.assertEqual(dash["player"]["win_rate_percent"], 45)
+        self.assertEqual(dash["balance"]["available_minor"],
+                         self.demo.books.available(self.player))
+
+    def test_an_unknown_mode_is_refused(self):
+        with self.assertRaises(ValueError):
+            self._set("cheat")
+
+    def test_the_dial_survives_a_restart(self):
+        self._set("always_win")
+        revived = Demo(data_dir=self.tmp)
+        self.assertEqual(
+            revived.players.read_all()[self.player]["outcome_bias"],
+            "always_win")
+
+
+class TestDepositTest(unittest.TestCase):
+    """A test account funds itself with a real, tagged deposit — not an
+    adjustment — so the saldo and the first-deposit rule react."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.admin = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        self.player = self.demo.admin_create_test_account(self.admin, {
+            "name": "Conta Teste", "email": "teste@example.com",
+            "cpf": "111.444.777-35", "password": "teste1234",
+            "pix_key": "teste@example.com", "username": "conta.teste",
+        })["created"]["player_id"]
+
+    def test_the_account_is_flagged(self):
+        self.assertTrue(self.demo.players.read_all()[self.player]["is_test"])
+
+    def test_self_service_deposit_moves_the_wallet_and_is_tagged(self):
+        out = self.demo.deposit({"player": self.player, "amount_minor": 5000,
+                                 "method": "pix", "deposit_id": "td-1"})
+        self.assertTrue(out["test"])
+        self.assertEqual(self.demo.books.available(self.player), 5000)
+        postings = [p for p in self.demo.books.postings
+                    if p.kind == "deposit" and p.metadata.get("test")]
+        self.assertEqual(len(postings), 1)
+        self.demo.books.assert_balanced()
+
+    def test_admin_credit_posts_as_a_real_deposit(self):
+        out = self.demo.admin_test_deposit(
+            self.admin, {"player_id": self.player, "amount_minor": 20000})
+        self.assertEqual(out["amount_minor"], 20000)
+        self.assertEqual(self.demo.books.available(self.player), 20000)
+        kinds = {p.kind for p in self.demo.books.postings
+                 if p.metadata.get("player") == self.player}
+        self.assertIn("deposit", kinds)
+        self.demo.books.assert_balanced()
+
+    def test_a_public_account_cannot_take_a_test_deposit(self):
+        public = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        with self.assertRaises(ValueError):
+            self.demo.admin_test_deposit(
+                self.admin, {"player_id": public, "amount_minor": 1000})
+
+    def test_first_deposit_sees_the_test_credit(self):
+        self.demo.admin_test_deposit(
+            self.admin, {"player_id": self.player, "amount_minor": 10000})
+        self.assertEqual(self.demo._deposit_amounts(self.player), [10000])
+        dash = self.demo.admin_player_dashboard(self.admin, self.player)
+        self.assertEqual(dash["balance"]["deposits_minor"], 10000)
+        self.assertEqual(dash["balance"]["test_deposits_minor"], 10000)
 
 
 if __name__ == "__main__":

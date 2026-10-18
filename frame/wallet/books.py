@@ -185,14 +185,18 @@ class Books:
     def bonus_available(self, player: str) -> int:
         return self.player_balances.get(player, {}).get(PLAYER_BONUS, 0)
 
-    def deposit(self, key: str, player: str, amount: int) -> Posting:
+    def deposit(self, key: str, player: str, amount: int,
+                metadata: dict[str, object] | None = None) -> Posting:
         if amount <= 0:
             raise WalletError("deposit amount must be positive")
+        meta: dict[str, object] = {"player": player}
+        if metadata:
+            meta.update(metadata)
         return self.post(
             key,
             "deposit",
             [(PLAYER_BALANCE, amount), (OPERATOR_CASH, -amount)],
-            {"player": player},
+            meta,
         )
 
     def withdraw(self, key: str, player: str, amount: int) -> Posting:

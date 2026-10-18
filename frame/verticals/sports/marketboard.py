@@ -20,6 +20,7 @@ leaving the pre-match price untouched.
 
 from __future__ import annotations
 
+import math
 import time
 
 from .contract import Market
@@ -48,6 +49,16 @@ TOTALS = {
 }
 DEFAULT_TOTAL = (2.7, 0.6, 2.5)
 RUGBY_TOTAL = (44.0, 4.0, 43.5)
+# Counting markets read straight off the match-stats feed (stats_engine): the
+# stats key whose two sides sum to the count, the market kind, and the expected
+# full-match total. The line quoted is derived from the model (expected final
+# count, snapped to the book's .5 grid) so it moves with the clock like a real
+# in-play count line, rather than sitting on a fixed number all match.
+COUNT_MARKETS = (
+    ("yellow_cards", "cards", 4.4),
+    ("corners", "corners", 10.2),
+    ("fouls", "fouls", 23.0),
+)
 # the live clock cap per sport, for the in-play tilt (mirrors the engines')
 LIVE_CAP = {"soccer": 90.0, "futsal": 40.0, "handball": 60.0,
             "basketball": 48.0, "hockey": 60.0, "rugby": 80.0,
@@ -72,9 +83,16 @@ def _half_line(line: float) -> tuple[float, float]:
 def quote_markets(fixture_key: str, sport: str, home: str, away: str,
                   live: bool = False, minute: float = 0.0,
                   bucket: int | None = None, home_score: int | None = None,
-                  away_score: int | None = None) -> list[Market]:
+                  away_score: int | None = None, stats: dict | None = None) -> list[Market]:
     """The book for one fixture. Deterministic per 30s bucket; a live fixture
-    adds the minute-scaled drift and tilts the result market by the score."""
+    adds the minute-scaled drift and tilts the result market by the score.
+
+    `stats` is the parsed match-stats section (`stats_engine.match_stats`).
+    When it carries a counting stat (cards, corners, fouls) the board adds that
+    over/under line, priced from the count so far and the time left; without it
+    the market is simply not offered — a count with no feed behind it cannot be
+    settled, so it must not be quoted.
+    """
     if bucket is None:
         bucket = int(time.time()) // 30
     minute = minute if live else 0.0
@@ -86,6 +104,31 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
                                    cap=LIVE_CAP.get(str(sport or ""), 90.0))
         return _market(fixture_key, sport, kind, selections, probs, bucket,
                        minute, line=line)
+
+    def count_lines(section, frac):
+        """The over/under lines for whatever counting stats the feed carries.
+
+        Only offered in-play: a pre-match count with no stats behind it could
+        not be settled from the final score, so it is not quoted (the board's
+        pre-match book is the result/total market).
+        """
+        if not live:
+            return []
+        out = []
+        for key, kind, mean in COUNT_MARKETS:
+            pair = (section or {}).get(key)
+            if not pair:
+                continue
+            current = sum(float(v or 0) for v in pair)
+            remaining = max(0.0, mean * (1.0 - max(0.0, min(1.0, frac))))
+            line = max(0.5, math.floor(current + remaining) + 0.5)
+            over = P.count_over(current, mean, frac, line)
+            out.append(add(kind, ("Mais", "Menos"), (over, 1.0 - over),
+                           line=line))
+        return out
+
+    def match_section():
+        return (stats or {}).get("match") or stats or {}
 
     def result_extras(three):
         """dnb + ah derived from a (home, draw, away) result vector."""
@@ -125,6 +168,8 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
             P.total_probs_over(home, away, line1, 0.45),
             P.total_probs_over(home, away, line2, 0.55), line1, line2))
         extras.extend(result_extras(adj))
+        extras.extend(count_lines(
+            match_section(), minute / LIVE_CAP["soccer"] if live else 0.0))
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=SOCCER_TOTAL_LINE))
         return [result, totals[0], *extras]
@@ -151,6 +196,9 @@ def quote_markets(fixture_key: str, sport: str, home: str, away: str,
             P.points_total_over(home, away, base, scale, line2, 0.55),
             line1, line2))
         extras.extend(result_extras(adj))
+        extras.extend(count_lines(
+            match_section(),
+            minute / LIVE_CAP.get(sport, 90.0) if live else 0.0))
         over = P.points_total_over(home, away, base, scale, line)
         totals.append(add("total", ("Mais", "Menos"), (over, 1.0 - over),
                           line=line))

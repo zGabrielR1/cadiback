@@ -16,6 +16,11 @@ export function useSession() {
   // opens a real charge and waits for confirmation; when it does not, the
   // instant demo credit is the honest fallback.
   const [asaasAvailable, setAsaasAvailable] = useState(false);
+  // Whether the server has a live NOWPayments crypto rail, and which coins it
+  // offers. Same rule as Asaas: a real invoice when configured, the instant
+  // demo credit otherwise.
+  const [cryptoAvailable, setCryptoAvailable] = useState(false);
+  const [cryptoCoins, setCryptoCoins] = useState([]);
   // Public operator settings the storefront adapts to: whether signup
   // demands the payout account, and whether hidden test accounts may log
   // in. Fetched on boot so the account modal knows the rules before a
@@ -61,6 +66,8 @@ export function useSession() {
       setHistory(h);
       setHealth(hl.status);
       setAsaasAvailable(!!(hl.asaas && hl.asaas.configured));
+      setCryptoAvailable(!!(hl.crypto && hl.crypto.configured));
+      if (hl.crypto && Array.isArray(hl.crypto.coins)) setCryptoCoins(hl.crypto.coins);
       setRefreshError("");
     } catch (e) {
       if (seq !== refreshSeq.current) return;
@@ -78,6 +85,8 @@ export function useSession() {
     health,
     setHealth,
     asaasAvailable,
+    cryptoAvailable,
+    cryptoCoins,
     serverConfig,
     refreshError,
     setRefreshError,
