@@ -35,7 +35,9 @@
   moving on the .5 grid) settle from the final stats — pending, never a guess,
   without them. Sport tabs use inline **SVG** icons (no emoji); a stats panel
   sits in the "mais mercados" drawer; tabs/selections/odds enlarged. Test:
-  `MatchStatsTest` (7). Scorer props remain an honest gap (lineups empty).
+  `MatchStatsTest` (7). Scorer props remain unoffered — but not for lack of a
+  roster: `df_li_1_<id>` returns the full starting XI (re-measured 2026-10-18),
+  so the open work is the market, not the data.
 - **Providers re-verified live** (§5). New `scripts/live_providers.py` proves our
   wallet answers and debits; live 2026-10-18 wired **22/22** sampled games across
   hacksaw, pg_soft, pragmatic_play, play_n_go and spribe (evolution launcher

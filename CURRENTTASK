@@ -42,7 +42,10 @@ and self-service test deposits for test accounts.
   budgeted. The board adds **in-play cards/corners/fouls over/under** markets
   (`pricing.count_over`, the line moving on the .5 grid) and
   `settlement.resolve` decides them from the final stats — pending, never a
-  guess, without them. Scorer props stay an honest gap (lineups feed empty).
+  guess, without them. Scorer props stay unoffered — but **not** for lack of a
+  roster: re-measured 2026-10-18, `df_li_1_<id>` returns the full starting XI
+  for both sides, so the remaining work is the market (pricing + settling from
+  the incidents feed), not the data.
   Sport tabs now use inline **SVG** icons (no emoji/glyphs), a stats panel shows
   inside the "mais mercados" drawer, and tabs/selections/odds were enlarged.
   `MatchStatsTest` (7).

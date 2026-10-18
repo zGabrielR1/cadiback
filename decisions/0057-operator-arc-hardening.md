@@ -122,10 +122,17 @@ the time left (`pricing.count_over`), with the line moving on the book's own .5
 grid as the tally grows**. They are offered **only in-play**, because only then
 does the fixture carry the stats that settle them; `settlement.resolve` decides
 them from the final match stats and returns *pending* (never a guess) when the
-feed is missing. Scorer props are plumbed but **not offered**: the roster comes
-from the lineups feed (`df_li_1`), which was empty for the matches seen, so
-mirroring the incidents feed alone cannot enumerate a squad — that stays an
-honest gap, not a fake market.
+feed is missing. Scorer props are plumbed but **not offered**, and the reason
+first given here was wrong. It is not that the roster feed is empty:
+re-measured on 2026-10-18, `df_li_1_<id>` answers with the full starting XI for
+both sides — formation (`LD`), player name (`LI`), player id (`LP`) and position
+(`LPG`) — 11–13 KB per match, with only the occasional fixture returning nothing
+(one of five sampled). The remaining work is the market, not the data: an
+anytime-scorer line (a few selections per side, won when the incidents feed
+carries `IK=Goal` for that player's `IM`) priced from the side's
+remaining-goal rate — the same shape as `count_over`. It stays unoffered until
+that is built, tested and settled from the incidents feed, rather than quoted on
+an invented number.
 
 The sport tabs get inline **SVG** icons (no emoji, no two-letter glyphs), a
 stats panel (possession/shots/corners/cards bars) inside the "mais mercados"
@@ -199,7 +206,7 @@ tagged `is_test`, behind a setting. The painel credit button posts the same way.
 | 1 | Crypto | NOWPayments charge → address/QR → provider-confirmed → wallet credited once | deferred until keys |
 | 2 | Behaviour | forcing win/lose and a win-rate moves the wallet; painel shows saldo | deploy |
 | 3 | Asaas | prod keys → real Pix credits once via webhook | deferred until keys |
-| 4 | Sports | cards/faltas/totals/scorer markets render, price and settle; SVG icons | deploy |
+| 4 | Sports | cards/faltas/totals markets render, price and settle; SVG icons | deploy |
 | 5 | Providers | each provider's live harness moves our saldo | deploy |
 | 6 | Wheel | RTP exactly 97%, playable, settles | deploy |
 | 7 | Test deposits | a test account funds itself and the wallet moves | deploy |
