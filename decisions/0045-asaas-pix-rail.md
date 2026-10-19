@@ -1,9 +1,12 @@
 # 0045 — Asaas Pix rail: a real charge, provider-confirmed before a centavo posts
 
-Status: built, unit-tested, and **live-verified in the Asaas sandbox** (a real
-R$5 charge → QR → provider confirm → webhook credit → replay-safe). The webhook
-is registered after the deploy; until then the operator runs the instant demo
-credit exactly as before. Sandbox first.
+Status: built, unit-tested, and **live in production** (2026-10-19). The rail
+was live-verified end to end in the Asaas sandbox (a real R$5,00 charge → QR →
+provider confirm → webhook credit → replay-safe), then configured for
+production: production key and base URL, a collection customer created in the
+production account, and the webhook repointed at
+`https://cadiback.onrender.com/api/webhooks/asaas`. The first paid production
+charge is the one remaining owner step.
 
 ## The rule that shapes everything
 
@@ -99,20 +102,27 @@ simulate`, is a 404).
 
 ## Honest limits
 
-- **Live-verified in the sandbox, not in production.** A real sandbox charge was
-  created, confirmed provider-side and credited through the webhook once, with a
-  replay crediting nothing and the books balanced. Production swaps the three
-  credentials and re-registers the webhook (the runbook covers it).
-- **The webhook is registered and live-verified.** `operator-deposits` →
-  `https://cadiback.onrender.com/api/webhooks/asaas` (RECEIVED / CONFIRMED /
-  OVERDUE / REFUNDED, `hasAuthToken: true`). A live deposit on the deployed
-  service credited through the webhook alone, with no poll call. Render is the
-  host; the earlier "Fly or Render?" question was moot because nothing was
-  registered before. A pre-existing `weeeb` webhook (enabled, pointing at the
-  site root) was left untouched.
+- **Production is configured; the first paid charge is pending (2026-10-19).**
+  The four `ASAAS_*` values were merged additively into the Render service (a
+  full-set sync would drop the dashboard-only variables). The production
+  account had no customer and the sandbox customer id 404s there, so one was
+  created from the account's own `/myAccount` CPF; Asaas reads the CPF from the
+  customer, never from the charge. Read-only checks: `/finance/balance` 200,
+  customer 200, webhook 200. Two things only a paid charge can prove remain:
+  the QR is payable and the webhook credits the saldo once.
+- **The webhook is registered and live-verified.** Sandbox:
+  `operator-deposits` → `https://cadiback.onrender.com/api/webhooks/asaas`
+  (RECEIVED / CONFIRMED / OVERDUE / REFUNDED, `hasAuthToken: true`). A live
+  sandbox deposit on the deployed service credited through the webhook alone,
+  with no poll call. In production the only webhook still pointed at the site
+  root (`/`), which our handler does not serve; it was repointed to the same
+  path and its `authToken` set to `ASAAS_WEBHOOK_SECRET`. The sandbox's
+  pre-existing `weeeb` webhook was left untouched.
 - **The payer is one configured customer, not the player.** The sandbox-first
   default charges `ASAAS_CUSTOMER_ID`; a per-payer design (an Asaas customer per
   player, CPF stored) is the production path and is deliberately not built yet.
 - **Secrets never enter the repository.** The host gets the four `ASAAS_*`
-  values from `render_deploy.py` (reading the gitignored `.env.asaas`) or from
-  the Render dashboard; `render.yaml` carries `sync: false` placeholders only.
+  values from the gitignored `.env.asaasprod`/`.env.asaas.sandbox` through
+  `render_deploy.py`'s resolver (or from the Render dashboard); `render.yaml`
+  carries `sync: false` placeholders only. On the live service the values are
+  merged additively, never written as a full-set replacement.

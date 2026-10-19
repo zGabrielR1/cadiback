@@ -35,6 +35,41 @@ ASAAS_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ASAAS_BASE_URL=https://sandbox.asaas.com/api/v3
 ```
 
+## Production (live 2026-10-19)
+
+Production credentials live in the gitignored `.env.asaasprod`. The file must
+be **complete**: `scripts/render_deploy.py` resolves the first complete
+credential file among `.env.asaas` / `.env.asaasprod` / `.env.asaas.sandbox`,
+and an empty `ASAAS_BASE_URL` makes the production file incomplete — the
+sandbox file then wins silently. That trap was hit once; the fix is the
+explicit line:
+
+```text
+ASAAS_BASE_URL=https://api.asaas.com/v3
+```
+
+Two production facts the sandbox hid:
+
+- **A customer is per-account.** The sandbox customer id 404s in production,
+  so a collection customer had to be created there. Asaas reads the CPF/CNPJ
+  from the customer, not from the charge, so `POST /customers` carries the
+  account holder's own `cpfCnpj` (read from `GET /myAccount`).
+- **The webhook had been registered at the root.** Asaas was posting to
+  `https://cadiback.onrender.com/`, which our handler does not serve. It now
+  points at `https://cadiback.onrender.com/api/webhooks/asaas`, with
+  `enabled: true`, `hasAuthToken: true`, and the token equal to
+  `ASAAS_WEBHOOK_SECRET`.
+
+The keys are never committed: they travel from `.env.asaasprod` into the
+Render service's environment through the API, **additively** — a full-set
+`PUT` replaces every variable and would drop the dashboard-only ones
+(Authgear, Turnstile, Resend, Supabase). `GET /api/health` reports
+`asaas: {configured: true, env: "production"}` once the process has restarted.
+
+The one step that needs a human is the first paid charge: create a R$5,00 Pix
+deposit in the storefront and pay it. The webhook alone should credit the
+saldo (no poll), and the poll must then agree without double-crediting.
+
 ## Before the first charge: provision the customer
 
 Asaas refuses a charge when the billed **customer** has no CPF/CNPJ

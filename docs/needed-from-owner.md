@@ -3,29 +3,30 @@
 The one list of things that are waiting on you. Everything not here is either
 done and live, or code I can still work on without you.
 
-Last updated: 2026-10-18 (session 2).
+Last updated: 2026-10-19 (Asaas production live).
 
-## 1. Asaas production keys (the only hard blocker)
+## 1. Asaas production — configured, one paid deposit to close the loop
 
-The Pix rail is wired and running on **sandbox** right now
-(`GET /api/health` → `asaas: {configured: true, env: "sandbox"}`). To go to
-production, drop the three production values into `.env.asaasprod`:
+The Pix rail is now **configured for production**:
 
-```
-ASAAS_API_KEY=<your production key>
-ASAAS_CUSTOMER_ID=<your production customer id>   # already filled in
-ASAAS_BASE_URL=https://api.asaas.com/v3
-ASAAS_WEBHOOK_SECRET=<your production webhook secret>
-```
+- `.env.asaasprod` (still gitignored, never committed) holds the production
+  key, customer and webhook secret, with
+  `ASAAS_BASE_URL=https://api.asaas.com/v3`.
+- The four `ASAAS_*` values were merged **additively** into the Render service
+  (the other variables were preserved; the full-set sync was not used), and
+  the deploy reports `asaas: {configured: true, env: "production"}`.
+- The production account had no collection customer, and the sandbox customer
+  id does not exist there (404), so one was created from the account's own
+  `/myAccount` name/CPF. Asaas needs that customer to carry a CPF/CNPJ.
+- The pre-existing webhook pointed at `https://cadiback.onrender.com/` — the
+  root, which our handler does not serve. It now points at
+  `https://cadiback.onrender.com/api/webhooks/asaas` with `hasAuthToken: true`
+  and the local secret.
 
-`scripts/render_deploy.py` picks the first **complete** credential file among
-`.env.asaas` / `.env.asaasprod` / `.env.asaas.sandbox`, so a half-filled prod
-file keeps sandbox running instead of pairing a prod customer with a sandbox
-key. Once the file is complete:
-
-1. push to `github.com/zGabrielR1/cadiback` (`main`) — that is the deploy;
-2. register the Asaas webhook →
-   `https://cadiback.onrender.com/api/webhooks/asaas` (`hasAuthToken: true`).
+What is still waiting on you: **one real R$5,00 Pix deposit through the
+storefront**, paid from your bank app. That is the only step that proves the
+provider-confirmed credit on the production account; everything up to the QR
+was verified with read-only calls, and nothing moves until you pay it.
 
 Full runbook: `docs/asaas.md`.
 
@@ -54,10 +55,9 @@ If you ever rotate the key or secret, just replace the two lines in
 
 ## How a deploy works (so you can do it too)
 
-The working tree is not a git checkout; the live service builds from
-`github.com/zGabrielR1/cadiback` (`main`, `autoDeploy` on). So: commit, push,
-and Render rebuilds in about two minutes. Do **not** run
-`scripts/render_deploy.py`'s env-var sync against the live service — it replaces
-the whole variable set and would drop the dashboard-only ones (Authgear,
-Turnstile, Resend, Supabase). New secrets are merged in additively through the
-Render API instead.
+The live service builds from `github.com/zGabrielR1/cadiback` (`main`,
+`autoDeploy` on). So: commit, push, and Render rebuilds in about two minutes.
+Do **not** run `scripts/render_deploy.py`'s env-var sync against the live
+service — it replaces the whole variable set and would drop the dashboard-only
+ones (Authgear, Turnstile, Resend, Supabase). New secrets are merged in
+additively through the Render API instead.

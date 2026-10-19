@@ -1,5 +1,37 @@
 # PROGRESS
 
+## DONE (2026-10-19 — Asaas Pix is live on production, decision 0045)
+
+- **THE PRODUCTION RAIL IS CONFIGURED — WITHOUT COMMITTING A SECRET.**
+  `.env.asaasprod` is a gitignored credential file (`.gitignore` excludes
+  `.env.*`, and the repository is public), so its values were not committed.
+  Instead the four `ASAAS_*` values were merged **additively** into the Render
+  service: the service's environment was read first (21 keys), the four Asaas
+  entries replaced, and the whole set written back. Readback confirmed the
+  other 17 keys unchanged. The deploy's full-set sync was deliberately not
+  used — it drops the dashboard-only Authgear/Turnstile/Resend/Supabase vars.
+- **A SILENT SANDBOX FALLBACK, FOUND AND CLOSED.** `.env.asaasprod` had an
+  empty `ASAAS_BASE_URL`; `render_deploy.resolve_asaas_env_file()` requires a
+  key, a customer and a base URL to call a file complete, so the complete
+  `.env.asaas.sandbox` was winning and the deploy would have stayed sandbox
+  forever. The explicit `https://api.asaas.com/v3` line fixes it.
+- **THE PRODUCTION ACCOUNT HAD NO CUSTOMER.** The configured id was the
+  sandbox one and 404s in production. A collection customer was created from
+  the account's own `GET /myAccount` name/CPF (Asaas reads `cpfCnpj` from the
+  customer, never from the charge) and written back to the gitignored file.
+- **THE WEBHOOK WAS POSTING TO THE SITE ROOT.** The only production webhook
+  pointed at `https://cadiback.onrender.com/`, which no handler serves. It now
+  points at `/api/webhooks/asaas`, `enabled`, `hasAuthToken: true`, with the
+  token equal to `ASAAS_WEBHOOK_SECRET`.
+- **LIVE.** Read-only checks: production key (`/finance/balance`) 200,
+  customer 200 with CPF, webhook 200. Deploy
+  `dep-dbb1d9m1egvs73cgue40` went live and `GET /api/health` now reports
+  `asaas: {configured: true, env: "production"}`.
+- **THE ONE REMAINING STEP IS A PAID CHARGE.** Only a real R$5,00 Pix deposit,
+  paid from a bank app, can prove the QR is payable and the webhook credits
+  the saldo once. That is the owner's step; no money moves until it is paid.
+
+
 ## DONE (2026-10-19 — a real browser on Windows; PG Soft settles too, decisions 0064)
 
 - **THE APPIMAGE IS GONE FROM THE LOOP.** Live checks had been driven from a

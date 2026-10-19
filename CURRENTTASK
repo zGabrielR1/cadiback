@@ -25,11 +25,13 @@ sees our rewrite.
   movement, built, deployed and **live-verified**). Evolution never reaches
   us (launcher 502 from this host).
 - Suites: `frame` 50/50 · `demo` 382/382 · `verify.py` 0 problems.
-- OPEN: a Pragmatic free-spins feature (a winning spin is verified; 0063),
-  and **Asaas prod keys** remains the one owner item. PG Soft in production
-  needs its money calls routed same-origin (0064): the publisher's api host
-  only CORS-allows `*.pg-demo.com` origins, so a document on
-  `cadiback.onrender.com` cannot reach it from the browser.
+- OPEN: a Pragmatic free-spins feature (a winning spin is verified; 0063), and
+  the first **real Pix deposit in production** (the rail is configured, the
+  customer and webhook are provisioned — 2026-10-19 — so only a paid R$5,00
+  charge remains to close the loop). PG Soft in production needs its money
+  calls routed same-origin (0064): the publisher's api host only CORS-allows
+  `*.pg-demo.com` origins, so a document on `cadiback.onrender.com` cannot
+  reach it from the browser.
 
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the
@@ -182,10 +184,21 @@ and self-service test deposits for test accounts.
   saldo with a test deposit (dashboard `available_minor` 500000,
   `test_deposits_minor` 500000), and a real NOWPayments invoice opened through
   the deploy.
-- OPEN (owner): **Asaas prod keys** — `.env.asaasprod` still holds only the
-  customer id. Nothing else waits on the owner. The only remaining provider item
-  is code: Pragmatic's off-origin splash (upstream, decision 0059 — the wallet
-  path is done and proven).
+- ASAAS PRODUCTION CONFIGURED (2026-10-19). `.env.asaasprod` completed with
+  `ASAAS_BASE_URL=https://api.asaas.com/v3` (without it the resolver kept
+  choosing the complete **sandbox** file). The four `ASAAS_*` values were
+  merged additively into the Render service — the other 17 variables were
+  read back unchanged. The configured customer id existed only in sandbox
+  (404 in production), so a collection customer was created from the account's
+  own `/myAccount` name/CPF; the pre-existing webhook was repointed from the
+  root `/` to `/api/webhooks/asaas` with the local secret. Verified: key
+  (`/finance/balance` 200), customer 200 with CPF, webhook 200 and
+  `hasAuthToken: true`; deploy `dep-dbb1d9m1egvs73cgue40` is live and
+  `/api/health` reports `asaas: {configured: true, env: "production"}`. OPEN
+  (owner): one paid R$5,00 Pix deposit through the storefront; nothing else
+  waits on the owner. The only remaining provider item is code: Pragmatic's
+  off-origin splash (upstream, decision 0059 — the wallet path is done and
+  proven).
 
 CURRENTTASK (previous): Authgear social login (Google/Facebook + CPF, decision 0054) and a
 better sports book (per-market overround, draw-no-bet + asian handicap,
