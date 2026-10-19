@@ -1,0 +1,193 @@
+{
+  "captured_at": "2026-10-19T20:21:22.588Z",
+  "url": "https://cadiback.onrender.com/126/?ot=ca7094186b309ee149c55c8822e7ecf2&l=pt&btt=2&__hv=2fMEYCIQD1jGDV5jgvTbgT5u8MDwoezH7yzPaTexoi4cXPf5j6owIhAMs6EOjw2yf1G9U7QYRGBCTO4WERX6k6ggJM7OPVD%2B%2Fe&__sv=010501HSlD3JHtvMhHjGea7u3RdvQg6W6L5QG99dNPORhxcGY&ao=20ujc%3Dz26rttw7w%3Dwig&or=14ghohwq%3Ddu-rsac%3Dqca&token=c2662205cb4c44f4a25e1146f1ca23e0&pg=3e5f556c4d1b46aa",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "headed": false,
+  "canvas": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 800
+  },
+  "actions": [
+    "clicked 800,400",
+    "started 640,624",
+    "tapped 640,717",
+    "tapped only #1",
+    "tapped 640,717",
+    "tapped only #2",
+    "tapped 640,717",
+    "tapped only #3",
+    "tapped 640,717",
+    "tapped only #4"
+  ],
+  "key": "Space",
+  "presses": 4,
+  "eval_result": "{\"verifySeen\":0,\"spinSeen\":3,\"harvested\":0,\"harvestError\":null,\"watch\":3,\"polls\":18,\"pollError\":null,\"settled\":1,\"stakeFallback\":0}",
+  "requests_total": 321,
+  "console": [
+    {
+      "level": "log",
+      "text": "Game/Boot/Engine 3.2.0.3/7.4.0/7.4.0-rc.5"
+    }
+  ],
+  "exceptions": [],
+  "hud": [
+    "Fortune Tiger - Modo de Teste",
+    "17:21:21",
+    "Saldo: R$ 997.00"
+  ],
+  "money_requests": [
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/wallet/status?token=c2662205cb4c44f4a25e1146f1ca23e0",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/web-api/auth/session/v2/verifySession",
+      "status": 200,
+      "postData": "btt=2&vc=2&pf=1&l=pt&gi=126&tk=null&otk=ca7094186b309ee149c55c8822e7ecf2"
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/web-api/game-proxy/v2/GameName/Get",
+      "status": 200,
+      "postData": "lang=pt&atk=B6B49384-5856-480C-ACCF-00EF412AE5F7&btt=2&pf=1&gid=126"
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/game-api/fortune-tiger/v4/GameInfo/Get",
+      "status": 200,
+      "postData": "5\u000100\u0002576F4820E6CA-8-E8\nF-1-\u0010BC4549B$4C\u00183AF"
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds",
+      "status": 200,
+      "postData": "du=https%3A%2F%2Fcadiback.onrender.com&rtids=7&otk=ca7094186b309ee149c55c8822e7ecf2&btt=2&wk=0_C&atk=B6B49384-5856-480C-ACCF-00EF412AE5F7&pf=1&gid=126"
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/web-api/game-proxy/v2/GameWallet/Get",
+      "status": 200,
+      "postData": "isagw=true&btt=2&wk=0_C&atk=B6B49384-5856-480C-ACCF-00EF412AE5F7&pf=1&gid=126"
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/game-api/fortune-tiger/v4/Spin",
+      "status": 200,
+      "postData": "Ó\u0001*6381F?\u00043\u00015730AB-43\u0001-3-FCE3C0°534$8\u00026\u00024C90©2E0bB8\u00105\u0003\n-CF_\u0018A0\u00014"
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/game-api/fortune-tiger/v4/Spin",
+      "status": 200,
+      "postData": "4C8010BÓA\u000086b3241593013F$F_7\u000385EB?F9\u00012©C\u00015C\u0010\n73-4-\u0002-9201*\u00133754\u00026510544E32-\u0018°2\u0001A03C"
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/api/wallet/round",
+      "status": 200,
+      "postData": "{\"token\":\"c2662205cb4c44f4a25e1146f1ca23e0\",\"round_id\":\"ws-1-1792441256817\",\"stake_minor\":300,\"payout_minor\":0}"
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "url": "https://cadiback.onrender.com/game-api/fortune-tiger/v4/Spin",
+      "status": 200,
+      "postData": "C202\u0003EC48·40°-60Fb6\u00027\u001075\u0018A2\u00137639*\u000132C458©85_0F-B4\u00018C4\n7$18-30\u00014FA35Ó9313B10E371\u0002-?"
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "https://cadiback.onrender.com/api/pg/wallet",
+      "status": 200
+    }
+  ],
+  "bodies": [],
+  "screenshot": "probes/live-spin-prod.png"
+}

@@ -29,6 +29,13 @@
   (server mode) rewrites root `/web-api/*`, `/game-api/*` and `/<gi>` to the
   backend, so a PG launch from the Vercel storefront takes the identical
   path. The Render single-container deploy needs no config at all.
+- **LIVE ON PRODUCTION.** Deploy `c10a0db` (auto-built by Render) serves the
+  new bridge; a funded test account launched `pg:fortune-tiger` and the
+  browser made `verifySession`, `GameName/Get`, `GameInfo/Get`,
+  `GameWallet/Get` and `/v4/Spin` all **200 on
+  `https://cadiback.onrender.com`**. One round settled (`stake 300 /
+  payout 0`), wallet `100000 → 99700`, HUD `R$ 997,00`, no exceptions.
+  Evidence: `probes/live-spin-prod.json`.
 - Surface: `demo/game_proxy.py` (`pgSameOrigin` + both transport hooks),
   `demo/pg_proxy.py` (`allowed_host` restored), `demo/server.py`
   (`settle_rgs_round` stake-less payout), `frame/wallet/books.py`

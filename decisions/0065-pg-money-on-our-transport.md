@@ -85,6 +85,14 @@ would refuse. Observed:
 Suites: `frame` 50/50, `demo` 387/387, `verify.py` 0 problems, frontend build
 green.
 
+**Production, through the live service** (auto-deploy of `c10a0db`): the
+served `/g/bridge.js` carries `pgSameOrigin`; a funded test account launched
+`pg:fortune-tiger` and the browser made `verifySession`, `GameName/Get`,
+`GameInfo/Get`, `GameWallet/Get` and `/v4/Spin` all **200 on
+`https://cadiback.onrender.com`**; one settled round (`stake 300 / payout 0`)
+moved the wallet `100000 → 99700`, the HUD read `R$ 997,00`, and the run
+raised no exceptions. Evidence: `probes/live-spin-prod.json`.
+
 ## Production notes
 
 - The Render origin needs nothing: the document, the bridge, the money paths

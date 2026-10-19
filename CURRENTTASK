@@ -33,7 +33,10 @@ sees our rewrite.
   `/game-api/…`) onto the document's own origin, so the publisher's CORS wall
   is never met — no custom domain needed. Verified live with no `--host` and
   no `--steer`: every money call 200 on our origin, two rounds settled, one a
-  win. The Vercel front door rewrites the same root paths.
+  win. **Deployed (`c10a0db`) and verified on production:** the same calls
+  200 on `https://cadiback.onrender.com`, one round settled, wallet
+  `100000 → 99700`, HUD `R$ 997,00`, no exceptions. The Vercel front door
+  rewrites the same root paths.
 
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the
