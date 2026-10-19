@@ -20,6 +20,12 @@ Three modes:
     python scripts/render_deploy.py --check     # is the tree deployable?
     python scripts/render_deploy.py --url-only  # where is it, if it exists?
     python scripts/render_deploy.py             # create/update, deploy, watch
+    python scripts/render_deploy.py --replace-env  # replace the whole env
+
+By default the service's existing environment is **merged**: variables that
+live only in the Render dashboard (Better Auth, Turnstile, Resend, Supabase)
+survive, while the values from the local `.env.*` files are applied. Pass
+`--replace-env` only for a deliberate reset.
 
 `--check` needs nothing but the tree, so it can be run before any credential
 exists — and it is the reason the deploy does not depend on the machine that
@@ -593,11 +599,52 @@ def configure(service_id: str, key: str) -> dict:
     return _call(f"/services/{service_id}", key)
 
 
+def get_env_vars(service_id: str, key: str) -> list[dict]:
+    """Read the service's current environment as `[{key, value}]`.
+
+    Render answers either the array bare or inside an `envVars` envelope, and
+    some rows arrive as `{"envVar": {…}}`; every shape is unwrapped here so a
+    merge never silently drops a variable.
+    """
+    answer = _call(f"/services/{service_id}/env-vars", key)
+    rows = answer.get("envVars") if isinstance(answer, dict) else answer
+    out: list[dict] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        env = row.get("envVar") if isinstance(row.get("envVar"), dict) else row
+        name = str(env.get("key") or "").strip()
+        if name:
+            out.append({"key": name, "value": env.get("value", "")})
+    return out
+
+
+def merge_env_vars(current: list[dict], wanted: list[dict]) -> list[dict]:
+    """Keep the dashboard-only variables and apply the wanted ones.
+
+    The service's environment is a shared surface: Better Auth, Turnstile,
+    Resend and Supabase values can live only in the dashboard, while the
+    gitignored `.env.*` files carry the rails this machine owns. A full
+    replacement silently deletes the first group, which is why the runbook
+    said to merge additively by hand. Doing it here makes the default deploy
+    safe; `--replace-env` remains for a deliberate reset.
+    """
+    merged = {str(row.get("key") or ""): row.get("value", "")
+              for row in current if row.get("key")}
+    for row in wanted:
+        name = str(row.get("key") or "").strip()
+        if name:
+            merged[name] = row.get("value", "")
+    return [{"key": name, "value": value} for name, value in merged.items()]
+
+
 def set_env_vars(service_id: str, key: str, env_list: list[dict]) -> None:
     """Write the service's environment through the endpoint that owns it.
 
     `/services/{id}/env-vars` takes the array as the body and replaces the set.
     It is the only place env vars are written; see `configure()` for why.
+    Callers that mean to keep dashboard-only variables pass the result of
+    `merge_env_vars()` (the default in `run()`).
     """
     _call(f"/services/{service_id}/env-vars", key, env_list, "PUT")
 
@@ -697,7 +744,8 @@ def print_build_failure(service_id: str, key: str, since: str) -> None:
         print("   ", line.encode("ascii", "replace").decode()[:200])
 
 
-def run(key: str, repo: str, force: bool) -> int:
+def run(key: str, repo: str, force: bool,
+        replace_env: bool = False) -> int:
     """Find or create the service, make it ours, deploy it, watch it go live."""
     existing = find_service(key, repo)
     if existing and not force:
@@ -719,7 +767,18 @@ def run(key: str, repo: str, force: bool) -> int:
         service = create_service(key, repo, owner)
     service_id = service["id"]
     env_list = runtime_env()
-    set_env_vars(service_id, key, env_list)
+    if replace_env:
+        set_env_vars(service_id, key, env_list)
+        print(f"env:     replaced with {len(env_list)} variable(s)")
+    else:
+        try:
+            current = get_env_vars(service_id, key)
+        except RenderError:
+            current = []
+        merged = merge_env_vars(current, env_list)
+        set_env_vars(service_id, key, merged)
+        print(f"env:     {len(merged)} variable(s), "
+              f"{max(0, len(merged) - len(env_list))} kept from the dashboard")
     carried = read_asaas_env()
     if carried:
         print(f"carrying {len(carried)} Asaas setting(s) from "
@@ -777,6 +836,9 @@ def main() -> int:
                         help="deploy even if the service already exists")
     parser.add_argument("--url-only", action="store_true",
                         help="print the existing service's URL and exit")
+    parser.add_argument("--replace-env", action="store_true",
+                        help="replace the whole environment instead of merging "
+                             "(drops variables that live only in the dashboard)")
     args = parser.parse_args()
 
     if args.check:
@@ -796,7 +858,7 @@ def main() -> int:
             print(f"need the repository: set RENDER_REPO, or put one line in "
                   f"{REPO_FILE}")
             return 2
-        return run(key, args.repo, args.yes)
+        return run(key, args.repo, args.yes, replace_env=args.replace_env)
     except RenderError as exc:
         print(f"render: {exc}")
         return 3

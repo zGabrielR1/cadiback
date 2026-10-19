@@ -71,7 +71,7 @@ function hostOf(value) {
 }
 
 /** Apple wants a short-lived JWT as the client secret, signed by the .p8. */
-async function appleClientSecret(env) {
+export async function appleClientSecret(env) {
   const key = String(env.APPLE_PRIVATE_KEY).replace(/\\n/g, "\n");
   const signingKey = await importPKCS8(key, "ES256");
   const now = Math.floor(Date.now() / 1000);

@@ -59,7 +59,7 @@ function hostOf(value) {
   }
 }
 
-async function appleClientSecret(env) {
+export async function appleClientSecret(env) {
   const key = String(env.APPLE_PRIVATE_KEY).replace(/\\n/g, "\n");
   const signingKey = await importPKCS8(key, "ES256");
   const now = Math.floor(Date.now() / 1000);

@@ -28,9 +28,22 @@ signed identity bridge and still requires a CPF.
   next sign-in. `/api/config` reads the sidecar's real provider list, and the
   old `GET /api/auth/oauth/start` remains as a compatibility shim. `frame`
   50/50; `demo` 389/389; frontend rebuilt.
+- **APPLE'S OWN BRANCH IS NOW EXERCISED.** A throwaway P-256 `.p8` booted the
+  sidecar as an Apple-only deployment: `/providers` listed Apple, the authorize
+  URL carried the Services ID and `/callback/apple`, and a simulated callback
+  reached Apple's token endpoint (`invalid_grant` for the fake code) — proof the
+  ES256 client-secret JWT was minted and accepted as a credential. Permanent
+  `auth-server/apple.test.mjs` (`npm test`, 3 checks) covers all-four-values
+  gating, escaped-newline keys, and the JWT header/claims/expiry.
+- **DEPLOYS MERGE THE ENVIRONMENT.** `scripts/render_deploy.py` now reads the
+  service's environment and merges the local `.env.*` values into it by
+  default, so the dashboard-only Better Auth/Turnstile/Resend/Supabase keys
+  survive; `--replace-env` is the explicit whole-set reset. This makes the
+  owner's credential step a normal `--yes` deploy instead of hand-merging.
 - **OPEN (owner):** paste the Google/Facebook/Apple credentials into
-  `.env.betterauth` and register the callbacks. The rail is config-gated
-  until then; everything else is live.
+  `.env.betterauth` and register the callbacks, then run
+  `python scripts/render_deploy.py --yes`. The rail is config-gated until
+  then; everything else is live.
 
 CURRENTTASK: Every provider that boots now settles a round on our books
 (decisions 0057/0060/0063) — the last one was Pragmatic, whose round is read

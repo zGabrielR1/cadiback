@@ -47,6 +47,18 @@
   from the public host; a signed claim created a wallet and the next one
   logged straight in. `frame` 50/50, `demo` 389/389, `verify.py` 0, frontend
   build green.
+- **APPLE WAS EXERCISED, NOT ASSUMED.** A throwaway P-256 key booted the
+  sidecar with only Apple configured: `/providers` answered Apple, the
+  authorize URL carried the Services ID and `/callback/apple`, and a simulated
+  callback reached Apple's token endpoint (`invalid_grant` for the fake code),
+  which proves the `.p8` was parsed and the ES256 client-secret JWT was minted.
+  `auth-server/apple.test.mjs` (3 checks, `npm test`) keeps the four-value
+  gate, escaped newlines and the JWT claims/180-day expiry under test.
+- **THE DEPLOY MERGES THE ENVIRONMENT.** `scripts/render_deploy.py` reads the
+  service's current variables and merges the local `.env.*` values over them,
+  so dashboard-only Better Auth/Turnstile/Resend/Supabase keys survive;
+  `--replace-env` is the explicit reset. The runbook's "merge by hand" step is
+  now the default.
 - Deploy: `render.yaml` gains the Better Auth placeholders and fixed values;
   `scripts/render_deploy.py` carries `.env.betterauth`. Open (owner): paste
   the Google/Facebook/Apple credentials and register the callbacks.

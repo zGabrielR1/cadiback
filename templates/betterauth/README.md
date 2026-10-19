@@ -27,8 +27,9 @@ Provider credentials never reach the Python process.
 | `auth.mjs` | `createAuth(env)`: stateless Better Auth, dynamic base URL, Google/Facebook/Apple, optional infrastructure dashboard |
 | `server.mjs` | the Node HTTP adapter, `GET /providers`, `GET /health`, `GET /bridge` |
 | `client.js` | a dependency-free `socialSignIn(provider)` helper |
+| `apple.test.mjs` | Apple's client-secret JWT (claims, key parsing) with a throwaway P-256 key |
 | `env.example` | every key, with the console steps |
-| `package.json` | the three dependencies (`better-auth`, `jose`, `@better-auth/infra`) |
+| `package.json` | the three dependencies (`better-auth`, `jose`, `@better-auth/infra`) plus `npm test` |
 
 ## Setup
 

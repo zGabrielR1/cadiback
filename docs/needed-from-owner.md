@@ -93,9 +93,11 @@ providers' own credentials, which only your accounts can issue:
   Apple Developer account is required; Apple does not accept `localhost`).
 
 Put them in the gitignored `.env.betterauth` (the bridge/server secrets are
-already generated there), then merge them into the Render service
-additively — the same rollout as Asaas, not the full env-var sync. Register
-these exact callbacks with each provider:
+already generated there), then run `python scripts/render_deploy.py --yes`.
+The script now **merges** the environment by default, so dashboard-only
+variables (Better Auth, Turnstile, Resend, Supabase) survive a deploy. Use
+`--replace-env` only for a deliberate reset. Register these exact callbacks
+with each provider:
 
 - `https://cadiback.onrender.com/api/betterauth/callback/<provider>`
 - `https://cadiback-web.vercel.app/api/betterauth/callback/<provider>`
@@ -124,7 +126,7 @@ Full runbook: `docs/oauth.md`.
 
 The live service builds from `github.com/zGabrielR1/cadiback` (`main`,
 `autoDeploy` on). So: commit, push, and Render rebuilds in about two minutes.
-Do **not** run `scripts/render_deploy.py`'s env-var sync against the live
-service — it replaces the whole variable set and would drop the dashboard-only
-ones (Better Auth, Turnstile, Resend, Supabase). New secrets are merged in
-additively through the Render API instead.
+`python scripts/render_deploy.py --yes` also ships the current commit and
+applies the local `.env.*` rails; its environment write **merges** by default,
+so the dashboard-only variables (Better Auth, Turnstile, Resend, Supabase)
+are kept. `--replace-env` is the explicit, whole-environment reset.

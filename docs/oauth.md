@@ -41,7 +41,9 @@ browser ── /api/betterauth/* ──▶ Python (public listener)
 ## Credentials
 
 All of them live in the gitignored **`.env.betterauth`** at the repository
-root. `scripts/render_deploy.py` carries them to Render; never commit them.
+root. `scripts/render_deploy.py` carries them to Render, merging them over the
+service's existing environment so dashboard-only keys survive; never commit
+them.
 
 | Variable | Secret? | Meaning |
 |---|---|---|
@@ -147,6 +149,7 @@ subject behind a database hook first.
 # terminal 1 — the auth server (fake or real credentials)
 cd auth-server
 npm ci            # once
+npm test          # Apple's client-secret JWT, with a throwaway key
 node server.mjs   # reads the process env; BETTER_AUTH_URL for local
 
 # terminal 2 — the operator
@@ -182,8 +185,10 @@ the bridge), never in the wallet database.
 
 ## Migrating from Authgear
 
-The old `.env.authgear` and the old `/api/auth/oauth/start` + `/api/auth/callback`
-routes are gone. `foundry.oauth` remains in the kit as a generic OIDC module,
-but the operator no longer vendors it. Remove the old Authgear client once the
-new callbacks are registered; the two flows must not share a host at the same
-time.
+The old `.env.authgear` is no longer read and the old `/api/auth/callback`
+route is gone. `GET /api/auth/oauth/start` survives only as a compatibility
+shim for a storefront bundle built before 0066: it starts the same Better Auth
+flow and redirects to the provider, so an un-redeployed front end still works.
+`foundry.oauth` remains in the kit as a generic OIDC module, but the operator
+no longer vendors it. Remove the old Authgear client once the new callbacks
+are registered; the two flows must not share a host at the same time.

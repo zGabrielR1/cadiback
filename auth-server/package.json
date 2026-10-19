@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Stateless Better Auth server for social sign-in (decision 0066)",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test": "node --test"
   },
   "dependencies": {
     "@better-auth/infra": "^0.3.7",
