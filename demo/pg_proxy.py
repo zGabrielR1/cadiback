@@ -584,7 +584,64 @@ def trial_balance(session_id: str) -> float | None:
         return None
 
 
-def allowed_host(host: str) -> bool:
+def public_host() -> str:
+    """The host PG's document is served from in production.
+
+    Empty in the default single-origin deploy: PG then uses the request's
+    own origin, which is what the local harness and the demo rely on. Set
+    ``PG_PUBLIC_HOST`` (e.g. ``pg.example.com``) to serve the document from
+    a host whose registrable domain also owns ``api.<domain>`` — that is
+    the only shape the client's money calls can share with our origin
+    without CORS. ``PG_HOST`` is accepted as an alias.
+    """
+    value = (os.environ.get("PG_PUBLIC_HOST")
+             or os.environ.get("PG_HOST") or "").strip().lower()
+    return value.rstrip("/")
+
+
+def api_host() -> str:
+    """The host PG's money calls must land on.
+
+    Explicit via ``PG_AO_HOST`` / ``PG_API_HOST`` (the local harness uses
+    this), otherwise derived as ``api.<registrable domain>`` of the public
+    host. Empty when neither is configured.
+    """
+    explicit = (os.environ.get("PG_AO_HOST")
+                or os.environ.get("PG_API_HOST") or "").strip().lower()
+    if explicit:
+        return explicit
+    host = public_host()
+    if not host:
+        return ""
+    labels = host.split(".")
+    if len(labels) < 2:
+        return ""
+    return "api." + ".".join(labels[-2:])
+
+
+def cookie_domain() -> str:
+    """Registrable domain for the PG session cookies, or ``\"\"``.
+
+    Cross-subdomain money calls (document on ``pg.example.com``, money on
+    ``api.example.com``) need the cookies on ``.example.com``; a single-
+    origin deploy must not set a Domain attribute at all.
+    """
+    host = public_host()
+    if not host:
+        return ""
+    labels = host.split(".")
+    if len(labels) < 2:
+        return ""
+    return "." + ".".join(labels[-2:])
+
+
+def routing() -> dict:
+    """Read-only view of the production routing, for /api/health."""
+    return {
+        "public_host": public_host() or None,
+        "api_host": api_host() or None,
+        "production_ready": bool(public_host() and api_host()),
+    }
     """Is `host` one this process has actually minted a session for?"""
     with _LOCK:
         now = time.time()

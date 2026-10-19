@@ -42,7 +42,38 @@ anyway is harmless). Runbook: `docs/crypto.md`.
 If you ever rotate the key or secret, just replace the two lines in
 `.env.crypto` and push.
 
-## 3. Nothing else
+## 3. PG Soft in production — one domain to make it playable
+
+PG's client only boots money calls when the document's host is a name whose
+`api.<registrable-domain>` we also own. The default `cadiback.onrender.com`
+origin cannot satisfy that (its registrable domain is `onrender.com`, which we
+do not control), so in production PG currently boots its document but its
+money calls are blocked by CORS.
+
+To make PG playable on the live site, point **two hosts of a domain you own**
+at this Render service and tell the app about them:
+
+1. In your DNS, create two records pointing at `cadiback.onrender.com`
+   (CNAME is fine):
+   - `pg.<your-domain>`   (the document)
+   - `api.<your-domain>`  (the money calls)
+   A wildcard `*.<your-domain>` works too.
+2. In the Render dashboard, add both `pg.<your-domain>` and
+   `api.<your-domain>` as custom domains of the `cadiback` service (Render
+   provisions TLS for them).
+3. Set two env vars on the service:
+   - `PG_PUBLIC_HOST=pg.<your-domain>`
+   - `PG_AO_HOST=api.<your-domain>`   (optional: derived as `api.<domain>`
+     when omitted)
+4. Redeploy. `/api/health` will then report
+   `pg_soft.routing.production_ready: true`, and PG launches from
+   `https://pg.<your-domain>` with its money calls same-origin to
+   `https://api.<your-domain>`.
+
+Until then, PG Soft stays a demo-only title on the live site (the document
+boots, the wallet bridge does not). No code change is needed beyond the above.
+
+## 4. Nothing else
 
 - Test deposits, the admin win/loss control (+ win-rate slider) and the wallet
   saldo are live and verified.

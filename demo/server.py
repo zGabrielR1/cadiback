@@ -3724,6 +3724,14 @@ class Demo:
         return f"{origin}{game_proxy.GAME_PREFIX}/{game_id}/?{urlencode(query)}"
 
     def pg_launch(self, game: dict, origin: str, token: str = "") -> str:
+        # Production can serve the document from a host whose registrable
+        # domain also owns the money host (see pg_proxy.public_host). When that
+        # is configured, the launch must use it instead of the request origin,
+        # otherwise the client derives the wrong `api.<domain>` and the money
+        # calls leave our origin.
+        public_host = pg_proxy.public_host()
+        if public_host:
+            origin = "https://" + public_host
         """A PG Soft launch that goes through a session we minted ourselves.
 
         PG's client only boots a page the publisher minted: the document
@@ -3778,7 +3786,7 @@ class Demo:
         # PG_AO_HOST overrides `ao` for experiments (ao-steering: naming
         # our own host so the client's money calls land on us).
         import os as _ao_os
-        ao_host = _ao_os.environ.get("PG_AO_HOST")
+        ao_host = pg_proxy.api_host() or _ao_os.environ.get("PG_AO_HOST")
         if ao_host:
             minted.append(("ao", pg_proxy.mangle(ao_host)))
         elif session.api_hosts:
@@ -4372,10 +4380,12 @@ class Handler(BaseHTTPRequestHandler):
                 # PG's game is served from the host its session minted, not
                 # from the launcher host the catalog row carries
                 doc_host = game_proxy.pg_doc_host(sub) or doc_host
+            _pg_domain = pg_proxy.cookie_domain()
+            _pg_attr = ((" Domain=" + _pg_domain + ";") if _pg_domain else "") + " Path=/; SameSite=Lax"
             extra["Set-Cookie"] = [
-                f"proxy_host={doc_host}; Path=/; SameSite=Lax",
-                f"proxy_provider={provider}; Path=/; SameSite=Lax",
-                f"proxy_game={game_id}; Path=/; SameSite=Lax",
+                f"proxy_host={doc_host};" + _pg_attr,
+                f"proxy_provider={provider};" + _pg_attr,
+                f"proxy_game={game_id};" + _pg_attr,
             ]
             if sub.startswith(game_proxy.PG_PREFIX):
                 # the gi-rooted launch (`/<gi>/`) carries no session in its
@@ -4384,12 +4394,12 @@ class Handler(BaseHTTPRequestHandler):
                 pg_sid = sub[len(game_proxy.PG_PREFIX):].partition("/")[0]
                 if pg_proxy.session_for(pg_sid) is not None:
                     extra["Set-Cookie"].append(
-                        f"pg_session={pg_sid}; Path=/; SameSite=Lax")
+                        f"pg_session={pg_sid};" + _pg_attr)
             if view is not None:
                 # the wallet rides every sub-request, and the client the game
                 # spawns inherits this origin binding
                 extra["Set-Cookie"].append(
-                    f"wallet_token={token}; Path=/; SameSite=Lax")
+                    f"wallet_token={token};" + _pg_attr)
                 data = game_proxy.inject_bridge(data, game_id, token, view)
                 rewrote = True
             if passthrough:
@@ -4772,7 +4782,8 @@ class Handler(BaseHTTPRequestHandler):
                 # proxy failed", and neither is visible in the other.
                 self._send(200, {**DEMO.health_report(),
                                  "proxy": game_proxy.stats(),
-                                 "pg_soft": pg_proxy.stats(),
+                                 "pg_soft": {**pg_proxy.stats(),
+                                             "routing": pg_proxy.routing()},
                                  "asaas": {"configured": DEMO.asaas_available(),
                                            "env": DEMO.asaas_env_name()},
                                  "crypto": {"configured": DEMO.crypto_available(),
