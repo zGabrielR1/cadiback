@@ -3870,7 +3870,9 @@ class Demo:
     PRAGMATIC_MOVEMENT_CAP = 10000000
 
     def pragmatic_note_balance(self, token: str, game_id: str,
-                               publisher_minor: int) -> dict | None:
+                               publisher_minor: int,
+                               split: tuple[int, int] | None = None
+                               ) -> dict | None:
         """Settle the round one movement of the publisher's own saldo means.
 
         Pragmatic's `gameService` answer carries the publisher's demo balance
@@ -3883,10 +3885,19 @@ class Demo:
         arrives later).
 
         The stake is learned from losses (a loss is exactly minus the stake,
-        the largest one wins). The books then keep the invariant that matters:
-        `payout - stake` is always the publisher's own net movement. Each
-        movement posts once, keyed by the session token and a sequence, through
-        the same idempotent write the other taps use.
+        the largest one wins) and a raised bet re-learns it, as the fallback.
+        The answer usually names its own round instead — `c`×`l` and `w` —
+        and when that agrees with the movement it is taken as the split,
+        which is exact from the first spin of a session. The books then keep
+        the invariant that matters either way: `payout - stake` is always the
+        publisher's own net movement. Each movement posts once, keyed by the
+        session token and a sequence, through the same idempotent write the
+        other taps use.
+
+        Only answers that carry a round in flight are offered here. Read-only
+        answers (`doInit`, `reloadBalance.do`) echo the same balance a round
+        answer already moved, and settling their movement too would book one
+        round twice — so the caller taps the round channel only.
 
         Returns the tap entry it logged, or None when nothing was posted.
         """
@@ -3919,12 +3930,29 @@ class Demo:
             self._log_pragmatic(entry)
             return None
         stake = 0
-        if net < 0 and (state["stake"] <= 0 or -net >= state["stake"]):
+        payout = 0
+        if split is not None and split[1] - split[0] == net:
+            # the answer names its own round (`c`×`l` and `w`) and it agrees
+            # with the publisher's movement: take the exact split, which the
+            # movement alone cannot give (a first-round win has no stake to
+            # have learned yet)
+            stake, payout = split
+        elif net < 0 and (state["stake"] <= 0 or -net >= state["stake"]):
             stake = -net
-            state["stake"] = stake
+            payout = 0
         elif state["stake"] > 0:
             stake = state["stake"]
-        payout = max(0, stake + net)
+            payout = max(0, stake + net)
+        else:
+            # a rise with no stake to pair it with: the publisher credited
+            # something the answer did not name, and no bet was ever seen to
+            # book it against. A wallet cannot post a bet it cannot name, so
+            # this is refused and said out loud rather than invented.
+            entry["note"] = "a rise with no stake to pair it with — not settled"
+            self._log_pragmatic(entry)
+            return None
+        if stake > 0:
+            state["stake"] = stake
         owner = self.wallet_owner(key)
         if owner is None:
             entry["note"] = "no wallet session"
@@ -4276,7 +4304,9 @@ class Handler(BaseHTTPRequestHandler):
                 # round their RGS just settled (decision 0063)
                 publisher = game_proxy.publisher_balance_minor(original)
                 if publisher is not None:
-                    DEMO.pragmatic_note_balance(token, game_id, publisher)
+                    DEMO.pragmatic_note_balance(
+                        token, game_id, publisher,
+                        split=game_proxy.spin_round(original))
             data = game_proxy.rewrite_balance(
                 data, view.get("balance_minor") or 0)
             rewrote = True
@@ -4337,88 +4367,6 @@ class Handler(BaseHTTPRequestHandler):
                    cache=game_proxy.cache_policy(
                        up_headers, status=status, rewritten=rewrote,
                        document=is_document, money=is_money),
-                   headers=extra)
-
-    def _serve_publisher_root(self, parsed, body: bytes | None) -> None:
-        """Serve a root-level path the game client asks for.
-
-        The client the game spawns builds its URLs from the
-        domain in our config, so it lands on our own origin
-        at paths the storefront does not know (/apps/…, a
-        stray /gs2c/…). The session cookies say which
-        publisher hosts them, so the request is forwarded
-        and the answer is brought back onto our origin like
-        any other proxied call.
-        """
-        import re as _re
-        game_id = self._cookie("proxy_game")
-        game = game_proxy.game_for(game_id) if game_id else None
-        host = self._cookie("proxy_host")
-        if not host or game is None or not game_proxy.allowed_host(host):
-            self._send(404, {"error": "not found"})
-            return
-        # the provider comes from the catalog, not from the browser: the
-        # cookie only says which host to fetch, and a stale one would
-        # otherwise have the wrong money paths applied to it
-        provider = game.get("provider") or ""
-        money = game_proxy.MONEY_PATHS.get(provider, ())
-        is_money = bool(money) and any(
-            _re.search(pattern, parsed.path) for pattern in money)
-        try:
-            target = game_proxy.checked_url(f"https://{host}{parsed.path}")
-        except game_proxy.ProxyError:
-            self._send(404, {"error": "not found"})
-            return
-        if parsed.query:
-            target += ("&" if "?" in target else "?") + \
-                game_proxy.publisher_query(parsed.query)
-        plain_headers = {k: v for k, v in self.headers.items()
-                         if k.lower() not in game_proxy.CONDITIONAL_HEADERS}
-        withheld = is_money or game_proxy.rewritable(parsed.path)
-        request_body = body if self.command == "POST" else None
-
-        def upstream(headers: dict):
-            return game_proxy.fetch(target, self.command, request_body, headers)
-
-        def content_type(up_headers: dict) -> str:
-            return (up_headers.get("Content-Type")
-                    or up_headers.get("content-type")
-                    or "application/octet-stream")
-
-        try:
-            request_headers = plain_headers if withheld else dict(self.headers)
-            status, up_headers, data = upstream(request_headers)
-            ctype = content_type(up_headers)
-            if status == 304 and (withheld
-                                  or game_proxy.rewriteable_type(ctype)):
-                # our rewrite could not have run on an empty answer: ask
-                # again without the validators and serve the real body
-                status, up_headers, data = upstream(plain_headers)
-                ctype = content_type(up_headers)
-        except (game_proxy.ProxyError, OSError, ValueError) as exc:
-            self._send(502, {"error": f"publisher unavailable: {type(exc).__name__}"})
-            return
-        view = DEMO.wallet_view_for(self._cookie("wallet_token"))
-        original = data
-        data = game_proxy.rewrite_urls(data, ctype, game_id, self._our_origin(), money)
-        rewrote = data != original
-        if is_money and view is not None:
-            if provider == "pragmatic_play":
-                # same tap as the game path: a root-level `gameService` carries
-                # the publisher's saldo too (decision 0063)
-                publisher = game_proxy.publisher_balance_minor(original)
-                if publisher is not None:
-                    DEMO.pragmatic_note_balance(
-                        self._cookie("wallet_token"), game_id, publisher)
-            data = game_proxy.rewrite_balance(
-                data, view.get("balance_minor") or 0)
-            rewrote = True
-        extra = ({} if (rewrote or withheld)
-                else game_proxy.validator_headers(up_headers))
-        self._send(status, data, ctype, charset="text" in ctype.lower()
-                   or "json" in ctype.lower(),
-                   cache=game_proxy.cache_policy(up_headers, status=status,
-                                                rewritten=rewrote, money=is_money),
                    headers=extra)
 
     def _serve_publisher_root(self, parsed, body: bytes | None) -> None:

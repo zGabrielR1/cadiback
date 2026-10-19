@@ -21,30 +21,39 @@
   minimum-bet loss is exactly 100 minor units; a `doSpin` answer carries the
   finished round. The scale is 1:1 with BRL, and our rewrite turns the same
   field into `balance=5,000.00` for a player holding R$5,000.00.
-- **IDEMPOTENT BY CONSTRUCTION.** The same saldo seen twice is not a movement,
-  so a client retry, a re-served answer or two tabs cannot charge twice (the
-  `pp-<token12>-<seq>` round id is the second line of defence). The stake is
-  learned from losses, and a movement no bet could explain (above the wallet's
-  own R$100,000.00 per-round bound) is **refused and logged**, never posted.
-  The R$0 gate comes free: the client gates its own spin on the saldo we handed
-  it.
+- **THE ANSWER NAMES ITS OWN ROUND.** A `doSpin` answer carries `c`×`l` (the
+  bet the client sent) and `w` (the win), and `ntp` (the net); when they agree
+  with the movement they are taken as the split, which makes the first spin of a
+  session exact. A `doInit`/`reloadBalance.do` carries none of them — which is
+  how a read is told from a round — and the movement stays the authority on the
+  net: a split that contradicts it, or a rise with no stake to pair it with, is
+  dropped and logged rather than posted.
+- **THE TAP SITS ON THE ROUND CHANNEL ONLY.** Reads echo a balance a round
+  answer already moved, so tapping them too would book one round twice (and a
+  late read would look like a small win). Only the `gameService` path taps.
 - **IT IS VISIBLE.** `GET /api/admin/pragmatic-tap` (admin only) is a 40-entry
   ring buffer: timestamp, game, the token's first 8 characters, the publisher's
   saldo, the delta, and what was done with it. A money tap is invisible in
   production otherwise.
-- Surface: `game_proxy.publisher_balance_minor`, `Demo.pragmatic_note_balance`
-  / `_log_pragmatic` / `pragmatic_tap_log` + the two serve-path call sites.
-  Tests: `PragmaticRoundTapTest` (7) + one HTTP-level test in `ProxyHttpTest`
-  that stubs the publisher and proves the *upstream* saldo moves a real wallet.
-- Suites: `frame` 50/50 · `demo` **376** with only the 6 pre-existing
+- Surface: `game_proxy.publisher_balance_minor` / `spin_round`,
+  `Demo.pragmatic_note_balance` / `_log_pragmatic` / `pragmatic_tap_log` + the
+  `_serve_game` call site. Tests: `PragmaticRoundTapTest` (9) + one HTTP-level
+  test in `ProxyHttpTest` that stubs the publisher and proves the *upstream*
+  saldo moves a real wallet through `settle_rgs_round`.
+- Suites: `frame` 50/50 · `demo` **379** with only the 6 pre-existing
   `sqlalchemy` errors · `verify.py` 0. Decision `0063`.
-- Live: the loader, the rewrite and the field scale are proven on the deploy;
-  **one spin at the counters** is what is still owed by a human — it should post
-  a `type: "publisher"` round in `/api/history` and show in the tap log. Three
-  traps are recorded in 0063: a hand-replayed spin **freezes** the publisher's
-  demo session (and the same browser profile then stalls at the splash),
-  `Emulation.setUserAgentOverride` breaks the 0062 boot, and the live container
-  drops its test accounts on restart.
+- **VERIFIED LIVE.** A real turbo spin (the HUD's own Space key, driven over
+  CDP — no hand-built body) through the deploy: the publisher's saldo moved
+  `10,000,000 → 9,999,800`, the tap posted `stake 200 / payout 0 / settled`,
+  the wallet moved `500,000 → 499,800` and the player's activity read
+  `rounds_total 1, settled_stake_minor 200`. A *winning* spin and a free-spins
+  feature are the two paths the suite still stands in for.
+- **Found while verifying (recorded, not fixed):** `Handler._serve_publisher_root`
+  was defined **twice** in `demo/server.py` — the richer copy had never run,
+  because Python keeps the last one; the dead copy is now removed. The free
+  instance is **ephemeral**, so a spin-down wipes players and wallet sessions
+  (mint inside one warm window). And the client retried a failing root path
+  **7086 times** in a 170 s boot (`POST /gs2c/saveSettings.do`).
 
 ## DONE (2026-10-18 — the anytime-scorer market, decision 0061)
 

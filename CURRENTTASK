@@ -5,28 +5,30 @@ sees our rewrite.
 
 ## STATUS
 
-- **PRAGMATIC SETTLES (0063).** `Demo.pragmatic_note_balance` reads the
-  publisher's saldo out of the `gameService` answer *before* `rewrite_balance`
-  replaces it, and posts each movement through the idempotent
-  `settle_rgs_round`: a drop is the stake, a rise is what came back, the stake
-  is learned from losses, and `payout - stake` is always the publisher's net.
-  The tap cannot live in the bridge (the page receives our saldo, a constant)
-  — which is also why PG Soft's tap is in the page (its money calls bypass us).
-  A movement above R$100,000.00 is refused and logged; `GET
-  /api/admin/pragmatic-tap` shows every observation and what was done with it.
+- **PRAGMATIC SETTLES (0063), VERIFIED LIVE.** `Demo.pragmatic_note_balance`
+  reads the publisher's saldo out of the `gameService` answer *before*
+  `rewrite_balance` replaces it, and posts each round through the idempotent
+  `settle_rgs_round`. The answer names its own round (`c`×`l` and `w`), so the
+  split is exact; the movement of the saldo stays the authority on the net, and
+  a rise with no stake to pair it with is refused and logged. Only the
+  `gameService` path taps — a read echoes a balance a round already moved.
+  `GET /api/admin/pragmatic-tap` shows every observation. A real turbo spin on
+  the deploy moved the publisher `10,000,000 → 9,999,800`, posted
+  `stake 200 / payout 0`, and moved the wallet `500,000 → 499,800`.
 - **MEASURED, NOT GUESSED.** The publisher's demo opens at `100,000.00` (direct
   `doInit` replay), the client paints `balance` + `balance_bonus` (out of its own
-  bundle), the stake is `coin`×`line`, and one `doSpin` answer is the whole
-  round. Scale 1:1 with BRL.
+  bundle), the stake is `coin`×`line` (`c=0.1&l=20` = R$2.00), and one `doSpin`
+  answer is the whole round. Scale 1:1 with BRL.
 - **THE MONEY MAP NOW READS:** Hacksaw (RGS interposition) · Play'n GO
   (`gamehub` tap) · Spribe (SFS2X tap) · PG Soft (trial-wallet reconcile, built,
-  one real spin from being live-verified) · Pragmatic (saldo movement, built and
-  deployed, one real spin from being live-verified). Evolution never reaches us
-  (launcher 502 from this host).
-- Suites: `frame` 50/50 · `demo` 376 with only the 6 pre-existing `sqlalchemy`
+  one real spin from being live-verified) · Pragmatic (saldo movement, built,
+  deployed and **live-verified**). Evolution never reaches us (launcher 502 from
+  this host).
+- Suites: `frame` 50/50 · `demo` 379 with only the 6 pre-existing `sqlalchemy`
   errors · `verify.py` 0 problems.
-- OPEN: one human spin on `pp:gates-of-olympus` (and one on a PG title) to
-  close 0063/0044 live; **Asaas prod keys** remain the one owner item.
+- OPEN: a winning spin + a free-spins feature on a Pragmatic title, and one real
+  spin on a PG title, to close 0044 live; **Asaas prod keys** remain the one
+  owner item.
 
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the

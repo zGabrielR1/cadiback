@@ -684,6 +684,52 @@ def publisher_balance_minor(body: bytes) -> int | None:
     return total if found else None
 
 
+# A `doSpin` answer names its own round: `w` is the win, `c` the coin and `l`
+# the lines (the client's own `coin * lines`, which is what a minimum bet of
+# `c=0.1&l=20` reads as R$2.00), and `ntp` the net. A `doInit` or a
+# `reloadBalance.do` carries none of them, which is how a read is told from a
+# round without trusting the path it arrived on.
+_ROUND_FIELDS = re.compile(r"(?:^|&)(c|l|w|ntp)=([^&]*)")
+
+
+def spin_round(body: bytes) -> tuple[int, int] | None:
+    """The (stake, payout) a Pragmatic round answer names, in centavos.
+
+    The publisher's own accounting is in the answer — the bet it settled
+    (`c`×`l`) and the win (`w`) — so the split does not have to be inferred
+    from the movement of the saldo, which knows only the net. `w` is
+    required: an answer without it is not a round. None is returned when the
+    fields are absent or do not describe a coherent round, so the caller can
+    fall back to the movement.
+    """
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    fields = {match.group(1): match.group(2)
+              for match in _ROUND_FIELDS.finditer(text)}
+    if "w" not in fields:
+        return None
+
+    def minor(value: str) -> int:
+        return int(round(float(value.replace(",", "")) * 100))
+
+    try:
+        payout = minor(fields["w"])
+        if "c" in fields and "l" in fields:
+            stake = int(round(float(fields["c"].replace(",", "")) *
+                              float(fields["l"]) * 100))
+        elif "ntp" in fields:
+            stake = payout - minor(fields["ntp"])
+        else:
+            return None
+    except ValueError:
+        return None
+    if stake < 0 or payout < 0:
+        return None
+    return stake, payout
+
+
 BRIDGE_MARK = b"<!--wallet-bridge-->"
 
 

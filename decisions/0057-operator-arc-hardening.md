@@ -387,8 +387,11 @@ publisher's number where it is still the publisher's: a bridge tap cannot see it
 side while PG Soft's is in the page. Every provider that boots now settles:
 Hacksaw (RGS), Play'n GO (`gamehub`), Spribe (SFS2X), PG Soft (trial-wallet
 reconcile), Pragmatic (saldo movement). Evolution remains the one that never
-reaches us (its launcher 502s from this host). Diagnosed live this session: the
+reaches us (its launcher 502s from this host). Measured live this session: the
 publisher's demo opens at `100,000.00`, the client paints `balance` +
-`balance_bonus`, and a spin settles inside one answer. Full record, surfacing
-(`GET /api/admin/pragmatic-tap`) and the three traps that cost time: **decision
+`balance_bonus`, a spin settles inside one answer that also names its own bet
+and win (`c`×`l`, `w`), and **a real turbo spin through the deploy settled on
+our books** — publisher `10,000,000 → 9,999,800`, tap `stake 200 / payout 0`,
+wallet `500,000 → 499,800`. Full record, surfacing
+(`GET /api/admin/pragmatic-tap`) and the traps that cost time: **decision
 0063**.

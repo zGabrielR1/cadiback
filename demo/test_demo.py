@@ -4449,6 +4449,56 @@ class PragmaticRoundTapTest(unittest.TestCase):
         self.assertIsNone(game_proxy.publisher_balance_minor(b"balance=,,,"))
         self.assertIsNone(game_proxy.publisher_balance_minor(bytes([0xff, 0xfe])))
 
+    def test_a_round_answer_names_its_own_split(self):
+        """`doSpin` answers carry the bet and the win — the client's own
+        `coin * lines` and `w` — so the split is read, not guessed. An
+        answer without them is not a round."""
+        from demo import game_proxy
+        lost = (b"tw=0.00&balance=99,998.00&accm=cp&c=0.10&sver=5&ntp=-2.00"
+                b"&l=20&w=0.00")
+        self.assertEqual(game_proxy.spin_round(lost), (200, 0))
+        # a win: R$2.00 staked, R$50.00 back, net +48.00
+        won = (b"tw=50.00&balance=100,048.00&c=0.10&ntp=48.00&l=20&w=50.00")
+        self.assertEqual(game_proxy.spin_round(won), (200, 5000))
+        # reads are not rounds
+        self.assertIsNone(game_proxy.spin_round(
+            b"action=doInit&balance=100,000.00&balance_bonus=0.00"))
+        self.assertIsNone(game_proxy.spin_round(
+            b"balance_bonus=0.00&balance=5,000.00&balance_cash=5,000.00"))
+        # a coherent answer needs a bet and a win it can parse
+        self.assertIsNone(game_proxy.spin_round(b"w=1.00&c=&l=20"))
+        self.assertIsNone(game_proxy.spin_round(b"w=1.00&c=0.1"))
+        self.assertIsNone(game_proxy.spin_round(bytes([0xff, 0xfe])))
+
+    def test_the_named_split_is_taken_when_it_agrees_with_the_movement(self):
+        """A first-round win has no stake to have learned yet, so the named
+        split is the only way to book it as a bet rather than a gift."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        won = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening + 4800, split=(200, 5000))
+        self.assertEqual((won["stake_minor"], won["payout_minor"]), (200, 5000))
+        self.assertEqual(won["payout_minor"] - won["stake_minor"], won["delta"])
+        # the bet is remembered for the movement-only rounds that follow
+        self.assertEqual(self.demo.pragmatic_books[self.token]["stake"], 200)
+
+    def test_a_split_that_contradicts_the_movement_is_dropped(self):
+        """A publisher that reports a win its balance did not move is not
+        trusted with the ledger: the movement stays the authority, and a
+        rise with no stake to pair it with is refused rather than booked."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        odd = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening + 100, split=(200, 0))
+        self.assertIsNone(odd)
+        self.assertIn("no stake", self.demo.pragmatic_tap[-1]["note"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+        # with a stake learned, the movement still settles the round
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening - 200)
+        again = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100, split=(200, 0))
+        self.assertEqual((again["stake_minor"], again["payout_minor"]), (300, 400))
+        self.assertEqual(self.demo.books.available(self.player), 9800)
+        self.demo.books.assert_balanced()
+
     def test_a_movement_settles_the_publishers_own_net(self):
         """A loss then a win: the loss teaches the stake, the win settles as
         stake + net, and the wallet moves by exactly the publisher's net."""
@@ -5353,15 +5403,15 @@ class ProxyHttpTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn(b"balance=100.00", body)          # our R$100.00
         self.assertEqual(demo.books.available(player), 10000)
-        # the round: the publisher's saldo drops by R$1.00
+        # the round: a real `doSpin` answer, publisher saldo down R$2.00
         self.answer = (200, {"Content-Type": "text/plain"},
-                       b"action=doSpin&balance=99,999.00&balance_bonus=0.00")
+                       b"tw=0.00&balance=99,998.00&c=0.10&ntp=-2.00&l=20&w=0.00")
         self._call(url)
-        self.assertEqual(demo.books.available(player), 9900)
+        self.assertEqual(demo.books.available(player), 9800)
         rounds = [r for r in demo.history(player)
                   if r.get("type") == "publisher"]
         self.assertEqual((rounds[0]["stake_minor"], rounds[0]["payout_minor"]),
-                         (100, 0))
+                         (200, 0))
         self.assertTrue(demo.pragmatic_tap[-1]["settled"])
         demo.books.assert_balanced()
 
