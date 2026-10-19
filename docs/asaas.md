@@ -63,7 +63,7 @@ Two production facts the sandbox hid:
 The keys are never committed: they travel from `.env.asaasprod` into the
 Render service's environment through the API, **additively** — a full-set
 `PUT` replaces every variable and would drop the dashboard-only ones
-(Authgear, Turnstile, Resend, Supabase). `GET /api/health` reports
+(Better Auth, Turnstile, Resend, Supabase). `GET /api/health` reports
 `asaas: {configured: true, env: "production"}` once the process has restarted.
 
 The one step that needs a human is the first paid charge: create a R$5,00 Pix

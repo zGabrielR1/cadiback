@@ -206,14 +206,20 @@ TURNSTILE_KEYS = ("TURNSTILE_SECRET_KEY", "TURNSTILE_SITE_KEY",
 SUPABASE_ENV_FILE = os.path.join(ROOT, ".env.supabase")
 SUPABASE_KEYS = ("DATABASE_URL",)
 
-# Authgear social login (decision 0054, docs/oauth.md). The client secret is the
-# only sensitive value; the endpoint, client id, redirect URI and provider list
-# are public configuration. All of them travel from the local gitignored
-# `.env.authgear`, so a deploy without them simply hides the social buttons.
-AUTHGEAR_ENV_FILE = os.path.join(ROOT, ".env.authgear")
-AUTHGEAR_KEYS = ("AUTHGEAR_ENDPOINT", "AUTHGEAR_CLIENT_ID",
-                 "AUTHGEAR_CLIENT_SECRET", "AUTHGEAR_REDIRECT_URI",
-                 "AUTHGEAR_PROVIDERS")
+# Better Auth social login (decision 0066, docs/oauth.md). The provider
+# credentials are read only by the Node sidecar; the Python backend gets just
+# the shared bridge secret. All of them travel from the local gitignored
+# `.env.betterauth`, so a deploy without them simply hides the social buttons.
+BETTERAUTH_ENV_FILE = os.path.join(ROOT, ".env.betterauth")
+BETTERAUTH_KEYS = (
+    "BETTER_AUTH_SECRET", "BETTER_AUTH_BRIDGE_SECRET",
+    "BETTER_AUTH_API_KEY", "BETTER_AUTH_URL",
+    "BETTER_AUTH_TRUSTED_ORIGINS", "BETTER_AUTH_PROVIDERS",
+    "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET",
+    "FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET",
+    "APPLE_CLIENT_ID", "APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY",
+    "APPLE_APP_BUNDLE_IDENTIFIER",
+)
 
 
 def _first_line(path: str) -> str:
@@ -416,27 +422,27 @@ def read_supabase_env() -> list[dict]:
             for name in SUPABASE_KEYS if values.get(name)]
 
 
-def read_authgear_env() -> list[dict]:
-    """The Authgear/OIDC settings to carry to the host.
+def read_betterauth_env() -> list[dict]:
+    """The Better Auth settings to carry to the host.
 
     Same rule as the other rails: the environment wins over the gitignored
-    `.env.authgear`, and a setting absent everywhere is simply not sent — so a
-    deploy without credentials hides the social buttons instead of
+    `.env.betterauth`, and a setting absent everywhere is simply not sent — so
+    a deploy without provider credentials hides the social buttons instead of
     half-configuring a login that cannot complete.
     """
-    values = _env_pairs(AUTHGEAR_ENV_FILE)
-    for name in AUTHGEAR_KEYS:
+    values = _env_pairs(BETTERAUTH_ENV_FILE)
+    for name in BETTERAUTH_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()
     return [{"key": name, "value": values[name]}
-            for name in AUTHGEAR_KEYS if values.get(name)]
+            for name in BETTERAUTH_KEYS if values.get(name)]
 
 
 def runtime_env() -> list[dict]:
     """Every environment variable the service runs with, secrets included."""
     return (SERVICE["envVars"] + read_asaas_env() + read_crypto_env()
             + read_resend_env() + read_turnstile_env() + read_supabase_env()
-            + read_authgear_env())
+            + read_betterauth_env())
 
 
 class RenderError(RuntimeError):
@@ -744,12 +750,12 @@ def run(key: str, repo: str, force: bool) -> int:
               f"{os.path.basename(SUPABASE_ENV_FILE)}/environment")
     else:
         print("no DATABASE_URL found: the deploy keeps files")
-    carried_oauth = read_authgear_env()
+    carried_oauth = read_betterauth_env()
     if carried_oauth:
         print(f"carrying {len(carried_oauth)} social-login setting(s) from "
-              f"{os.path.basename(AUTHGEAR_ENV_FILE)}/environment")
+              f"{os.path.basename(BETTERAUTH_ENV_FILE)}/environment")
     else:
-        print("no Authgear credentials found: the social buttons stay hidden")
+        print("no Better Auth credentials found: the social buttons stay hidden")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
     outcome = deploy(service_id, key)

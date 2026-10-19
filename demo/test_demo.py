@@ -15,11 +15,12 @@ import urllib.request
 os.environ.setdefault("PASSWORD_PBKDF2_ITERATIONS", "1000")
 from fractions import Fraction
 from datetime import datetime, timedelta, timezone
-from http.server import ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import quote
 
 from demo import game_proxy, pg_proxy, provider_demos
-from foundry.oauth import OAuthError
+from foundry.betterauth import (BetterAuthConfig, BridgeError,
+                                SocialIdentity, payload_for, signature_for)
 from demo.arcade import (ARCADE_GAME_IDS, KENO_DRAWN, KENO_MAX_SPOTS,
                          KENO_MIN_SPOTS, KENO_POOL, KENO_GAME_ID,
                          keno_draw, keno_multiplier, keno_paytable,
@@ -3173,60 +3174,33 @@ class SameOriginTest(unittest.TestCase):
         self.assertEqual(frontend_hosts({}), set())
 
 
-class _Prov:
-    def __init__(self, ident):
-        self.id = ident
+# ---- Better Auth social login (decision 0066) ----
 
-    def shown_label(self):
-        return self.id.capitalize()
+BRIDGE_SECRET = "bridge-secret-for-tests-at-least-32-chars"
 
 
-class _FakeOAuth:
-    """A stand-in for foundry.oauth's client: records the flow, returns a
-    canned identity, never dials. `identities` maps a code to an Identity."""
-
-    name = "authgear"
-
-    def __init__(self, *, enabled=True, providers=("google", "facebook")):
-        self._enabled = enabled
-        self.config = type("Cfg", (), {"redirect_uri": ""})()
-        self._providers = tuple(_Prov(p) for p in providers)
-        self.last_state = None
-        self.last_challenge = None
-        self.identities = {}
-
-    @property
-    def enabled(self):
-        return self._enabled
-
-    @property
-    def providers(self):
-        return self._providers
-
-    def authorize_url(self, *, state, code_challenge, provider="", redirect_uri=""):
-        self.last_state = state
-        self.last_challenge = code_challenge
-        return "https://idp.example/authorize?state=" + state
-
-    def identity_from_code(self, code, code_verifier, *, provider="", redirect_uri=""):
-        from foundry.oauth import Identity
-        return self.identities[code]
+def _social(provider="google", subject="sub-1", email="ana@example.com",
+            name="Ana Souza") -> SocialIdentity:
+    return SocialIdentity(provider=provider, subject=subject, email=email,
+                          name=name, email_verified=True)
 
 
-class OAuthTest(unittest.TestCase):
-    """Social login (decision 0054): a config-gated OIDC rail that links an
-    existing account by provider:subject or email, and forces a **CPF** —
-    validated and unique — before a new social account gets a wallet. The CPF
-    is the wallet key, so no account is created without one."""
+def _signed(identity, now=None):
+    payload = payload_for(identity, now=now)
+    body = json.dumps(payload, separators=(",", ":")).encode()
+    return body, signature_for(body, BRIDGE_SECRET)
 
-    def _demo(self, **kw):
-        return Demo(data_dir=tempfile.mkdtemp(), oauth=_FakeOAuth(**kw))
 
-    def _identity(self, *, subject="auth0|abc", email="ana@example.com",
-                  name="Ana Souza", provider="google"):
-        from foundry.oauth import Identity
-        return Identity(subject=subject, email=email, email_verified=True,
-                        name=name, provider=provider)
+class BetterAuthTest(unittest.TestCase):
+    """Social login (decision 0066): a config-gated Better Auth bridge that
+    links an existing account by provider:subject or email, and forces a
+    **CPF** — validated and unique — before a new social account gets a wallet.
+    The CPF is the wallet key, so no account is created without one."""
+
+    def _demo(self, providers=("google", "facebook"), secret=BRIDGE_SECRET):
+        return Demo(data_dir=tempfile.mkdtemp(), betterauth=BetterAuthConfig(
+            bridge_secret=secret, providers=providers,
+            base_url="https://app.example"))
 
     def _register(self, demo, cpf="529.982.247-25", email="existing@example.com"):
         return demo.register_player({
@@ -3234,84 +3208,84 @@ class OAuthTest(unittest.TestCase):
             "cpf": cpf, "password": "ana1234", "pix_key": email})
 
     def test_unconfigured_is_a_noop(self):
-        demo = Demo(data_dir=tempfile.mkdtemp())  # no oauth client
+        demo = Demo(data_dir=tempfile.mkdtemp())  # no bridge secret
         self.assertFalse(demo.oauth_enabled())
         status = demo.oauth_status()
         self.assertFalse(status["enabled"])
-        self.assertEqual(status["providers"], [])
+        self.assertEqual(status["provider"], "betterauth")
+        # the public config hides the row when the bridge is unconfigured
         cfg = demo.public_config()
         self.assertFalse(cfg["oauth_enabled"])
         self.assertEqual(cfg["oauth_providers"], [])
-        with self.assertRaises(OAuthError):
-            demo.oauth_start("google", "http://localhost:8765")
+        with self.assertRaises(BridgeError):
+            demo.social_bridge(b"{}", "sha256=00")
 
-    def test_config_and_health_expose_providers_without_a_secret(self):
-        demo = self._demo()
+    def test_config_and_health_report_providers_without_a_secret(self):
+        demo = self._demo(providers=("google", "apple"))
         cfg = demo.public_config()
         self.assertTrue(cfg["oauth_enabled"])
         self.assertEqual([p["id"] for p in cfg["oauth_providers"]],
-                         ["google", "facebook"])
-        status = demo.oauth_status()
-        self.assertEqual(status["provider"], "authgear")
+                         ["google", "apple"])
+        status = demo.oauth_status("https://app.example")
+        self.assertEqual(status["provider"], "betterauth")
+        self.assertEqual(status["providers"],
+                         [{"id": "google", "label": "Google"},
+                          {"id": "apple", "label": "Apple"}])
+        self.assertEqual(
+            status["callback_urls"]["apple"],
+            "https://app.example/api/betterauth/callback/apple")
         self.assertNotIn("secret", str(status).lower())
+        self.assertNotIn(BRIDGE_SECRET, str(status))
 
-    def test_state_is_single_use(self):
-        demo = self._demo()
-        fake = demo.oauth
-        demo.oauth_start("google", "http://localhost:8765")
-        state = fake.last_state
-        fake.identities["c1"] = self._identity()
-        demo.oauth_callback("c1", state, "http://localhost:8765")
-        with self.assertRaises(OAuthError):
-            demo.oauth_callback("c1", state, "http://localhost:8765")
-
-    def test_a_known_email_logs_in_without_a_second_handoff(self):
+    def test_a_signed_claim_for_a_known_email_logs_in(self):
         demo = self._demo()
         profile = self._register(demo, email="ana@example.com")
-        fake = demo.oauth
-        demo.oauth_start("google", "http://localhost:8765")
-        fake.identities["c2"] = self._identity(email="ana@example.com")
-        result = demo.oauth_callback("c2", fake.last_state,
-                                     "http://localhost:8765")
+        body, signature = _signed(_social(email="ana@example.com"))
+        result = demo.social_bridge(body, signature)
         self.assertFalse(result["needs_profile"])
         session = demo.oauth_session(result["token"])
         self.assertEqual(session["player_id"], profile["player_id"])
         # the provider:subject link is remembered for next time
-        self.assertEqual(demo.oauth_links.read_all().get("google:auth0|abc"),
+        self.assertEqual(demo.oauth_links.read_all().get("google:sub-1"),
                          profile["player_id"])
 
-    def test_a_new_email_requires_the_cpf_completion(self):
+    def test_a_new_identity_requires_the_cpf_completion(self):
         demo = self._demo()
-        fake = demo.oauth
-        demo.oauth_start("facebook", "http://localhost:8765")
-        fake.identities["c3"] = self._identity(email="novo@example.com",
-                                               provider="facebook")
-        result = demo.oauth_callback("c3", fake.last_state,
-                                     "http://localhost:8765")
+        body, signature = _signed(_social(provider="facebook", subject="f-9",
+                                          email="novo@example.com"))
+        result = demo.social_bridge(body, signature)
         self.assertTrue(result["needs_profile"])
         self.assertEqual(result["suggested"]["email"], "novo@example.com")
         session = demo.oauth_session(result["token"])
         self.assertTrue(session["needs_profile"])
-        # CPF is required and keys the wallet
         profile = demo.oauth_complete_profile(result["token"], {
             "cpf": "111.444.777-35", "username": "novato",
             "pix_key": "novo@example.com"})
         self.assertTrue(profile["player_id"].startswith("player-"))
         self.assertEqual(profile["email"], "novo@example.com")
         # a second sign-in on the same subject is now one tap
-        demo.oauth_start("facebook", "http://localhost:8765")
-        again = demo.oauth_callback("c3", fake.last_state,
-                                    "http://localhost:8765")
+        body, signature = _signed(_social(provider="facebook", subject="f-9",
+                                          email="novo@example.com"))
+        again = demo.social_bridge(body, signature)
         self.assertFalse(again["needs_profile"])
+
+    def test_a_forged_or_stale_claim_is_refused_before_any_link(self):
+        demo = self._demo()
+        body, signature = _signed(_social())
+        with self.assertRaises(BridgeError):
+            demo.social_bridge(body.replace(b"sub-1", b"sub-2"), signature)
+        with self.assertRaises(BridgeError):
+            demo.social_bridge(body, "sha256=deadbeef")
+        stale, stale_sig = _signed(_social(), now=time.time() - 600)
+        with self.assertRaises(BridgeError):
+            demo.social_bridge(stale, stale_sig)
+        self.assertEqual(demo.oauth_links.read_all(), {})
 
     def test_completion_refuses_a_bad_or_duplicate_cpf(self):
         demo = self._demo()
         self._register(demo, cpf="529.982.247-25", email="taken@example.com")
-        fake = demo.oauth
-        demo.oauth_start("google", "http://localhost:8765")
-        fake.identities["c4"] = self._identity(email="novo2@example.com")
-        token = demo.oauth_callback("c4", fake.last_state,
-                                    "http://localhost:8765")["token"]
+        body, signature = _signed(_social(email="novo2@example.com"))
+        token = demo.social_bridge(body, signature)["token"]
         with self.assertRaises(ValueError):
             demo.oauth_complete_profile(token, {
                 "cpf": "111.111.111-11", "username": "x",  # invalid check digits
@@ -3322,54 +3296,92 @@ class OAuthTest(unittest.TestCase):
                 "username": "outro", "pix_key": "novo2@example.com"})
 
 
-class OAuthHttpTest(unittest.TestCase):
-    """The route wiring: start 303s to the provider, the callback 303s back to
-    the storefront with the handoff in the hash (never a query a third party
-    could read), and the two frontend calls are same-origin POSTs."""
+class _AuthStub(BaseHTTPRequestHandler):
+    """A stand-in for the Node auth server: records the proxy's request and
+    answers with two Set-Cookie headers, which is the shape that breaks a
+    dict-collapsing proxy."""
 
-    class _NoRedirect(urllib.request.HTTPRedirectHandler):
-        def redirect_request(self, *args, **kwargs):
-            return None
+    calls: list[dict] = []
+
+    def do_GET(self):  # noqa: N802
+        type(self).calls.append({"path": self.path,
+                                 "headers": dict(self.headers)})
+        body = (b'{"enabled":true,"providers":'
+                b'[{"id":"google","label":"Google"}]}')
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Set-Cookie", "a=1; Path=/")
+        self.send_header("Set-Cookie", "b=2; Path=/")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+class BetterAuthHttpTest(unittest.TestCase):
+    """The route wiring: `/api/betterauth/*` is proxied to the Node auth
+    server with the public host and every Set-Cookie preserved, and the signed
+    bridge endpoint is a same-origin POST that issues the hash handoff."""
 
     def setUp(self):
+        _AuthStub.calls = []
+        self.stub = ThreadingHTTPServer(("127.0.0.1", 0), _AuthStub)
+        threading.Thread(target=self.stub.serve_forever, daemon=True).start()
+        self.stub_url = "http://127.0.0.1:%d" % self.stub.server_address[1]
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
-        self.thread.start()
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        self.keep_oauth = DEMO.oauth
-        self.fake = _FakeOAuth()
-        DEMO.oauth = self.fake
-        self.opener = urllib.request.build_opener(self._NoRedirect)
+        self.keep = DEMO.betterauth
+        DEMO.betterauth = BetterAuthConfig(
+            bridge_secret=BRIDGE_SECRET, providers=("google",),
+            internal_url=self.stub_url)
         self.addCleanup(self._restore)
 
     def _restore(self):
-        DEMO.oauth = self.keep_oauth
+        DEMO.betterauth = self.keep
         self.server.shutdown()
         self.server.server_close()
+        self.stub.shutdown()
+        self.stub.server_close()
 
-    def _get(self, path):
+    def _call(self, path, body=None, headers=None):
+        method = "POST" if body is not None else "GET"
+        req = urllib.request.Request(self.base + path, data=body,
+                                     headers=headers or {}, method=method)
         try:
-            with self.opener.open(self.base + path, timeout=10) as resp:
-                return resp.status, resp.headers.get("Location")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status, resp.headers, resp.read()
         except urllib.error.HTTPError as exc:
             with exc:
-                return exc.code, exc.headers.get("Location")
+                return exc.code, exc.headers, exc.read()
 
-    def test_start_redirects_to_the_provider(self):
-        status, location = self._get("/api/auth/oauth/start?provider=google")
-        self.assertEqual(status, 303)
-        self.assertTrue(location.startswith("https://idp.example/authorize"))
-        self.assertTrue(self.fake.last_challenge)  # PKCE
+    def test_the_proxy_forwards_to_the_auth_server_with_the_public_host(self):
+        status, headers, body = self._call("/api/betterauth/providers")
+        self.assertEqual(status, 200)
+        self.assertIn(b'"google"', body)
+        # both Set-Cookie headers survive (a dict would collapse them)
+        self.assertEqual(headers.get_all("Set-Cookie"),
+                         ["a=1; Path=/", "b=2; Path=/"])
+        call = _AuthStub.calls[-1]
+        self.assertEqual(call["path"], "/api/betterauth/providers")
+        self.assertEqual(call["headers"].get("X-Forwarded-Host"),
+                         self.base.split("://", 1)[1])
 
-    def test_callback_returns_to_the_storefront_with_the_hash_handoff(self):
-        self._get("/api/auth/oauth/start?provider=google")
-        from foundry.oauth import Identity
-        self.fake.identities["code-1"] = Identity(
-            subject="s1", email="n@example.com", provider="google")
-        status, location = self._get(
-            "/api/auth/callback?code=code-1&state=" + self.fake.last_state)
-        self.assertEqual(status, 303)
-        self.assertIn("/#social=", location)
+    def test_the_signed_bridge_endpoint_issues_a_handoff(self):
+        body, signature = _signed(_social(email="novo-http@example.com"))
+        headers = {"Content-Type": "application/json",
+                   "X-Betterauth-Signature": signature}
+        status, _headers, data = self._call(
+            "/api/auth/betterauth/session", body, headers)
+        self.assertEqual(status, 200)
+        self.assertTrue(json.loads(data)["needs_profile"])
+        status, _headers, _data = self._call(
+            "/api/auth/betterauth/session", body,
+            {"Content-Type": "application/json",
+             "X-Betterauth-Signature": "sha256=deadbeef"})
+        self.assertEqual(status, 400)
 
 
 class DbSeamTest(unittest.TestCase):

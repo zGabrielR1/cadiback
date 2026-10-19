@@ -13,8 +13,9 @@ operator/
 ├── decisions/ / docs/
 ├── frame/            the money core + verticals (stdlib only)
 ├── demo/             playable product: HTTP server, slot, Pix, risk, sports seam,
-│                     Authgear social login (routes + oauth_links store)
-├── foundry/          vendored kit modules (envfile, mail, turnstile, oauth)
+│                     Better Auth bridge (routes + oauth_links store)
+├── auth-server/      self-hosted Better Auth (Google/Facebook/Apple, stateless)
+├── foundry/          vendored kit modules (envfile, mail, turnstile, auth, betterauth)
 ├── web/              Next.js storefront (React 19), builds to web/out
 ├── probes/           captured live-feed evidence & provider demos
 └── frame/

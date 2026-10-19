@@ -50,6 +50,8 @@ A missing value is a normal state: the hash uses its safe default, and the
 session policy falls back to 12 hours / 30 days. Nothing here reads a secret
 at import time.
 
-For OAuth (Google/Facebook through Authgear), use `foundry.oauth` — it owns
-discovery, PKCE, `state`, the code exchange and userinfo; this module does not
-duplicate it.
+For social sign-in (Google/Facebook/Apple) use `templates/betterauth/` and the
+Python verifier in `foundry.betterauth`. That pair owns the OAuth flow and the
+signed identity bridge; this module deliberately does not duplicate them. The
+older `foundry.oauth` module remains available as a generic OIDC client for a
+host that already has an OIDC broker.

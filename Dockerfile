@@ -31,6 +31,17 @@ COPY web/lib/ ./lib/
 COPY web/public/ ./public/
 RUN npm run build
 
+# --- stage 1b: the Better Auth server's dependencies ---------------------------
+# Better Auth is a TypeScript library, so social login runs in a small Node
+# process beside the Python server rather than inside it (decision 0066). Its
+# modules are installed here, where npm exists, and copied into the runtime.
+FROM node:22-slim AS authdeps
+
+ENV NODE_ENV=production
+WORKDIR /auth
+COPY auth-server/package.json auth-server/package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+
 # --- stage 2: the runtime -----------------------------------------------------
 FROM python:3.14-slim
 
@@ -38,9 +49,25 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOST=0.0.0.0 \
     PORT=8080 \
-    OPERATOR_DATA_DIR=/data
+    OPERATOR_DATA_DIR=/data \
+    NODE_ENV=production
 
 WORKDIR /app
+
+# Node for the auth sidecar. Better Auth's dependency graph needs Node >= 22
+# (Kysely pins that floor) and Debian's nodejs is older, so install the official
+# Node 22 tarball, pinned and checksum-verified. `linux-x64` matches Render's
+# builders; a source-build on another architecture needs the matching tarball.
+ARG NODE_VERSION=22.23.3
+ARG NODE_SHA256=df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl xz-utils \
+ && curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
+ && echo "${NODE_SHA256}  node-v${NODE_VERSION}-linux-x64.tar.xz" | sha256sum -c - \
+ && tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
+ && rm "node-v${NODE_VERSION}-linux-x64.tar.xz" \
+ && node --version \
+ && rm -rf /var/lib/apt/lists/*
 
 # the backend, the provider catalog it reads, and the built storefront
 COPY frame/ ./frame/
@@ -49,6 +76,10 @@ COPY probes/ ./probes/
 # foundry: the vendored kit modules (stdlib only). Copied rather than installed
 # so the repository + this Dockerfile remain the whole build (decisions/0047).
 COPY foundry/ ./foundry/
+# the auth server: source plus the dependencies built above (never the host's
+# node_modules — .dockerignore keeps them out of the context)
+COPY auth-server/ ./auth-server/
+COPY --from=authdeps /auth/node_modules ./auth-server/node_modules
 COPY --from=storefront /build/out/ ./web/out/
 
 # run unprivileged; /data is where the ledger, profiles and rounds live. The
@@ -70,4 +101,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD python3 -c "import os,urllib.request;urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8080')+'/api/health',timeout=4)"
 
-CMD ["python3", "-m", "demo.server"]
+# Two processes, one public port: the Python server answers everything and
+# proxies /api/betterauth/* to the loopback Node auth server. The `&` sidecar
+# is deliberately best-effort — if it fails to start, the site stays up and
+# the social buttons disappear (the auth server reports itself disabled).
+CMD ["sh", "-c", "node /app/auth-server/server.mjs & exec python3 -m demo.server"]

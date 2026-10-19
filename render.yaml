@@ -87,20 +87,44 @@ services:
       # .env.supabase. Never put the URL in this file.
       - key: DATABASE_URL
         sync: false
-      # Authgear social login — Google/Facebook + CPF (decision 0054,
-      # docs/oauth.md). Optional: with no endpoint/client id the social buttons
-      # stay hidden, so a deploy without it stays healthy. The client secret is
-      # the only sensitive value; the endpoint, client id and provider list are
-      # public. `sync: false` keeps the secret out of the repository — let
-      # scripts/render_deploy.py carry them from the local gitignored
-      # .env.authgear. Never put the secret in this file.
-      - key: AUTHGEAR_ENDPOINT
+      # Better Auth social login — Google/Facebook/Apple + CPF (decision 0066,
+      # docs/oauth.md). A small Node sidecar runs beside the Python server and
+      # owns the provider credentials; the backend only verifies the signed
+      # identity bridge. Optional: with no provider credentials the sidecar
+      # reports itself disabled and the social buttons stay hidden. `sync:
+      # false` keeps every secret out of the repository — scripts/render_deploy.py
+      # carries them from the local gitignored `.env.betterauth`.
+      - key: BETTER_AUTH_URL
+        value: https://cadiback.onrender.com
+      - key: BETTER_AUTH_TRUSTED_ORIGINS
+        value: https://cadiback.onrender.com,https://cadiback-web.vercel.app
+      - key: BETTER_AUTH_APP_NAME
+        value: candibet
+      - key: BETTER_AUTH_INTERNAL_PORT
+        value: "3100"
+      - key: BETTER_AUTH_PROVIDERS
+        value: google,facebook,apple
+      - key: BETTER_AUTH_SECRET
         sync: false
-      - key: AUTHGEAR_CLIENT_ID
+      - key: BETTER_AUTH_BRIDGE_SECRET
         sync: false
-      - key: AUTHGEAR_CLIENT_SECRET
+      - key: BETTER_AUTH_API_KEY
         sync: false
-      - key: AUTHGEAR_PROVIDERS
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FACEBOOK_CLIENT_ID
+        sync: false
+      - key: FACEBOOK_CLIENT_SECRET
+        sync: false
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
         sync: false
     # disk:            # paid plans only
     #   name: candibet-data

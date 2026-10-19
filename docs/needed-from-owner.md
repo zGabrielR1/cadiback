@@ -3,7 +3,7 @@
 The one list of things that are waiting on you. Everything not here is either
 done and live, or code I can still work on without you.
 
-Last updated: 2026-10-19 (Asaas production live).
+Last updated: 2026-10-19 (Better Auth replaces Authgear).
 
 ## 1. Asaas production — configured, one paid deposit to close the loop
 
@@ -80,7 +80,36 @@ the steps below and set `PG_PUBLIC_HOST=pg.<your-domain>`
 
 </details>
 
-## 4. Nothing else
+## 4. Better Auth — paste the three provider credentials
+
+Social login now runs on **Better Auth**, self-hosted in the container; the
+Authgear dependency is gone. The wiring, the sidecar, the signed bridge and
+the CPF flow are done and verified locally. What is still needed is the three
+providers' own credentials, which only your accounts can issue:
+
+- **Google**: OAuth client ID + secret (Web application).
+- **Facebook**: App ID + App Secret.
+- **Apple**: Services ID, Team ID, Key ID, and the `.p8` private key (a paid
+  Apple Developer account is required; Apple does not accept `localhost`).
+
+Put them in the gitignored `.env.betterauth` (the bridge/server secrets are
+already generated there), then merge them into the Render service
+additively — the same rollout as Asaas, not the full env-var sync. Register
+these exact callbacks with each provider:
+
+- `https://cadiback.onrender.com/api/betterauth/callback/<provider>`
+- `https://cadiback-web.vercel.app/api/betterauth/callback/<provider>`
+
+`GET /api/health` prints `betterauth.callback_urls` computed from the host you
+call, so the string to paste is never a guess. Until the credentials are in,
+each provider is simply hidden; the rest of the site is unaffected.
+
+The optional `BETTER_AUTH_API_KEY` you already supplied is wired; it loads the
+Better Auth infrastructure dashboard when present.
+
+Full runbook: `docs/oauth.md`.
+
+## 5. Nothing else
 
 - Test deposits, the admin win/loss control (+ win-rate slider) and the wallet
   saldo are live and verified.
@@ -97,5 +126,5 @@ The live service builds from `github.com/zGabrielR1/cadiback` (`main`,
 `autoDeploy` on). So: commit, push, and Render rebuilds in about two minutes.
 Do **not** run `scripts/render_deploy.py`'s env-var sync against the live
 service — it replaces the whole variable set and would drop the dashboard-only
-ones (Authgear, Turnstile, Resend, Supabase). New secrets are merged in
+ones (Better Auth, Turnstile, Resend, Supabase). New secrets are merged in
 additively through the Render API instead.

@@ -273,10 +273,30 @@ export default function Page() {
       .finally(() => setBusy(false));
   }, [setPlayer]);
 
-  const startSocial = useCallback((provider) => {
-    window.location.href =
-      "/api/auth/oauth/start?provider=" + encodeURIComponent(provider);
-  }, []);
+  const startSocial = useCallback(async (provider) => {
+    // Better Auth (decision 0066): ask the same-origin auth server for the
+    // provider URL, then navigate. The call must be same-origin so the OAuth
+    // state cookie lands on this host; the bridge route finishes the flow.
+    setBusy(true);
+    try {
+      const callbackURL = "/api/betterauth/bridge?return=" +
+        encodeURIComponent(window.location.origin);
+      const res = await fetch("/api/betterauth/sign-in/social", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, callbackURL }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || data.message || "login indisponível");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setMessage("Login social: " + e.message);
+      setBusy(false);
+    }
+  }, [setBusy]);
 
   // The Painel button only renders for a logged-in admin, so the owner
   // reaches the login form through this hidden shortcut (Ctrl+Shift+A).

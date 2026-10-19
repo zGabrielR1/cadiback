@@ -1,5 +1,50 @@
 # PROGRESS
 
+## DONE (2026-10-19 — Better Auth replaces Authgear for Google/Facebook/Apple, decision 0066)
+
+- **ONE SELF-HOSTED NODE PROCESS.** `auth-server/` runs Better Auth stateless
+  (no database; sessions and OAuth state in signed cookies) on loopback. The
+  Python server, the only public listener, proxies `/api/betterauth/*` to it,
+  preserving the public host as `X-Forwarded-Host` (dynamic baseURL for Render
+  and Vercel) and **every** `Set-Cookie` (a dict would collapse them). Vercel's
+  existing `/api/:path*` rewrite carries the same paths, so both front doors
+  share one auth server.
+- **THREE PROVIDERS, CONFIG-GATED.** Google, Facebook and Apple are offered
+  only when their credentials are complete. Apple's client-secret JWT is
+  generated at boot with `jose` (180-day expiry, under Apple's six-month
+  limit). `BETTER_AUTH_API_KEY` optionally loads the infrastructure dashboard.
+  No credentials → `/providers` reports `enabled:false` and the buttons hide.
+- **THE BRIDGE IS THE TRUST BOUNDARY.** After the callback the Node bridge
+  reads the session (the provider subject rides the session as
+  `providerSubject`/`providerId`, because stateless mode forgets users) and
+  POSTs `{provider,subject,email,email_verified,name,ts}` to
+  `POST /api/auth/betterauth/session`, signed with HMAC-SHA256 over the exact
+  bytes. `foundry.betterauth.verify_bridge` checks it in constant time and
+  enforces a ±120 s window before the existing link/CPF logic runs. Provider
+  credentials never reach Python.
+- **STATELESS CAVEATS HANDLED.** `mapProfileToUser` captures the stable
+  subject; every client-writable user path is disabled so a browser cannot
+  change it. Apple/Facebook email gaps become reserved `.invalid` placeholders;
+  the subject still links the wallet. Local HTTP runs set
+  `NODE_ENV=development` so the state cookie is not `Secure`.
+- **FOUNDRY GREW BOTH HALVES.** `foundry/betterauth/` is the stdlib verifier
+  (config, frozen `SocialIdentity`, HMAC bridge); `templates/betterauth/` is
+  the reusable TypeScript server (auth config, Node adapter, provider list,
+  bridge, client helper, env example, runbook). `vendor.py` copies both; the
+  operator no longer vendors `foundry.oauth`.
+- **VERIFIED.** Foundry 91 checks. Operator `BetterAuthTest` +
+  `BetterAuthHttpTest` (8): unconfigured no-op, provider reporting, a signed
+  claim for a known email, CPF completion, forged/stale refusal, and the
+  proxy's two-`Set-Cookie` forwarding. The full local path with fake
+  Google/Facebook credentials: `/api/betterauth/providers` enabled;
+  `/sign-in/social` 200 with the state cookie and a callback derived from the
+  public host; a signed claim created a wallet and the next one logged
+  straight in. `frame` 50/50, `verify.py` 0, frontend build green.
+- Deploy: `render.yaml` gains the Better Auth placeholders and fixed values;
+  `scripts/render_deploy.py` carries `.env.betterauth`. Open (owner): paste
+  the Google/Facebook/Apple credentials and register the callbacks.
+
+
 ## DONE (2026-10-19 — PG Soft is production-ready without a custom domain, decision 0065)
 
 - **THE CORS WALL IS MET BY THE PAGE'S OWN TRANSPORT.** PG's api host

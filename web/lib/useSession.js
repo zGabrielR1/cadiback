@@ -40,13 +40,31 @@ export function useSession() {
 
   useEffect(() => {
     let alive = true;
-    api("GET", "/api/config")
-      .then((cfg) => {
-        if (alive && cfg) setServerConfig(cfg);
-      })
-      .catch(() => {
-        /* keep the safe defaults: bank optional, test accounts on */
-      });
+    // `/api/config` carries the operator flags; `/api/betterauth/providers`
+    // is the auth server's credential-aware answer (decision 0066). The
+    // second wins for the social row: a provider with no credentials must
+    // not render a button that cannot complete.
+    Promise.all([
+      api("GET", "/api/config").catch(() => null),
+      fetch("/api/betterauth/providers", { credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ]).then(([cfg, auth]) => {
+      if (!alive) return;
+      if (!cfg && !auth) return;
+      const merged = { ...(cfg || {}) };
+      if (auth && Array.isArray(auth.providers)) {
+        merged.oauth_providers = auth.providers;
+        merged.oauth_enabled = Boolean(auth.enabled) &&
+          auth.providers.length > 0;
+      } else {
+        // the sidecar did not answer: never offer a button that cannot
+        // complete, even if the backend's bridge secret is configured
+        merged.oauth_providers = [];
+        merged.oauth_enabled = false;
+      }
+      setServerConfig(merged);
+    });
     return () => {
       alive = false;
     };

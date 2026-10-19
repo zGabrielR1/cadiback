@@ -13,22 +13,24 @@ No real money moves; no commercial legal or regulatory obligations.
 | `CURRENTTASK` | Active objective tracker |
 | `Makefile`, `scripts/verify.py` | Executable verification: tests, structure, links |
 | `decisions/` | Decision log, one file per decision |
-| `frame/` | Core double-entry wallet, ledger, and rules (45 checks) |
-| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (282 checks) |
+| `frame/` | Core double-entry wallet, ledger, and rules (50 checks) |
+| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (387 checks) |
 | `demo/asaas.py` | Real Pix through Asaas: charge, QR, provider-confirmed settlement |
 | `demo/crypto.py` | Real crypto through NOWPayments: invoice, address, IPN-confirmed settlement |
 | `scripts/live_providers.py` | Live provider harness: launch each publisher and prove our wallet answers + debits |
-| `foundry/` | Vendored modules from the foundry kit (stdlib only) — email, Turnstile and OAuth today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decisions 0047, 0048, 0054) |
+| `foundry/` | Vendored modules from the foundry kit (stdlib only) — email, Turnstile, password/session auth and the Better Auth bridge today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decisions 0047, 0048, 0066) |
+| `auth-server/` | The self-hosted Better Auth process (TypeScript, stateless): Google/Facebook/Apple, the signed identity bridge. Started beside Python in the container and proxied same-origin at `/api/betterauth/*` (decision 0066) |
+| `demo/betterauth_proxy.py` | Same-origin proxy to the auth sidecar: public host as `X-Forwarded-Host`, every `Set-Cookie` preserved |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
-| `Dockerfile`, `render.yaml` | The deploy: one container, built and run by the host |
+| `Dockerfile`, `render.yaml` | The deploy: one container, two processes (Python + the Node auth server), built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |
 | `docs/asaas.md` | Real Pix via Asaas: credentials, webhook registration, production swap |
 | `docs/crypto.md` | Real crypto via NOWPayments: credentials, IPN signing, production swap |
-| `docs/needed-from-owner.md` | The short list of what is waiting on the owner (currently: Asaas prod keys only) |
+| `docs/needed-from-owner.md` | The short list of what is waiting on the owner (Asaas prod keys, OAuth provider credentials) |
 | `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
-| `docs/oauth.md` | Social login (Authgear): credentials, the CPF-completion flow, the no-op-when-unconfigured rule, the Authgear-portal steps |
+| `docs/oauth.md` | Social login (Better Auth): the sidecar/proxy/bridge shape, Google/Facebook/Apple setup, the CPF-completion flow, the no-op-when-unconfigured rule |
 | `docs/supabase.md` | Supabase Postgres + Vercel: credentials, env vars, cutover checklist |
 | `supabase/` | Postgres schema as migrations (decision 0049); applied in the dashboard, mirrored by `demo/models.py` |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |

@@ -1,3 +1,35 @@
+CURRENTTASK: Better Auth for social login (decision 0066) — Google, Facebook
+and Apple replace the Authgear broker. A small self-hosted Node auth server
+runs beside the Python process, proxied same-origin; the wallet is linked by a
+signed identity bridge and still requires a CPF.
+
+## STATUS
+
+- **THE BROKER IS GONE.** `auth-server/` runs Better Auth (TypeScript,
+  stateless — no database) on loopback; the Python server proxies
+  `/api/betterauth/*` to it, preserving the public host and every
+  `Set-Cookie`. The provider credentials never reach Python.
+- **GOOGLE, FACEBOOK, APPLE.** Configured from `.env.betterauth`, each one
+  offered only when its credentials are complete. Apple's client-secret JWT
+  is generated at boot with `jose` (180-day expiry, under Apple's limit).
+  `BETTER_AUTH_API_KEY` optionally enables the infrastructure dashboard.
+- **THE BRIDGE IS SIGNED.** The Node bridge posts the provider identity to
+  `POST /api/auth/betterauth/session`; `foundry.betterauth` verifies a
+  constant-time HMAC over the exact bytes and a ±120 s window before the
+  existing link/CPF logic runs. Stateless Better Auth means the wallet keys on
+  the provider's stable subject (`providerSubject`), captured server-side.
+- **FOUNDRY HAS BOTH HALVES.** `foundry/betterauth/` (Python verifier) and
+  `templates/betterauth/` (Better Auth server, Node adapter, client helper,
+  env example, runbook); `vendor.py` copies both.
+- **VERIFIED.** Foundry 91 checks; operator `BetterAuthTest` +
+  `BetterAuthHttpTest` (8); the local full path with fake Google/Facebook
+  credentials returned the provider URL and state cookie, the callback derived
+  from the public host, and a signed claim created a wallet then linked the
+  next sign-in. `frame` 50/50; frontend rebuilt.
+- **OPEN (owner):** paste the Google/Facebook/Apple credentials into
+  `.env.betterauth` and register the callbacks. The rail is config-gated
+  until then; everything else is live.
+
 CURRENTTASK: Every provider that boots now settles a round on our books
 (decisions 0057/0060/0063) — the last one was Pragmatic, whose round is read
 off the movement of the publisher's own demo saldo, because the page only ever

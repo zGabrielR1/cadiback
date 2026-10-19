@@ -78,6 +78,7 @@ from . import behaviour
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
 from . import pg_proxy
+from . import betterauth_proxy
 from . import rgs_proxy
 from .asaas import AsaasClient, AsaasConfig, resolve_webhook
 from .crypto import (CryptoClient, CryptoConfig, resolve_ipn as
@@ -93,14 +94,14 @@ from .vendor import AggregatorError, VendorAggregator, VendorConfig
 from foundry.envfile import load_env
 from foundry.mail import MailError, Message, resolve_mailer, wrap_html
 from foundry.turnstile import FIELD_NAME, TurnstileError, resolve_verifier
-from foundry.oauth import (Identity, OAuthError, code_challenge, new_state,
-                           new_verifier, resolve_oauth)
+from foundry.betterauth import (BridgeError, SocialIdentity,
+                                resolve_betterauth, verify_bridge)
 from foundry.auth import resolve_password_hasher
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
 TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
-AUTHGEAR_ENV_FILE = os.path.join(_REPO_ROOT, ".env.authgear")
+BETTERAUTH_ENV_FILE = os.path.join(_REPO_ROOT, ".env.betterauth")
 
 
 def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
@@ -125,15 +126,17 @@ def turnstile_env(env_file: str = TURNSTILE_ENV_FILE, environ=None) -> dict[str,
     return load_env(env_file, environ, secret_name="TURNSTILE_SECRET_KEY")
 
 
-def authgear_env(env_file: str = AUTHGEAR_ENV_FILE, environ=None) -> dict[str, str]:
-    """The Authgear/OIDC settings: the file, then the real environment on top.
+def betterauth_env(env_file: str = BETTERAUTH_ENV_FILE,
+                   environ=None) -> dict[str, str]:
+    """The Better Auth settings: the file, then the real environment on top.
 
-    Same shape as `mail_env`. `.env.authgear` holds the endpoint, the client
-    id, the client secret and (optionally) the redirect URI; the environment
-    wins. Unconfigured is a normal state — the rail then falls back to a
-    disabled client and the social buttons stay hidden.
+    Same shape as `mail_env`. `.env.betterauth` holds the shared bridge secret,
+    the public base URL and the provider list; the provider *credentials* are
+    read only by the Node auth server, never here. Unconfigured is a normal
+    state — the rail then hides the social buttons.
     """
-    return load_env(env_file, environ, secret_name="AUTHGEAR_CLIENT_SECRET")
+    return load_env(env_file, environ,
+                    secret_name="BETTER_AUTH_BRIDGE_SECRET")
 
 
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:
@@ -267,11 +270,11 @@ LEDGER_PATH = os.path.join(DATA, "ledger.jsonl")
 STAKE_STEPS = (200, 500, 1000, 2500)  # centavos: R$2/5/10/25
 HEARTBEAT_SECONDS = 30
 
-# Social login (Authgear/OIDC, decision 0054). The `state` (with its PKCE
-# verifier) and the one-time handoff token are short-lived and in-memory on
-# purpose: a restart mid-flow just means "sign in again", which is a normal
-# outcome for a social login and keeps no credential material on disk.
-OAUTH_STATE_TTL_SECONDS = 600
+# Social login (Better Auth, decision 0066). The provider credentials and the
+# OAuth state live in the Node auth server; the one-time handoff token is
+# short-lived and in-memory on purpose: a restart mid-flow just means "sign in
+# again", which is a normal outcome for a social login and keeps no credential
+# material on disk.
 OAUTH_HANDOFF_TTL_SECONDS = 900
 
 # Promotions (demo): real mechanics through the double-entry wallet.
@@ -590,7 +593,7 @@ SETTINGS_DEFAULTS = {
 
 class Demo:
     def __init__(self, data_dir: str = DATA, mailer=None, verifier=None,
-                 db=None, oauth=None, password_hasher=None) -> None:
+                 db=None, betterauth=None, password_hasher=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -695,19 +698,18 @@ class Demo:
         self.turnstile = verifier if verifier is not None else resolve_verifier(
             env=ts_env)
         self.turnstile_site_key = (ts_env.get("TURNSTILE_SITE_KEY") or "").strip()
-        # Social login through an OIDC broker (Authgear, decision 0054).
-        # Unconfigured is a normal state: with no endpoint/client id the rail
-        # falls back to a disabled client and the storefront hides the Google
-        # and Facebook buttons. The client is injectable so tests never dial.
-        # Links and in-flight states live in memory / a small JSON store; the
-        # player row itself is written by the same code the password path uses.
-        if oauth is None:
-            self.oauth = resolve_oauth(env={})
+        # Social login through Better Auth (decision 0066). The TypeScript
+        # auth server owns the providers and the OAuth dance; this process
+        # only verifies the signed identity it hands over. Unconfigured is a
+        # normal state: with no bridge secret the rail is disabled and the
+        # storefront hides the buttons. Injecting the config keeps tests
+        # hermetic (they never read this machine's .env.betterauth).
+        if betterauth is None:
+            self.betterauth = resolve_betterauth(env={})
         else:
-            self.oauth = oauth
+            self.betterauth = betterauth
         self.oauth_links = Store(os.path.join(data_dir, "oauth_links.json"))
         self._oauth_lock = threading.RLock()
-        self.oauth_states: dict[str, dict] = {}
         self.oauth_handoffs: dict[str, dict] = {}
 
     def _load_sessions(self) -> None:
@@ -880,52 +882,57 @@ class Demo:
         config["turnstile_enabled"] = self.turnstile_enabled()
         config["turnstile_site_key"] = self.turnstile_site_key
         config["oauth_enabled"] = self.oauth_enabled()
-        config["oauth_providers"] = self.oauth_status()["providers"]
+        config["oauth_providers"] = (self.oauth_status()["providers"]
+                                     if self.oauth_enabled() else [])
         config["asaas_enabled"] = self.asaas_available()
         config["crypto_enabled"] = self.crypto_available()
         config["crypto_coins"] = self.crypto_coins()
         return config
 
-    # ---- social login (Authgear / OIDC, decision 0054) ----
+    # ---- social login (Better Auth, decision 0066) ----
+    PROVIDER_LABELS = {"google": "Google", "facebook": "Facebook",
+                       "apple": "Apple"}
+
     def oauth_enabled(self) -> bool:
-        """True when the social buttons should be offered at all."""
-        return bool(getattr(self.oauth, "enabled", False))
+        """True when the signed bridge is configured.
+
+        The provider credentials live only in the Node auth server, so from
+        this process's point of view the rail is usable exactly when the
+        shared bridge secret is present.
+        """
+        return bool(getattr(self.betterauth, "configured", False))
 
     def oauth_status(self, origin: str = "") -> dict:
-        """Read-only view for /api/health and /api/config. The client secret
-        is never surfaced; the endpoints are public knowledge. When the
-        caller passes the request origin, the redirect URI the provider must
-        whitelist is included too: a mismatch there is the single most common
-        cause of Authgear's "redirect URI is not allowed"."""
-        providers = [{"id": p.id, "label": p.shown_label()}
-                     for p in getattr(self.oauth, "providers", ())]
+        """Read-only view for /api/health and /api/config. Never a secret.
+
+        `providers` is the config's public list; the storefront also asks the
+        auth server, which is the authority on which credentials are present.
+        When the caller passes the request origin, the callback URLs each
+        provider console must whitelist are included too.
+        """
+        providers = [
+            {"id": p, "label": self.PROVIDER_LABELS.get(p, p.capitalize())}
+            for p in getattr(self.betterauth, "provider_ids", ())
+        ]
         status = {
-            "provider": getattr(self.oauth, "name", "none"),
+            "provider": "betterauth",
             "enabled": self.oauth_enabled(),
             "configured": self.oauth_enabled(),
             "providers": providers,
+            "base_url": getattr(self.betterauth, "base_url", "") or None,
         }
         if origin:
-            status["redirect_uri"] = self._oauth_redirect_uri(origin)
+            status["callback_urls"] = {
+                p["id"]: origin.rstrip("/") + "/api/betterauth/callback/"
+                + p["id"] for p in providers}
         return status
 
-    def _oauth_redirect_uri(self, origin: str) -> str:
-        """The redirect URI Authgear must whitelist. It is computed from the
-        request's own public origin unless the environment pins one, so a
-        local run (127.0.0.1:8765) and the deploy both land on the path the
-        backend actually serves."""
-        configured = getattr(getattr(self.oauth, "config", None),
-                             "redirect_uri", "")
-        return configured or (origin.rstrip("/") + "/api/auth/callback")
-
     def _sweep_oauth(self, now: float | None = None) -> None:
-        """Drop expired states and handoffs. Called under `_oauth_lock`."""
+        """Drop expired handoffs. Called under `_oauth_lock`."""
         now = time.time() if now is None else now
-        for bucket, ttl in ((self.oauth_states, OAUTH_STATE_TTL_SECONDS),
-                            (self.oauth_handoffs, OAUTH_HANDOFF_TTL_SECONDS)):
-            for key, row in list(bucket.items()):
-                if now - float(row.get("created_at", 0)) > ttl:
-                    bucket.pop(key, None)
+        for key, row in list(self.oauth_handoffs.items()):
+            if now - float(row.get("created_at", 0)) > OAUTH_HANDOFF_TTL_SECONDS:
+                self.oauth_handoffs.pop(key, None)
 
     def _issue_handoff(self, payload: dict) -> str:
         """Mint a one-time token that carries an in-flight sign-in from the
@@ -937,40 +944,13 @@ class Demo:
             self.oauth_handoffs[token] = {**payload, "created_at": time.time()}
         return token
 
-    def oauth_start(self, provider: str, origin: str) -> str:
-        """Begin a sign-in: mint PKCE + CSRF state, return the provider URL."""
-        if not self.oauth_enabled():
-            raise OAuthError("login social não está configurado")
-        provider = str(provider or "").strip().lower()
-        verifier = new_verifier()
-        state = new_state()
-        with self._oauth_lock:
-            self._sweep_oauth()
-            self.oauth_states[state] = {"verifier": verifier,
-                                        "provider": provider,
-                                        "created_at": time.time()}
-        return self.oauth.authorize_url(
-            state=state, code_challenge=code_challenge(verifier),
-            provider=provider, redirect_uri=self._oauth_redirect_uri(origin))
+    def social_login(self, identity: SocialIdentity) -> dict:
+        """Link a verified social identity and issue a one-time handoff.
 
-    def oauth_callback(self, code: str, state: str, origin: str) -> dict:
-        """Finish a sign-in. Links an existing account by provider:subject or
-        email, otherwise hands the storefront a token that opens the CPF
-        completion step. The CPF is what makes the wallet key, so an account
-        is never created here without one."""
-        if not self.oauth_enabled():
-            raise OAuthError("login social não está configurado")
-        with self._oauth_lock:
-            self._sweep_oauth()
-            pending = self.oauth_states.pop(str(state or ""), None)
-        if not pending:
-            # an unknown or already-used state is a replayed or forged
-            # callback: refuse before the code is ever exchanged
-            raise OAuthError("estado de login inválido ou expirado")
-        identity = self.oauth.identity_from_code(
-            code, pending.get("verifier", ""),
-            provider=pending.get("provider", ""),
-            redirect_uri=self._oauth_redirect_uri(origin))
+        A `provider:subject` link, or an existing account with the same email,
+        logs straight in. Anything else opens the CPF completion step; the CPF
+        is the wallet key, so an account is never created here without one.
+        """
         data = self.players.read_all()
         links = self.oauth_links.read_all()
         player_id = links.get(identity.key) or (
@@ -992,6 +972,19 @@ class Demo:
             "suggested": suggested,
         }
 
+    def social_bridge(self, body: bytes, signature: str) -> dict:
+        """Verify the auth server's signed claim, then link the identity.
+
+        The signature covers the exact bytes received, and the claim must be
+        fresh (120 s), so a replayed or forged bridge call is refused before
+        an account is touched.
+        """
+        if not self.oauth_enabled():
+            raise BridgeError("login social não está configurado")
+        identity = verify_bridge(body, signature,
+                                 self.betterauth.bridge_secret)
+        return self.social_login(identity)
+
     def oauth_session(self, token: str) -> dict:
         """Exchange a handoff for the player profile, or tell the storefront
         that this sign-in still needs a CPF."""
@@ -999,13 +992,13 @@ class Demo:
             self._sweep_oauth()
             handoff = self.oauth_handoffs.get(str(token or ""))
         if not handoff:
-            raise OAuthError("sessão social inválida ou expirada")
+            raise BridgeError("sessão social inválida ou expirada")
         if handoff.get("needs_profile"):
             return {"needs_profile": True,
                     "suggested": dict(handoff.get("suggested") or {})}
         player_id = str(handoff.get("player_id") or "")
         if player_id not in self.players.read_all():
-            raise OAuthError("conta social não encontrada")
+            raise BridgeError("conta social não encontrada")
         return {"needs_profile": False, **self.profile(player_id)}
 
     def oauth_complete_profile(self, token: str, payload: dict) -> dict:
@@ -1016,11 +1009,11 @@ class Demo:
             self._sweep_oauth()
             handoff = self.oauth_handoffs.get(str(token or ""))
         if not handoff or not handoff.get("needs_profile"):
-            raise OAuthError("sessão social inválida ou já concluída")
-        identity = Identity(subject=str(handoff.get("subject") or ""),
-                            provider=str(handoff.get("provider") or ""),
-                            email=str(handoff.get("email") or ""),
-                            name=str(handoff.get("name") or ""))
+            raise BridgeError("sessão social inválida ou já concluída")
+        identity = SocialIdentity(subject=str(handoff.get("subject") or ""),
+                                  provider=str(handoff.get("provider") or ""),
+                                  email=str(handoff.get("email") or ""),
+                                  name=str(handoff.get("name") or ""))
         profile = self.register_player(dict(payload or {}), identity=identity)
         with self._oauth_lock:
             self.oauth_handoffs.pop(str(token or ""), None)
@@ -1128,7 +1121,7 @@ class Demo:
         return profile
 
     def register_player(self, payload: dict, *, is_test: bool = False,
-                        identity: Identity | None = None) -> dict:
+                        identity: SocialIdentity | None = None) -> dict:
         """Strict account creation: name + username + email + CPF + password +
         Pix key, every field validated. One wallet per CPF, one per email and
         one per username — a duplicate is a login hint, not an overwrite.
@@ -1141,12 +1134,12 @@ class Demo:
         from the signup requirement (the operator creates them) and are
         refused at login while ``test_accounts_enabled`` is off.
 
-        ``identity`` is set only on the social path (Authgear, decision 0054):
-        the name and email then fall back to the values the provider vouched
-        for, the password becomes optional (a random unusable secret keeps the
-        column satisfied until the player sets one), and the ``provider:subject``
-        link is recorded so the next sign-in is one tap. The CPF is still
-        required and still unique — that is the wallet key."""
+        ``identity`` is set only on the social path (Better Auth, decision
+        0066): the name and email then fall back to the values the provider
+        vouched for, the password becomes optional (a random unusable secret
+        keeps the column satisfied until the player sets one), and the
+        ``provider:subject`` link is recorded so the next sign-in is one tap.
+        The CPF is still required and still unique — that is the wallet key."""
         name = (payload.get("name")
                 or (identity.name if identity else "") or "").strip()
         if len(name) < 2:
@@ -4751,6 +4744,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         try:
+            if parsed.path.startswith(betterauth_proxy.PREFIX):
+                # the Node Better Auth server owns this seam; same-origin
+                # proxy so its cookies and dynamic callback URLs stay on the
+                # public host (decision 0066)
+                betterauth_proxy.forward(self, parsed, None)
+                return
             if parsed.path.startswith(game_proxy.GAME_PREFIX + "/"):
                 self._serve_game(parsed, None)
                 return
@@ -4801,7 +4800,7 @@ class Handler(BaseHTTPRequestHandler):
                                             "coins": DEMO.crypto_coins()},
                                  "mail": DEMO.mail_status(),
                                  "turnstile": DEMO.turnstile_status(),
-                                 "oauth": DEMO.oauth_status(self._our_origin()),
+                                 "betterauth": DEMO.oauth_status(self._our_origin()),
                                  "config": DEMO.public_config()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that
@@ -4860,26 +4859,6 @@ class Handler(BaseHTTPRequestHandler):
                 # to (e.g. whether signup demands the payout account, whether
                 # to render the Turnstile widget, which social buttons to show)
                 self._send(200, DEMO.public_config())
-            elif parsed.path == "/api/auth/oauth/start":
-                from urllib.parse import parse_qs
-                provider = (parse_qs(parsed.query).get("provider") or [""])[0]
-                self._redirect(DEMO.oauth_start(provider, self._our_origin()))
-            elif parsed.path == "/api/auth/callback":
-                from urllib.parse import parse_qs, quote
-                query = parse_qs(parsed.query)
-                origin = self._our_origin()
-                try:
-                    result = DEMO.oauth_callback(
-                        (query.get("code") or [""])[0],
-                        (query.get("state") or [""])[0], origin)
-                except OAuthError as exc:
-                    # a failed social login returns to the storefront, not to
-                    # a raw JSON page — the hash carries the reason
-                    self._redirect(origin + "/#social_error=" +
-                                   quote(str(exc), safe=""))
-                else:
-                    self._redirect(origin + "/#social=" +
-                                   quote(str(result["token"]), safe=""))
             elif parsed.path == "/api/admin":
                 self._send(200, DEMO.admin_dashboard(self._bearer()))
             elif parsed.path == "/api/admin/player":
@@ -4943,6 +4922,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         try:
+            if urlparse(self.path).path.startswith(betterauth_proxy.PREFIX):
+                # the auth server does its own origin/CSRF checks; forward the
+                # request with the browser's Origin intact (decision 0066)
+                betterauth_proxy.forward(self, urlparse(self.path),
+                                         self._raw_body())
+                return
             # the RGS calls come from the game page on the
             # publisher's origin, so they are cross-origin by
             # design and carry their own CORS answer
@@ -5052,6 +5037,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/auth/password":
                 self._send(200, DEMO.auth_change_password(
                     self._bearer(), self._body()))
+            elif path == "/api/auth/betterauth/session":
+                # server-to-server from the Node bridge, signed over the exact
+                # body; a missing/forged/expired claim is a clean 400
+                self._send(200, DEMO.social_bridge(
+                    self._raw_body(),
+                    self.headers.get("X-Betterauth-Signature") or ""))
             elif path == "/api/auth/oauth/session":
                 self._send(200, DEMO.oauth_session(
                     self._body().get("token") or ""))
@@ -5135,7 +5126,7 @@ def run(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
     # Postgres wiring (decision 0049): files stay the default when DATABASE_URL
     # is unset; with it, the ported stores read the database instead.
     DEMO = Demo(db=_ambient_db(),
-                oauth=resolve_oauth(env=authgear_env()))
+                betterauth=resolve_betterauth(env=betterauth_env()))
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"operator demo (NO REAL MONEY) on http://{host}:{port}")
     stop = threading.Event()

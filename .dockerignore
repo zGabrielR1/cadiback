@@ -30,6 +30,7 @@ web/node_modules
 web/.next
 web/out
 web/README.md
+auth-server/node_modules
 
 # the live ledger, profiles, rounds and admin sessions
 demo/data

@@ -1,0 +1,13 @@
+{
+  "name": "foundry-betterauth-template",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@better-auth/infra": "^0.3.7",
+    "better-auth": "^1.7.11",
+    "jose": "^6.1.0"
+  }
+}

@@ -35,4 +35,5 @@ __version__ = "0.1.0"
 
 # The modules that exist today. Kept as data so the vendor script, the docs and
 # the tests agree on one list instead of three.
-MODULES = ("envfile", "mail", "turnstile", "oauth", "auth", "deploy")
+MODULES = ("envfile", "mail", "turnstile", "oauth", "auth", "betterauth",
+           "deploy")
