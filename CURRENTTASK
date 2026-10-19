@@ -22,10 +22,12 @@ signed identity bridge and still requires a CPF.
   `templates/betterauth/` (Better Auth server, Node adapter, client helper,
   env example, runbook); `vendor.py` copies both.
 - **VERIFIED.** Foundry 91 checks; operator `BetterAuthTest` +
-  `BetterAuthHttpTest` (8); the local full path with fake Google/Facebook
+  `BetterAuthHttpTest` (10); the local full path with fake Google/Facebook
   credentials returned the provider URL and state cookie, the callback derived
   from the public host, and a signed claim created a wallet then linked the
-  next sign-in. `frame` 50/50; frontend rebuilt.
+  next sign-in. `/api/config` reads the sidecar's real provider list, and the
+  old `GET /api/auth/oauth/start` remains as a compatibility shim. `frame`
+  50/50; `demo` 389/389; frontend rebuilt.
 - **OPEN (owner):** paste the Google/Facebook/Apple credentials into
   `.env.betterauth` and register the callbacks. The rail is config-gated
   until then; everything else is live.

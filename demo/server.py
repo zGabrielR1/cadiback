@@ -881,9 +881,8 @@ class Demo:
         config = self.settings_view()
         config["turnstile_enabled"] = self.turnstile_enabled()
         config["turnstile_site_key"] = self.turnstile_site_key
-        config["oauth_enabled"] = self.oauth_enabled()
-        config["oauth_providers"] = (self.oauth_status()["providers"]
-                                     if self.oauth_enabled() else [])
+        config["oauth_enabled"] = bool(self._auth_providers())
+        config["oauth_providers"] = self._auth_providers()
         config["asaas_enabled"] = self.asaas_available()
         config["crypto_enabled"] = self.crypto_available()
         config["crypto_coins"] = self.crypto_coins()
@@ -926,6 +925,42 @@ class Demo:
                 p["id"]: origin.rstrip("/") + "/api/betterauth/callback/"
                 + p["id"] for p in providers}
         return status
+
+    def _auth_providers(self) -> list[dict]:
+        """The providers the auth server actually has credentials for.
+
+        `/api/config` is read by every storefront (including one built before
+        0066), so it must not advertise a provider the sidecar cannot start.
+        The query is loopback, cached per 30 s bucket, and a refused
+        connection is an empty list — an absent sidecar is a normal state.
+        """
+        if not self.oauth_enabled():
+            return []
+        cached = getattr(self, "_providers_cache", None)
+        bucket = int(time.monotonic() // 30)
+        key = (getattr(self.betterauth, "internal_url", ""), bucket)
+        if cached and cached[0] == key:
+            return cached[1]
+        providers: list[dict] = []
+        try:
+            import json as _json
+            import urllib.request as _urlopen
+            url = (getattr(self.betterauth, "internal_url", "")
+                   .rstrip("/") + "/api/betterauth/providers")
+            with _urlopen.urlopen(url, timeout=1.0) as response:
+                answer = _json.loads(response.read().decode("utf-8"))
+            if answer.get("enabled"):
+                for row in answer.get("providers") or []:
+                    ident = str(row.get("id") or "").strip().lower()
+                    if ident:
+                        providers.append({
+                            "id": ident,
+                            "label": str(row.get("label") or ident.capitalize()),
+                        })
+        except (OSError, ValueError, TypeError):
+            providers = []
+        self._providers_cache = (key, providers)
+        return providers
 
     def _sweep_oauth(self, now: float | None = None) -> None:
         """Drop expired handoffs. Called under `_oauth_lock`."""
@@ -4749,6 +4784,13 @@ class Handler(BaseHTTPRequestHandler):
                 # proxy so its cookies and dynamic callback URLs stay on the
                 # public host (decision 0066)
                 betterauth_proxy.forward(self, parsed, None)
+                return
+            if parsed.path == "/api/auth/oauth/start":
+                # compatibility for a storefront bundle built before 0066:
+                # it still navigates here, so start the Better Auth flow
+                from urllib.parse import parse_qs
+                provider = (parse_qs(parsed.query).get("provider") or [""])[0]
+                betterauth_proxy.start(self, provider)
                 return
             if parsed.path.startswith(game_proxy.GAME_PREFIX + "/"):
                 self._serve_game(parsed, None)

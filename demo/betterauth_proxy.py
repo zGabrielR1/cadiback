@@ -22,7 +22,7 @@ from __future__ import annotations
 import http.client
 import json
 import os
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 PREFIX = "/api/betterauth/"
 DEFAULT_INTERNAL_URL = "http://127.0.0.1:3100"
@@ -54,6 +54,87 @@ def _fail(handler, status: int, message: str) -> None:
     handler.send_header("Cache-Control", "no-store")
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _connection():
+    target = urlsplit(internal_url())
+    host = target.hostname or "127.0.0.1"
+    port = target.port or (443 if target.scheme == "https" else 80)
+    cls = (http.client.HTTPSConnection
+           if target.scheme == "https" else http.client.HTTPConnection)
+    return cls(host, port, timeout=TIMEOUT)
+
+
+def _redirect_error(handler, origin: str, message: str) -> None:
+    handler.send_response(303)
+    handler.send_header("Location", origin.rstrip("/")
+                        + "/#social_error=" + quote(message, safe=""))
+    handler.send_header("Cache-Control", "no-store")
+    handler.end_headers()
+
+
+def start(handler, provider: str) -> None:
+    """The pre-0066 storefront's GET entry point, kept as a compatibility shim.
+
+    A bundle built before this change still navigates to
+    ``/api/auth/oauth/start?provider=…``. It now starts the same Better Auth
+    flow: POST to the sidecar, forward its OAuth-state cookie, and 303 to the
+    provider. That keeps an un-redeployed storefront working without asking
+    the provider for a second callback.
+    """
+    origin = handler._our_origin()
+    provider = str(provider or "").strip().lower()
+    if not provider:
+        _redirect_error(handler, origin, "provedor inválido")
+        return
+    callback = "/api/betterauth/bridge?return=" + quote(origin, safe="")
+    body = json.dumps({"provider": provider, "callbackURL": callback}).encode()
+    headers = {
+        "Content-Type": "application/json",
+        "Content-Length": str(len(body)),
+        "Origin": origin,
+        "X-Forwarded-Host": handler.headers.get("Host") or "",
+        "X-Forwarded-Proto": ("https" if origin.startswith("https")
+                              else "http"),
+    }
+    cookie = handler.headers.get("Cookie")
+    if cookie:
+        headers["Cookie"] = cookie
+    connection = _connection()
+    try:
+        connection.request("POST", "/api/betterauth/sign-in/social",
+                           body=body, headers=headers)
+        response = connection.getresponse()
+        data = response.read(MAX_BODY + 1)
+        status = response.status
+        cookies = [value for key, value in response.getheaders()
+                   if key.lower() == "set-cookie"]
+    except (OSError, http.client.HTTPException):
+        _redirect_error(handler, origin, "servidor de autenticação indisponível")
+        return
+    finally:
+        connection.close()
+    if status != 200:
+        detail = "login social não está configurado"
+        try:
+            detail = json.loads(data.decode("utf-8")).get("error") or detail
+        except (ValueError, UnicodeDecodeError):
+            pass
+        _redirect_error(handler, origin, detail)
+        return
+    try:
+        target = json.loads(data.decode("utf-8")).get("url") or ""
+    except (ValueError, UnicodeDecodeError):
+        target = ""
+    if not target:
+        _redirect_error(handler, origin, "login social indisponível")
+        return
+    handler.send_response(303)
+    for value in cookies:
+        handler.send_header("Set-Cookie", value)
+    handler.send_header("Location", target)
+    handler.send_header("Cache-Control", "no-store")
+    handler.end_headers()
 
 
 def forward(handler, parsed, body: bytes | None) -> None:

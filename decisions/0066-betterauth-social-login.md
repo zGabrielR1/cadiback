@@ -80,10 +80,11 @@ Node adapter, provider list, bridge, client helper, env example, runbook).
 
 - Foundry: 91 checks green, including the bridge's refusal paths (tampered
   body, wrong secret, expired/future timestamp, malformed payload).
-- Operator: `BetterAuthTest` + `BetterAuthHttpTest` (8 checks) cover the
-  unconfigured no-op, provider reporting, a signed claim for a known email, a
-  new identity's CPF completion, forgot/stale claims, and the proxy's
-  multi-`Set-Cookie` forwarding.
+- Operator: `BetterAuthTest` + `BetterAuthHttpTest` (10 checks) cover the
+  unconfigured no-op, the config's credential-aware provider list, a signed
+  claim for a known email, a new identity's CPF completion, forged/stale
+  claims, the proxy's multi-`Set-Cookie` forwarding, and the legacy start
+  shim.
 - The full local path was exercised with fake Google/Facebook credentials:
   `/api/betterauth/providers` → enabled; `/sign-in/social` → 200 with the OAuth
   state cookie and a callback derived from the public host; a signed claim →

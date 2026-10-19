@@ -27,19 +27,26 @@
   change it. Apple/Facebook email gaps become reserved `.invalid` placeholders;
   the subject still links the wallet. Local HTTP runs set
   `NODE_ENV=development` so the state cookie is not `Secure`.
+- **THE CONFIG IS HONEST AND OLD BUNDLES STILL WORK.** `/api/config` asks the
+  sidecar for its credential-aware provider list (loopback, cached 30 s) and
+  hides the social row when it has none, so a storefront built before 0066
+  does not offer a dead button. The old `GET /api/auth/oauth/start` remains as
+  a compatibility shim: it starts the same Better Auth flow, forwards the
+  OAuth-state cookie and 303s to the provider.
 - **FOUNDRY GREW BOTH HALVES.** `foundry/betterauth/` is the stdlib verifier
   (config, frozen `SocialIdentity`, HMAC bridge); `templates/betterauth/` is
   the reusable TypeScript server (auth config, Node adapter, provider list,
   bridge, client helper, env example, runbook). `vendor.py` copies both; the
   operator no longer vendors `foundry.oauth`.
 - **VERIFIED.** Foundry 91 checks. Operator `BetterAuthTest` +
-  `BetterAuthHttpTest` (8): unconfigured no-op, provider reporting, a signed
-  claim for a known email, CPF completion, forged/stale refusal, and the
-  proxy's two-`Set-Cookie` forwarding. The full local path with fake
-  Google/Facebook credentials: `/api/betterauth/providers` enabled;
-  `/sign-in/social` 200 with the state cookie and a callback derived from the
-  public host; a signed claim created a wallet and the next one logged
-  straight in. `frame` 50/50, `verify.py` 0, frontend build green.
+  `BetterAuthHttpTest` (10): unconfigured no-op, the config's real provider
+  list, a signed claim for a known email, CPF completion, forged/stale refusal,
+  the proxy's two-`Set-Cookie` forwarding, and the legacy start shim. The full
+  local path with fake Google/Facebook credentials: `/api/betterauth/providers`
+  enabled; `/sign-in/social` 200 with the state cookie and a callback derived
+  from the public host; a signed claim created a wallet and the next one
+  logged straight in. `frame` 50/50, `demo` 389/389, `verify.py` 0, frontend
+  build green.
 - Deploy: `render.yaml` gains the Better Auth placeholders and fixed values;
   `scripts/render_deploy.py` carries `.env.betterauth`. Open (owner): paste
   the Google/Facebook/Apple credentials and register the callbacks.

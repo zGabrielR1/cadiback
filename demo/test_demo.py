@@ -3220,12 +3220,14 @@ class BetterAuthTest(unittest.TestCase):
         with self.assertRaises(BridgeError):
             demo.social_bridge(b"{}", "sha256=00")
 
-    def test_config_and_health_report_providers_without_a_secret(self):
+    def test_config_hides_providers_when_the_sidecar_is_absent(self):
         demo = self._demo(providers=("google", "apple"))
+        # no auth server is listening on the injected/default loopback URL:
+        # the storefront must not offer a button that cannot start
         cfg = demo.public_config()
-        self.assertTrue(cfg["oauth_enabled"])
-        self.assertEqual([p["id"] for p in cfg["oauth_providers"]],
-                         ["google", "apple"])
+        self.assertFalse(cfg["oauth_enabled"])
+        self.assertEqual(cfg["oauth_providers"], [])
+        # the read-only status still names the configured callbacks (health)
         status = demo.oauth_status("https://app.example")
         self.assertEqual(status["provider"], "betterauth")
         self.assertEqual(status["providers"],
@@ -3316,6 +3318,19 @@ class _AuthStub(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_POST(self):  # noqa: N802
+        length = int(self.headers.get("Content-Length") or 0)
+        self.rfile.read(length)
+        type(self).calls.append({"path": self.path,
+                                 "headers": dict(self.headers)})
+        body = b'{"url":"https://idp.example/authorize"}'
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Set-Cookie", "state=1; Path=/")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def log_message(self, *args):
         pass
 
@@ -3382,6 +3397,35 @@ class BetterAuthHttpTest(unittest.TestCase):
             {"Content-Type": "application/json",
              "X-Betterauth-Signature": "sha256=deadbeef"})
         self.assertEqual(status, 400)
+
+    def test_config_reports_the_sidecars_real_provider_list(self):
+        status, _headers, data = self._call("/api/config")
+        self.assertEqual(status, 200)
+        cfg = json.loads(data)
+        self.assertTrue(cfg["oauth_enabled"])
+        self.assertEqual([p["id"] for p in cfg["oauth_providers"]],
+                         ["google"])
+
+    def test_the_legacy_start_redirects_to_the_provider(self):
+        """A storefront bundle built before 0066 still navigates to the old
+        GET; it must start the same flow and keep the state cookie."""
+        class _NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                return None
+
+        opener = urllib.request.build_opener(_NoRedirect)
+        try:
+            opener.open(self.base + "/api/auth/oauth/start?provider=google",
+                        timeout=10)
+            status, location, cookies = 200, "", []
+        except urllib.error.HTTPError as exc:
+            with exc:
+                status = exc.code
+                location = exc.headers.get("Location")
+                cookies = exc.headers.get_all("Set-Cookie")
+        self.assertEqual(status, 303)
+        self.assertEqual(location, "https://idp.example/authorize")
+        self.assertEqual(cookies, ["state=1; Path=/"])
 
 
 class DbSeamTest(unittest.TestCase):
