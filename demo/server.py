@@ -620,6 +620,11 @@ class Demo:
         self.rgs_sessions: dict[tuple[str, str], str] = {}
         # rounds in flight, keyed by (provider, RGS session id)
         self.rgs_rounds: dict[tuple[str, str], dict] = {}
+        # Pragmatic's publisher saldo per wallet token — the last value its
+        # own RGS reported — plus a ring buffer of what the tap did with each
+        # movement (decision 0063)
+        self.pragmatic_books: dict[str, dict] = {}
+        self.pragmatic_tap: list[dict] = []
         self.orphan_rounds: list[dict] = []
         # the anytime-scorer market's settlement feed: the per-match incidents
         # are read lazily, and only for a final fixture whose scorer leg is
@@ -3859,6 +3864,100 @@ class Demo:
         return self.settle_rgs_round(player_id, session["game_id"],
                                      f"px:{round_id}", stake, payout)
 
+    # A movement larger than any bet this sim takes: a scale or field mistake
+    # in the tap would show up as an absurd number, and it must be refused
+    # rather than posted. The cap is the wallet's own per-round bound.
+    PRAGMATIC_MOVEMENT_CAP = 10000000
+
+    def pragmatic_note_balance(self, token: str, game_id: str,
+                               publisher_minor: int) -> dict | None:
+        """Settle the round one movement of the publisher's own saldo means.
+
+        Pragmatic's `gameService` answer carries the publisher's demo balance
+        *before* our rewrite replaces it with the player's saldo. That balance
+        moves when their RGS settles a round, and the round is theirs — it is
+        drawn server side and cannot be re-cut from outside (0044) — so the
+        movement is the only honest thing to book: a drop is the stake going
+        out, a rise is what came back. A `doSpin` answer carries the finished
+        round, so one movement is one round (unlike Spribe, where the crash
+        arrives later).
+
+        The stake is learned from losses (a loss is exactly minus the stake,
+        the largest one wins). The books then keep the invariant that matters:
+        `payout - stake` is always the publisher's own net movement. Each
+        movement posts once, keyed by the session token and a sequence, through
+        the same idempotent write the other taps use.
+
+        Returns the tap entry it logged, or None when nothing was posted.
+        """
+        key = str(token or "")
+        if not key:
+            return None
+        state = self.pragmatic_books.setdefault(
+            key, {"last": None, "stake": 0, "seq": 0})
+        previous = state["last"]
+        state["last"] = publisher_minor
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "game_id": game_id, "token": key[:8],
+            "publisher_minor": publisher_minor, "delta": None,
+        }
+        if previous is None:
+            # the first answer of a session is the opening saldo, not a round
+            entry["delta"] = 0
+            entry["note"] = "baseline"
+            self._log_pragmatic(entry)
+            return None
+        net = publisher_minor - previous
+        entry["delta"] = net
+        if net == 0:
+            entry["note"] = "no movement"
+            self._log_pragmatic(entry)
+            return None
+        if abs(net) > self.PRAGMATIC_MOVEMENT_CAP:
+            entry["note"] = "above the per-movement cap — not settled"
+            self._log_pragmatic(entry)
+            return None
+        stake = 0
+        if net < 0 and (state["stake"] <= 0 or -net >= state["stake"]):
+            stake = -net
+            state["stake"] = stake
+        elif state["stake"] > 0:
+            stake = state["stake"]
+        payout = max(0, stake + net)
+        owner = self.wallet_owner(key)
+        if owner is None:
+            entry["note"] = "no wallet session"
+            self._log_pragmatic(entry)
+            return None
+        state["seq"] += 1
+        entry["stake_minor"] = stake
+        entry["payout_minor"] = payout
+        entry["round_id"] = f"pp-{key[:12]}-{state['seq']}"
+        try:
+            result = self.settle_rgs_round(owner["player"], game_id,
+                                           entry["round_id"], stake, payout)
+        except (DuplicatePosting, WalletError, ValueError, KeyError,
+                ExclusionError) as exc:
+            # the wallet refused it (an empty saldo, a closed account): the
+            # saldo stands and the log says why
+            entry["note"] = f"refused: {type(exc).__name__}"
+            self._log_pragmatic(entry)
+            return None
+        entry["settled"] = bool(result.get("settled"))
+        self._log_pragmatic(entry)
+        return entry
+
+    def _log_pragmatic(self, entry: dict) -> None:
+        """Keep the last movements the tap saw, for the admin endpoint."""
+        self.pragmatic_tap.append(entry)
+        del self.pragmatic_tap[:-40]
+
+    def pragmatic_tap_log(self, token: str) -> dict:
+        """What the Pragmatic round tap saw, newest first. Admin only."""
+        self._require_admin(token)
+        return {"tap": list(reversed(self.pragmatic_tap))}
+
     def settle_rgs_round(self, player_id: str, game_id: str, round_id: str,
                          stake: int, win: int) -> dict:
         """Settle one round an interposed RGS reported.
@@ -4171,6 +4270,13 @@ class Handler(BaseHTTPRequestHandler):
         # money tap: the saldo the game shows is the player's
         # real one, so an RGS answer carries our balance
         if is_money and view is not None:
+            if provider == "pragmatic_play":
+                # the publisher's own demo saldo rides this answer, before the
+                # rewrite below replaces it with ours: its movement is the
+                # round their RGS just settled (decision 0063)
+                publisher = game_proxy.publisher_balance_minor(original)
+                if publisher is not None:
+                    DEMO.pragmatic_note_balance(token, game_id, publisher)
             data = game_proxy.rewrite_balance(
                 data, view.get("balance_minor") or 0)
             rewrote = True
@@ -4297,6 +4403,13 @@ class Handler(BaseHTTPRequestHandler):
         data = game_proxy.rewrite_urls(data, ctype, game_id, self._our_origin(), money)
         rewrote = data != original
         if is_money and view is not None:
+            if provider == "pragmatic_play":
+                # same tap as the game path: a root-level `gameService` carries
+                # the publisher's saldo too (decision 0063)
+                publisher = game_proxy.publisher_balance_minor(original)
+                if publisher is not None:
+                    DEMO.pragmatic_note_balance(
+                        self._cookie("wallet_token"), game_id, publisher)
             data = game_proxy.rewrite_balance(
                 data, view.get("balance_minor") or 0)
             rewrote = True
@@ -4697,6 +4810,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.admin_settings(self._bearer()))
             elif parsed.path == "/api/admin/test-accounts":
                 self._send(200, DEMO.admin_test_accounts(self._bearer()))
+            elif parsed.path == "/api/admin/pragmatic-tap":
+                self._send(200, DEMO.pragmatic_tap_log(self._bearer()))
             elif parsed.path == "/api/config":
                 # public, read-only operator settings the storefront adapts
                 # to (e.g. whether signup demands the payout account, whether

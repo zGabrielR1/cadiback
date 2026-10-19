@@ -1,3 +1,33 @@
+CURRENTTASK: Every provider that boots now settles a round on our books
+(decisions 0057/0060/0063) — the last one was Pragmatic, whose round is read
+off the movement of the publisher's own demo saldo, because the page only ever
+sees our rewrite.
+
+## STATUS
+
+- **PRAGMATIC SETTLES (0063).** `Demo.pragmatic_note_balance` reads the
+  publisher's saldo out of the `gameService` answer *before* `rewrite_balance`
+  replaces it, and posts each movement through the idempotent
+  `settle_rgs_round`: a drop is the stake, a rise is what came back, the stake
+  is learned from losses, and `payout - stake` is always the publisher's net.
+  The tap cannot live in the bridge (the page receives our saldo, a constant)
+  — which is also why PG Soft's tap is in the page (its money calls bypass us).
+  A movement above R$100,000.00 is refused and logged; `GET
+  /api/admin/pragmatic-tap` shows every observation and what was done with it.
+- **MEASURED, NOT GUESSED.** The publisher's demo opens at `100,000.00` (direct
+  `doInit` replay), the client paints `balance` + `balance_bonus` (out of its own
+  bundle), the stake is `coin`×`line`, and one `doSpin` answer is the whole
+  round. Scale 1:1 with BRL.
+- **THE MONEY MAP NOW READS:** Hacksaw (RGS interposition) · Play'n GO
+  (`gamehub` tap) · Spribe (SFS2X tap) · PG Soft (trial-wallet reconcile, built,
+  one real spin from being live-verified) · Pragmatic (saldo movement, built and
+  deployed, one real spin from being live-verified). Evolution never reaches us
+  (launcher 502 from this host).
+- Suites: `frame` 50/50 · `demo` 376 with only the 6 pre-existing `sqlalchemy`
+  errors · `verify.py` 0 problems.
+- OPEN: one human spin on `pp:gates-of-olympus` (and one on a PG title) to
+  close 0063/0044 live; **Asaas prod keys** remain the one owner item.
+
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the
 Asaas deploy fixed, a fuller sports channel (stats-derived markets + SVG icons),

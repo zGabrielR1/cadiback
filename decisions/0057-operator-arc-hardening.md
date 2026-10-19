@@ -358,7 +358,37 @@ that was open at session 4 is now closed too:
   the HUD over the splash, and `gameService`/`saveSettings.do`/`reloadBalance.do`/
   `announcements` all answered 200 on our host. What was missing was the
   publisher's own scene activation, which their signed session table gates.
-  Note this is the **boot**, not settlement: Pragmatic stays a balance-rewrite
-  proxy where the publisher's demo RGS owns the rounds (as for every PROXIED
-  title — only Spribe settles, because its socket carries the round). Interposing
-  an RGS for the PROXIED titles is a separate piece of work, not part of §5.
+  Note this is the **boot**, not settlement. Pragmatic is the one working
+  provider with **no round tap**: its rounds stay the publisher's demo RGS, and
+  our side only *displays* the saldo (a balance rewrite of the `gameService`
+  answers). Every other working provider does settle on our books — Hacksaw by
+  RGS interposition (0025), Play'n GO by the `gamehub` socket tap (0026), Spribe
+  by the SFS2X socket tap (0060) — and PG Soft by the trial-wallet reconcile tap
+  (0044, built, **not yet live-verified**: it needs one real spin). Giving
+  Pragmatic a tap was a separate piece of work and is now done — see the
+  session-6 update below and **decision 0063**.
+
+  > Correction, session 6 (2026-10-18): this paragraph previously read "only
+  > Spribe settles, because its socket carries the round". That was wrong —
+  > Play'n GO has settled since 0026 and PG Soft since 0044 — and it read
+  > Pragmatic's *display* rewrite as the whole provider story. The table above
+  > is the accurate one. Read the money map before claiming a provider is
+  > display-only: `game_proxy._BRIDGE` carries three taps (`watchSocket` →
+  > Play'n GO, `spribeWatch` → Spribe, `pgWatch` → PG Soft) plus Hacksaw's RGS
+  > interposition in `rgs_proxy.UPSTREAMS`.
+
+**Update, session 6 (2026-10-18).** The provider money story is now uniform:
+**Pragmatic settles too** (decision 0063). Its `gameService` answer carries the
+publisher's own demo saldo before our rewrite, so the *movement* of that number
+is the round — a drop is the stake, a rise is what came back — and it posts
+through the same idempotent `settle_rgs_round` the other taps use. Read the
+publisher's number where it is still the publisher's: a bridge tap cannot see it
+(the page receives our rewrite, a constant), which is why this one is server
+side while PG Soft's is in the page. Every provider that boots now settles:
+Hacksaw (RGS), Play'n GO (`gamehub`), Spribe (SFS2X), PG Soft (trial-wallet
+reconcile), Pragmatic (saldo movement). Evolution remains the one that never
+reaches us (its launcher 502s from this host). Diagnosed live this session: the
+publisher's demo opens at `100,000.00`, the client paints `balance` +
+`balance_bonus`, and a spin settles inside one answer. Full record, surfacing
+(`GET /api/admin/pragmatic-tap`) and the three traps that cost time: **decision
+0063**.

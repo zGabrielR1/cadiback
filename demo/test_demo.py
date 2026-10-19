@@ -4407,6 +4407,139 @@ class WalletSyncTest(unittest.TestCase):
         self.demo.books.assert_balanced()
 
 
+class PragmaticRoundTapTest(unittest.TestCase):
+    """Pragmatic's round is the publisher's, drawn server side, so the tap
+    books the movement of *their* demo saldo onto our wallet: the drop is the
+    stake, the rise is what came back, and the net is always theirs."""
+
+    GAME = "pp:gates-of-olympus"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp)
+        self.player = self.demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        self.demo.deposit({"player": self.player, "amount_minor": 10000,
+                           "method": "pix", "deposit_id": "pp-dep"})
+        self.token = self.demo.wallet_launch(
+            {"player": self.player, "game_id": self.GAME})["token"]
+        # the publisher opens the session at R$100,000.00, as its demo does
+        self.opening = 10000000
+
+    def test_the_publishers_saldo_is_read_from_the_answer(self):
+        """The client paints `balance` + `balance_bonus` together, so the tap
+        reads the same sum, in the publisher's own "100,000.00" rendering."""
+        from demo import game_proxy
+        answer = (b"def_s=9,5&balance=100,000.00&balance_cash=100,000.00"
+                  b"&balance_bonus=0.00&accm=cp")
+        self.assertEqual(game_proxy.publisher_balance_minor(answer), 10000000)
+        # the error answer drops the separators
+        self.assertEqual(game_proxy.publisher_balance_minor(
+            b"balance=100000.0&balance_bonus=0.0"), 10000000)
+        # bonus money is part of the total, not a separate pocket
+        self.assertEqual(game_proxy.publisher_balance_minor(
+            b"balance=99,500.00&balance_bonus=1.50"), 9950150)
+        # an answer with no saldo is not a zero saldo
+        self.assertIsNone(game_proxy.publisher_balance_minor(
+            b"action=doInit&index=1"))
+        self.assertIsNone(game_proxy.publisher_balance_minor(b"balance=,,,"))
+        self.assertIsNone(game_proxy.publisher_balance_minor(bytes([0xff, 0xfe])))
+
+    def test_a_movement_settles_the_publishers_own_net(self):
+        """A loss then a win: the loss teaches the stake, the win settles as
+        stake + net, and the wallet moves by exactly the publisher's net."""
+        self.assertIsNone(self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening))          # opening, not a round
+        # a R$1.00 loss at the counters
+        lost = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100)
+        self.assertEqual((lost["stake_minor"], lost["payout_minor"]), (100, 0))
+        self.assertEqual(self.demo.books.available(self.player), 9900)
+        # R$2.50 back over the same stake
+        won = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100 + 250)
+        self.assertEqual((won["stake_minor"], won["payout_minor"]), (100, 350))
+        self.assertEqual(self.demo.books.available(self.player), 9900 - 100 + 350)
+        for entry in (lost, won):
+            self.assertEqual(entry["payout_minor"] - entry["stake_minor"],
+                             entry["delta"])
+            self.assertTrue(entry["settled"])
+        self.demo.books.assert_balanced()
+        rounds = [r for r in self.demo.history(self.player)
+                  if r.get("type") == "publisher"]
+        self.assertEqual(rounds[0]["game_id"], self.GAME)
+        self.assertEqual(rounds[0]["stake_minor"], 100)
+
+    def test_a_partial_win_keeps_the_net_and_a_bigger_bet_relearns(self):
+        """A round that returns part of a learned stake is booked with the
+        stake that was learned (the net is what is real), and a larger loss
+        re-learns it."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        lost = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100)      # R$1.00, gone
+        self.assertEqual((lost["stake_minor"], lost["payout_minor"]), (100, 0))
+        # R$0.50 of it comes back: the stake is the learned one, the net -50
+        half = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100 - 50)
+        self.assertEqual((half["stake_minor"], half["payout_minor"]), (100, 50))
+        self.assertEqual(half["payout_minor"] - half["stake_minor"], half["delta"])
+        # a R$5.00 bet now loses whole: the stake follows the bet up
+        big = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100 - 50 - 500)
+        self.assertEqual((big["stake_minor"], big["payout_minor"]), (500, 0))
+        self.assertEqual(self.demo.books.available(self.player),
+                         10000 - 100 - 50 - 500)
+        self.demo.books.assert_balanced()
+
+    def test_a_replayed_answer_settles_nothing_twice(self):
+        """The same saldo seen again is not a movement: a client that repeats
+        a call, or a proxy that re-serves an answer, cannot charge twice."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening - 100)
+        again = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 100)
+        self.assertIsNone(again)
+        self.assertEqual(self.demo.books.available(self.player), 9900)
+        self.assertEqual(self.demo.pragmatic_tap[-1]["note"], "no movement")
+
+    def test_a_movement_no_bet_could_explain_is_refused(self):
+        """A scale or field mistake would arrive as an absurd number; the tap
+        refuses it and says so instead of posting it."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        refused = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening - 50000000)
+        self.assertIsNone(refused)
+        self.assertIn("cap", self.demo.pragmatic_tap[-1]["note"])
+        self.assertEqual(self.demo.books.available(self.player), 10000)
+
+    def test_a_wallet_less_session_settles_nothing(self):
+        """No wallet session behind the token: free play stays free play."""
+        self.assertIsNone(self.demo.pragmatic_note_balance(
+            "no-such-token", self.GAME, self.opening))
+        self.assertIsNone(self.demo.pragmatic_note_balance(
+            "no-such-token", self.GAME, self.opening - 100))
+
+    def test_the_tap_log_is_admin_only_and_names_what_it_saw(self):
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening - 100)
+        token = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        log = self.demo.pragmatic_tap_log(token)["tap"]
+        self.assertEqual(log[0]["stake_minor"], 100)
+        self.assertEqual(log[0]["round_id"][:3], "pp-")
+        self.assertEqual(log[0]["game_id"], self.GAME)
+        # the token is truncated: the log is a diagnostic, not a credential
+        self.assertEqual(len(log[0]["token"]), 8)
+        self.assertNotIn(self.token, json.dumps(log))
+        self.assertEqual(log[1]["note"], "baseline")
+        with self.assertRaises(AuthError):
+            self.demo.pragmatic_tap_log("nope")
+
+
 class SocketRoundTest(unittest.TestCase):
     """Rounds a publisher drives over the page's own socket (Play'n GO's
     SignalR hub), reported by the injected bridge: the net settles on our
@@ -5190,6 +5323,47 @@ class ProxyHttpTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn(b"<html>", body)
         self.assertEqual(len(self.calls), 4)
+
+    def test_a_publishers_round_settles_through_the_game_path(self):
+        """The whole chain at HTTP level: the answer carries the publisher's
+        own saldo, the rewrite shows the player's, and the movement between
+        two answers posts the round on our books (decision 0063).
+
+        Read the *upstream* body, not the rewritten one: the publisher's
+        saldo is what moves, and ours is a constant in it."""
+        from demo import server as server_mod
+        keep = server_mod.DEMO
+        demo = Demo(data_dir=tempfile.mkdtemp())
+        player = demo.upsert_player({
+            "name": "Ana Souza", "cpf": "529.982.247-25",
+            "pix_key": "ana.souza@example.com",
+            "bank": {"bank_code": "001", "agency": "1234",
+                     "account": "56789-0", "holder_name": "Ana Souza"},
+        })["player_id"]
+        demo.deposit({"player": player, "amount_minor": 10000,
+                      "method": "pix", "deposit_id": "http-dep"})
+        token = demo.wallet_launch(
+            {"player": player, "game_id": self.GAME})["token"]
+        server_mod.DEMO = demo
+        self.addCleanup(lambda: setattr(server_mod, "DEMO", keep))
+        url = f"{self.game_path}/gs2c/ge/v3/gameService?token={token}"
+        self.answer = (200, {"Content-Type": "text/plain"},
+                       b"action=doInit&balance=100,000.00&balance_bonus=0.00")
+        status, _headers, body = self._call(url)
+        self.assertEqual(status, 200)
+        self.assertIn(b"balance=100.00", body)          # our R$100.00
+        self.assertEqual(demo.books.available(player), 10000)
+        # the round: the publisher's saldo drops by R$1.00
+        self.answer = (200, {"Content-Type": "text/plain"},
+                       b"action=doSpin&balance=99,999.00&balance_bonus=0.00")
+        self._call(url)
+        self.assertEqual(demo.books.available(player), 9900)
+        rounds = [r for r in demo.history(player)
+                  if r.get("type") == "publisher"]
+        self.assertEqual((rounds[0]["stake_minor"], rounds[0]["payout_minor"]),
+                         (100, 0))
+        self.assertTrue(demo.pragmatic_tap[-1]["settled"])
+        demo.books.assert_balanced()
 
     def test_a_balance_is_never_cached(self):
         DEMO.wallet_view_for = lambda token: {"token": token,

@@ -653,6 +653,37 @@ def rewrite_balance(body: bytes, balance_minor: int) -> bytes:
     return text.encode("utf-8") if changed else body
 
 
+# The two fields the Pragmatic client adds up to know its saldo: the answer
+# carries `balance` and `balance_bonus`, and the client paints their sum
+# (`XT.GetDouble(Vars.BalanceReceived) + XT.GetDouble(Vars.BonusBalanceReceived)`,
+# read off its own bundle). The tap has to read the same total, or a round paid
+# out of bonus money would look like no movement at all.
+_BALANCE_FIELD = re.compile(r"(?:^|&)(balance|balance_bonus)=([^&]*)")
+
+
+def publisher_balance_minor(body: bytes) -> int | None:
+    """The saldo a Pragmatic RGS answer reports, in centavos, or None.
+
+    The publisher renders it as "100,000.00" (and as a bare float in an
+    error answer), so the thousands separators come off before the number
+    is read. An answer carrying neither field is not a money answer and
+    gives None — a caller must not read that as a zero balance.
+    """
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    total = 0
+    found = False
+    for match in _BALANCE_FIELD.finditer(text):
+        try:
+            total += int(round(float(match.group(2).replace(",", "")) * 100))
+        except ValueError:
+            return None
+        found = True
+    return total if found else None
+
+
 BRIDGE_MARK = b"<!--wallet-bridge-->"
 
 

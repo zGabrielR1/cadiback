@@ -1,5 +1,51 @@
 # PROGRESS
 
+## DONE (2026-10-18 — Pragmatic's round settles on our books, decision 0063)
+
+- **THE LAST DISPLAY-ONLY PROVIDER SETTLES.** Pragmatic was the one working
+  publisher whose rounds reached no ledger: its `gameService` answers were
+  rewritten so the client showed our saldo, but a spin at the counters moved
+  the publisher's demo credits and left our books alone. Now the *movement of
+  the publisher's own demo saldo* posts a round: a drop is the stake going out,
+  a rise is what came back, and `payout - stake` is always their own net.
+- **WHERE THE NUMBER IS STILL THE PUBLISHER'S.** The tap could not live in the
+  bridge: the page receives our rewrite, so `balance` there is a constant. The
+  publisher's saldo exists only in the upstream body in the serve path, before
+  `rewrite_balance`, so `Demo.pragmatic_note_balance` reads it in `_serve_game`
+  (and on the root path, wherever we rewrite). PG Soft's tap is in the page for
+  the opposite and equally real reason — its money calls bypass us entirely.
+- **WHAT THE WIRE SAYS (measured live this session).** The publisher's demo
+  opens at `100,000.00` (a direct `doInit` replay against their RGS, no proxy);
+  the client paints `balance` + `balance_bonus` summed (read out of its own
+  served bundle); the stake is the `coin`×`line` the client sends, so a
+  minimum-bet loss is exactly 100 minor units; a `doSpin` answer carries the
+  finished round. The scale is 1:1 with BRL, and our rewrite turns the same
+  field into `balance=5,000.00` for a player holding R$5,000.00.
+- **IDEMPOTENT BY CONSTRUCTION.** The same saldo seen twice is not a movement,
+  so a client retry, a re-served answer or two tabs cannot charge twice (the
+  `pp-<token12>-<seq>` round id is the second line of defence). The stake is
+  learned from losses, and a movement no bet could explain (above the wallet's
+  own R$100,000.00 per-round bound) is **refused and logged**, never posted.
+  The R$0 gate comes free: the client gates its own spin on the saldo we handed
+  it.
+- **IT IS VISIBLE.** `GET /api/admin/pragmatic-tap` (admin only) is a 40-entry
+  ring buffer: timestamp, game, the token's first 8 characters, the publisher's
+  saldo, the delta, and what was done with it. A money tap is invisible in
+  production otherwise.
+- Surface: `game_proxy.publisher_balance_minor`, `Demo.pragmatic_note_balance`
+  / `_log_pragmatic` / `pragmatic_tap_log` + the two serve-path call sites.
+  Tests: `PragmaticRoundTapTest` (7) + one HTTP-level test in `ProxyHttpTest`
+  that stubs the publisher and proves the *upstream* saldo moves a real wallet.
+- Suites: `frame` 50/50 · `demo` **376** with only the 6 pre-existing
+  `sqlalchemy` errors · `verify.py` 0. Decision `0063`.
+- Live: the loader, the rewrite and the field scale are proven on the deploy;
+  **one spin at the counters** is what is still owed by a human — it should post
+  a `type: "publisher"` round in `/api/history` and show in the tap log. Three
+  traps are recorded in 0063: a hand-replayed spin **freezes** the publisher's
+  demo session (and the same browser profile then stalls at the splash),
+  `Emulation.setUserAgentOverride` breaks the 0062 boot, and the live container
+  drops its test accounts on restart.
+
 ## DONE (2026-10-18 — the anytime-scorer market, decision 0061)
 
 - **"PLAYER X SCORES" SHIPS.** Item 4 of 0057 held this market back for want of
