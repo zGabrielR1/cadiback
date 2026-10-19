@@ -130,7 +130,8 @@ assumed.
   be steered there by this trick alone. Serving PG through a domain we control
   at that shape (or a proxy the client is pointed at) remains work. 0043's
   "boots through our origin" was true for the document, never for the money
-  calls; this is the correction.
+  calls; this is the correction. **Resolved by decision 0065**, which routes
+  the page's own money XHRs back through our origin — no domain needed.
 * **The tap polls; it does not observe the round.** Two spins closer than the
   settle window can be conflated, and a spin that moves nothing produces no
   round. The server-side token makes a future server tap possible, but this

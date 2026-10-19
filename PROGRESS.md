@@ -1,5 +1,45 @@
 # PROGRESS
 
+## DONE (2026-10-19 — PG Soft is production-ready without a custom domain, decision 0065)
+
+- **THE CORS WALL IS MET BY THE PAGE'S OWN TRANSPORT.** PG's api host
+  CORS-allows only `*.pg-demo.com`, so a document on our origin could not call
+  it (0064's Limit). The injected bridge now rewrites the client's own money
+  XHRs — any absolute `…/web-api/…` or `…/game-api/…` — onto
+  `location.origin`, keeping path and query. The request is then same-origin:
+  no preflight, no CORS, cookies intact. The server already forwards root
+  money paths to the api host the mint named, with the launcher's Origin and
+  `Authorization` (0057/0064). No domain, DNS or certificate step remains.
+- **VERIFIED LIVE, UNSTEERED.** `scripts/live_spin.py --game pg:fortune-tiger`
+  with **no `--host` and no `--steer`** (the document on `127.0.0.1`, an
+  origin PG refuses): `verifySession`, `GameName/Get`, `GameInfo/Get`,
+  `GameWallet/Get` and `/v4/Spin` all answered **200 on our origin**; the
+  wallet moved `500000 → 499880` over two settled rounds — a win
+  (`stake 200 / payout 380`) and a loss (`stake 300 / payout 0`). Before the
+  bridge change the same calls were `net::ERR_FAILED`.
+- **TWO DEFECTS FOUND BY THE LIVE RUN, BOTH FIXED.** `b6189ca`'s routing
+  helpers had been inserted on top of `pg_proxy.allowed_host`'s `def` line,
+  leaving its body unreachable under `routing()`; the minted-host allowlist
+  `_serve_publisher_root` depends on was gone, and is restored. And a
+  legitimate trailing feature win (`stake 0, payout N`) hit
+  `place_bet`'s positive-stake rule and answered **500**; new
+  `Books.settle_casino_payout` pays the payout alone against the game's
+  revenue account, so the pair still books exactly `stake - total_payout`.
+- **THE VERCEL FRONT DOOR FORWARDS THE SAME PATHS.** `web/next.config.js`
+  (server mode) rewrites root `/web-api/*`, `/game-api/*` and `/<gi>` to the
+  backend, so a PG launch from the Vercel storefront takes the identical
+  path. The Render single-container deploy needs no config at all.
+- Surface: `demo/game_proxy.py` (`pgSameOrigin` + both transport hooks),
+  `demo/pg_proxy.py` (`allowed_host` restored), `demo/server.py`
+  (`settle_rgs_round` stake-less payout), `frame/wallet/books.py`
+  (`settle_casino_payout`), `web/next.config.js`. Tests:
+  `PgSoftTest.test_the_bridge_reroutes_pg_money_calls_onto_our_origin`,
+  `ProxyHttpTest.test_a_pg_money_call_rides_our_origin_to_the_minted_api_host`,
+  `SocketRoundTest.test_a_trailing_feature_win_is_paid_without_a_stake`.
+- Suites: `frame` 50/50 · `demo` 387/387 · `verify.py` 0 problems · frontend
+  build green. Decision `0065`.
+
+
 ## DONE (2026-10-19 — Asaas Pix is live on production, decision 0045)
 
 - **THE PRODUCTION RAIL IS CONFIGURED — WITHOUT COMMITTING A SECRET.**

@@ -24,14 +24,16 @@ sees our rewrite.
   0064 — **live-verified**, including a partial win) · Pragmatic (saldo
   movement, built, deployed and **live-verified**). Evolution never reaches
   us (launcher 502 from this host).
-- Suites: `frame` 50/50 · `demo` 382/382 · `verify.py` 0 problems.
+- Suites: `frame` 50/50 · `demo` 387/387 · `verify.py` 0 problems.
 - OPEN: a Pragmatic free-spins feature (a winning spin is verified; 0063), and
   the first **real Pix deposit in production** (the rail is configured, the
   customer and webhook are provisioned — 2026-10-19 — so only a paid R$5,00
-  charge remains to close the loop). PG Soft in production needs its money
-  calls routed same-origin (0064): the publisher's api host only CORS-allows
-  `*.pg-demo.com` origins, so a document on `cadiback.onrender.com` cannot
-  reach it from the browser.
+  charge remains to close the loop). **PG Soft production routing is DONE
+  (0065):** the bridge rewrites the client's money XHRs (`/web-api/…`,
+  `/game-api/…`) onto the document's own origin, so the publisher's CORS wall
+  is never met — no custom domain needed. Verified live with no `--host` and
+  no `--steer`: every money call 200 on our origin, two rounds settled, one a
+  win. The Vercel front door rewrites the same root paths.
 
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the

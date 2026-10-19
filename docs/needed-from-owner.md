@@ -42,16 +42,27 @@ anyway is harmless). Runbook: `docs/crypto.md`.
 If you ever rotate the key or secret, just replace the two lines in
 `.env.crypto` and push.
 
-## 3. PG Soft in production — one domain to make it playable
+## 3. PG Soft in production — nothing needed (fixed in code)
 
-PG's client only boots money calls when the document's host is a name whose
-`api.<registrable-domain>` we also own. The default `cadiback.onrender.com`
-origin cannot satisfy that (its registrable domain is `onrender.com`, which we
-do not control), so in production PG currently boots its document but its
-money calls are blocked by CORS.
+PG's client only accepts money calls when they reach a document on the same
+origin: its api host CORS-allows `*.pg-demo.com` and nothing else. That used
+to make a custom domain the only way in. It no longer does.
 
-To make PG playable on the live site, point **two hosts of a domain you own**
-at this Render service and tell the app about them:
+The injected bridge now rewrites PG's own money XHRs (`/web-api/…`,
+`/game-api/…`) onto the document's own origin, and our server forwards them to
+the api host the mint named. That is same-origin from the browser's point of
+view, so there is no preflight and no CORS — on `cadiback.onrender.com` and on
+the Vercel storefront, with no DNS work. Verified live with no steering: every
+money call 200, rounds settle on our books, including wins.
+
+You do **not** need to do anything. A custom domain remains supported and
+optional: if you ever want `pg.<your-domain>` and `api.<your-domain>`, follow
+the steps below and set `PG_PUBLIC_HOST=pg.<your-domain>`
+(`PG_AO_HOST=api.<your-domain>` is optional) — `/api/health` will then report
+`pg_soft.routing.production_ready: true`.
+
+<details>
+<summary>Optional custom-domain steps (no longer required)</summary>
 
 1. In your DNS, create two records pointing at `cadiback.onrender.com`
    (CNAME is fine):
@@ -65,13 +76,9 @@ at this Render service and tell the app about them:
    - `PG_PUBLIC_HOST=pg.<your-domain>`
    - `PG_AO_HOST=api.<your-domain>`   (optional: derived as `api.<domain>`
      when omitted)
-4. Redeploy. `/api/health` will then report
-   `pg_soft.routing.production_ready: true`, and PG launches from
-   `https://pg.<your-domain>` with its money calls same-origin to
-   `https://api.<your-domain>`.
+4. Redeploy.
 
-Until then, PG Soft stays a demo-only title on the live site (the document
-boots, the wallet bridge does not). No code change is needed beyond the above.
+</details>
 
 ## 4. Nothing else
 

@@ -4051,8 +4051,18 @@ class Demo:
             if any(p.key.startswith(key) for p in self.books.postings):
                 return {"settled": False, "replayed": True,
                         **self._wallet_view(player_id)}
-            self.books.place_bet(f"{key}:bet", player_id, stake, "2.00")
-            self.books.settle_casino(f"{key}:win", player_id, stake, win)
+            if stake:
+                self.books.place_bet(f"{key}:bet", player_id, stake, "2.00")
+                self.books.settle_casino(f"{key}:win", player_id, stake, win)
+            elif win:
+                # A trailing feature win: the round's own stake was booked
+                # when it opened, so this is a payout-only posting (decision
+                # 0065). Charging a second stake would take money the player
+                # never put down.
+                self.books.settle_casino_payout(f"{key}:win", player_id, win)
+            else:
+                return {"settled": False, "round_id": round_id,
+                        **self._wallet_view(player_id)}
             self.books.assert_balanced()
             self._record_wager(player_id, stake, f"rgs:{round_id}")
         self._maybe_convert(player_id, f"rgs:{round_id}")

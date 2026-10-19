@@ -4667,6 +4667,24 @@ class SocketRoundTest(unittest.TestCase):
         self.assertEqual(self.demo.books.available(self.player), 9900)
         self.demo.books.assert_balanced()
 
+    def test_a_trailing_feature_win_is_paid_without_a_stake(self):
+        """A respin/cascade pays after the round closed: the tap reports the
+        payout with no new stake. The books must pay it rather than refuse it
+        (a 500, seen live) or charge a stake nobody placed."""
+        self.demo.wallet_round({"token": self.token, "round_id": "ws-feature",
+                                "stake_minor": 0, "payout_minor": 300})
+        self.assertEqual(self.demo.books.available(self.player), 10300)
+        self.demo.books.assert_balanced()
+        rows = [r for r in self.demo.history(self.player)
+                if r.get("type") == "publisher"]
+        self.assertEqual(rows[0]["stake_minor"], 0)
+        self.assertEqual(rows[0]["payout_minor"], 300)
+        again = self.demo.wallet_round({"token": self.token,
+                                        "round_id": "ws-feature",
+                                        "stake_minor": 0, "payout_minor": 300})
+        self.assertTrue(again.get("replayed"))
+        self.assertEqual(self.demo.books.available(self.player), 10300)
+
     def test_a_bad_token_or_amount_is_refused(self):
         with self.assertRaises(KeyError):
             self.demo.wallet_round({"token": "nope", "round_id": "x",
@@ -5479,6 +5497,35 @@ class ProxyHttpTest(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertEqual(self.calls, [])
 
+    def test_a_pg_money_call_rides_our_origin_to_the_minted_api_host(self):
+        """The bridge routes PG's money XHRs through the document's own origin
+        (decision 0065), so the publisher's CORS wall is never met: the server
+        holds the session cookies and forwards to the api host the mint named,
+        with the launcher's own Origin."""
+        session = pg_proxy.Session(
+            "s-http", "126", "ot",
+            "https://m.pg-demo.com/126/index.html?ot=ot",
+            "m.pg-demo.com", "static.pg-demo.com", ("api.f26xzzc7c.com",))
+        pg_proxy.bind(session)
+        self.addCleanup(pg_proxy.forget, "s-http")
+        self.answer = (200, {"Content-Type": "application/json"},
+                       b'{"dt": {"cb": 100000.0}}')
+        cookies = ("proxy_host=m.pg-demo.com; proxy_provider=pg_soft; "
+                   "proxy_game=pg:fortune-tiger; pg_session=s-http")
+        status, _headers, body = self._call(
+            "/web-api/auth/session/v2/verifySession",
+            {"Cookie": cookies, "Origin": self.base,
+             "Content-Type": "application/x-www-form-urlencoded"},
+            method="POST")
+        self.assertEqual(status, 200)
+        self.assertIn(b'"cb"', body)
+        call = self.calls[-1]
+        self.assertEqual(call["method"], "POST")
+        self.assertTrue(call["url"].startswith("https://api.f26xzzc7c.com/"),
+                        call["url"])
+        self.assertEqual(call["headers"].get("Origin"),
+                         pg_proxy.LAUNCHER_ORIGIN)
+
     def test_a_declared_charset_is_not_declared_twice(self):
         """`text/javascript; charset=utf-8; charset=utf-8` is what a publisher
         that declares its own charset used to get back from us."""
@@ -5754,6 +5801,16 @@ class PgSoftTest(unittest.TestCase):
             view).decode()
         self.assertNotIn("pg_gi", pp)
         self.assertNotIn("bet_url", pp)
+
+    def test_the_bridge_reroutes_pg_money_calls_onto_our_origin(self):
+        """PG's api host refuses a document on our origin (no CORS header),
+        so the page's own transport is what moves: an absolute /web-api or
+        /game-api URL becomes this origin's path, which the server forwards
+        (decision 0065). No domain, no preflight, no CORS."""
+        script = game_proxy.bridge_script().decode("utf-8")
+        self.assertIn("function pgSameOrigin", script)
+        self.assertIn("(?:web-api|game-api)", script)
+        self.assertIn("location.origin + found[1]", script)
 
     def test_the_money_endpoints_are_named_where_they_were_measured(self):
         """The paths are written down because they were measured, not guessed.

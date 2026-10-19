@@ -643,7 +643,15 @@ def routing() -> dict:
         "api_host": api_host() or None,
         "production_ready": bool(public_host() and api_host()),
     }
-    """Is `host` one this process has actually minted a session for?"""
+
+
+def allowed_host(host: str) -> bool:
+    """Is `host` one this process has actually minted a session for?
+
+    PG mints its hosts per session, so no suffix rule covers them and no
+    static list survives a week. A host is proxyable because *we* asked PG
+    for it and bound the exact string in the answer (decision 0040).
+    """
     with _LOCK:
         now = time.time()
         for session in _SESSIONS.values():

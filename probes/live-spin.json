@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-10-19T12:47:46.681Z",
-  "url": "https://api.pg-demo.com:61053/126/?ot=ca7094186b309ee149c55c8822e7ecf2&l=pt&btt=2&__hv=2fMEYCIQD1jGDV5jgvTbgT5u8MDwoezH7yzPaTexoi4cXPf5j6owIhAMs6EOjw2yf1G9U7QYRGBCTO4WERX6k6ggJM7OPVD%2B%2Fe&__sv=010501HSlD3JHtvMhHjGea7u3RdvQg6W6L5QG99dNPORhxcGY&ao=11lat%3Dar-opxz%3Dnzx%3A61053&or=21novodx%3Dkb-yzhj%3Dxjh&token=0da1bc1a9ea14aabbe68b8aa367198ee&pg=6de3e16b66e84641",
+  "captured_at": "2026-10-19T20:13:55.424Z",
+  "url": "http://127.0.0.1:56860/126/?ot=ca7094186b309ee149c55c8822e7ecf2&l=pt&btt=2&__hv=2fMEYCIQD1jGDV5jgvTbgT5u8MDwoezH7yzPaTexoi4cXPf5j6owIhAMs6EOjw2yf1G9U7QYRGBCTO4WERX6k6ggJM7OPVD%2B%2Fe&__sv=010501HSlD3JHtvMhHjGea7u3RdvQg6W6L5QG99dNPORhxcGY&ao=22wle%3Db26tvvy7y%3Dyki&or=17jkrkzt%3Dgx-uvdf%3Dtfd&token=050c5d960aeb4b81949d5c14a048635e&pg=e5166eaaca4e4ce4",
   "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "headed": false,
   "canvas": {
@@ -19,14 +19,12 @@
     "tapped 640,717",
     "tapped only #3",
     "tapped 640,717",
-    "tapped only #4",
-    "tapped 640,717",
-    "tapped only #5"
+    "tapped only #4"
   ],
   "key": "Space",
-  "presses": 5,
-  "eval_result": "{\"verifySeen\":0,\"spinSeen\":4,\"harvested\":0,\"harvestError\":null,\"watch\":4,\"polls\":31,\"pollError\":null,\"settled\":3,\"stakeFallback\":0}",
-  "requests_total": 337,
+  "presses": 4,
+  "eval_result": "{\"verifySeen\":0,\"spinSeen\":3,\"harvested\":0,\"harvestError\":null,\"watch\":3,\"polls\":22,\"pollError\":null,\"settled\":2,\"stakeFallback\":1}",
+  "requests_total": 326,
   "console": [
     {
       "level": "log",
@@ -36,240 +34,183 @@
   "exceptions": [],
   "hud": [
     "Fortune Tiger - Modo de Teste",
-    "09:47:45",
-    "Saldo: R$ 4992.80"
+    "17:13:54",
+    "Saldo: R$ 4998.80"
   ],
   "money_requests": [
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/wallet/status?token=0da1bc1a9ea14aabbe68b8aa367198ee",
+      "url": "http://127.0.0.1:56860/api/wallet/status?token=050c5d960aeb4b81949d5c14a048635e",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/web-api/auth/session/v2/verifySession",
+      "url": "http://127.0.0.1:56860/web-api/auth/session/v2/verifySession",
       "status": 200,
       "postData": "btt=2&vc=2&pf=1&l=pt&gi=126&tk=null&otk=ca7094186b309ee149c55c8822e7ecf2"
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/web-api/game-proxy/v2/GameName/Get",
+      "url": "http://127.0.0.1:56860/web-api/game-proxy/v2/GameName/Get",
       "status": 200,
-      "postData": "lang=pt&atk=68F7B26B-DAE4-456C-88E7-D38E5DFFECB7&btt=2&pf=1&gid=126"
+      "postData": "lang=pt&atk=473A695E-12E4-4801-B923-F601FFD7A46D&btt=2&pf=1&gid=126"
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/game-api/fortune-tiger/v4/GameInfo/Get",
+      "url": "http://127.0.0.1:56860/game-api/fortune-tiger/v4/GameInfo/Get",
       "status": 200,
-      "postData": "B46E8B7C\u0018®268-8EF\u0002FDDC--E48\u0010F375-6E\nB5\u0001A7D$"
+      "postData": "-960F8-\u0002\u0010D\u00181A733-D\u0001\n215-F9$A6E1440E42F674B"
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds",
+      "url": "http://127.0.0.1:56860/web-api/game-proxy/v2/Resources/GetByResourcesTypeIds",
       "status": 200,
-      "postData": "du=https%3A%2F%2Fapi.pg-demo.com%3A61053&rtids=7&otk=ca7094186b309ee149c55c8822e7ecf2&btt=2&wk=0_C&atk=68F7B26B-DAE4-456C-88E7-D38E5DFFECB7&pf=1&gid=126"
+      "postData": "du=http%3A%2F%2F127.0.0.1%3A56860&rtids=7&otk=ca7094186b309ee149c55c8822e7ecf2&btt=2&wk=0_C&atk=473A695E-12E4-4801-B923-F601FFD7A46D&pf=1&gid=126"
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/web-api/game-proxy/v2/GameWallet/Get",
+      "url": "http://127.0.0.1:56860/web-api/game-proxy/v2/GameWallet/Get",
       "status": 200,
-      "postData": "isagw=true&btt=2&wk=0_C&atk=68F7B26B-DAE4-456C-88E7-D38E5DFFECB7&pf=1&gid=126"
+      "postData": "isagw=true&btt=2&wk=0_C&atk=473A695E-12E4-4801-B923-F601FFD7A46D&pf=1&gid=126"
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/game-api/fortune-tiger/v4/Spin",
+      "url": "http://127.0.0.1:56860/game-api/fortune-tiger/v4/Spin",
       "status": 200,
-      "postData": "?D0273$6\u00014_5E-\u0001373B3C7°E-\nb6DCBFE*-DÓ53©6E8\u0002\u00033\u0010-8C\u0002AF\u00188\u0001\u0001804FB3"
+      "postData": "ÓDE746605¡9D3-\n433A2\u0001$\u00024\u00012\u0003--\u0001\u001040\u00180AE_3°1?3F©\u000278\u0001bF33F9B1130-6*C"
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "POST",
-      "url": "https://api.pg-demo.com:61053/game-api/fortune-tiger/v4/Spin",
-      "status": 200,
-      "postData": "8$F0\u00013F3\u0002ïD768\u001321375\u0018E6F1\u00015\u0002CC743*26A\u00034DE17-7Eb4\n©Ó\u00010?°--3C9E_7B8283DB836\u0010-7148B38"
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/api/wallet/round",
+      "url": "http://127.0.0.1:56860/game-api/fortune-tiger/v4/Spin",
       "status": 200,
-      "postData": "{\"token\":\"0da1bc1a9ea14aabbe68b8aa367198ee\",\"round_id\":\"ws-1-1792414038645\",\"stake_minor\":120,\"payout_minor\":0}"
+      "postData": "3-3-39993æ72$15E8\u00031_F1F\u0018A330D0E1\n4\u00024-°-\u0001F68\u00132*\u0002264D0A13B266\u0001C\u001038127020723b41©?\u000167Ó"
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/game-api/fortune-tiger/v4/Spin",
+      "url": "http://127.0.0.1:56860/api/wallet/round",
       "status": 200,
-      "postData": "C3E$ÓE\u00037E¶\u000187FCD534-7A3353_02©88b-\u0018DB2*47F10833\n6?1\u00022C1380D6F-\u000268-\u0001°4\u0010B\u0001B86\u0013E13827"
+      "postData": "{\"token\":\"050c5d960aeb4b81949d5c14a048635e\",\"round_id\":\"ws-1-1792440810784\",\"stake_minor\":200,\"payout_minor\":380}"
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/api/wallet/round",
+      "url": "http://127.0.0.1:56860/game-api/fortune-tiger/v4/Spin",
       "status": 200,
-      "postData": "{\"token\":\"0da1bc1a9ea14aabbe68b8aa367198ee\",\"round_id\":\"ws-2-1792414045180\",\"stake_minor\":300,\"payout_minor\":0}"
+      "postData": "D80663bF-Ô*633-7412\u0013©2\u00186\u00011\u0010512D3\u00020335E261E4914\u0003\n_9Ó43-4A12052$?71\u0001\u0002\u000183B49FCF3°A0-7"
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "https://api.pg-demo.com:61053/game-api/fortune-tiger/v4/Spin",
+      "url": "http://127.0.0.1:56860/api/wallet/round",
       "status": 200,
-      "postData": "243-9\u0002EC8\u00101*Ó83183_4D3E$3395E8-63?8C\u00014D\u0013B\u0010\u0001F45°\u000320E\u0001C-BD6©BF7A\u00022\u0018F2823638\n6-37b713"
+      "postData": "{\"token\":\"050c5d960aeb4b81949d5c14a048635e\",\"round_id\":\"ws-2-1792440817483\",\"stake_minor\":300,\"payout_minor\":0}"
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "POST",
-      "url": "https://api.pg-demo.com:61053/api/wallet/round",
-      "status": 200,
-      "postData": "{\"token\":\"0da1bc1a9ea14aabbe68b8aa367198ee\",\"round_id\":\"ws-3-1792414048467\",\"stake_minor\":300,\"payout_minor\":0}"
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     },
     {
       "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "url": "https://api.pg-demo.com:61053/api/pg/wallet",
+      "url": "http://127.0.0.1:56860/api/pg/wallet",
       "status": 200
     }
   ],

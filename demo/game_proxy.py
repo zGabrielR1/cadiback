@@ -1396,10 +1396,37 @@ _BRIDGE = r"""
     }).catch(function () {});
   }
 
+  // PG's api host only CORS-allows `*.pg-demo.com`, so a document served from
+  // our own origin cannot call it directly: no `access-control-allow-origin`
+  // comes back and the handshake dies at the splash (measured, decision 0064).
+  // The money calls are the page's own XHRs, so route them back through the
+  // origin the document came from. Our server holds the session cookies and
+  // forwards to the api host the mint named, with the launcher's Origin
+  // (decision 0065); same-origin means no preflight and no CORS — on any
+  // deploy, with no domain to own.
+  function pgSameOrigin(url) {
+    if (typeof url !== "string") return url;
+    var found = /^(?:https?:)?\/\/[^\/?#]+(\/(?:web-api|game-api)\/[^#]*)$/
+      .exec(url);
+    return found ? location.origin + found[1] : url;
+  }
+
   var _pgFetch = window.fetch;
   window.fetch = function (input, init) {
     var url = typeof input === "string" ? input : (input && input.url) || "";
-    var promise = _pgFetch.apply(this, arguments);
+    var args = arguments;
+    if (cfg.game_id && cfg.game_id.indexOf("pg:") === 0) {
+      var routed = pgSameOrigin(url);
+      if (routed !== url) {
+        try {
+          args = typeof input === "string"
+            ? [routed, init]
+            : [new Request(routed, input), init];
+          url = routed;
+        } catch (e) { args = arguments; }
+      }
+    }
+    var promise = _pgFetch.apply(this, args);
     if (cfg.game_id && cfg.game_id.indexOf("pg:") === 0) {
       if (url.indexOf("verifySession") >= 0) {
         promise.then(function (r) {
@@ -1420,6 +1447,13 @@ _BRIDGE = r"""
     var _pgOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url) {
       this.__pgUrl = url;
+      if (cfg.game_id && cfg.game_id.indexOf("pg:") === 0) {
+        var routed = pgSameOrigin(url);
+        if (routed !== url) {
+          var rest = Array.prototype.slice.call(arguments, 2);
+          return _pgOpen.apply(this, [method, routed].concat(rest));
+        }
+      }
       return _pgOpen.apply(this, arguments);
     };
     var _pgSend = XMLHttpRequest.prototype.send;

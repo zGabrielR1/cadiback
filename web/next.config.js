@@ -31,6 +31,14 @@ const nextConfig = {
       api,
       { source: "/g/:path*", destination: BACKEND_URL + "/g/:path*" },
       { source: "/rgs/:path*", destination: BACKEND_URL + "/rgs/:path*" },
+      // PG Soft serves its game document at a root-level `/<gi>/` path and its
+      // money at root `/web-api/…` and `/game-api/…`. The injected bridge
+      // routes those money calls same-origin (decision 0065), so the frontend
+      // host must forward them to the backend or the game 404s at the splash.
+      { source: "/web-api/:path*", destination: BACKEND_URL + "/web-api/:path*" },
+      { source: "/game-api/:path*", destination: BACKEND_URL + "/game-api/:path*" },
+      { source: "/:gi(\\d+)", destination: BACKEND_URL + "/:gi" },
+      { source: "/:gi(\\d+)/:path*", destination: BACKEND_URL + "/:gi/:path*" },
     ];
   },
 };

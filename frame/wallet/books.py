@@ -339,6 +339,34 @@ class Books:
              "bonus_part": bonus_part},
         )
 
+    def settle_casino_payout(
+        self,
+        key: str,
+        player: str,
+        payout: int,
+        bonus_part: int = 0,
+    ) -> Posting:
+        """Pay a settled round that carries no stake of its own.
+
+        A publisher feature that pays after the round has closed (a respin, a
+        cascade) reports a payout with no new stake: the stake was already
+        booked with the round it belongs to. Charging a second stake would
+        take money the player never put down, so only the payout posts, out of
+        the game's own revenue account. Across the round pair the books still
+        show exactly ``stake - total_payout``.
+        """
+        if payout <= 0:
+            raise WalletError("payout must be positive")
+        if bonus_part:
+            raise WalletError("a stake-less payout has no bonus share")
+        return self.post(
+            key,
+            "bet_settled_casino",
+            [(PLAYER_BALANCE, payout), (GGR_REVENUE, -payout)],
+            {"player": player, "stake": 0, "payout": payout,
+             "bonus_part": 0},
+        )
+
     def settle_bet_push(self, key: str, player: str, stake: int, bonus_part: int = 0) -> Posting:
         cash_part = stake - bonus_part
         legs = [(BET_STAKED, -stake)]
