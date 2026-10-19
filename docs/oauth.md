@@ -79,13 +79,40 @@ so the module reads it there and does no JWT crypto.
 
 1. In the Authgear portal create a **Traditional Web Application**; copy its
    client id and secret.
-2. Add the redirect URIs it is allowed to return to: your local
-   `http://127.0.0.1:8765/api/auth/callback` and the deploy's
-   `https://<host>/api/auth/callback`.
+2. Add **every** redirect URI it is allowed to return to. This is an exact
+   string match, path included, no wildcards:
+   - local: `http://127.0.0.1:8765/api/auth/callback`
+   - the Render host: `https://cadiback.onrender.com/api/auth/callback`
+   - the Vercel storefront (when it proxies `/api` to Render):
+     `https://cadiback-web.vercel.app/api/auth/callback`
+   A custom domain needs its own entry, `https://<your-domain>/api/auth/callback`.
 3. Enable the **Google** and **Facebook** identities; each provider's own
    Google/Facebook client id and secret go there, not in this repository.
 4. Put the endpoint, client id and secret into `.env.authgear`; deploy with
    `python scripts/render_deploy.py --yes`.
+
+## Troubleshooting: "redirect URI is not allowed"
+
+Authgear returns this **before** Google or Facebook is contacted, and the
+browser sees `Invalid OAuth authorization request: error: invalid_request /
+redirect URI is not allowed`. It is not a client-id or PKCE problem: the exact
+callback the app sent is missing from the application's authorized list.
+
+1. Ask the live deploy what it sends:
+   `curl -s https://cadiback.onrender.com/api/health | jq .oauth.redirect_uri`
+   (or the same on the storefront host). `/api/health` computes it from the
+   request's public origin, so it shows the value for the host you called.
+2. Paste that exact string into Authgear → Applications → your Traditional Web
+   Application → **Authorized Redirect URIs**. Add both hosts if both are used;
+   the callback keeps the browser on the host it started from, so the session
+   lands on the right origin.
+3. Retry the button. If a reverse proxy rewrites the host, either register the
+   forwarded host or pin `AUTHGEAR_REDIRECT_URI` to the public callback.
+
+The app cannot fix this from code: Authgear's application settings are the
+allow-list, and changing them needs portal access (or its Management API key,
+which is not part of the OAuth client credentials).
+
 
 ## What is stored
 

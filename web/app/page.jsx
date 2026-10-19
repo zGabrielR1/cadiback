@@ -33,8 +33,8 @@ import WheelPanel from "./components/WheelPanel";
 export default function Page() {
   const session = useSession();
   const {
-    player, setPlayer, profile,
-    history, health, asaasAvailable,
+    player, setPlayer, profile, setProfile,
+    history, setHistory, health, asaasAvailable,
     cryptoAvailable, cryptoCoins, serverConfig,
     refreshError, busy, setBusy, refresh,
   } = session;
@@ -89,6 +89,10 @@ export default function Page() {
   // is single-use and a retry must mint a fresh one.
   const [turnstileToken, setTurnstileToken] = useState("");
   const [authAttempt, setAuthAttempt] = useState(0);
+  // "Lembrar de mim" only affects the login path: checked persists the
+  // player id in localStorage, unchecked keeps it in sessionStorage so it
+  // dies with the tab. Signup and social completion keep the default.
+  const [rememberMe, setRememberMe] = useState(true);
   // The in-flight social sign-in: the one-time token from the OAuth callback
   // plus the name/email the provider vouched for, shown while the player
   // supplies the CPF that keys the wallet. Null on every password path.
@@ -344,6 +348,20 @@ export default function Page() {
 
   const openAccount = () => (player ? go("account") : setAcctOpen(true));
 
+  const logout = () => {
+    setPlayerSession(null);
+    setPlayer(null);
+    setProfile(null);
+    setHistory(null);
+    setPendingSocial(null);
+    setAuthErrors({});
+    setAuthMode("login");
+    setCashOpen(false);
+    setAcctOpen(false);
+    setView("casino");
+    window.scrollTo(0, 0);
+  };
+
   const onQuery = (value) => {
     setQuery(value);
     if (view !== "casino") go("casino");
@@ -579,7 +597,10 @@ export default function Page() {
           ...turnstile,
         });
       }
-      setPlayerSession({ player_id: profileRow.player_id });
+      setPlayerSession(
+        { player_id: profileRow.player_id },
+        { remember: authMode === "login" ? rememberMe : true },
+      );
       setPlayer(profileRow.player_id);
       setAuthErrors({});
       setPendingSocial(null);
@@ -977,6 +998,7 @@ export default function Page() {
             history={history}
             refreshError={refreshError}
             onChanged={refresh}
+            onLogout={logout}
           />
         ) : null}
 
@@ -1064,6 +1086,8 @@ export default function Page() {
           serverConfig.oauth_enabled ? serverConfig.oauth_providers || [] : []
         }
         social={pendingSocial ? { ...pendingSocial.suggested } : null}
+        remember={rememberMe}
+        onRemember={setRememberMe}
         onForm={(next) => {
           setForm(next);
           setAuthErrors({});

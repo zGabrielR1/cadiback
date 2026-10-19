@@ -43,6 +43,8 @@ required += [os.path.join(p, n) for p, n in [
     ("foundry/oauth", "__init__.py"), ("foundry/oauth", "config.py"),
     ("foundry/oauth", "identity.py"), ("foundry/oauth", "client.py"),
     ("foundry/oauth", "transport.py"),
+    ("foundry/auth", "__init__.py"), ("foundry/auth", "password.py"),
+    ("foundry/auth", "session.py"), ("foundry/auth", "documents.py"),
     ("demo", "game_proxy.py"),
     ("demo", "index.html"), ("frame", "selftest.py"),
     ("frame/tests", "test_frame.py"), ("demo", "test_demo.py"),
@@ -54,6 +56,7 @@ required += [os.path.join(p, n) for p, n in [
     ("web/app", "components/CasinoHome.jsx"),
     ("web/app", "components/SportsHome.jsx"),
     ("web/app", "components/AdminPanel.jsx"),
+    ("web/app", "components/OAuthIcon.jsx"),
     ("web", "next.config.js"),
     ("web", "package.json"),
 ]]

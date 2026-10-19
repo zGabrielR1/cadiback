@@ -95,6 +95,7 @@ from foundry.mail import MailError, Message, resolve_mailer, wrap_html
 from foundry.turnstile import FIELD_NAME, TurnstileError, resolve_verifier
 from foundry.oauth import (Identity, OAuthError, code_challenge, new_state,
                            new_verifier, resolve_oauth)
+from foundry.auth import resolve_password_hasher
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
@@ -589,12 +590,17 @@ SETTINGS_DEFAULTS = {
 
 class Demo:
     def __init__(self, data_dir: str = DATA, mailer=None, verifier=None,
-                 db=None, oauth=None) -> None:
+                 db=None, oauth=None, password_hasher=None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
+        # One hasher for both credential stores. New hashes are PBKDF2; the
+        # old salted-SHA256 records keep verifying and are upgraded on the
+        # next successful login (foundry.auth).
+        self.passwords = password_hasher or resolve_password_hasher()
         # painel administrativo: credentials + bearer sessions (auth.py)
-        self.users = UserStore(os.path.join(data_dir, "users.json"))
+        self.users = UserStore(os.path.join(data_dir, "users.json"),
+                               hasher=self.passwords)
         self.session_path = os.path.join(data_dir, "sessions.json")
         self.sessions = SessionBook()
         self._load_sessions()
@@ -885,17 +891,23 @@ class Demo:
         """True when the social buttons should be offered at all."""
         return bool(getattr(self.oauth, "enabled", False))
 
-    def oauth_status(self) -> dict:
+    def oauth_status(self, origin: str = "") -> dict:
         """Read-only view for /api/health and /api/config. The client secret
-        is never surfaced; the endpoints are public knowledge."""
+        is never surfaced; the endpoints are public knowledge. When the
+        caller passes the request origin, the redirect URI the provider must
+        whitelist is included too: a mismatch there is the single most common
+        cause of Authgear's "redirect URI is not allowed"."""
         providers = [{"id": p.id, "label": p.shown_label()}
                      for p in getattr(self.oauth, "providers", ())]
-        return {
+        status = {
             "provider": getattr(self.oauth, "name", "none"),
             "enabled": self.oauth_enabled(),
             "configured": self.oauth_enabled(),
             "providers": providers,
         }
+        if origin:
+            status["redirect_uri"] = self._oauth_redirect_uri(origin)
+        return status
 
     def _oauth_redirect_uri(self, origin: str) -> str:
         """The redirect URI Authgear must whitelist. It is computed from the
@@ -1056,8 +1068,19 @@ class Demo:
 
     @staticmethod
     def _player_hash(password: str, salt: str) -> str:
+        """The pre-foundry record: salted SHA-256, kept only to verify old rows."""
         return hashlib.sha256(
             (salt + "\x00" + password).encode("utf-8")).hexdigest()
+
+    def _verify_player_password(self, password: str, record: dict) -> bool:
+        """Verify a PBKDF2 record, or the old salted SHA-256 one."""
+        stored = str(record.get("pw_hash") or "")
+        if stored.startswith("pbkdf2_sha256$"):
+            return self.passwords.verify(password, stored)
+        salt = str(record.get("pw_salt") or "")
+        if not stored or not salt:
+            return False
+        return hmac.compare_digest(self._player_hash(password, salt), stored)
 
     def upsert_player(self, payload: dict) -> dict:
         name = (payload.get("name") or "").strip()
@@ -1094,10 +1117,9 @@ class Demo:
         if payload.get("email"):
             row["email"] = validate_email(payload.get("email") or "")
         if payload.get("password"):
-            salt = secrets.token_hex(16)
-            row["pw_salt"] = salt
-            row["pw_hash"] = self._player_hash(
-                validate_player_password(payload.get("password")), salt)
+            row.pop("pw_salt", None)
+            row["pw_hash"] = self.passwords.hash(
+                validate_player_password(payload.get("password")))
         data[player_id] = row
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
@@ -1165,7 +1187,6 @@ class Demo:
                 raise ValueError("este email já tem conta — entre com sua senha")
             if str(other.get("username") or "").lower() == username:
                 raise ValueError("este nome de usuário já está em uso")
-        salt = secrets.token_hex(16)
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         data[player_id] = {
             "player_id": player_id,
@@ -1173,8 +1194,7 @@ class Demo:
             "username": username,
             "email": email,
             "cpf_masked": "***" + cpf[-4:],
-            "pw_salt": salt,
-            "pw_hash": self._player_hash(password, salt),
+            "pw_hash": self.passwords.hash(password),
             "pix_kind": pix.kind,
             "pix_masked": mask_pix_key(pix.raw),
             "pix_raw": pix.raw,  # sole payout destination for this wallet
@@ -1211,12 +1231,25 @@ class Demo:
         data = self.players.read_all()
         player_id = self._find_player(data, ident)
         record = data.get(player_id or "")
-        digest = self._player_hash(password, str((record or {}).get("pw_salt", ""))) \
-            if isinstance(record, dict) else self._player_hash(password, "0" * 32)
-        if not isinstance(record, dict) or not hmac.compare_digest(
-                digest, str(record.get("pw_hash") or "")):
+        if not isinstance(record, dict):
+            # Burn the same PBKDF2 work an existing account would do, then
+            # answer with the same message and delay.
+            self.passwords.hash(password)
             time.sleep(0.25)
             raise ValueError("usuário/email/CPF ou senha inválidos")
+        if not self._verify_player_password(password, record):
+            time.sleep(0.25)
+            raise ValueError("usuário/email/CPF ou senha inválidos")
+        if not str(record.get("pw_hash") or "").startswith("pbkdf2_sha256$"):
+            # A legacy row is upgraded the moment its owner proves the
+            # password; the plaintext never exists after this block.
+            upgraded = dict(record)
+            upgraded["pw_hash"] = self.passwords.hash(password)
+            upgraded.pop("pw_salt", None)
+            upgraded["updated_at"] = datetime.now(
+                timezone.utc).isoformat(timespec="seconds")
+            data[player_id] = upgraded
+            self.players.write_all(data)
         self.exclusions.assert_playable(player_id)
         if record.get("is_test") and \
                 not self.settings_view()["test_accounts_enabled"]:
@@ -4747,7 +4780,7 @@ class Handler(BaseHTTPRequestHandler):
                                             "coins": DEMO.crypto_coins()},
                                  "mail": DEMO.mail_status(),
                                  "turnstile": DEMO.turnstile_status(),
-                                 "oauth": DEMO.oauth_status(),
+                                 "oauth": DEMO.oauth_status(self._our_origin()),
                                  "config": DEMO.public_config()})
             elif parsed.path == "/api/webhooks/asaas":
                 # Asaas validates a webhook by reaching the URL; a GET that

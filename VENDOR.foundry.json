@@ -1,6 +1,10 @@
 {
   "files": {
-    "foundry/__init__.py": "97a0698ad7630077cee4037f9aa747ba58ee8c6ba2676c0d6f692251b3a830fe",
+    "foundry/__init__.py": "24e0f542c93a0b67f07d1f3795b8c22c61e59d7f13256e2737127facf8f8ab9f",
+    "foundry/auth/__init__.py": "6b9d6e6525ba4310b6be6327496e05c4375f1d351ae051062ed3cfc5923c7605",
+    "foundry/auth/documents.py": "12b59e02990af075bb1aebb46e2eaa6c9664585bca573712e3cc49af0fd57ec4",
+    "foundry/auth/password.py": "b3076e1e32ff41007406b414d46f5734e10b68759f2143b0e0333ac3d80fe7e5",
+    "foundry/auth/session.py": "55122fcb7e77aa889a0bc06f5105edf77ffa38d66a452a1413625322839ec440",
     "foundry/envfile.py": "9a2d8c96090c97035e5e31ca0b726b41b9a30060bf8a3dfecaf0f03fe9179d3d",
     "foundry/mail/__init__.py": "89bb8bee62468c08411893afd4030439dddcd6f13d82284f7d28869456888f23",
     "foundry/mail/mailer.py": "f9d4235a5a989eeb7cecf69e214fe342c8cfd0fd2a25d579a28b31ad6a161d12",
@@ -15,10 +19,14 @@
     "foundry/turnstile/__init__.py": "b3c7771893d1e0f4d58fd10f94ed56179c7cac789959641b53db938d09651255",
     "foundry/turnstile/transport.py": "39d84b1379cf94045778465fc7d0341b7bc978ac3b39b7fe5ea78c5dcf89848a",
     "foundry/turnstile/verification.py": "69f95fc892cd05142687d8718847edee6e911eeb893f0fa49ed53a9bf874bea4",
-    "foundry/turnstile/verifier.py": "b09a79786337914984959ccc954404ea39a3e32093d9e6138082a67b34163026"
+    "foundry/turnstile/verifier.py": "b09a79786337914984959ccc954404ea39a3e32093d9e6138082a67b34163026",
+    "templates/auth/README.md": "16a9702b41fb0aee596d7201b35400510de06e038323af904de0e2d2b39fdeea",
+    "templates/auth/env.example": "966ff41c0bf06d594f71a09e6370448cf1738bc4feddf37c2c70588dd17424b0",
+    "templates/auth/session.js": "2d70e44a83b5b9f64fee3ee10f776d65ec5095950523c8ca64134ff47748c43f"
   },
   "kit": "foundry",
   "modules": [
+    "auth",
     "envfile",
     "mail",
     "oauth",

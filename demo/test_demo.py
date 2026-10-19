@@ -8,6 +8,11 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+
+# The demo suite hashes many credentials; keep the PBKDF2 work factor low here.
+# foundry's own tests cover the real default, and production reads the env var
+# only when it is explicitly set.
+os.environ.setdefault("PASSWORD_PBKDF2_ITERATIONS", "1000")
 from fractions import Fraction
 from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer
@@ -2453,13 +2458,27 @@ class AuthTest(unittest.TestCase):
         with open(self.demo.users.path, "r", encoding="utf-8") as fh:
             raw = fh.read()
         record = json.loads(raw)["admin"]
-        self.assertEqual(len(record["hash"]), 64)   # sha256 hexdigest
+        self.assertTrue(record["hash"].startswith("pbkdf2_sha256$"))
         self.assertNotEqual(record["hash"], "admin")
         self.assertNotIn("password", record)        # plaintext never stored
         with self.assertRaises(AuthError):
             self.demo.users.authenticate("admin", "wrong-password")
         with self.assertRaises(AuthError):
             self.demo.users.authenticate("ghost", "admin")
+
+    def test_a_legacy_sha256_admin_row_upgrades_on_login(self):
+        from demo.auth import _hash as legacy_hash
+        salt = "cd" * 16
+        data = self.demo.users._read()
+        data["legacy"] = {"salt": salt, "hash": legacy_hash("segredo", salt),
+                          "role": "viewer", "created_at": "",
+                          "updated_at": ""}
+        self.demo.users._write(data)
+        self.assertEqual(self.demo.users.authenticate("legacy", "segredo"),
+                         "viewer")
+        upgraded = self.demo.users._read()["legacy"]
+        self.assertTrue(upgraded["hash"].startswith("pbkdf2_sha256$"))
+        self.assertNotIn("salt", upgraded)
 
     def test_login_session_lifecycle(self):
         out = self._login()
@@ -2598,11 +2617,26 @@ class PlayerAuthTest(unittest.TestCase):
         self.assertEqual(row["email"], "ana.souza@example.com")
         with open(self.demo.players.path, "r", encoding="utf-8") as fh:
             stored = json.load(fh)[row["player_id"]]
-        self.assertEqual(len(stored["pw_hash"]), 64)
+        self.assertTrue(stored["pw_hash"].startswith("pbkdf2_sha256$"))
         self.assertNotEqual(stored["pw_hash"], "ana1234")
         self.assertNotIn("password", stored)
         self.assertNotIn("pw_hash", row)
         self.assertNotIn("pw_salt", row)
+
+    def test_a_legacy_sha256_player_row_upgrades_on_login(self):
+        from demo.auth import _hash as legacy_hash
+        row = self.demo.register_player(self._payload())
+        data = self.demo.players.read_all()
+        salt = "ab" * 16
+        data[row["player_id"]]["pw_salt"] = salt
+        data[row["player_id"]]["pw_hash"] = legacy_hash("ana1234", salt)
+        self.demo.players.write_all(data)
+        out = self.demo.login_player({"identifier": "ana.souza",
+                                      "password": "ana1234"})
+        self.assertEqual(out["player_id"], row["player_id"])
+        upgraded = self.demo.players.read_all()[row["player_id"]]
+        self.assertTrue(upgraded["pw_hash"].startswith("pbkdf2_sha256$"))
+        self.assertNotIn("pw_salt", upgraded)
 
     def test_register_rejects_second_account_per_cpf_or_email(self):
         self.demo.register_player(self._payload())

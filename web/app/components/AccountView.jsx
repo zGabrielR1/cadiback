@@ -6,7 +6,7 @@ import { api, BRL } from "../../lib/api";
  * history (F1 extract from page.jsx). Exclusion calls live here and report
  * back through onChanged (the page refresh); history rendering is
  * untouched. */
-export default function AccountView({ profile, player, health, history, refreshError, onChanged }) {
+export default function AccountView({ profile, player, health, history, refreshError, onChanged, onLogout }) {
   const selfExclude = async () => {
     try {
       await api("POST", "/api/self-exclude", {
@@ -63,6 +63,14 @@ export default function AccountView({ profile, player, health, history, refreshE
           onClick={liftBlock}
         >
           Levantar Bloqueio
+        </button>
+        <button
+          className="ghost"
+          style={{ width: "auto", marginTop: 14, marginLeft: 8 }}
+          disabled={!player}
+          onClick={onLogout}
+        >
+          Sair da conta
         </button>
       </section>
       <section className="panel">

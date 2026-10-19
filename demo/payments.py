@@ -15,6 +15,8 @@ from dataclasses import dataclass
 
 from frame.core.ids import normalize
 from frame.wallet.books import DuplicatePosting
+from foundry.auth import (DocumentError, validate_cnpj as _validate_cnpj,
+                          validate_cpf as _validate_cpf)
 
 PIX_METHODS = ("pix", "ted", "debit", "prepaid")
 CRYPTO_METHODS = ("crypto", "bitcoin", "btc", "ethereum", "eth", "usdt", "usdc", "litecoin", "ltc")
@@ -41,31 +43,19 @@ def digits_only(value: str) -> str:
 
 
 def validate_cpf(cpf: str) -> str:
-    number = digits_only(cpf)
-    if len(number) != 11 or len(set(number)) == 1:
-        raise PaymentError("CPF must hold 11 digits")
-    first = sum(int(d) * w for d, w in zip(number[:9], range(10, 1, -1))) % 11
-    first = 0 if first < 2 else 11 - first
-    second = sum(int(d) * w for d, w in zip(number[:10], range(11, 1, -1))) % 11
-    second = 0 if second < 2 else 11 - second
-    if int(number[9]) != first or int(number[10]) != second:
-        raise PaymentError("CPF check digits do not match")
-    return number
+    """Normalise and check a CPF; the arithmetic lives in foundry.auth."""
+    try:
+        return _validate_cpf(cpf)
+    except DocumentError as exc:
+        raise PaymentError(str(exc)) from exc
 
 
 def validate_cnpj(cnpj: str) -> str:
-    number = digits_only(cnpj)
-    if len(number) != 14 or len(set(number)) == 1:
-        raise PaymentError("CNPJ must hold 14 digits")
-    weights1 = (5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2)
-    first = sum(int(d) * w for d, w in zip(number[:12], weights1)) % 11
-    first = 0 if first < 2 else 11 - first
-    weights2 = (6,) + weights1
-    second = sum(int(d) * w for d, w in zip(number[:13], weights2)) % 11
-    second = 0 if second < 2 else 11 - second
-    if int(number[12]) != first or int(number[13]) != second:
-        raise PaymentError("CNPJ check digits do not match")
-    return number
+    """Normalise and check a CNPJ; the arithmetic lives in foundry.auth."""
+    try:
+        return _validate_cnpj(cnpj)
+    except DocumentError as exc:
+        raise PaymentError(str(exc)) from exc
 
 
 @dataclass(frozen=True)

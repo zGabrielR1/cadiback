@@ -10,14 +10,33 @@ export const newDepositId = () =>
 /** Millis before an in-flight request is abandoned. */
 export const REQUEST_TIMEOUT_MS = 8000;
 
-/** Player session: {player_id} in localStorage. The player stays logged
- * in across reloads; a stored id the server no longer knows is dropped on
- * the first refresh and the visitor logs in again. */
+/** Player session, stored in one of the two browser stores.
+ *
+ * "Lembrar de mim" decides which: checked means localStorage, so the player
+ * stays logged in across browser restarts; unchecked means sessionStorage,
+ * which dies with the tab. Both are read on boot, sessionStorage first, so a
+ * non-remembered login always wins over an older remembered one. A stored id
+ * the server no longer knows is dropped on the first refresh. */
 export const PLAYER_KEY = "casa-player";
 
-export function getPlayerSession() {
+const PLAYER_STORES = ["sessionStorage", "localStorage"];
+
+function playerStore(name) {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(PLAYER_KEY);
+    const store = window[name];
+    const probe = "__casa_probe__";
+    store.setItem(probe, "1");
+    store.removeItem(probe);
+    return store;
+  } catch (e) {
+    return null;
+  }
+}
+
+function readPlayer(store) {
+  try {
+    const raw = store.getItem(PLAYER_KEY);
     const session = raw ? JSON.parse(raw) : null;
     return session && session.player_id ? session : null;
   } catch (e) {
@@ -25,13 +44,37 @@ export function getPlayerSession() {
   }
 }
 
-export function setPlayerSession(session) {
-  try {
-    if (session && session.player_id) {
-      window.localStorage.setItem(PLAYER_KEY, JSON.stringify(session));
-    } else {
-      window.localStorage.removeItem(PLAYER_KEY);
+export function getPlayerSession() {
+  for (const name of PLAYER_STORES) {
+    const store = playerStore(name);
+    const session = store && readPlayer(store);
+    if (session) return session;
+  }
+  return null;
+}
+
+export function setPlayerSession(session, { remember = true } = {}) {
+  const primary = remember ? "localStorage" : "sessionStorage";
+  const secondary = remember ? "sessionStorage" : "localStorage";
+  const clear = (name) => {
+    const store = playerStore(name);
+    try {
+      if (store) store.removeItem(PLAYER_KEY);
+    } catch (e) {
+      /* nothing to clear */
     }
+  };
+  if (!session || !session.player_id) {
+    clear("localStorage");
+    clear("sessionStorage");
+    return;
+  }
+  // Drop the other copy first: a remembered id must never outlive a
+  // deliberate "do not remember me" login, and vice versa.
+  clear(secondary);
+  const store = playerStore(primary) || playerStore(secondary);
+  try {
+    if (store) store.setItem(PLAYER_KEY, JSON.stringify(session));
   } catch (e) {
     /* private mode: the player simply logs in again next visit */
   }

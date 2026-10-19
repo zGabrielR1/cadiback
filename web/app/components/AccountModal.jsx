@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TurnstileWidget from "./TurnstileWidget";
+import OAuthIcon from "./OAuthIcon";
 
 /** Player login, registration and social completion (Entrar / Criar conta /
  * Complete seu cadastro). Real-site shape: login takes username, email or CPF
@@ -28,8 +29,10 @@ export default function AccountModal({
   turnstileReset = 0,
   oauthProviders = [],
   social = null,
+  remember = true,
   onForm,
   onMode,
+  onRemember,
   onSubmit,
   onSocial,
   onTurnstileToken,
@@ -100,7 +103,8 @@ export default function AccountModal({
           onClick={() => onSocial(p.id)}
           disabled={!!busy}
         >
-          {p.label}
+          <OAuthIcon provider={p.id} />
+          <span>Continuar com {p.label}</span>
         </button>
       ))}
     </div>
@@ -273,6 +277,16 @@ export default function AccountModal({
             )}
           </>
         )}
+        {isLogin ? (
+          <label className="remember">
+            <input
+              type="checkbox"
+              checked={!!remember}
+              onChange={(e) => onRemember(e.target.checked)}
+            />
+            <span>Lembrar de mim neste dispositivo</span>
+          </label>
+        ) : null}
         {errors._ ? (
           <p className="ferr" role="alert" style={{ marginTop: 10 }}>
             {errors._}

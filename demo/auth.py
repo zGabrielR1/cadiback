@@ -2,8 +2,9 @@
 
 Default operator account ``admin``/``admin`` is seeded on first boot —
 the owner asked for it and said they will change it later. Passwords are
-stored salted + SHA-256 and compared in constant time; the users file
-never carries plaintext.
+PBKDF2 (foundry.auth) with a fresh salt and compared in constant time; the
+users file never carries plaintext. A pre-foundry salted-SHA256 row still
+verifies and is upgraded on its next successful login.
 
 Sessions are bearer tokens with a TTL that persist to disk, so a server
 restart does not forcibly log out every panel user — only sessions whose
@@ -25,6 +26,8 @@ import secrets
 import threading
 from datetime import datetime, timedelta, timezone
 
+from foundry.auth import PasswordHasher, resolve_password_hasher
+
 SESSION_TTL_HOURS = 12
 MIN_PASSWORD_LEN = 4
 USERNAME_RE = re.compile(r"^[a-z0-9._-]{3,32}$")
@@ -36,6 +39,7 @@ class AuthError(RuntimeError):
 
 
 def _hash(password: str, salt: str) -> str:
+    """The pre-foundry record: salted SHA-256, kept only to verify old rows."""
     return hashlib.sha256(
         (salt + "\x00" + password).encode("utf-8")
     ).hexdigest()
@@ -53,9 +57,10 @@ class UserStore:
     and lose each other's change.
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, hasher: PasswordHasher | None = None) -> None:
         self.path = path
         self.lock = threading.Lock()
+        self.hasher = hasher or resolve_password_hasher()
         directory = os.path.dirname(path)
         if directory:
             os.makedirs(directory, exist_ok=True)
@@ -89,8 +94,7 @@ class UserStore:
 
     def _record(self, password: str, role: str) -> dict:
         now = _now().isoformat(timespec="seconds")
-        salt = secrets.token_hex(16)
-        return {"salt": salt, "hash": _hash(password, salt),
+        return {"hash": self.hasher.hash(password),
                 "role": role, "created_at": now, "updated_at": now}
 
     @staticmethod
@@ -122,12 +126,25 @@ class UserStore:
             data = self._read()
             record = data.get(username)
             if not isinstance(record, dict):
-                _hash(password, "0" * 32)
+                self.hasher.hash(password)
                 raise AuthError("usuário ou senha inválidos")
-            if not hmac.compare_digest(
-                _hash(password, str(record.get("salt", ""))),
-                str(record.get("hash", "")),
-            ):
+            stored = str(record.get("hash", ""))
+            if stored.startswith("pbkdf2_sha256$"):
+                ok = self.hasher.verify(password, stored)
+            else:
+                salt = str(record.get("salt", ""))
+                expected = _hash(password, salt) if salt else ""
+                ok = bool(expected and stored) and hmac.compare_digest(
+                    expected, stored)
+                if ok:
+                    # Upgrade the old salted-SHA256 row on first login.
+                    record = dict(record)
+                    record.pop("salt", None)
+                    record["hash"] = self.hasher.hash(password)
+                    record["updated_at"] = _now().isoformat(timespec="seconds")
+                    data[username] = record
+                    self._write(data)
+            if not ok:
                 raise AuthError("usuário ou senha inválidos")
             role = str(record.get("role", "viewer"))
         if role not in ROLES:
@@ -160,9 +177,8 @@ class UserStore:
             record = data.get(username)
             if not isinstance(record, dict):
                 raise AuthError("usuário não existe")
-            salt = secrets.token_hex(16)
-            record["salt"] = salt
-            record["hash"] = _hash(password, salt)
+            record.pop("salt", None)
+            record["hash"] = self.hasher.hash(password)
             record["updated_at"] = now
             self._write(data)
 
