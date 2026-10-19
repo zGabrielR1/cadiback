@@ -1,8 +1,11 @@
 # 0044 — PG Soft theater tap: settle the trial-wallet delta on our books
 
-Status: built, not yet live-verified. Same pattern as the Spribe theater
-bridge and the Play'n GO socket tap: read what the page already says,
-touch nothing of the publisher's.
+Status: **live-verified (0064, 2026-10-19).** Same pattern as the Spribe
+theater bridge and the Play'n GO socket tap: read what the page already says,
+touch nothing of the publisher's. The live path differs from the original
+cross-origin poll: when the launch is steered same-origin the server keeps the
+`dt.tk` from the handshake and `GET /api/pg/wallet` polls the trial wallet
+unrewritten. See 0064 for the evidence and for the production caveat.
 
 ## Why a tap, not an interposition
 

@@ -1,5 +1,60 @@
 # PROGRESS
 
+## DONE (2026-10-19 — a real browser on Windows; PG Soft settles too, decisions 0064)
+
+- **THE APPIMAGE IS GONE FROM THE LOOP.** Live checks had been driven from a
+  Linux `Chromium … .AppImage`, which cannot run on this machine. New
+  `scripts/drive_game.mjs` drives the installed Chrome/Edge over the DevTools
+  Protocol (Node's own `WebSocket`, no Playwright, no AppImage): trusted
+  `Input.dispatchMouseEvent`/`dispatchKeyEvent`, canvas-boot polling,
+  screenshots, network capture and — new — `--start x,y` for a splash's
+  INICIAR button, `--boot` for a heavy client, `--bodies` for plaintext
+  handshake answers and `--eval` for a final state read.
+- **`scripts/live_spin.py` IS THE ONE-COMMAND LIVE CHECK.** It starts an
+  in-process `Demo` + server, registers/deposits a player, mints a launch,
+  drives the browser and reads the outcome in three places (wallet, publisher
+  round rows, the provider's own tap). TLS is optional (`--tls`) but required
+  by Pragmatic's Unity client, which hardcodes `https://` + document host.
+- **PRAGMATIC WIN, VERIFIED.** `pp:gates-of-olympus`, 40 trusted presses:
+  four rounds, one `stake 200 / payout 300`; the tap log showed the publisher
+  saldo `9,999,400 → 9,999,500` and the wallet `500,000 → 499,500` (net −500
+  across −200, −200, −200, +100). This closes the "winning spin" half of 0063.
+- **PG SOFT: THE CORS WALL, MEASURED AND ROUTED AROUND.** `verifySession` on
+  `api.<label>.com` echoes `access-control-allow-origin` only for
+  `*.pg-demo.com`; `127.0.0.1`, `localhost` and the Render origin get none.
+  The local run therefore serves the page under `api.pg-demo.com` (Chrome
+  `--host-resolver-rules`, a self-signed cert with that SAN) and steers PG's
+  mangled `ao` at it (`--steer` → `PG_AO_HOST`). The client rewrites `ao` to
+  `api.<registrable domain>`, so the document has to be served from exactly
+  that host; `--steer` refuses anything else.
+- **THE SERVER NOW OWNS THE TAP'S TOKEN.** Steered, `verifySession` and
+  `Spin` land on our origin and are forwarded to the session's api host
+  (root `/web-api/…` + `/game-api/…`, `Origin`/`Referer` reset to the
+  launcher). `Authorization` had to join the forward allowlist — PG's
+  `game-api` is a 401 without it. `pg_proxy.note_access` keeps the answer's
+  `dt.tk` per session, and the new `GET /api/pg/wallet` polls the publisher's
+  trial wallet through it **without the display rewrite**; the bridge's tap
+  polls that same-origin endpoint (the old cross-origin poll existed because
+  the money calls bypassed us). The page never sees the publisher's saldo
+  rewritten as our own.
+- **LIVE, ON OUR BOOKS.** `pg:fortune-tiger`, 3 trusted spins: 2 rounds
+  `stake 300 / payout 0`, wallet `500,000 → 499,400`, HUD `R$ 4.994,00`.
+  A longer 8-spin run caught partial wins too: `stake 300 / payout 180`,
+  seven rounds, net `−1,740`, HUD `R$ 4.982,60`. One spin in eight produced
+  no delta and no round; the per-spin poll can still conflate two spins that
+  land closer than its settle window (noted, not hidden).
+- **PRODUCTION CAVEAT (RECORDED, NOT SOLVED).** The Render origin cannot be
+  the PG document host, so production still needs the money calls routed
+  same-origin (a domain we can serve at `api.<registrable>`, or a proxy that
+  the client is steered to). Decision 0043's "boots through our origin" was
+  true for the document, not for the money calls; 0064 is the correction.
+- Surface: `scripts/drive_game.mjs`, `scripts/live_spin.py`,
+  `pg_proxy.note_access`/`trial_balance`, `game_proxy.PG_MONEY_HEADERS`,
+  `Handler._serve_publisher_root` (PG money host + token), `GET
+  /api/pg/wallet`. Tests: `PgSoftTest` +3. Suites: `frame` 50/50, `demo`
+  382/382, `verify.py` 0 problems.
+
+
 ## DONE (2026-10-18 — Pragmatic's round settles on our books, decision 0063)
 
 - **THE LAST DISPLAY-ONLY PROVIDER SETTLES.** Pragmatic was the one working

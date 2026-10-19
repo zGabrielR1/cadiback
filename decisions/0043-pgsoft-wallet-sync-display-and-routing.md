@@ -3,6 +3,14 @@
 Status: built. PG stays `wallet_isolated`: spins are binary and still the
 publisher's. What changed is everything around the spin.
 
+> **Correction (0064, 2026-10-19).** "Routing to the api hosts" is true for
+> calls the browser makes *through our path*. It does not make the money calls
+> same-origin: PG's client calls `https://api.<label>.com` directly, and that
+> host CORS-allows only `*.pg-demo.com` origins. A launch on our real origin
+> therefore boots the document but loses the handshake — and production on
+> `cadiback.onrender.com` hits the same wall. 0064 steers `ao` at the server
+> for live checks and records the production work still needed.
+
 ## What was wrong
 
 1. **Money rode the wrong host.** `pg_target` sent every sub-path to the

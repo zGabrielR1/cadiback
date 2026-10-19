@@ -64,6 +64,12 @@ FORWARDED_HEADERS = frozenset({
     "content-type", "accept-language", "x-requested-with",
 }) | CONDITIONAL_HEADERS | {"range"}
 
+# PG's game-api authenticates with `Authorization: Bearer …`; dropping it
+# turns a steered money call into a 401 (measured). It is deliberately *not*
+# in `FORWARDED_HEADERS`: our storefront's own bearer must never travel to a
+# publisher, so only the PG money paths opt into this set.
+PG_MONEY_HEADERS = FORWARDED_HEADERS | {"authorization"}
+
 # Query parameters that belong to us and must never reach a publisher: the
 # wallet token is a player's session credential, `pg` is our own PG Soft
 # session id, and a redirect we rewrite puts it back on the way out
@@ -1299,35 +1305,43 @@ _BRIDGE = r"""
   // (cfg.token empty) the report 401s and is silently dropped: free play.
   var pgAtk = null, pgApi = null, pgLast = null, pgStake = null, pgSeq = 0,
       pgChain = Promise.resolve();
+  // Counters the live harness reads (scripts/live_spin.py): a silent tap is
+  // either a missed hook ("seen") or a handshake that never yielded a token
+  // ("harvestError"). Namespaced and read-only; no money rides on them.
+  var pgTap = window.__wallet_tap = {
+    verifySeen: 0, spinSeen: 0, harvested: 0, harvestError: null,
+    watch: 0, polls: 0, pollError: null, settled: 0, stakeFallback: 0,
+  };
 
   function pgHarvest(url, text) {
     if (!url || url.indexOf("verifySession") < 0 || pgAtk) return;
+    pgTap.verifySeen += 1;
     try {
       var tk = JSON.parse(text).dt.tk;
       if (tk) {
         pgAtk = tk;
         pgApi = url.split("/web-api/")[0];
+        pgTap.harvested += 1;
         pgPoll().then(function (cb) { pgLast = cb; });
+      } else {
+        pgTap.harvestError = "no dt.tk";
       }
-    } catch (e) {}
-  }
-
-  function pgWalletUrl() {
-    return pgApi + "/web-api/game-proxy/v2/GameWallet/Get";
+    } catch (e) { pgTap.harvestError = String(e).slice(0, 120); }
   }
 
   function pgPoll() {
-    if (!pgAtk || !pgApi) return Promise.resolve(null);
-    var body = "isagw=true&btt=2&wk=0_C&atk=" + encodeURIComponent(pgAtk) +
-      "&pf=1&gid=" + encodeURIComponent(cfg.pg_gi || "");
-    return fetch(pgWalletUrl(), {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body,
-    }).then(function (r) { return r.ok ? r.json() : null; })
+    pgTap.polls += 1;
+    // The proxy owns the publisher's access token (it saw the handshake when
+    // the launch was steered same-origin), so the tap asks our own server for
+    // the untouched trial balance instead of trying to read it cross-origin.
+    return fetch(cfg.api + "/pg/wallet", { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        return d && d.dt && typeof d.dt.cb === "number" ? d.dt.cb : null;
-      }).catch(function () { return null; });
+        return d && typeof d.cb === "number" ? d.cb : null;
+      }).catch(function (e) {
+        pgTap.pollError = String(e).slice(0, 120);
+        return null;
+      });
   }
 
   function pgSettle(netUnits, first) {
@@ -1337,10 +1351,16 @@ _BRIDGE = r"""
       pgStake = -netMinor;
       stake = pgStake;
     } else {
-      stake = first ? (pgStake || 0) : 0;
+      // A first observation can be a win (no loss has taught us the stake).
+      // The net is still exact; the split is bookkeeping, so a known minimum
+      // keeps the posting valid without inventing money. A later loss learns
+      // the real stake.
+      stake = (first || pgStake === null) ? (pgStake || minStake) : 0;
+      if (first && pgStake === null) pgTap.stakeFallback += 1;
     }
     var payout = Math.max(0, stake + netMinor);
     if (!stake && !payout) return Promise.resolve();
+    pgTap.settled += 1;
     return reportRound(stake, payout);
   }
 
@@ -1349,6 +1369,7 @@ _BRIDGE = r"""
     // until the wallet stills, settling the first move with the stake and
     // every later move as a pure win. Serialized: a spin while one settles
     // waits its turn instead of double-reading the same delta.
+    pgTap.watch += 1;
     pgChain = pgChain.then(function () {
       return pgPoll().then(function (base) {
         if (base === null) return;
@@ -1388,6 +1409,7 @@ _BRIDGE = r"""
         }).catch(function () {});
       } else if (url.indexOf("/v4/Spin") >= 0 &&
                  ((init && init.method) || "GET").toUpperCase() !== "GET") {
+        pgTap.spinSeen += 1;
         promise.catch(function () {}).then(function () { pgWatch(); });
       }
     }
@@ -1407,7 +1429,10 @@ _BRIDGE = r"""
         this.addEventListener("load", function () {
           try {
             if (url.indexOf("verifySession") >= 0) pgHarvest(url, self.responseText);
-            else if (url.indexOf("/v4/Spin") >= 0) pgWatch();
+            else if (url.indexOf("/v4/Spin") >= 0) {
+              pgTap.spinSeen += 1;
+              pgWatch();
+            }
           } catch (e) {}
         });
       }
@@ -1671,19 +1696,23 @@ def _read_body(stream) -> bytes:
 
 def fetch(url: str, method: str = "GET", body: bytes | None = None,
           headers: dict | None = None, timeout: int = 20,
-          follow: bool = True) -> tuple[int, dict, bytes]:
+          follow: bool = True,
+          forward: frozenset[str] | None = None) -> tuple[int, dict, bytes]:
     """Forward one request to the publisher.
 
     With `follow=False` a redirect is not followed: the 3xx comes back with
     its Location so the caller can hand it to the browser (see
-    `Handler._pass_redirect`).
+    `Handler._pass_redirect`). `forward` overrides the header allowlist for a
+    call that has a reason to carry more (PG money paths pass
+    `PG_MONEY_HEADERS`).
     """
     checked_url(url)
     req = urllib.request.Request(url, data=body, method=method)
     req.add_header("User-Agent", USER_AGENT)
     req.add_header("Accept", "*/*")
+    allowed = FORWARDED_HEADERS if forward is None else forward
     for key, value in (headers or {}).items():
-        if key.lower() in FORWARDED_HEADERS:
+        if key.lower() in allowed:
             req.add_header(key, value)
     opener = _FOLLOW_OPENER if follow else _OPENER
     try:

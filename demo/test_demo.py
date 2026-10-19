@@ -5269,7 +5269,7 @@ class ProxyHttpTest(unittest.TestCase):
         self.keep_view = DEMO.wallet_view_for
 
         def stub(url, method="GET", body=None, headers=None, timeout=20,
-                 follow=True):
+                 follow=True, forward=None):
             self.calls.append({"url": url, "method": method,
                                "headers": dict(headers or {})})
             status, up_headers, data = self.answer
@@ -5805,6 +5805,54 @@ class PgSoftTest(unittest.TestCase):
         self.assertTrue(any(re.search(p, sub) for p in money_paths))
         self.assertFalse(any(re.search(p, "pg/s5/loader/06.js")
                              for p in money_paths))
+
+    def test_the_server_keeps_the_pg_access_token_for_the_tap(self):
+        """ao-steering puts `verifySession` on our origin, where only the
+        server can read `dt.tk`. Remembering it per session is what lets the
+        tap poll the publisher's trial wallet without the browser seeing the
+        publisher (and without the display rewrite feeding it our saldo)."""
+        pg_proxy.note_access("s-atk", "TK-1")
+        self.assertEqual(pg_proxy.access_for("s-atk"), "TK-1")
+        self.assertEqual(pg_proxy.access_for("s-other"), "")
+
+    def test_the_trial_balance_is_polled_unrewritten(self):
+        """`trial_balance` talks to the api host directly, with the minted
+        `atk`/`gid`, and returns the publisher's `cb` untouched — the number
+        the tap settles from. No token or no session means None, never 0."""
+        import json
+        from unittest import mock
+        session = pg_proxy.Session(
+            "s-tap", "126", "ot",
+            "https://m.pg-demo.com/126/index.html?ot=ot123&l=pt&btt=2",
+            "m.pg-demo.com", "static.pg-demo.com",
+            ("api.f26xzzc7c.com",))
+        pg_proxy.bind(session)
+        pg_proxy.note_access("s-tap", "TK-9")
+        seen = {}
+
+        def fake_fetch(url, method="GET", body=None, headers=None, **kw):
+            seen.update(url=url, body=body, headers=headers)
+            return 200, {}, json.dumps({"dt": {"cb": 999985.5}}).encode()
+
+        with mock.patch.object(game_proxy, "fetch", fake_fetch):
+            self.assertEqual(pg_proxy.trial_balance("s-tap"), 999985.5)
+        self.assertEqual(seen["url"],
+                         "https://api.f26xzzc7c.com"
+                         + pg_proxy.WALLET_PATH)
+        self.assertIn(b"atk=TK-9", seen["body"])
+        self.assertIn(b"gid=126", seen["body"])
+        # unsteered (no token) and unknown sessions stay quiet
+        self.assertIsNone(pg_proxy.trial_balance("s-nope"))
+
+    def test_the_authorization_header_reaches_only_pg_money(self):
+        """PG's game-api authenticates with `Authorization: Bearer …`; the
+        PG money allowlist must carry it (a dropped header is a 401). The
+        global allowlist must not: our storefront's bearer is not a
+        publisher credential."""
+        self.assertNotIn("authorization", game_proxy.FORWARDED_HEADERS)
+        self.assertIn("authorization", game_proxy.PG_MONEY_HEADERS)
+        self.assertTrue(game_proxy.FORWARDED_HEADERS
+                        <= game_proxy.PG_MONEY_HEADERS)
 
 
 class KenoTest(unittest.TestCase):

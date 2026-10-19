@@ -46,6 +46,7 @@ publisher's until a real browser session can be observed. See decision 0040.
 from __future__ import annotations
 
 import base64
+import json
 import re
 import threading
 import time
@@ -55,6 +56,7 @@ import urllib.request
 import uuid
 
 LAUNCHER = "https://public.pg-demo.com/demo/"
+LAUNCHER_ORIGIN = "https://public.pg-demo.com"
 MINT_API = ("https://public-api.pg-demo.com/"
             "web-api/operator-proxy/v2/Game/GetTrialLaunchURLHTML")
 
@@ -526,6 +528,60 @@ def session_for(session_id: str) -> Session | None:
             _SESSIONS.pop(session_id, None)
             return None
         return session
+
+
+# The access token PG mints in `verifySession` (`dt.tk`). It is session-scoped
+# and expires with the session; the server keeps it only when the handshake
+# actually came through us (ao-steering), because that is when the browser
+# cannot read the publisher's trial wallet cross-origin on its own.
+_ACCESS: dict[str, str] = {}
+
+
+def note_access(session_id: str, token: str) -> None:
+    """Remember the token `verifySession` minted for one PG session."""
+    if not session_id or not token:
+        return
+    with _LOCK:
+        _ACCESS[session_id] = token
+        while len(_ACCESS) > MAX_SESSIONS:
+            _ACCESS.pop(next(iter(_ACCESS)))
+
+
+def access_for(session_id: str) -> str:
+    with _LOCK:
+        return _ACCESS.get(session_id, "")
+
+
+def trial_balance(session_id: str) -> float | None:
+    """Poll the publisher's trial wallet for one session, untouched.
+
+    This is the one number the theatre must never rewrite: the client's own
+    `GameWallet/Get` is rewritten to the player's saldo (that is the display),
+    so the tap asks the publisher directly through the token the handshake
+    handed us. None means "not steered" — an unsteered launch never showed us
+    the token, and the tap stays quiet rather than inventing a balance.
+    """
+    session = session_for(session_id)
+    atk = access_for(session_id)
+    if session is None or not atk or not session.api_hosts:
+        return None
+    from demo import game_proxy
+    body = urllib.parse.urlencode({
+        "isagw": "true", "btt": "2", "wk": "0_C", "atk": atk,
+        "pf": "1", "gid": session.gi,
+    }).encode()
+    url = f"https://{session.api_hosts[0]}{WALLET_PATH}"
+    try:
+        status, _headers, data = game_proxy.fetch(
+            url, "POST", body,
+            {"Content-Type": "application/x-www-form-urlencoded"})
+        if status != 200:
+            return None
+        payload = json.loads(data.decode("utf-8"))
+        value = payload["dt"]["cb"]
+        return float(value) if isinstance(value, (int, float)) else None
+    except (game_proxy.ProxyError, OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def allowed_host(host: str) -> bool:

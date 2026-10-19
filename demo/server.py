@@ -4253,10 +4253,14 @@ class Handler(BaseHTTPRequestHandler):
         withheld = is_document or is_money or game_proxy.rewritable(sub)
         request_headers = plain_headers if withheld else dict(self.headers)
         request_body = body if self.command == "POST" else None
+        # PG's game-api needs its own bearer; nothing else may carry ours.
+        forward = (game_proxy.PG_MONEY_HEADERS
+                   if provider == "pg_soft" and is_money else None)
 
         def upstream(headers: dict):
             return game_proxy.fetch(url, self.command, request_body,
-                                    headers, follow=not passthrough)
+                                    headers, follow=not passthrough,
+                                    forward=forward)
 
         def content_type(up_headers: dict) -> str:
             return (up_headers.get("Content-Type")
@@ -4389,6 +4393,17 @@ class Handler(BaseHTTPRequestHandler):
         if not host or game is None:
             self._send(404, {"error": "not found"})
             return
+        # PG's money API is not on the document host: the game host 404s
+        # `/web-api/…` (measured). When the launch steers `ao` at us
+        # (`PG_AO_HOST`), the client's money calls arrive root-level here and
+        # must be forwarded to the api host its session minted, not to the
+        # game host the document came from.
+        if provider == "pg_soft" and parsed.path.startswith(
+                pg_proxy.MONEY_TAILS):
+            sid = self._cookie("pg_session")
+            session = pg_proxy.session_for(sid)
+            if session and session.api_hosts:
+                host = session.api_hosts[0]
         if not game_proxy.allowed_host(host):
             self._send(404, {"error": "not found"})
             return
@@ -4396,14 +4411,34 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.query:
             target += "&" if "?" in target else "?"
             target += parsed.query
+        headers = {k: v for k, v in self.headers.items()}
+        forward = None
+        if provider == "pg_soft" and parsed.path.startswith(
+                pg_proxy.MONEY_TAILS):
+            # The upstream labels the request by origin; the browser is
+            # same-origin with us now, and the launcher's own origin is the
+            # one the publisher recognises.
+            headers["Origin"] = pg_proxy.LAUNCHER_ORIGIN
+            headers["Referer"] = pg_proxy.LAUNCHER
+            forward = game_proxy.PG_MONEY_HEADERS
         try:
             status, up_headers, data = game_proxy.fetch(
                 target, self.command,
                 body if self.command == "POST" else None,
-                {k: v for k, v in self.headers.items()})
+                headers, forward=forward)
         except (game_proxy.ProxyError, OSError, ValueError) as exc:
             self._send(502, {"error": f"publisher unavailable: {type(exc).__name__}"})
             return
+        if (provider == "pg_soft" and parsed.path == pg_proxy.SESSION_PATH
+                and status == 200):
+            # ao-steering: the handshake came through us, so this is the only
+            # place the server can read the session's access token. The tap's
+            # trial-wallet poll needs it (pg_proxy.trial_balance).
+            try:
+                pg_proxy.note_access(self._cookie("pg_session"),
+                                     json.loads(data.decode("utf-8"))["dt"]["tk"])
+            except (ValueError, KeyError, TypeError):
+                pass
         ctype = up_headers.get("Content-Type") or up_headers.get("content-type") \
             or "application/octet-stream"
         view = DEMO.wallet_view_for(self._cookie("wallet_token"))
@@ -4744,6 +4779,12 @@ class Handler(BaseHTTPRequestHandler):
                 from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)
                 self._send(200, DEMO.wallet_status(query["token"][0]))
+            elif parsed.path == "/api/pg/wallet":
+                # the trial wallet, unrewritten, for the PG tap (decision
+                # 0044). Same-origin by construction; `cb` is null when the
+                # handshake did not come through us (unsteered launch).
+                self._send(200, {"cb": pg_proxy.trial_balance(
+                    self._cookie("pg_session"))})
             elif parsed.path == "/api/tournaments":
                 self._send(200, DEMO.tournaments())
             elif parsed.path == "/api/news":

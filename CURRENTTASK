@@ -20,15 +20,16 @@ sees our rewrite.
   bundle), the stake is `coin`×`line` (`c=0.1&l=20` = R$2.00), and one `doSpin`
   answer is the whole round. Scale 1:1 with BRL.
 - **THE MONEY MAP NOW READS:** Hacksaw (RGS interposition) · Play'n GO
-  (`gamehub` tap) · Spribe (SFS2X tap) · PG Soft (trial-wallet reconcile, built,
-  one real spin from being live-verified) · Pragmatic (saldo movement, built,
-  deployed and **live-verified**). Evolution never reaches us (launcher 502 from
-  this host).
-- Suites: `frame` 50/50 · `demo` 379 with only the 6 pre-existing `sqlalchemy`
-  errors · `verify.py` 0 problems.
-- OPEN: a winning spin + a free-spins feature on a Pragmatic title, and one real
-  spin on a PG title, to close 0044 live; **Asaas prod keys** remain the one
-  owner item.
+  (`gamehub` tap) · Spribe (SFS2X tap) · PG Soft (trial-wallet reconcile,
+  0064 — **live-verified**, including a partial win) · Pragmatic (saldo
+  movement, built, deployed and **live-verified**). Evolution never reaches
+  us (launcher 502 from this host).
+- Suites: `frame` 50/50 · `demo` 382/382 · `verify.py` 0 problems.
+- OPEN: a Pragmatic free-spins feature (a winning spin is verified; 0063),
+  and **Asaas prod keys** remains the one owner item. PG Soft in production
+  needs its money calls routed same-origin (0064): the publisher's api host
+  only CORS-allows `*.pg-demo.com` origins, so a document on
+  `cadiback.onrender.com` cannot reach it from the browser.
 
 CURRENTTASK: Operator arc hardening (decision 0057) — the owner's seven asks: a
 real crypto rail, admin win/loss behaviour control with the saldo visible, the
