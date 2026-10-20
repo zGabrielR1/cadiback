@@ -3559,6 +3559,248 @@ class PlayerSessionHttpTest(unittest.TestCase):
         self.assertIn(body["status"], ("cashed", "busted"))
 
 
+class DeviceSessionTest(unittest.TestCase):
+    """Per-device sessions (decision 0070): every minted token names a row in
+    the live-session list, deleting that row logs one device out, and a
+    password reset still clears every row at once."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.demo = Demo(data_dir=self.tmp, player_secret="device-secret")
+        self.row = self.demo.register_player({
+            "name": "Ana Souza", "username": "ana.souza",
+            "email": "ana.souza@example.com", "cpf": "529.982.247-25",
+            "password": "ana1234", "pix_key": "ana.souza@example.com"})
+        self.player_id = self.row["player_id"]
+
+    def _login(self, user_agent):
+        return self.demo.login_player(
+            {"identifier": "ana.souza", "password": "ana1234"},
+            device={"user_agent": user_agent, "ip": "203.0.113.9"}
+        )["player_token"]
+
+    def _legacy_token(self):
+        """A 0069-shaped token: correctly signed, but with no session id."""
+        import hmac
+        from demo.player_session import CONTEXT
+        now = int(time.time())
+        payload = {"p": self.player_id, "e": 0, "iat": now,
+                   "exp": now + 3600, "r": False}
+        body = "ps1." + base64.urlsafe_b64encode(json.dumps(
+            payload, sort_keys=True, separators=(",", ":")).encode()
+        ).rstrip(b"=").decode()
+        mac = hmac.new(b"device-secret", CONTEXT + body.encode("ascii"),
+                       hashlib.sha256).digest()
+        return body + "." + base64.urlsafe_b64encode(mac).rstrip(b"=").decode()
+
+    def test_every_mint_is_a_row_and_the_list_marks_the_caller(self):
+        phone = self._login("Firefox/Android")
+        self._login("Chrome/Windows")
+        session = self.demo.player_session(phone)
+        listed = self.demo.player_sessions_view(session)["sessions"]
+        self.assertEqual(len(listed), 3)          # signup + two logins
+        mine = [row for row in listed if row["current"]]
+        self.assertEqual(len(mine), 1)
+        self.assertEqual(mine[0]["id"], session.session_id)
+        self.assertEqual(mine[0]["user_agent"], "Firefox/Android")
+        self.assertEqual(mine[0]["ip"], "203.0.113.9")
+        self.assertTrue(mine[0]["created_at"].endswith("+00:00"))
+
+    def test_logout_ends_one_device_only(self):
+        phone = self._login("Firefox/Android")
+        laptop = self._login("Chrome/Windows")
+        self.demo.logout_player(self.demo.player_session(phone))
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(phone)
+        # the signature still verifies: the missing row is what refuses it
+        self.assertEqual(self.demo.player_sessions.verify(phone).player_id,
+                         self.player_id)
+        self.assertEqual(self.demo.player_from_token(laptop), self.player_id)
+
+    def test_a_stranger_cannot_revoke_by_id(self):
+        phone = self._login("Firefox/Android")
+        bia = self.demo.register_player({
+            "name": "Bia Souza", "username": "bia.souza",
+            "email": "bia.souza@example.com", "cpf": "111.444.777-35",
+            "password": "bia1234", "pix_key": "bia.souza@example.com"})
+        with self.assertRaises(AuthError):
+            self.demo.revoke_player_session(
+                self.demo.player_session(bia["player_token"]),
+                self.demo.player_sessions.verify(phone).session_id)
+        self.assertEqual(self.demo.player_from_token(phone), self.player_id)
+
+    def test_revoke_others_keeps_only_the_caller(self):
+        phone = self._login("Firefox/Android")
+        self._login("Chrome/Windows")
+        self._login("Safari/iPhone")
+        session = self.demo.player_session(phone)
+        removed = self.demo.revoke_other_sessions(session)["revoked"]
+        self.assertEqual(removed, 3)              # signup + two logins
+        rows = self.demo.player_devices.active(self.player_id)
+        self.assertEqual([row["id"] for row in rows], [session.session_id])
+
+    def test_the_cap_drops_the_oldest_rows(self):
+        self.demo.player_devices.max_per_player = 2
+        self._login("um")
+        self._login("dois")
+        third = self._login("tres")
+        self.assertEqual(len(self.demo.player_devices.active(self.player_id)),
+                         2)
+        self.assertEqual(self.demo.player_from_token(third), self.player_id)
+
+    def test_touch_is_throttled(self):
+        token = self._login("Firefox/Android")
+        session = self.demo.player_sessions.verify(token)
+        registry = self.demo.player_devices
+        registry.record(session, now=1000)
+        registry.touch(session, now=1060)
+        self.assertEqual(
+            registry.lookup(session.session_id, now=1060)["seen"], 1000)
+        registry.touch(session, now=1601)
+        self.assertEqual(
+            registry.lookup(session.session_id, now=1601)["seen"], 1601)
+
+    def test_an_expired_row_is_pruned_and_refused(self):
+        token = self._login("Firefox/Android")
+        session = self.demo.player_sessions.verify(token)
+        self.assertGreaterEqual(
+            self.demo.player_devices.prune(now=session.expires_at), 1)
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(token)
+
+    def test_a_token_without_a_session_id_is_refused(self):
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(self._legacy_token())
+
+    def test_an_operator_reset_empties_the_list(self):
+        admin = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        created = self.demo.admin_create_test_account(admin, {
+            "name": "Conta Teste", "username": "teste.um",
+            "email": "teste.um@example.com", "cpf": "111.444.777-35",
+            "password": "teste1234", "pix_key": "teste.um@example.com",
+        })["created"]
+        player_id = created["player_id"]
+        self.demo.issue_player_token(player_id)
+        self.assertEqual(
+            len(self.demo.player_devices.active(player_id)), 2)
+        self.demo.admin_reset_test_password(
+            admin, {"player_id": player_id, "password": "outra1234"})
+        self.assertEqual(self.demo.player_devices.active(player_id), [])
+
+
+class DeviceSessionHttpTest(unittest.TestCase):
+    """The route wiring for decision 0070: the session list, the single-device
+    logout and "sair dos outros" answer only to the caller's own token."""
+
+    def setUp(self):
+        import demo.server as server_module
+        self.server_module = server_module
+        self.keep = server_module.DEMO
+        self.demo = Demo(data_dir=tempfile.mkdtemp(),
+                         player_secret="http-device-secret")
+        server_module.DEMO = self.demo
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever,
+                                       daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.addCleanup(self._restore)
+        self.ana = self.demo.register_player({
+            "name": "Ana Souza", "username": "ana.souza",
+            "email": "ana.souza@example.com", "cpf": "529.982.247-25",
+            "password": "ana1234", "pix_key": "ana.souza@example.com"})
+        self.phone = self._login("Firefox/Android")
+        self.laptop = self._login("Chrome/Windows")
+
+    def _restore(self):
+        self.server_module.DEMO = self.keep
+        self.server.shutdown()
+        self.server.server_close()
+
+    def _login(self, user_agent):
+        return self.demo.login_player(
+            {"identifier": "ana.souza", "password": "ana1234"},
+            device={"user_agent": user_agent, "ip": "203.0.113.9"}
+        )["player_token"]
+
+    def _call(self, path, body=None, token=""):
+        method = "POST" if body is not None else "GET"
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["X-Player-Token"] = token
+        req = urllib.request.Request(
+            self.base + path,
+            data=None if body is None else json.dumps(body).encode("utf-8"),
+            headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status, json.loads(resp.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            with exc:
+                return exc.code, json.loads(exc.read() or b"{}")
+
+    def test_the_list_and_the_single_device_logout_are_wired(self):
+        status, body = self._call("/api/player/sessions", token=self.phone)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["sessions"]), 3)
+        status, body = self._call("/api/player/logout", {}, token=self.phone)
+        self.assertEqual(status, 200)
+        self.assertTrue(body["signed_out"])
+        status, _ = self._call("/api/player", token=self.phone)
+        self.assertEqual(status, 401)
+        status, _ = self._call("/api/player", token=self.laptop)
+        self.assertEqual(status, 200)
+
+    def test_revoking_by_id_from_the_list(self):
+        status, body = self._call("/api/player/sessions", token=self.laptop)
+        self.assertEqual(status, 200)
+        target = [row for row in body["sessions"]
+                  if row["user_agent"] == "Firefox/Android"]
+        self.assertEqual(len(target), 1)
+        status, body = self._call(
+            "/api/player/sessions/revoke",
+            {"session_id": target[0]["id"]}, token=self.laptop)
+        self.assertEqual(status, 200)
+        self.assertTrue(body["revoked"])
+        self.assertFalse(body["current"])
+        status, _ = self._call("/api/player", token=self.phone)
+        self.assertEqual(status, 401)
+        status, _ = self._call("/api/player", token=self.laptop)
+        self.assertEqual(status, 200)
+
+    def test_revoke_others_keeps_the_caller(self):
+        status, body = self._call(
+            "/api/player/sessions/revoke-others", {}, token=self.laptop)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["revoked"], 2)      # signup + the phone
+        status, body = self._call("/api/player/sessions", token=self.laptop)
+        self.assertEqual(len(body["sessions"]), 1)
+        self.assertTrue(body["sessions"][0]["current"])
+        status, _ = self._call("/api/player", token=self.phone)
+        self.assertEqual(status, 401)
+
+    def test_a_stranger_cannot_revoke_and_the_routes_need_a_token(self):
+        for path, body in (("/api/player/sessions", None),
+                           ("/api/player/logout", {}),
+                           ("/api/player/sessions/revoke", {"session_id": "x"}),
+                           ("/api/player/sessions/revoke-others", {})):
+            status, _ = self._call(path, body)
+            self.assertEqual(status, 401, path)
+        bia = self.demo.register_player({
+            "name": "Bia Souza", "username": "bia.souza",
+            "email": "bia.souza@example.com", "cpf": "111.444.777-35",
+            "password": "bia1234", "pix_key": "bia.souza@example.com"})
+        ana_id = self.demo.player_sessions.verify(self.phone).session_id
+        status, error = self._call("/api/player/sessions/revoke",
+                                   {"session_id": ana_id},
+                                   token=bia["player_token"])
+        self.assertEqual(status, 401)
+        self.assertIn("sessão", error["error"])
+        status, _ = self._call("/api/player", token=self.phone)
+        self.assertEqual(status, 200)
+
+
 class SameOriginTest(unittest.TestCase):
     """The write guard: same-origin only, but it must see through the Vercel
     proxy, where the browser's Origin is the frontend host and the request Host

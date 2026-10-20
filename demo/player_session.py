@@ -1,6 +1,6 @@
-"""Signed player sessions (decision 0069). Stdlib only. DEMO.
+"""Signed player sessions (decisions 0069, 0070). Stdlib only. DEMO.
 
-Until now a player *was* whoever the request said: every player write carried
+Until 0069 a player *was* whoever the request said: every player write carried
 ``player: <id>`` in its body and ``/api/player?id=`` read a profile, and the id
 is derived from the CPF (``player-…``), which is a semi-public document. The
 password protected the login form, not the money.
@@ -9,18 +9,17 @@ A session here is a signed, stateless token:
 
     ps1.<base64url(payload)>.<base64url(hmac-sha256)>
 
-The payload names the player, the row's ``session_epoch``, the issue/expiry
-instants and whether "remember me" was asked for. The signature covers the
-exact ``ps1.<payload>`` text with a fixed context prefix, so a token minted by
-another use of the same secret — or an edited payload — is refused.
+The payload names the player, the row's ``session_epoch``, a session id, the
+issue/expiry instants and whether "remember me" was asked for. The signature
+covers the exact ``ps1.<payload>`` text with a fixed context prefix, so a token
+minted by another use of the same secret — or an edited payload — is refused.
 
-Stateless is a deliberate trade, the same one the Better Auth bridge makes
-(0066): there is no session table to port, a restart does not log players out,
-and revocation is one integer on the player row. A password reset or an admin
-reset bumps ``session_epoch`` and every token minted before it stops verifying:
-the password change finally has something real to revoke (0068's open limit).
-A single device cannot be logged out alone; the module does not pretend
-otherwise.
+The signature is the proof; the ``SessionRegistry`` is the revocation list
+(0070). A token whose session id has no live row is refused, which is what
+makes "sair deste dispositivo" real without turning the token into a database
+lookup: the row list is one small JSON file, read on the same pass as the
+player row the host already reads. A password reset still bumps
+``session_epoch`` and kills every device at once.
 
 The clock and the token factory are injectable so the tests need neither sleep
 nor a real secret.
@@ -34,6 +33,7 @@ import hmac
 import json
 import os
 import secrets
+import threading
 import time
 from dataclasses import dataclass
 
@@ -46,8 +46,17 @@ TTL_SECONDS = 12 * 60 * 60            # a normal login
 REMEMBER_TTL_SECONDS = 30 * 24 * 60 * 60   # "lembrar de mim"
 MAX_TTL_SECONDS = 365 * 24 * 60 * 60
 
+# A session id is public (it names a row in the list the player sees); the
+# signature is what makes a token usable, so the id alone is not a credential.
+MAX_SESSION_ID = 64
+
 # A key file in the data dir, used only when no environment secret exists.
 KEY_FILE = "player_session.key"
+
+
+def new_session_id() -> str:
+    """A fresh, unguessable row id: 16 bytes as 22 url-safe characters."""
+    return secrets.token_urlsafe(16)
 
 
 class PlayerSessionError(ValueError):
@@ -56,13 +65,15 @@ class PlayerSessionError(ValueError):
 
 @dataclass(frozen=True)
 class PlayerSession:
-    """One verified token. ``epoch`` is checked against the player row."""
+    """One verified token. ``epoch`` is checked against the player row and
+    ``session_id`` against the live-session registry."""
 
     player_id: str
     epoch: int
     issued_at: int
     expires_at: int
     remember: bool = False
+    session_id: str = ""
 
     def remaining(self, now: float | None = None) -> float:
         instant = time.time() if now is None else float(now)
@@ -99,7 +110,8 @@ class PlayerSessions:
 
     # -- minting -----------------------------------------------------
     def issue(self, player_id: str, *, epoch: int = 0,
-              remember: bool = False, now: float | None = None) -> str:
+              remember: bool = False, now: float | None = None,
+              session_id: str | None = None) -> str:
         player_id = str(player_id or "")
         if not player_id or len(player_id) > 128:
             raise PlayerSessionError("a session needs a player id")
@@ -109,11 +121,15 @@ class PlayerSessions:
             raise PlayerSessionError("session epoch must be an integer") from None
         if epoch < 0:
             raise PlayerSessionError("session epoch must not be negative")
+        sid = str(session_id or new_session_id()).strip()
+        if not sid or len(sid) > MAX_SESSION_ID:
+            raise PlayerSessionError("a session needs a valid id")
         issued = int(time.time() if now is None else now)
         ttl = self.remember_ttl_seconds if remember else self.ttl_seconds
         payload = {
             "p": player_id,
             "e": epoch,
+            "s": sid,
             "iat": issued,
             "exp": issued + ttl,
             "r": bool(remember),
@@ -147,6 +163,12 @@ class PlayerSessions:
         player_id = payload.get("p")
         if not isinstance(player_id, str) or not player_id or len(player_id) > 128:
             raise PlayerSessionError("token de sessão malformado")
+        session_id = payload.get("s")
+        # a token minted before 0070 has no session id: it cannot be revoked
+        # one device at a time, so it is not accepted at all (one re-login)
+        if not isinstance(session_id, str) or not session_id or \
+                len(session_id) > MAX_SESSION_ID:
+            raise PlayerSessionError("token de sessão sem identificador")
         try:
             epoch = int(payload.get("e"))
             issued = int(payload.get("iat"))
@@ -166,7 +188,197 @@ class PlayerSessions:
             raise PlayerSessionError("sessão do jogador expirada")
         return PlayerSession(player_id=player_id, epoch=epoch,
                              issued_at=issued, expires_at=expires,
-                             remember=bool(payload.get("r")))
+                             remember=bool(payload.get("r")),
+                             session_id=session_id)
+
+
+# -- live sessions (decision 0070) -----------------------------------
+
+class SessionRegistry:
+    """Which minted tokens are still allowed to exist.
+
+    One row per token: the player, the epoch, when it was created, last seen
+    and expires, and the device that opened it. Deleting a row logs that one
+    device out; the token's signature still verifies, but the host refuses it
+    because the row is gone.
+
+    The file is small and read on the same pass as the player row the host
+    already reads. Writes are rare — a mint, a logout, a revoke, or a
+    ``touch`` at most once per ``touch_seconds`` — so the stateless fast path
+    (a request that only reads) does not write at all.
+    """
+
+    FILE = "player_sessions.json"
+
+    def __init__(self, path: str, *, max_per_player: int = 20,
+                 touch_seconds: int = 600) -> None:
+        self.path = path
+        self.lock = threading.RLock()
+        self.max_per_player = max(1, int(max_per_player))
+        self.touch_seconds = max(0, int(touch_seconds))
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        if not os.path.exists(path):
+            self._write({})
+
+    # -- storage -----------------------------------------------------
+    def _read(self) -> dict:
+        try:
+            with open(self.path, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, ValueError):
+            return {}
+        rows = data.get("sessions") if isinstance(data, dict) else None
+        return rows if isinstance(rows, dict) else {}
+
+    def _write(self, rows: dict) -> None:
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump({"sessions": rows}, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp, self.path)
+
+    @staticmethod
+    def _instant(now: float | None) -> int:
+        return int(time.time() if now is None else now)
+
+    @staticmethod
+    def _expires(row: dict) -> int:
+        try:
+            return int(row.get("expires") or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    def _drop_expired(self, rows: dict, instant: int) -> int:
+        dead = [sid for sid, row in rows.items()
+                if not isinstance(row, dict) or
+                self._expires(row) <= instant]
+        for sid in dead:
+            rows.pop(sid, None)
+        return len(dead)
+
+    # -- lifecycle ---------------------------------------------------
+    def record(self, session: PlayerSession, *, user_agent: str = "",
+               ip: str = "", now: float | None = None) -> dict:
+        """Register a freshly minted token. Oldest rows fall off at the cap."""
+        instant = self._instant(now)
+        row = {
+            "player": session.player_id,
+            "epoch": int(session.epoch),
+            "created": int(session.issued_at),
+            "seen": instant,
+            "expires": int(session.expires_at),
+            "remember": bool(session.remember),
+            "user_agent": str(user_agent or "")[:200],
+            "ip": str(ip or "")[:64],
+        }
+        with self.lock:
+            rows = self._read()
+            self._drop_expired(rows, instant)
+            mine = sorted(
+                ((sid, entry) for sid, entry in rows.items()
+                 if isinstance(entry, dict) and
+                 entry.get("player") == session.player_id),
+                key=lambda item: int(item[1].get("created") or 0))
+            while len(mine) >= self.max_per_player:
+                rows.pop(mine.pop(0)[0], None)
+            rows[session.session_id] = row
+            self._write(rows)
+        return {"id": session.session_id, **row}
+
+    def lookup(self, session_id: str, *, now: float | None = None) -> dict | None:
+        """The live row for an id, or None when it was revoked/expired."""
+        instant = self._instant(now)
+        with self.lock:
+            rows = self._read()
+            row = rows.get(str(session_id or ""))
+            if not isinstance(row, dict):
+                return None
+            if self._expires(row) <= instant:
+                rows.pop(str(session_id), None)
+                self._write(rows)
+                return None
+            return {"id": str(session_id), **row}
+
+    def touch(self, session: PlayerSession,
+              now: float | None = None) -> bool:
+        """Note activity, at most once per ``touch_seconds``. False = gone."""
+        instant = self._instant(now)
+        with self.lock:
+            rows = self._read()
+            row = rows.get(session.session_id)
+            if not isinstance(row, dict):
+                return False
+            if self._expires(row) <= instant:
+                rows.pop(session.session_id, None)
+                self._write(rows)
+                return False
+            try:
+                seen = int(row.get("seen") or 0)
+            except (TypeError, ValueError):
+                seen = 0
+            if instant - seen >= self.touch_seconds:
+                row["seen"] = instant
+                rows[session.session_id] = row
+                self._write(rows)
+            return True
+
+    def active(self, player_id: str, *, now: float | None = None) -> list[dict]:
+        """Live rows for one player, newest first. Expired rows are pruned."""
+        instant = self._instant(now)
+        with self.lock:
+            rows = self._read()
+            if self._drop_expired(rows, instant):
+                self._write(rows)
+            mine = [{"id": sid, **row} for sid, row in rows.items()
+                    if isinstance(row, dict) and
+                    row.get("player") == player_id]
+        return sorted(mine, key=lambda row: -int(row.get("created") or 0))
+
+    def revoke(self, player_id: str, session_id: str) -> bool:
+        """Delete one row, but only if it belongs to ``player_id``."""
+        session_id = str(session_id or "")
+        with self.lock:
+            rows = self._read()
+            row = rows.get(session_id)
+            if not isinstance(row, dict) or row.get("player") != player_id:
+                return False
+            rows.pop(session_id, None)
+            self._write(rows)
+            return True
+
+    def revoke_others(self, player_id: str, keep_session_id: str) -> int:
+        keep = str(keep_session_id or "")
+        with self.lock:
+            rows = self._read()
+            dead = [sid for sid, row in rows.items()
+                    if isinstance(row, dict) and
+                    row.get("player") == player_id and sid != keep]
+            for sid in dead:
+                rows.pop(sid, None)
+            if dead:
+                self._write(rows)
+            return len(dead)
+
+    def revoke_player(self, player_id: str) -> int:
+        """Every device for one player (a password change, a reset)."""
+        with self.lock:
+            rows = self._read()
+            dead = [sid for sid, row in rows.items()
+                    if isinstance(row, dict) and
+                    row.get("player") == player_id]
+            for sid in dead:
+                rows.pop(sid, None)
+            if dead:
+                self._write(rows)
+            return len(dead)
+
+    def prune(self, *, now: float | None = None) -> int:
+        instant = self._instant(now)
+        with self.lock:
+            rows = self._read()
+            dropped = self._drop_expired(rows, instant)
+            if dropped:
+                self._write(rows)
+            return dropped
 
 
 # -- secret resolution ----------------------------------------------

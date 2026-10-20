@@ -395,7 +395,12 @@ export default function Page() {
 
   const openAccount = () => (player ? go("account") : setAcctOpen(true));
 
-  const logout = () => {
+  const logout = async () => {
+    // decision 0070: end this device on the server too. The local clear runs
+    // even if the call fails — a dead token still ends the local session.
+    try {
+      await api("POST", "/api/player/logout");
+    } catch (e) {}
     setPlayerSession(null);
     setPlayer(null);
     setProfile(null);

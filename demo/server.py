@@ -98,13 +98,27 @@ from foundry.betterauth import (BridgeError, SocialIdentity,
                                 resolve_betterauth, verify_bridge)
 from foundry.auth import resolve_password_hasher
 
-from demo.player_session import (PlayerSessionError, PlayerSessions,
+from demo.player_session import (PlayerSession, PlayerSessionError,
+                                 PlayerSessions, SessionRegistry,
                                  resolve_player_sessions)
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
 TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
 BETTERAUTH_ENV_FILE = os.path.join(_REPO_ROOT, ".env.betterauth")
+
+# One refusal for every player-credential failure (decisions 0069, 0070): a
+# forged token, an expired one and a revoked device must be indistinguishable.
+PLAYER_SESSION_REFUSED = "sessão do jogador inválida ou expirada"
+
+
+def _session_stamp(value) -> str:
+    """A registry int as the ISO instant the storefront shows."""
+    try:
+        return datetime.fromtimestamp(int(value), timezone.utc).isoformat(
+            timespec="seconds")
+    except (TypeError, ValueError, OSError, OverflowError):
+        return ""
 
 
 def mail_env(env_file: str = RESEND_ENV_FILE, environ=None) -> dict[str, str]:
@@ -780,6 +794,11 @@ class Demo:
         # hermetic; otherwise the environment (or a local key file) is used.
         self.player_sessions = resolve_player_sessions(
             env=session_env(), data_dir=data_dir, secret=player_secret)
+        # The live-session list (decision 0070): one row per minted token, so a
+        # logout or a "sair dos outros" is a single row deletion. A token with
+        # no row is refused by `player_session`.
+        self.player_devices = SessionRegistry(
+            os.path.join(data_dir, SessionRegistry.FILE))
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -1094,7 +1113,8 @@ class Demo:
                                  self.betterauth.bridge_secret)
         return self.social_login(identity)
 
-    def oauth_session(self, token: str) -> dict:
+    def oauth_session(self, token: str, *,
+                      device: dict | None = None) -> dict:
         """Exchange a handoff for the player profile, or tell the storefront
         that this sign-in still needs a CPF."""
         with self._oauth_lock:
@@ -1111,9 +1131,11 @@ class Demo:
         # the handoff proves the provider identity; the session is what the
         # storefront keeps (decision 0069)
         return {"needs_profile": False,
-                **self._with_session(self.profile(player_id))}
+                **self._with_session(self.profile(player_id),
+                                     device=device)}
 
-    def oauth_complete_profile(self, token: str, payload: dict) -> dict:
+    def oauth_complete_profile(self, token: str, payload: dict, *,
+                               device: dict | None = None) -> dict:
         """CPF verification for a new social user: validate the CPF (check
         digits) and its uniqueness, plus username and Pix, then create the
         wallet — the same rules the password signup enforces."""
@@ -1126,7 +1148,8 @@ class Demo:
                                   provider=str(handoff.get("provider") or ""),
                                   email=str(handoff.get("email") or ""),
                                   name=str(handoff.get("name") or ""))
-        profile = self.register_player(dict(payload or {}), identity=identity)
+        profile = self.register_player(dict(payload or {}), identity=identity,
+                                       device=device)
         with self._oauth_lock:
             self.oauth_handoffs.pop(str(token or ""), None)
         return profile
@@ -1227,6 +1250,7 @@ class Demo:
                 validate_player_password(payload.get("password")))
             # a credential change revokes the old sessions (decision 0069)
             row["session_epoch"] = int(row.get("session_epoch") or 0) + 1
+            self.player_devices.revoke_player(player_id)
         data[player_id] = row
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
@@ -1235,7 +1259,8 @@ class Demo:
         return profile
 
     def register_player(self, payload: dict, *, is_test: bool = False,
-                        identity: SocialIdentity | None = None) -> dict:
+                        identity: SocialIdentity | None = None,
+                        device: dict | None = None) -> dict:
         """Strict account creation: name + username + email + CPF + password +
         Pix key, every field validated. One wallet per CPF, one per email and
         one per username — a duplicate is a login hint, not an overwrite.
@@ -1328,9 +1353,10 @@ class Demo:
             self._send_welcome(player_id, data[player_id])
         # signup is also a login (decision 0069): the new account walks away
         # with the same signed session the login form hands out.
-        return self._with_session(self.profile(player_id))
+        return self._with_session(self.profile(player_id), device=device)
 
-    def login_player(self, payload: dict) -> dict:
+    def login_player(self, payload: dict, *,
+                     device: dict | None = None) -> dict:
         """Username, email or CPF + password. Unknown account and wrong
         password are the same message after the same fixed delay, so neither
         the existence of an account nor its password can be probed cheaply."""
@@ -1370,7 +1396,8 @@ class Demo:
         # decision 0069: the login answer carries the signed session the
         # storefront presents on every player write from now on.
         return self._with_session(self.profile(player_id),
-                                  remember=bool(payload.get("remember")))
+                                  remember=bool(payload.get("remember")),
+                                  device=device)
 
     # -- password reset (decision 0068) ---------------------------------
     @staticmethod
@@ -1519,6 +1546,8 @@ class Demo:
             timezone.utc).isoformat(timespec="seconds")
         data[player_id] = updated
         self.players.write_all(data)
+        # ...and every device, not just the tokens (0070)
+        self.player_devices.revoke_player(player_id)
         return {"reset": True,
                 "username": str(record.get("username") or "")}
 
@@ -1564,7 +1593,7 @@ class Demo:
         profile["bonus"] = self._bonus_view(player_id)
         return profile
 
-    # -- signed player sessions (decision 0069) -------------------------
+    # -- signed player sessions (decisions 0069, 0070) ------------------
     def session_epoch(self, player_id: str) -> int:
         """The revocation counter on the player row (0 when absent)."""
         row = self.players.read_all().get(player_id) or {}
@@ -1574,43 +1603,96 @@ class Demo:
             return 0
 
     def issue_player_token(self, player_id: str, *,
-                           remember: bool = False) -> dict:
-        """Mint the token a player surface must present from now on."""
+                           remember: bool = False,
+                           device: dict | None = None) -> dict:
+        """Mint the token a player surface must present from now on.
+
+        The token names a session id and the registry records that id, so this
+        device can later be logged out alone (0070).
+        """
         token = self.player_sessions.issue(
             player_id, epoch=self.session_epoch(player_id), remember=remember)
+        session = self.player_sessions.verify(token)
+        facts = dict(device or {})
+        self.player_devices.record(
+            session, user_agent=str(facts.get("user_agent") or ""),
+            ip=str(facts.get("ip") or ""))
         return {"player_token": token,
-                "player_token_expires_at":
-                    self.player_sessions.verify(token).expires_at}
+                "player_token_expires_at": session.expires_at}
 
-    def _with_session(self, profile: dict, *, remember: bool = False) -> dict:
+    def _with_session(self, profile: dict, *, remember: bool = False,
+                      device: dict | None = None) -> dict:
         return {**profile,
                 **self.issue_player_token(profile["player_id"],
-                                          remember=remember)}
+                                          remember=remember, device=device)}
 
-    def player_from_token(self, token: str) -> str:
-        """The player a request may act as, or an AuthError (HTTP 401).
+    def player_session(self, token: str) -> PlayerSession:
+        """The verified session behind a token, or an AuthError (HTTP 401).
 
-        Three things must agree: the signature, the row's epoch (a password
-        reset bumps it), and the row's existence. The message is deliberately
-        the same for every refusal — a forged token and a revoked one must not
-        be distinguishable — and it never echoes the token.
+        Four things must agree: the signature and lifetime, the player row's
+        existence, the row's epoch (a password reset bumps it), and a live
+        registry row for the token's session id (a logout deletes it). Every
+        refusal carries the same message, so a forged token, an expired one and
+        a revoked one cannot be told apart, and it never echoes the token.
         """
         try:
             session = self.player_sessions.verify(token)
         except PlayerSessionError:
-            raise AuthError("sessão do jogador inválida ou expirada") from None
-        data = self.players.read_all()
-        row = data.get(session.player_id)
+            raise AuthError(PLAYER_SESSION_REFUSED) from None
+        row = self.players.read_all().get(session.player_id)
         if not isinstance(row, dict):
-            raise AuthError("sessão do jogador inválida ou expirada")
-        if self.session_epoch(session.player_id) != session.epoch:
-            raise AuthError("sessão do jogador inválida ou expirada")
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        try:
+            epoch = max(0, int(row.get("session_epoch") or 0))
+        except (TypeError, ValueError):
+            epoch = 0
+        if epoch != session.epoch:
+            raise AuthError(PLAYER_SESSION_REFUSED)
         if row.get("is_test") and \
                 not self.settings_view()["test_accounts_enabled"]:
             # a disabled test account is an account that cannot log in; a token
             # minted before the switch must stop working too
-            raise AuthError("sessão do jogador inválida ou expirada")
-        return session.player_id
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        if not self.player_devices.touch(session):
+            # the row is gone: this device was logged out (0070)
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        return session
+
+    def player_from_token(self, token: str) -> str:
+        return self.player_session(token).player_id
+
+    def player_sessions_view(self, session: PlayerSession) -> dict:
+        """Every live device for the caller, with the caller's own row marked."""
+        return {"sessions": [{
+            "id": row["id"],
+            "current": row["id"] == session.session_id,
+            "created_at": _session_stamp(row.get("created")),
+            "last_seen_at": _session_stamp(row.get("seen")),
+            "expires_at": _session_stamp(row.get("expires")),
+            "remember": bool(row.get("remember")),
+            "user_agent": row.get("user_agent") or "",
+            "ip": row.get("ip") or "",
+        } for row in self.player_devices.active(session.player_id)]}
+
+    def logout_player(self, session: PlayerSession) -> dict:
+        """End this device only. The token stays valid until `exp`, but with
+        no registry row the next request is refused."""
+        self.player_devices.revoke(session.player_id, session.session_id)
+        return {"signed_out": True}
+
+    def revoke_player_session(self, session: PlayerSession,
+                              session_id: str) -> dict:
+        """End another device, or this one. A stranger's id is a 401 and does
+        not touch the victim's row."""
+        session_id = str(session_id or "")
+        if not self.player_devices.revoke(session.player_id, session_id):
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        return {"revoked": True, "current": session_id == session.session_id}
+
+    def revoke_other_sessions(self, session: PlayerSession) -> dict:
+        """Leave this device alone, end every other one."""
+        return {"revoked": self.player_devices.revoke_others(
+            session.player_id, session.session_id)}
 
     # -- promotions -----------------------------------------------------
     # Real mechanics, small numbers: every claim posts a `bonus_grant`
@@ -3461,6 +3543,7 @@ class Demo:
         row["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
         data[player_id] = row
         self.players.write_all(data)
+        self.player_devices.revoke_player(player_id)
         return {"reset": player_id, "by": admin["username"]}
 
     def admin_delete_test_account(self, token: str, body: dict) -> dict:
@@ -3472,6 +3555,7 @@ class Demo:
             raise ValueError("conta de teste não encontrada")
         del data[player_id]
         self.players.write_all(data)
+        self.player_devices.revoke_player(player_id)
         self.pix_keys.pop(player_id, None)
         return {"deleted": player_id, "by": admin["username"]}
 
@@ -5001,7 +5085,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def _player_id(self) -> str:
         """Who this request may act as, or an AuthError (HTTP 401)."""
-        return DEMO.player_from_token(self._player_token())
+        return self._player_session().player_id
+
+    def _player_session(self) -> PlayerSession:
+        """The verified session, when a route needs its id (0070)."""
+        return DEMO.player_session(self._player_token())
+
+    def _device(self) -> dict:
+        """What the session list shows about this login (decision 0070)."""
+        return {"user_agent": (self.headers.get("User-Agent") or "")[:200],
+                "ip": self._client_ip()}
 
     def _player_body(self) -> dict:
         """The JSON body with `player` replaced by the session's identity.
@@ -5173,6 +5266,10 @@ class Handler(BaseHTTPRequestHandler):
                 # decision 0069: the identity comes from the session, never
                 # from a query string; `?id=` is deliberately ignored.
                 self._send(200, DEMO.profile(self._player_id()))
+            elif parsed.path == "/api/player/sessions":
+                # decision 0070: the caller's own devices, with its row marked
+                self._send(200, DEMO.player_sessions_view(
+                    self._player_session()))
             elif parsed.path == "/api/history":
                 player = self._player_id()
                 self._send(200, {"rounds": DEMO.history(player),
@@ -5324,11 +5421,22 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/player":
                 body = self._body()
                 DEMO.require_turnstile(body, "register", self._client_ip())
-                self._send(200, DEMO.register_player(body))
+                self._send(200, DEMO.register_player(body,
+                                                    device=self._device()))
             elif path == "/api/player/login":
                 body = self._body()
                 DEMO.require_turnstile(body, "login", self._client_ip())
-                self._send(200, DEMO.login_player(body))
+                self._send(200, DEMO.login_player(body, device=self._device()))
+            elif path == "/api/player/logout":
+                # decision 0070: end this device only; the other rows stay
+                self._send(200, DEMO.logout_player(self._player_session()))
+            elif path == "/api/player/sessions/revoke":
+                self._send(200, DEMO.revoke_player_session(
+                    self._player_session(),
+                    str(self._body().get("session_id") or "")))
+            elif path == "/api/player/sessions/revoke-others":
+                self._send(200, DEMO.revoke_other_sessions(
+                    self._player_session()))
             elif path == "/api/player/password/request":
                 body = self._body()
                 DEMO.require_turnstile(body, "password_reset",
@@ -5420,11 +5528,11 @@ class Handler(BaseHTTPRequestHandler):
                     self.headers.get("X-Betterauth-Signature") or ""))
             elif path == "/api/auth/oauth/session":
                 self._send(200, DEMO.oauth_session(
-                    self._body().get("token") or ""))
+                    self._body().get("token") or "", device=self._device()))
             elif path == "/api/auth/oauth/complete":
                 body = self._body()
                 self._send(200, DEMO.oauth_complete_profile(
-                    body.get("token") or "", body))
+                    body.get("token") or "", body, device=self._device()))
             elif path == "/api/admin/users":
                 self._send(200, DEMO.admin_create_user(
                     self._bearer(), self._body()))

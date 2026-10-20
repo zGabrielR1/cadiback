@@ -14,14 +14,14 @@ No real money moves; no commercial legal or regulatory obligations.
 | `Makefile`, `scripts/verify.py` | Executable verification: tests, structure, links |
 | `decisions/` | Decision log, one file per decision |
 | `frame/` | Core double-entry wallet, ledger, and rules (50 checks) |
-| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (411 checks) |
+| `demo/` | Playable server: Pix (real Asaas rail + instant demo credit), in-house slots, risk monitor (424 checks) |
 | `demo/asaas.py` | Real Pix through Asaas: charge, QR, provider-confirmed settlement |
 | `demo/crypto.py` | Real crypto through NOWPayments: invoice, address, IPN-confirmed settlement |
 | `scripts/live_providers.py` | Live provider harness: launch each publisher and prove our wallet answers + debits |
 | `foundry/` | Vendored modules from the foundry kit (stdlib only) — email, Turnstile, password/session auth and the Better Auth bridge today. Source of truth: `projects/foundry/`; regenerate with its `scripts/vendor.py` (decisions 0047, 0048, 0066) |
 | `auth-server/` | The self-hosted Better Auth process (TypeScript, stateless): Google/Facebook/Apple, the signed identity bridge. Started beside Python in the container and proxied same-origin at `/api/betterauth/*` (decision 0066) |
 | `demo/betterauth_proxy.py` | Same-origin proxy to the auth sidecar: public host as `X-Forwarded-Host`, every `Set-Cookie` preserved |
-| `demo/player_session.py` | Signed player sessions (decision 0069): the `ps1.…` token every player route derives the account from, plus epoch revocation |
+| `demo/player_session.py` | Signed player sessions (decisions 0069, 0070): the `ps1.…` token every player route derives the account from, the live-session registry behind per-device logout, and epoch revocation |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
 | `Dockerfile`, `render.yaml` | The deploy: one container, two processes (Python + the Node auth server), built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
@@ -33,7 +33,7 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
 | `docs/oauth.md` | Social login (Better Auth): the sidecar/proxy/bridge shape, Google/Facebook/Apple setup, the CPF-completion flow, the no-op-when-unconfigured rule |
 | `docs/supabase.md` | Supabase Postgres + Vercel: credentials, env vars, cutover checklist |
-| `docs/sessions.md` | Signed player sessions (decision 0069): the token, revocation, the signing key |
+| `docs/sessions.md` | Signed player sessions (decisions 0069, 0070): the token, the live-session list, revocation, the signing key |
 | `supabase/` | Postgres schema as migrations (decision 0049); applied in the dashboard, mirrored by `demo/models.py` |
 | `docs/audit-2026-10-01.md` | Audit findings & ledger integrity fixes |
 | `probes/` | Provider demo catalog (272 official games) & live sports fixtures |

@@ -1,8 +1,9 @@
 # Player sessions
 
-How a player's account is proven on every request (decision `0069`). Replaces
-the old `{"player": "player-…"}` body field and `GET /api/player?id=`: the id
-is derived from the CPF, so it was never a credential.
+How a player's account is proven on every request (decisions `0069`, `0070`).
+Replaces the old `{"player": "player-…"}` body field and
+`GET /api/player?id=`: the id is derived from the CPF, so it was never a
+credential.
 
 ## The shape
 
@@ -10,14 +11,16 @@ is derived from the CPF, so it was never a credential.
 X-Player-Token: ps1.<base64url(payload)>.<base64url(hmac-sha256)>
 ```
 
-The payload carries the player id, the row's `session_epoch`, the issue and
-expiry instants, and whether "lembrar de mim" was chosen.
+The payload carries the player id, the row's `session_epoch`, a session id,
+the issue and expiry instants, and whether "lembrar de mim" was chosen. The
+session id names a row in the live-session list (`data/player_sessions.json`),
+which is what makes "sair deste dispositivo" real (decision `0070`).
 
 - **12 h** ordinary login; **30 d** when the form sends `remember: true`.
 - Signed with HMAC-SHA256 over a fixed context prefix, compared in constant
   time.
-- Stateless: no session table, no per-request write. A restart does not log
-  players out (the token is its own proof until `exp`).
+- Stateless signing: no per-request write. The live-session row is read on the
+  same pass as the player row and touched at most once per 10 minutes.
 
 ## Where it is required
 
@@ -29,6 +32,7 @@ expiry instants, and whether "lembrar de mim" was chosen.
 | `POST /api/wallet/launch` | |
 | `POST /api/self-exclude`, `/api/self-exclude-lift` | |
 | `GET /api/player`, `GET /api/history` | |
+| `GET /api/player/sessions`, `POST /api/player/logout`, `POST /api/player/sessions/revoke`, `POST /api/player/sessions/revoke-others` | |
 
 A missing, forged, expired or revoked token is **401** with
 `sessão do jogador inválida ou expirada` — the same message for every refusal.
@@ -38,23 +42,38 @@ The body's `player` field is overwritten from the token, never merged. The
 The token header is deliberately not `Authorization`: the painel's bearer
 session uses that, and the owner can be logged into both surfaces at once.
 
-## Revocation
+## Live sessions and revocation
+
+`data/player_sessions.json` holds one row per minted token: player, epoch,
+created/last-seen/expires (unix seconds), remember, the opening browser's
+`User-Agent` and IP. A token whose id has no row is refused, even though its
+signature still verifies.
+
+| Action | Effect |
+|--------|--------|
+| `GET /api/player/sessions` | The caller's own rows, newest first, with the current one marked |
+| `POST /api/player/logout` | Deletes the caller's row — this device only |
+| `POST /api/player/sessions/revoke` `{session_id}` | Deletes another row of the caller; a stranger's id is a 401 and leaves it alive |
+| `POST /api/player/sessions/revoke-others` | Every row of the caller except the current one |
+
+A player keeps at most 20 live rows; the oldest is dropped at the cap, and
+expired rows are pruned on writes and on every list.
 
 `session_epoch` lives on the player row (0 for accounts created before 0069).
 A token names the epoch it was minted under; when the row's value differs, the
-token is refused.
-
-The epoch is bumped by:
+token is refused. The epoch is bumped — and the player's rows deleted — by:
 
 - `POST /api/player/password/reset` (the self-service link, decision `0068`);
 - the operator's test-account password reset;
+- the operator's test-account deletion;
 - a legacy `upsert_player` that writes a new password.
 
 Deleting the row invalidates every token for it immediately. Disabling test
 accounts in the painel does the same at the next request.
 
-Revocation is all-or-nothing: a reset logs every device out. Per-device logout
-would need a session table.
+A password reset is all-or-nothing by design; everything else is per device.
+A token minted before 0070 (no session id) is refused: that player logs in
+once.
 
 ## The signing key
 
@@ -90,6 +109,12 @@ and drops a stored entry that has no token (a pre-0069 leftover) on boot. The
 boot refresh calls `GET /api/player` with no id; a rejected token clears the
 session.
 
+The account view lists the live sessions ("Sessões ativas"): device label from
+the user agent, start, last use, expiry, the current row marked, an "Encerrar"
+per row and "Encerrar as outras sessões". "Sair da conta" now calls
+`POST /api/player/logout` before clearing the local copy, so the token is dead
+on the server too.
+
 The `player` prop still travels to panels and into bodies for convenience. The
 server ignores it — the token decides.
 
@@ -104,9 +129,15 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:8765/api/player/login \
   -H 'Content-Type: application/json' \
   -d '{"identifier":"ana.souza","password":"ana1234"}' | python -c 'import json,sys;print(json.load(sys.stdin)["player_token"])')
 curl -s http://127.0.0.1:8765/api/player -H "X-Player-Token: $TOKEN"
+
+# the list, then end this device: the same token is refused afterwards
+curl -s http://127.0.0.1:8765/api/player/sessions -H "X-Player-Token: $TOKEN"
+curl -s -X POST http://127.0.0.1:8765/api/player/logout -H "X-Player-Token: $TOKEN"
+curl -s -o - -w '\n%{http_code}\n' http://127.0.0.1:8765/api/player \
+  -H "X-Player-Token: $TOKEN"      # 401
 ```
 
-After a password reset, the second call must answer 401.
+After a password reset, the profile call must answer 401 as well.
 
 ## Tests
 
@@ -114,3 +145,9 @@ After a password reset, the second call must answer 401.
 minting at every door, both lifetimes, tampered/foreign/expired tokens, reset
 and operator-reset revocation, deleted rows, derived key, 401 without a token,
 token-beats-body on a deposit, `?id=` ignored, and crash-round ownership.
+
+`DeviceSessionTest` (9) and `DeviceSessionHttpTest` (4): every mint is a row,
+the list marks the caller, logout ends one device only, a stranger cannot
+revoke by id, "revoke others" keeps the caller, the 20-row cap, the throttled
+touch, expiry pruning, a 0069-shaped token without a session id, an operator
+reset emptying the list, and the four routes answering 401 without a token.

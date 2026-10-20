@@ -1,5 +1,26 @@
 # PROGRESS
 
+## DONE (2026-10-20 — device sessions, decision 0070)
+
+- **"SAIR" NOW SIGNS OUT.** The token carries a session id and the host keeps
+  one row per token in `data/player_sessions.json`. A logged-out token still has
+  a valid signature; the missing row is what refuses it. The storefront's
+  "Sair da conta" calls `POST /api/player/logout` before clearing local
+  storage, and revoking the current row from the list ends that tab.
+- **EACH DEVICE HAS A NAME.** The account view lists "Sessões ativas" —
+  browser · OS from the user agent, IP, start, last use, expiry, the current row
+  marked — with "Encerrar" per row and "Encerrar as outras sessões". A
+  stranger's session id is a 401 and changes nothing.
+- **A RESET STILL CLEARS EVERYTHING.** `session_epoch` keeps its job; the reset,
+  the operator test-account reset/deletion and a password upsert bump it and
+  delete the player's rows. Disabled test accounts refuse at the next request.
+- **BOUNDED.** 20 rows per player (oldest dropped), expired rows pruned,
+  `seen` written at most once per 10 minutes — a read-only request still does
+  not write.
+- Tests: `DeviceSessionTest` (9) + `DeviceSessionHttpTest` (4). `frame` 50/50 ·
+  `demo` 424/424 · `verify.py` 0. Decision `0070`. Open limit: the registry is
+  one JSON file in one process, and on the free plan a deploy rebuilds `data/`.
+
 ## DONE (2026-10-20 — signed player sessions, decision 0069)
 
 - **A PLAYER IS WHO THE TOKEN SAYS.** Every player write used to carry

@@ -53,7 +53,7 @@ demo/
     ├── game_proxy.py        same-origin front for publisher games: wallet sync, /g/<game_id>
     ├── pg_proxy.py          PG Soft: a minted trial session, the hosts it
     │                        binds, and the measured money-API endpoints
-    ├── player_session.py    signed player sessions: HMAC token, 12h/30d, epoch revocation (0069)
+    ├── player_session.py    signed player sessions: HMAC token, 12h/30d, per-device rows, epoch revocation (0069, 0070)
     ├── index.html           zero-build fallback storefront
     └── test_demo.py         411 execution checks
 

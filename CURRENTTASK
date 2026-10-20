@@ -1,3 +1,47 @@
+CURRENTTASK: Device sessions (decision 0070) — "Sair da conta" now ends the
+session on the server, and a player can see and end each device separately. The
+signed token gains a session id, the host keeps one row per token in
+`data/player_sessions.json`, and a token whose row is gone is refused — the
+row is the allowlist. A password reset still bumps `session_epoch` and clears
+every row, closing 0069's "a single device cannot be logged out alone".
+
+## STATUS
+
+- **THE ROW IS THE ALLOWLIST.** `demo/player_session.py` mints `s` into the
+  payload (`new_session_id`), and `SessionRegistry` (same file) keeps
+  `{player, epoch, created, seen, expires, remember, user_agent, ip}` per token.
+  `Demo.player_session` checks signature → player row → epoch → registry, so a
+  correctly signed token that was logged out is refused like a forged one.
+- **FOUR ROUTES, ONE OWNER.** `GET /api/player/sessions` (own rows, current
+  marked), `POST /api/player/logout` (this device), `POST
+  /api/player/sessions/revoke {session_id}` (another of the caller's, a
+  stranger's id is 401 and changes nothing), `POST
+  /api/player/sessions/revoke-others`. All 401 without a token, with the same
+  message as 0069.
+- **THE EPOCH STILL MEANS ALL DEVICES.** Reset (0068), operator test-account
+  reset, test-account deletion and a password upsert bump the epoch and now
+  delete the player's rows too; a disabled test account still refuses at the
+  next request.
+- **BOUNDED AND CHEAP.** 20 rows per player (oldest dropped), expired rows
+  pruned on writes/lists/lookup, `touch` writes `seen` at most once per 10
+  minutes, so a read-only request still does not write. The list exposes the
+  session id (public; the signature is the credential) so one device can end
+  another.
+- **STOREFRONT.** The account view gains "Sessões ativas": browser · OS label
+  from the user agent, IP, start/last use/expiry, current row marked, an
+  "Encerrar" per row and "Encerrar as outras sessões". Logout calls the server
+  before clearing local storage; revoking the current row logs the tab out.
+- **TESTED.** `DeviceSessionTest` (9) + `DeviceSessionHttpTest` (4): mint is a
+  row, the list marks the caller, one-device logout, stranger revoke, revoke
+  others, the 20-row cap, throttled touch, expiry pruning, a 0069 token with no
+  session id, operator reset emptying the list, and the four routes 401 without
+  a token. `frame` 50/50 · `demo` 424/424 · `verify.py` 0. Decision `0070`.
+- **OPEN (limit):** the registry is one JSON file in one process, and on the
+  free plan `data/` is rebuilt per deploy, so every deploy logs players out.
+  A second replica or a persistent list needs the Postgres seam (0049).
+- **OPEN (cleanup):** the UI still sends the now-ignored `player` field; it is
+  documentation, not authority (unchanged from 0069).
+
 CURRENTTASK: Signed player sessions (decision 0069) — a player write no longer
 names its wallet; it presents a token. Login, signup and both social doors mint
 a signed `ps1.…` token, the storefront sends it on `X-Player-Token`, and every
@@ -33,8 +77,10 @@ closing the limit 0068 recorded.
   deleted rows, derived key, 401 without a token, token-beats-body on a
   deposit, `?id=` ignored, and crash ownership. `frame` 50/50 · `demo`
   411/411 · `verify.py` 0. Decision `0069`.
-- **OPEN (limit):** revocation is all-or-nothing — a reset kills every device,
-  because there is no session table. Per-device logout needs one.
+- **CLOSED (limit):** was "revocation is all-or-nothing — a reset kills every
+  device, because there is no session table. Per-device logout needs one."
+  Decision `0070` added the session-id row list, `POST /api/player/logout` and
+  the per-device list/revoke routes; a reset still kills every device.
 - **OPEN (cleanup):** the UI still passes `player` as a prop and in bodies; the
   server ignores it, so it is documentation now, not authority.
 - **LIVE.** Commit `0a5e1d3`, deploy `dep-dbbnkd2vcj2c73a37e90`. Probed

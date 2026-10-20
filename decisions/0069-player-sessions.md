@@ -174,6 +174,10 @@ Suites: `frame` 50/50 · `demo` 411/411 · `verify.py` 0.
 
 ## Limits
 
+- **Amended by 0070.** The token now carries a session id and a live-session row
+  in `data/player_sessions.json` decides whether it is accepted, so one device
+  can be logged out alone. The signature and `session_epoch` still hold; the
+  stateless claim is now about the token's payload, not the revocation list.
 - **All-or-nothing revocation.** A password reset kills every device, not one.
   That is the honest consequence of a stateless token; per-device revocation
   needs a store.

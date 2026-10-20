@@ -1,12 +1,95 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { api, BRL } from "../../lib/api";
 
-/** Account view: profile, self-exclusion controls, stats strip and round
- * history (F1 extract from page.jsx). Exclusion calls live here and report
- * back through onChanged (the page refresh); history rendering is
- * untouched. */
+/** A registry instant (ISO, UTC) in the reader's own timezone. */
+function when(iso) {
+  if (!iso) return "—";
+  const stamp = new Date(iso);
+  return Number.isNaN(stamp.getTime())
+    ? "—"
+    : stamp.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+/** A browser/OS label from the user agent. The raw string is not shown: it is
+ * 200 characters of noise, and the point of the list is "is that me?". */
+function deviceName(userAgent) {
+  const text = String(userAgent || "");
+  if (!text) return "Dispositivo desconhecido";
+  const browser = /Edg\//.test(text)
+    ? "Edge"
+    : /OPR\//.test(text)
+      ? "Opera"
+      : /Firefox\//.test(text)
+        ? "Firefox"
+        : /Chrome\//.test(text)
+          ? "Chrome"
+          : /Safari\//.test(text)
+            ? "Safari"
+            : "Navegador";
+  const system = /Android/.test(text)
+    ? "Android"
+    : /iPhone|iPad|iPod/.test(text)
+      ? "iOS"
+      : /Windows/.test(text)
+        ? "Windows"
+        : /Mac OS X|Macintosh/.test(text)
+          ? "macOS"
+          : /Linux/.test(text)
+            ? "Linux"
+            : "dispositivo";
+  return browser + " · " + system;
+}
+
+/** Account view: profile, self-exclusion controls, active sessions, stats
+ * strip and round history (F1 extract from page.jsx). Exclusion and session
+ * calls live here and report back through onChanged (the page refresh);
+ * history rendering is untouched. */
 export default function AccountView({ profile, player, health, history, refreshError, onChanged, onLogout }) {
+  const [sessions, setSessions] = useState(null);
+  const [sessionError, setSessionError] = useState("");
+
+  const loadSessions = () => {
+    api("GET", "/api/player/sessions")
+      .then((data) => {
+        setSessions(data.sessions || []);
+        setSessionError("");
+      })
+      .catch((e) => {
+        setSessions([]);
+        setSessionError(e.message);
+      });
+  };
+
+  useEffect(() => {
+    if (player) loadSessions();
+    else setSessions(null);
+    // a login on another tab changes the list; reload with the player
+  }, [player]);
+
+  const endSession = async (sessionId) => {
+    try {
+      const result = await api("POST", "/api/player/sessions/revoke", {
+        session_id: sessionId,
+      });
+      // revoking the row this tab is using is a logout for this tab too
+      if (result.current) onLogout();
+      else loadSessions();
+    } catch (e) {
+      window.alert(e.message);
+    }
+  };
+
+  const endOtherSessions = async () => {
+    try {
+      await api("POST", "/api/player/sessions/revoke-others");
+      loadSessions();
+    } catch (e) {
+      window.alert(e.message);
+    }
+  };
+
   const selfExclude = async () => {
     try {
       await api("POST", "/api/self-exclude", {
@@ -71,6 +154,77 @@ export default function AccountView({ profile, player, health, history, refreshE
           onClick={onLogout}
         >
           Sair da conta
+        </button>
+      </section>
+      <section className="panel">
+        <h2>Sessões ativas</h2>
+        <div style={{ fontSize: 12.5, color: "var(--mut)" }}>
+          Cada login abre uma sessão. Encerrar uma aqui derruba aquela sessão no próximo pedido;
+          a senha e o saldo não mudam.
+        </div>
+        {sessionError ? (
+          <div className="err" style={{ fontSize: 12.5 }}>
+            falha ao carregar sessões: {sessionError}
+          </div>
+        ) : null}
+        {sessions === null ? (
+          <div className="sub" style={{ marginTop: 8 }}>
+            Carregando...
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="sub" style={{ marginTop: 8 }}>
+            Nenhuma sessão ativa.
+          </div>
+        ) : (
+          <table className="hist" style={{ marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th>Dispositivo</th>
+                <th>Início</th>
+                <th>Último uso</th>
+                <th>Expira</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    {deviceName(s.user_agent)}
+                    {s.current ? (
+                      <>
+                        {" "}
+                        <span className="badge b-ok">este dispositivo</span>
+                      </>
+                    ) : null}
+                    <div style={{ fontSize: 11, color: "var(--mut)" }}>
+                      {s.ip || "IP desconhecido"}
+                    </div>
+                  </td>
+                  <td>{when(s.created_at)}</td>
+                  <td>{when(s.last_seen_at)}</td>
+                  <td>{when(s.expires_at)}</td>
+                  <td style={{ textAlign: "right" }}>
+                    <button
+                      className="ghost"
+                      style={{ width: "auto", fontSize: 11.5, padding: "4px 8px" }}
+                      onClick={() => endSession(s.id)}
+                    >
+                      {s.current ? "Sair" : "Encerrar"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <button
+          className="ghost"
+          style={{ width: "auto", marginTop: 12 }}
+          disabled={!sessions || sessions.length < 2}
+          onClick={endOtherSessions}
+        >
+          Encerrar as outras sessões
         </button>
       </section>
       <section className="panel">
