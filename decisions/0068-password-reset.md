@@ -160,5 +160,8 @@ and loopback are accepted, and `PUBLIC_SITE_URL` wins over all of them.
 - **Deliverability is the provider's job.** Reserved addresses are refused by
   the foundry mail module, and a real player needs a real inbox. The live
   smoke test used the existing Resend rail only for health, not a real reset.
+  The deployed `MAIL_FROM` is still `onboarding@resend.dev`, which Resend only
+  delivers to the account owner; a verified domain is the owner step recorded
+  in `docs/needed-from-owner.md`.
 - **A stolen inbox can reset the account.** That is the standard trust model
   for email reset; the 30-minute, single-use link limits the window.

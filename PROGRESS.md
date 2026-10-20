@@ -20,7 +20,9 @@
   from the address bar on boot and held in component state.
 - Tests: `PasswordResetTest` (6) + `PasswordResetHttpTest` (2). Decision
   `0068`; runbook updated in `docs/mail.md`. Open limit: the player surface is
-  still `player_id`-keyed, so there are no player sessions to revoke.
+  still `player_id`-keyed, so there are no player sessions to revoke. Open
+  owner step: `MAIL_FROM` is still `onboarding@resend.dev`, which only delivers
+  to the account owner, so a verified Resend domain is needed for real players.
 
 ## DONE (2026-10-19 — Pragmatic free spins settle without a phantom stake, decision 0067)
 

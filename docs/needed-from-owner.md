@@ -111,7 +111,24 @@ Better Auth infrastructure dashboard when present.
 
 Full runbook: `docs/oauth.md`.
 
-## 5. Nothing else
+## 5. Resend sending domain — required for reset emails to real players
+
+Password reset (decision 0068) is live, and the rail currently sends from
+`onboarding@resend.dev`. Resend only delivers that placeholder sender to the
+**account owner's own address**, which is enough to prove the rail and to test
+your own reset, but not enough for a real player. To make reset work for
+everyone:
+
+1. Verify a domain in Resend (SPF/DKIM records).
+2. Put the verified sender in the gitignored `.env.resend`:
+   `MAIL_FROM=candibet <nao-responda@seudominio.com>`.
+3. Run `python scripts/render_deploy.py --yes`.
+
+Until that is done, the reset form answers neutrally but a non-owner inbox will
+not receive the link. The admin test-send in the painel is the quickest way to
+confirm the new sender.
+
+## 6. Nothing else
 
 - Test deposits, the admin win/loss control (+ win-rate slider) and the wallet
   saldo are live and verified.

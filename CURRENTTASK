@@ -26,6 +26,10 @@ the older link. The reset email is the second trigger on the Resend rail.
 - **OPEN (limit):** the player surface still keys on `player_id`; this changes
   the password credential only, and there are no player sessions to revoke.
   Moving players onto signed sessions is a larger, separate change.
+- **OPEN (owner):** `MAIL_FROM` is `onboarding@resend.dev`, which Resend only
+  delivers to the account owner. Verify a domain and update `.env.resend` so a
+  real player's reset email arrives; the feature still works for your own
+  address and is unit-tested meanwhile.
 
 CURRENTTASK: Pragmatic free spins settle without a phantom stake (decision
 0067) — the round tap now reads the publisher's own `ntp` instead of `c × l`
