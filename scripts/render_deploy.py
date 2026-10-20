@@ -225,6 +225,10 @@ BETTERAUTH_KEYS = (
     "BETTER_AUTH_SECRET", "BETTER_AUTH_BRIDGE_SECRET",
     "BETTER_AUTH_API_KEY", "BETTER_AUTH_URL",
     "BETTER_AUTH_TRUSTED_ORIGINS", "BETTER_AUTH_PROVIDERS",
+    # player-session signing (decision 0069): optional, derived from
+    # BETTER_AUTH_SECRET when absent; carried here so an explicit key can be
+    # pinned without a second credential file
+    "PLAYER_SESSION_SECRET",
     "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET",
     "FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET",
     "APPLE_CLIENT_ID", "APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY",

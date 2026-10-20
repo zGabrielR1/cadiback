@@ -98,6 +98,9 @@ from foundry.betterauth import (BridgeError, SocialIdentity,
                                 resolve_betterauth, verify_bridge)
 from foundry.auth import resolve_password_hasher
 
+from demo.player_session import (PlayerSessionError, PlayerSessions,
+                                 resolve_player_sessions)
+
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
 TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
@@ -137,6 +140,18 @@ def betterauth_env(env_file: str = BETTERAUTH_ENV_FILE,
     """
     return load_env(env_file, environ,
                     secret_name="BETTER_AUTH_BRIDGE_SECRET")
+
+
+def session_env(env_file: str = BETTERAUTH_ENV_FILE,
+                environ=None) -> dict[str, str]:
+    """The player-session signing settings (decision 0069).
+
+    `PLAYER_SESSION_SECRET` is the proper key. When it is absent the already
+    deployed `BETTER_AUTH_SECRET` (same file, carried by the deploy) is derived
+    into a player-only key, so this change needs no new owner step; a local
+    run with neither falls back to a generated `data/player_session.key`.
+    """
+    return load_env(env_file, environ)
 
 
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:
@@ -634,7 +649,8 @@ SETTINGS_DEFAULTS = {
 
 class Demo:
     def __init__(self, data_dir: str = DATA, mailer=None, verifier=None,
-                 db=None, betterauth=None, password_hasher=None) -> None:
+                 db=None, betterauth=None, password_hasher=None,
+                 player_secret: str | None = None) -> None:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
@@ -758,6 +774,12 @@ class Demo:
             os.path.join(data_dir, "password_resets.json"))
         self._reset_lock = threading.RLock()
         self._reset_ip: dict[str, list[float]] = {}
+        # Signed player sessions (decision 0069). The token is the credential:
+        # the player id it names is derived server-side by the route, never
+        # taken from a body field. `player_secret` is injectable so tests are
+        # hermetic; otherwise the environment (or a local key file) is used.
+        self.player_sessions = resolve_player_sessions(
+            env=session_env(), data_dir=data_dir, secret=player_secret)
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -1086,7 +1108,10 @@ class Demo:
         player_id = str(handoff.get("player_id") or "")
         if player_id not in self.players.read_all():
             raise BridgeError("conta social não encontrada")
-        return {"needs_profile": False, **self.profile(player_id)}
+        # the handoff proves the provider identity; the session is what the
+        # storefront keeps (decision 0069)
+        return {"needs_profile": False,
+                **self._with_session(self.profile(player_id))}
 
     def oauth_complete_profile(self, token: str, payload: dict) -> dict:
         """CPF verification for a new social user: validate the CPF (check
@@ -1200,6 +1225,8 @@ class Demo:
             row.pop("pw_salt", None)
             row["pw_hash"] = self.passwords.hash(
                 validate_player_password(payload.get("password")))
+            # a credential change revokes the old sessions (decision 0069)
+            row["session_epoch"] = int(row.get("session_epoch") or 0) + 1
         data[player_id] = row
         self.players.write_all(data)
         self.pix_keys[player_id] = pix.raw
@@ -1285,6 +1312,7 @@ class Demo:
                 "holder_name": bank.get("holder_name"),
             },
             "is_test": bool(is_test),
+            "session_epoch": 0,
             "created_at": now,
             "updated_at": now,
         }
@@ -1298,7 +1326,9 @@ class Demo:
             self.oauth_links.write_all(links)
         if self.settings_view()["mail_welcome"]:
             self._send_welcome(player_id, data[player_id])
-        return self.profile(player_id)
+        # signup is also a login (decision 0069): the new account walks away
+        # with the same signed session the login form hands out.
+        return self._with_session(self.profile(player_id))
 
     def login_player(self, payload: dict) -> dict:
         """Username, email or CPF + password. Unknown account and wrong
@@ -1337,7 +1367,10 @@ class Demo:
             # same message, same delay, nothing special to probe
             time.sleep(0.25)
             raise ValueError("usuário/email/CPF ou senha inválidos")
-        return self.profile(player_id)
+        # decision 0069: the login answer carries the signed session the
+        # storefront presents on every player write from now on.
+        return self._with_session(self.profile(player_id),
+                                  remember=bool(payload.get("remember")))
 
     # -- password reset (decision 0068) ---------------------------------
     @staticmethod
@@ -1480,6 +1513,8 @@ class Demo:
         updated = dict(record)
         updated["pw_hash"] = self.passwords.hash(password)
         updated.pop("pw_salt", None)
+        # a password reset must kill every token minted before it (0069)
+        updated["session_epoch"] = int(record.get("session_epoch") or 0) + 1
         updated["updated_at"] = datetime.now(
             timezone.utc).isoformat(timespec="seconds")
         data[player_id] = updated
@@ -1528,6 +1563,54 @@ class Demo:
         profile["bonus_minor"] = self.books.bonus_available(player_id)
         profile["bonus"] = self._bonus_view(player_id)
         return profile
+
+    # -- signed player sessions (decision 0069) -------------------------
+    def session_epoch(self, player_id: str) -> int:
+        """The revocation counter on the player row (0 when absent)."""
+        row = self.players.read_all().get(player_id) or {}
+        try:
+            return max(0, int(row.get("session_epoch") or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    def issue_player_token(self, player_id: str, *,
+                           remember: bool = False) -> dict:
+        """Mint the token a player surface must present from now on."""
+        token = self.player_sessions.issue(
+            player_id, epoch=self.session_epoch(player_id), remember=remember)
+        return {"player_token": token,
+                "player_token_expires_at":
+                    self.player_sessions.verify(token).expires_at}
+
+    def _with_session(self, profile: dict, *, remember: bool = False) -> dict:
+        return {**profile,
+                **self.issue_player_token(profile["player_id"],
+                                          remember=remember)}
+
+    def player_from_token(self, token: str) -> str:
+        """The player a request may act as, or an AuthError (HTTP 401).
+
+        Three things must agree: the signature, the row's epoch (a password
+        reset bumps it), and the row's existence. The message is deliberately
+        the same for every refusal — a forged token and a revoked one must not
+        be distinguishable — and it never echoes the token.
+        """
+        try:
+            session = self.player_sessions.verify(token)
+        except PlayerSessionError:
+            raise AuthError("sessão do jogador inválida ou expirada") from None
+        data = self.players.read_all()
+        row = data.get(session.player_id)
+        if not isinstance(row, dict):
+            raise AuthError("sessão do jogador inválida ou expirada")
+        if self.session_epoch(session.player_id) != session.epoch:
+            raise AuthError("sessão do jogador inválida ou expirada")
+        if row.get("is_test") and \
+                not self.settings_view()["test_accounts_enabled"]:
+            # a disabled test account is an account that cannot log in; a token
+            # minted before the switch must stop working too
+            raise AuthError("sessão do jogador inválida ou expirada")
+        return session.player_id
 
     # -- promotions -----------------------------------------------------
     # Real mechanics, small numbers: every claim posts a `bonus_grant`
@@ -2501,14 +2584,15 @@ class Demo:
             "title": cert.title,
         }
 
-    def crash_status(self, payload: dict) -> dict:
+    def crash_status(self, payload: dict, player_id: str | None = None) -> dict:
         """Poll one live round. While it flies only the current multiplier
         is returned; once the bust is reached the round settles and the
-        secret bust is finally revealed."""
+        secret bust is finally revealed. A round belongs to the player who
+        opened it: someone else's handle reads as unknown (decision 0069)."""
         token = str(payload.get("token") or "")
         with self._crash_lock:
             row = self.crash_pending.get(token)
-            if row is None:
+            if row is None or (player_id and row.get("player") != player_id):
                 return {"status": "unknown"}
             elapsed = time.time() - float(row["started_at"])
             point = crash_bust_multiplier(CRASH_GAME_ID, str(row["round_id"]))
@@ -2519,14 +2603,14 @@ class Demo:
                                             CRASH_LIVE_MAX), 4),
                     "elapsed": round(elapsed, 3)}
 
-    def crash_cashout(self, payload: dict) -> dict:
+    def crash_cashout(self, payload: dict, player_id: str | None = None) -> dict:
         """Cash out the live round now: pay stake x the multiplier the
         server's clock shows at this instant, or a loss if the curve had
-        already busted."""
+        already busted. Only the round's owner may cash it out (0069)."""
         token = str(payload.get("token") or "")
         with self._crash_lock:
             row = self.crash_pending.get(token)
-            if row is None:
+            if row is None or (player_id and row.get("player") != player_id):
                 raise ValueError("voo não encontrado (já finalizado?)")
             elapsed = time.time() - float(row["started_at"])
             return self._settle_crash(token, row, elapsed)
@@ -3372,6 +3456,8 @@ class Demo:
         row["pw_salt"] = salt
         row["pw_hash"] = self._player_hash(
             validate_player_password(body.get("password")), salt)
+        # an operator reset also revokes the player's live sessions (0069)
+        row["session_epoch"] = int(row.get("session_epoch") or 0) + 1
         row["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
         data[player_id] = row
         self.players.write_all(data)
@@ -4906,6 +4992,35 @@ class Handler(BaseHTTPRequestHandler):
             return header[7:].strip()
         return ""
 
+    # -- player identity (decision 0069) ------------------------------
+    def _player_token(self) -> str:
+        """The player session token. A distinct header, not `Authorization`:
+        the owner can be logged into the painel and the storefront in the same
+        browser, and the two credentials must never shadow each other."""
+        return (self.headers.get("X-Player-Token") or "").strip()
+
+    def _player_id(self) -> str:
+        """Who this request may act as, or an AuthError (HTTP 401)."""
+        return DEMO.player_from_token(self._player_token())
+
+    def _player_body(self) -> dict:
+        """The JSON body with `player` replaced by the session's identity.
+
+        A client-supplied `player` is ignored, never merged: the id is derived
+        here or the request does not run. That is the whole fix — a forged
+        body can no longer name somebody else's wallet.
+        """
+        body = self._body()
+        body["player"] = self._player_id()
+        return body
+
+    def _optional_player(self, body: dict) -> dict:
+        """Presentation activity (a game open) may be anonymous, but when a
+        session rides along it must be valid and it decides the player."""
+        token = self._player_token()
+        body["player"] = DEMO.player_from_token(token) if token else ""
+        return body
+
     def _redirect(self, location: str, code: int = 303) -> None:
         """303 See Other to a browser-navigation URL (the OAuth round trip).
 
@@ -5055,13 +5170,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"status": "ok",
                                  "configured": DEMO.crypto_available()})
             elif parsed.path == "/api/player":
-                from urllib.parse import parse_qs
-                query = parse_qs(parsed.query)
-                self._send(200, DEMO.profile(query["id"][0]))
+                # decision 0069: the identity comes from the session, never
+                # from a query string; `?id=` is deliberately ignored.
+                self._send(200, DEMO.profile(self._player_id()))
             elif parsed.path == "/api/history":
-                from urllib.parse import parse_qs
-                query = parse_qs(parsed.query)
-                player = query["player"][0]
+                player = self._player_id()
                 self._send(200, {"rounds": DEMO.history(player),
                                  "risk": DEMO.risk(player)})
             elif parsed.path == "/api/sports":
@@ -5228,30 +5341,35 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.reset_player_password(
                     body.get("token") or "", body.get("password") or ""))
             elif path == "/api/deposit":
-                self._send(200, DEMO.deposit(self._body()))
+                self._send(200, DEMO.deposit(self._player_body()))
             elif path == "/api/deposit/pix":
-                self._send(200, DEMO.create_pix_deposit(self._body()))
+                self._send(200, DEMO.create_pix_deposit(self._player_body()))
             elif path == "/api/deposit/pix/status":
-                self._send(200, DEMO.pix_deposit_status(self._body()))
+                self._send(200, DEMO.pix_deposit_status(self._player_body()))
             elif path == "/api/deposit/crypto":
                 self._send(200, DEMO.create_crypto_deposit(
-                    self._body(),
+                    self._player_body(),
                     ipn_url=self._our_origin().rstrip("/")
                     + "/api/webhooks/crypto"))
             elif path == "/api/deposit/crypto/status":
-                self._send(200, DEMO.crypto_deposit_status(self._body()))
+                self._send(200, DEMO.crypto_deposit_status(
+                    self._player_body()))
             elif path == "/api/withdraw":
-                self._send(200, DEMO.withdraw(self._body()))
+                self._send(200, DEMO.withdraw(self._player_body()))
             elif path == "/api/spin":
-                self._send(200, DEMO.spin(self._body()))
+                self._send(200, DEMO.spin(self._player_body()))
             elif path == "/api/crash/start":
-                self._send(200, DEMO.crash_start(self._body()))
+                self._send(200, DEMO.crash_start(self._player_body()))
             elif path == "/api/crash/status":
-                self._send(200, DEMO.crash_status(self._body()))
+                body = self._player_body()
+                self._send(200, DEMO.crash_status(
+                    body, player_id=body["player"]))
             elif path == "/api/crash/cashout":
-                self._send(200, DEMO.crash_cashout(self._body()))
+                body = self._player_body()
+                self._send(200, DEMO.crash_cashout(
+                    body, player_id=body["player"]))
             elif path == "/api/wallet/launch":
-                result = DEMO.wallet_launch(self._body())
+                result = DEMO.wallet_launch(self._player_body())
                 # the public origin the browser sees (X-Forwarded-* behind the
                 # Worker), not our internal Host — the launch URL is handed to
                 # the browser, so a wrong scheme/host loads the game off-domain
@@ -5269,22 +5387,24 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.wallet_round(self._body()))
             elif path == "/api/bet":
                 DEMO.settle_pending()
-                self._send(200, DEMO.bet(self._body()))
+                self._send(200, DEMO.bet(self._player_body()))
             elif path == "/api/settle":
                 settled = DEMO.settle_pending()
                 self._send(200, {"settled": len(settled), "rows": settled})
             elif path == "/api/bonus":
-                self._send(200, DEMO.claim_bonus(self._body()))
+                self._send(200, DEMO.claim_bonus(self._player_body()))
             elif path == "/api/play":
-                self._send(200, DEMO.record_play(self._body()))
+                self._send(200, DEMO.record_play(
+                    self._optional_player(self._body())))
             elif path == "/api/chat":
                 self._send(200, DEMO.chat(self._body()))
             elif path == "/api/self-exclude":
-                body = self._body()
+                body = self._player_body()
                 self._send(200, DEMO.self_exclude(
                     body["player"], body.get("until", "2027-01-01")))
             elif path == "/api/self-exclude-lift":
-                self._send(200, DEMO.lift_exclusion(self._body()["player"]))
+                self._send(200, DEMO.lift_exclusion(
+                    self._player_body()["player"]))
             elif path == "/api/auth/login":
                 self._send(200, DEMO.auth_login(self._body()))
             elif path == "/api/auth/logout":

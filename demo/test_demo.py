@@ -35,6 +35,7 @@ from demo.crypto import (CryptoClient, CryptoConfig, CryptoError,
                          resolve_ipn as resolve_crypto_ipn, sign_ipn,
                          SUPPORTED_COINS)
 from demo.auth import AuthError
+from demo.player_session import PlayerSessionError, PlayerSessions
 from demo.payments import (
     PaymentError,
     check_deposit_method,
@@ -3316,6 +3317,246 @@ class PasswordResetHttpTest(unittest.TestCase):
             {"token": "nunca-existiu", "password": "nova1234"})
         self.assertEqual(status, 400)
         self.assertIn("inválido", body["error"])
+
+
+class PlayerSessionTest(unittest.TestCase):
+    """Signed player sessions (decision 0069): the token a login hands out is
+    the only thing a player write trusts. The body's `player` is a hint at
+    best, a forged or edited token is refused, expiry is absolute, and a
+    password reset bumps the row's epoch so every older token dies."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.mailer = _RecordingMailer()
+        self.demo = Demo(data_dir=self.tmp, mailer=self.mailer,
+                         player_secret="test-secret")
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "username": "ana.souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+        }
+        body.update(over)
+        return body
+
+    def _login(self, **over):
+        return self.demo.login_player({
+            "identifier": "ana.souza", "password": "ana1234", **over})
+
+    def test_every_door_mints_a_token_the_server_accepts(self):
+        row = self.demo.register_player(self._payload())
+        self.assertTrue(row["player_token"].startswith("ps1."))
+        self.assertEqual(self.demo.player_from_token(row["player_token"]),
+                         row["player_id"])
+        login = self._login()
+        self.assertEqual(self.demo.player_from_token(login["player_token"]),
+                         row["player_id"])
+        self.assertGreater(login["player_token_expires_at"], time.time())
+        # the token is a credential, not profile data: no hash ever rides along
+        self.assertNotIn("pw_hash", login)
+        self.assertNotIn("pw_salt", login)
+
+    def test_remember_me_extends_the_lifetime(self):
+        self.demo.register_player(self._payload())
+        short = self.demo.player_sessions.verify(
+            self._login()["player_token"])
+        long = self.demo.player_sessions.verify(
+            self._login(remember=True)["player_token"])
+        self.assertEqual(short.expires_at - short.issued_at, 12 * 60 * 60)
+        self.assertEqual(long.expires_at - long.issued_at, 30 * 24 * 60 * 60)
+        self.assertTrue(long.remember)
+        self.assertFalse(short.remember)
+
+    def test_a_tampered_or_foreign_token_is_refused(self):
+        row = self.demo.register_player(self._payload())
+        head, payload, signature = row["player_token"].split(".")
+        edited = payload[:-1] + ("A" if payload[-1] != "A" else "B")
+        for bad in (f"{head}.{edited}.{signature}", "ps1.e30.deadbeef", "",
+                    "nao-e-um-token"):
+            with self.assertRaises(AuthError):
+                self.demo.player_from_token(bad)
+        # a well-formed token signed with a different key names the same player
+        # and is still refused: the signature is what makes it a credential
+        foreign = PlayerSessions("outra-chave").issue(row["player_id"])
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(foreign)
+
+    def test_expiry_is_absolute_and_the_clock_is_injectable(self):
+        sessions = PlayerSessions("test-secret", ttl_seconds=60)
+        token = sessions.issue("player-ana", epoch=0, now=1000)
+        self.assertEqual(sessions.verify(token, now=1059).player_id,
+                         "player-ana")
+        with self.assertRaises(PlayerSessionError):
+            sessions.verify(token, now=1060)
+        # a token claiming to be from the future is not accepted either
+        future = sessions.issue("player-ana", epoch=0, now=5000)
+        with self.assertRaises(PlayerSessionError):
+            sessions.verify(future, now=1000)
+
+    def test_revocation_is_a_password_change(self):
+        row = self.demo.register_player(self._payload())
+        old = row["player_token"]
+        self.demo.request_password_reset({"identifier": "ana.souza@example.com"},
+                                         site_url="https://casa.test",
+                                         remote_ip="203.0.113.9")
+        deadline = time.time() + 2.0
+        while not self.mailer.sent and time.time() < deadline:
+            time.sleep(0.01)
+        token = self.mailer.sent[-1]["text"].split("#reset=", 1)[1].split()[0]
+        self.demo.reset_player_password(token, "nova1234")
+        # the token minted before the reset is dead, and a fresh login works
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(old)
+        fresh = self.demo.login_player({"identifier": "ana.souza",
+                                        "password": "nova1234"})
+        self.assertEqual(self.demo.player_from_token(fresh["player_token"]),
+                         row["player_id"])
+        self.assertEqual(self.demo.session_epoch(row["player_id"]), 1)
+
+    def test_an_operator_test_account_reset_revokes_too(self):
+        admin = self.demo.auth_login(
+            {"username": "admin", "password": "admin"})["token"]
+        created = self.demo.admin_create_test_account(admin, {
+            "name": "Conta Teste", "username": "teste.um",
+            "email": "teste.um@example.com", "cpf": "111.444.777-35",
+            "password": "teste1234", "pix_key": "teste.um@example.com",
+        })["created"]
+        player_id = created["player_id"]
+        token = self.demo.issue_player_token(player_id)["player_token"]
+        self.assertEqual(self.demo.player_from_token(token), player_id)
+        self.demo.admin_reset_test_password(
+            admin, {"player_id": player_id, "password": "outra1234"})
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(token)
+
+    def test_a_deleted_player_cannot_keep_using_a_token(self):
+        row = self.demo.register_player(self._payload())
+        token = row["player_token"]
+        data = self.demo.players.read_all()
+        data.pop(row["player_id"])
+        self.demo.players.write_all(data)
+        with self.assertRaises(AuthError):
+            self.demo.player_from_token(token)
+
+    def test_the_secret_is_derived_not_shared(self):
+        from demo.player_session import derive_secret
+        a = derive_secret("betterauth-secret")
+        b = derive_secret("betterauth-secret")
+        self.assertEqual(a, b)
+        self.assertNotEqual(a, "betterauth-secret")
+        self.assertNotEqual(a, derive_secret("outro-segredo"))
+        self.assertEqual(len(a), 64)
+
+
+class PlayerSessionHttpTest(unittest.TestCase):
+    """The route wiring for decision 0069: a player read without a token is
+    401, a token plus a body naming somebody else still acts as the token's
+    player, and a crash round reads as unknown to anyone but its owner."""
+
+    def setUp(self):
+        import demo.server as server_module
+        self.server_module = server_module
+        self.keep = server_module.DEMO
+        self.demo = Demo(data_dir=tempfile.mkdtemp(),
+                         player_secret="http-test-secret")
+        server_module.DEMO = self.demo
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever,
+                                       daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.addCleanup(self._restore)
+        self.ana = self._register("ana.souza", "529.982.247-25",
+                                  "ana.souza@example.com")
+        self.bia = self._register("bia.souza", "111.444.777-35",
+                                  "bia.souza@example.com")
+
+    def _restore(self):
+        self.server_module.DEMO = self.keep
+        self.server.shutdown()
+        self.server.server_close()
+
+    def _register(self, username, cpf, email):
+        return self.demo.register_player({
+            "name": username.replace(".", " ").title(),
+            "username": username, "email": email, "cpf": cpf,
+            "password": "senha1234", "pix_key": email,
+        })
+
+    def _call(self, path, body=None, token=""):
+        method = "POST" if body is not None else "GET"
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["X-Player-Token"] = token
+        req = urllib.request.Request(
+            self.base + path,
+            data=None if body is None else json.dumps(body).encode("utf-8"),
+            headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status, json.loads(resp.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            with exc:
+                return exc.code, json.loads(exc.read() or b"{}")
+
+    def test_a_player_read_without_a_token_is_401(self):
+        for path in ("/api/player", "/api/history",
+                     "/api/player?id=" + self.ana["player_id"]):
+            status, body = self._call(path)
+            self.assertEqual(status, 401, path)
+            self.assertIn("sessão", body["error"])
+        status, body = self._call("/api/player", token="ps1.forged.token")
+        self.assertEqual(status, 401)
+
+    def test_the_token_decides_who_acts_not_the_body(self):
+        # Ana's token, Bia's id in the body: the credit lands on Ana
+        before = self.demo.books.available(self.bia["player_id"])
+        status, body = self._call(
+            "/api/deposit",
+            {"player": self.bia["player_id"], "amount_minor": 5000},
+            token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(body["available_minor"], 5000)
+        self.assertEqual(self.demo.books.available(self.ana["player_id"]),
+                         5000)
+        self.assertEqual(self.demo.books.available(self.bia["player_id"]),
+                         before)
+
+    def test_the_profile_query_string_cannot_name_another_player(self):
+        status, body = self._call(
+            "/api/player?id=" + self.bia["player_id"],
+            token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(body["player_id"], self.ana["player_id"])
+        self.assertEqual(body["username"], "ana.souza")
+
+    def test_a_live_crash_round_belongs_to_its_owner(self):
+        self.demo.deposit({"player": self.ana["player_id"],
+                           "amount_minor": 2000})
+        status, opened = self._call(
+            "/api/crash/start", {"stake_minor": 200},
+            token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        status, body = self._call(
+            "/api/crash/status", {"token": opened["token"]},
+            token=self.bia["player_token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {"status": "unknown"})
+        status, error = self._call(
+            "/api/crash/cashout", {"token": opened["token"]},
+            token=self.bia["player_token"])
+        self.assertEqual(status, 400)
+        self.assertIn("não encontrado", error["error"])
+        # the owner can still cash it out
+        status, body = self._call(
+            "/api/crash/cashout", {"token": opened["token"]},
+            token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        self.assertIn(body["status"], ("cashed", "busted"))
 
 
 class SameOriginTest(unittest.TestCase):

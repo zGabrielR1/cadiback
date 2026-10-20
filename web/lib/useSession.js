@@ -76,8 +76,8 @@ export function useSession() {
     const seq = ++refreshSeq.current;
     try {
       const [p, h, hl] = await Promise.all([
-        api("GET", "/api/player?id=" + encodeURIComponent(player)),
-        api("GET", "/api/history?player=" + encodeURIComponent(player)),
+        api("GET", "/api/player"),
+        api("GET", "/api/history"),
         api("GET", "/api/health"),
       ]);
       if (seq !== refreshSeq.current) return;

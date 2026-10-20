@@ -15,9 +15,17 @@ export const REQUEST_TIMEOUT_MS = 8000;
  * "Lembrar de mim" decides which: checked means localStorage, so the player
  * stays logged in across browser restarts; unchecked means sessionStorage,
  * which dies with the tab. Both are read on boot, sessionStorage first, so a
- * non-remembered login always wins over an older remembered one. A stored id
- * the server no longer knows is dropped on the first refresh. */
+ * non-remembered login always wins over an older remembered one.
+ *
+ * The session is `{player_id, token}`. The token is the credential: the server
+ * derives the player from it (decision 0069), so an entry without one is a
+ * pre-0069 leftover and is dropped — that player simply logs in again. A
+ * token the server no longer accepts is dropped by the boot refresh. */
 export const PLAYER_KEY = "casa-player";
+
+/** The player session travels on its own header, not `Authorization`: the
+ * owner can be logged into the painel and the storefront at the same time. */
+export const PLAYER_TOKEN_HEADER = "X-Player-Token";
 
 const PLAYER_STORES = ["sessionStorage", "localStorage"];
 
@@ -38,7 +46,7 @@ function readPlayer(store) {
   try {
     const raw = store.getItem(PLAYER_KEY);
     const session = raw ? JSON.parse(raw) : null;
-    return session && session.player_id ? session : null;
+    return session && session.player_id && session.token ? session : null;
   } catch (e) {
     return null;
   }
@@ -64,7 +72,7 @@ export function setPlayerSession(session, { remember = true } = {}) {
       /* nothing to clear */
     }
   };
-  if (!session || !session.player_id) {
+  if (!session || !session.player_id || !session.token) {
     clear("localStorage");
     clear("sessionStorage");
     return;
@@ -109,6 +117,7 @@ export function setAdminSession(session) {
 
 export async function api(method, path, body) {
   const session = getAdminSession();
+  const player = getPlayerSession();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -117,6 +126,7 @@ export async function api(method, path, body) {
       headers: {
         "Content-Type": "application/json",
         ...(session ? { Authorization: "Bearer " + session.token } : {}),
+        ...(player ? { [PLAYER_TOKEN_HEADER]: player.token } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,

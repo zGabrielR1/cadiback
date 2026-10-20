@@ -218,10 +218,11 @@ export default function Page() {
       if (stored) setTheme(stored);
     } catch (e) {}
     setAdmin(getAdminSession());
-    // a stored player id logs the visitor back in without the form
+    // a stored player session logs the visitor back in without the form;
+    // /api/player derives the account from the token (decision 0069)
     const saved = getPlayerSession();
     if (saved) {
-      api("GET", "/api/player?id=" + encodeURIComponent(saved.player_id))
+      api("GET", "/api/player")
         .then((p) => setPlayer(p.player_id))
         .catch(() => setPlayerSession(null));
     }
@@ -270,7 +271,7 @@ export default function Page() {
           setAuthErrors({});
           setAcctOpen(true);
         } else {
-          setPlayerSession({ player_id: row.player_id });
+          setPlayerSession({ player_id: row.player_id, token: row.player_token });
           setPlayer(row.player_id);
           setAcctOpen(false);
         }
@@ -627,6 +628,7 @@ export default function Page() {
         profileRow = await api("POST", "/api/player/login", {
           identifier: String(form.identifier || "").trim(),
           password: form.password,
+          remember: rememberMe,
           ...turnstile,
         });
       } else if (complete) {
@@ -684,7 +686,7 @@ export default function Page() {
         });
       }
       setPlayerSession(
-        { player_id: profileRow.player_id },
+        { player_id: profileRow.player_id, token: profileRow.player_token },
         { remember: authMode === "login" ? rememberMe : true },
       );
       setPlayer(profileRow.player_id);

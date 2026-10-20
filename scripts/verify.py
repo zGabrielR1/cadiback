@@ -12,7 +12,7 @@ required = ["AGENTS.md", "ARCHITECTURE.md", "PROGRESS.md", "CURRENTTASK",
             "README.md", "Makefile", "requirements.txt",
             "docs/gap-assessment.md",
             "docs/mail.md", "docs/turnstile.md", "docs/supabase.md",
-            "docs/oauth.md"]
+            "docs/oauth.md", "docs/sessions.md"]
 required += [os.path.join(p, n) for p, n in [
     ("frame/core", "money.py"), ("frame/core", "ids.py"), ("frame/core", "ledger.py"),
     ("frame/core", "devig.py"), ("frame/wallet", "books.py"),
@@ -26,7 +26,7 @@ required += [os.path.join(p, n) for p, n in [
     ("demo", "server.py"), ("demo", "slot.py"), ("demo", "payments.py"),
     ("demo", "risk.py"), ("demo", "sports_data.py"),    ("demo", "vendor.py"),
     ("demo", "odds_engine.py"), ("demo", "asaas.py"),
-    ("demo", "auth.py"),
+    ("demo", "auth.py"), ("demo", "player_session.py"),
     # postgres seam (decision 0049) — the only non-stdlib dependency
     ("demo", "db.py"), ("demo", "models.py"),
     ("supabase", "README.md"),

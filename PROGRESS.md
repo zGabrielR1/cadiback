@@ -1,5 +1,29 @@
 # PROGRESS
 
+## DONE (2026-10-20 — signed player sessions, decision 0069)
+
+- **A PLAYER IS WHO THE TOKEN SAYS.** Every player write used to carry
+  `{"player": "player-…"}` and `GET /api/player?id=`, and the id is derived
+  from the CPF — a semi-public document. A request could read, spend, claim and
+  settle on any wallet whose CPF it knew. Login/signup/social now mint a signed
+  `ps1.…` token (HMAC-SHA256, 12 h or 30 d remembered), the storefront sends it
+  on `X-Player-Token`, and `Handler._player_body()` derives the account and
+  overwrites the body's `player`. Missing or forged is 401; `?id=` is ignored.
+- **A RESET NOW REVOKES.** The player row carries `session_epoch`; the
+  self-service reset (0068), the operator's test-account reset and a legacy
+  password upsert bump it, and a token minted under an older epoch stops
+  verifying. Deleted rows and disabled test accounts are refused too. This is
+  the "something real to revoke" that 0068 could not offer.
+- **NO NEW OWNER STEP.** `PLAYER_SESSION_SECRET` if set, else a
+  domain-separated sub-key of the already deployed `BETTER_AUTH_SECRET`, else a
+  generated `data/player_session.key`.
+- **CRASH ROUNDS HAVE AN OWNER.** The round handle was already random, but the
+  poll/cash-out routes trusted the body; they now compare the row's player to
+  the session, and a stranger's handle reads as unknown.
+- Tests: `PlayerSessionTest` (8) + `PlayerSessionHttpTest` (4). Decision
+  `0069`. Open limit: revocation is all-or-nothing without a session table, and
+  the UI still sends the now-ignored `player` field.
+
 ## DONE (2026-10-19 — self-service password reset over email, decision 0068)
 
 - **THE LAST ACCOUNT GAP IS CLOSED.** A player who forgot a password had no
