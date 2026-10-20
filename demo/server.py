@@ -3955,9 +3955,10 @@ class Demo:
 
         The stake is learned from losses (a loss is exactly minus the stake,
         the largest one wins) and a raised bet re-learns it, as the fallback.
-        The answer usually names its own round instead — `c`×`l` and `w` —
-        and when that agrees with the movement it is taken as the split,
-        which is exact from the first spin of a session. The books then keep
+        The answer usually names its own round instead — the win `w` and the
+        net `ntp` (with `c`×`l` as the fallback) — and when that split agrees
+        with the movement it is taken, which is exact from the first spin of a
+        session and reads a free spin as stake zero. The books then keep
         the invariant that matters either way: `payout - stake` is always the
         publisher's own net movement. Each movement posts once, keyed by the
         session token and a sequence, through the same idempotent write the
@@ -4001,10 +4002,10 @@ class Demo:
         stake = 0
         payout = 0
         if split is not None and split[1] - split[0] == net:
-            # the answer names its own round (`c`×`l` and `w`) and it agrees
-            # with the publisher's movement: take the exact split, which the
-            # movement alone cannot give (a first-round win has no stake to
-            # have learned yet)
+            # the answer names its own round (`w` + `ntp`, else `c`×`l` + `w`)
+            # and it agrees with the publisher's movement: take the exact
+            # split, which the movement alone cannot give (a first-round win
+            # has no stake to have learned yet, and a free spin has none)
             stake, payout = split
         elif net < 0 and (state["stake"] <= 0 or -net >= state["stake"]):
             stake = -net
