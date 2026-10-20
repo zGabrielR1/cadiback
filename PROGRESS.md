@@ -20,6 +20,11 @@
 - **CRASH ROUNDS HAVE AN OWNER.** The round handle was already random, but the
   poll/cash-out routes trusted the body; they now compare the row's player to
   the session, and a stranger's handle reads as unknown.
+- **LIVE.** Deployed as commit `0a5e1d3`. On `cadiback.onrender.com`:
+  `/api/player` (no token, with a forged token, and with `?id=`), `/api/history`
+  and `/api/deposit` all answer 401 `sessão do jogador inválida ou expirada`;
+  anonymous `/api/play` still records; `/api/catalog`, `/` and `/api/health`
+  are 200; the served bundle contains `X-Player-Token`.
 - Tests: `PlayerSessionTest` (8) + `PlayerSessionHttpTest` (4). Decision
   `0069`. Open limit: revocation is all-or-nothing without a session table, and
   the UI still sends the now-ignored `player` field.

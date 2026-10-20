@@ -37,6 +37,12 @@ closing the limit 0068 recorded.
   because there is no session table. Per-device logout needs one.
 - **OPEN (cleanup):** the UI still passes `player` as a prop and in bodies; the
   server ignores it, so it is documentation now, not authority.
+- **LIVE.** Commit `0a5e1d3`, deploy `dep-dbbnkd2vcj2c73a37e90`. Probed
+  `cadiback.onrender.com`: `/api/player` without a token, with a forged token
+  and with `?id=` all 401 the same message, as do `/api/history` and
+  `/api/deposit`; anonymous `/api/play` still records; the served bundle
+  carries `X-Player-Token`. Login could not be scripted live because Turnstile
+  gates it — the owner verifies the mint in the browser.
 
 CURRENTTASK: Self-service password reset over email (decision 0068) — a player
 who forgets a password can request a one-time link from the login form instead

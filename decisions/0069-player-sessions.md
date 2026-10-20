@@ -1,9 +1,10 @@
 # 0069 — Signed player sessions
 
-Date: 2026-10-20. Status: **shipped and unit/HTTP-verified**; deployed with the
-next push. Follows 0068 (password reset) and closes the limit that decision
-recorded: the player surface was keyed on `player_id`, so there were no player
-sessions to revoke.
+Date: 2026-10-20. Status: **shipped and deployed** (commit `0a5e1d3`, live on
+`cadiback.onrender.com`; unit/HTTP-verified locally and the player routes
+re-probed against the live service). Follows 0068 (password reset) and closes
+the limit that decision recorded: the player surface was keyed on `player_id`,
+so there were no player sessions to revoke.
 
 ## The gap this closes
 
