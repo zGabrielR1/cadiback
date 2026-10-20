@@ -701,12 +701,20 @@ _ROUND_FIELDS = re.compile(r"(?:^|&)(c|l|w|ntp)=([^&]*)")
 def spin_round(body: bytes) -> tuple[int, int] | None:
     """The (stake, payout) a Pragmatic round answer names, in centavos.
 
-    The publisher's own accounting is in the answer — the bet it settled
-    (`c`×`l`) and the win (`w`) — so the split does not have to be inferred
-    from the movement of the saldo, which knows only the net. `w` is
-    required: an answer without it is not a round. None is returned when the
-    fields are absent or do not describe a coherent round, so the caller can
-    fall back to the movement.
+    The publisher's own accounting is in the answer — the win (`w`), the bet
+    it settled (`c`×`l`) and its net (`ntp`) — so the split does not have to
+    be inferred from the movement of the saldo, which knows only the net.
+
+    `ntp` is preferred when present, because it is the field that agrees with
+    the saldo movement by definition (`net = payout - stake`). A free spin is
+    exactly the case where the two disagree: the answer still prints the
+    triggering bet in `c`×`l`, but the balance only rose by the win, so `ntp`
+    is the win itself and the implied stake is **zero**. Reading `c`×`l` there
+    would book a bet the player never placed.
+
+    `w` is required: an answer without it is not a round. None is returned
+    when the fields are absent or do not describe a coherent round, so the
+    caller can fall back to the movement.
     """
     try:
         text = body.decode("utf-8")
@@ -722,11 +730,11 @@ def spin_round(body: bytes) -> tuple[int, int] | None:
 
     try:
         payout = minor(fields["w"])
-        if "c" in fields and "l" in fields:
+        if "ntp" in fields:
+            stake = payout - minor(fields["ntp"])
+        elif "c" in fields and "l" in fields:
             stake = int(round(float(fields["c"].replace(",", "")) *
                               float(fields["l"]) * 100))
-        elif "ntp" in fields:
-            stake = payout - minor(fields["ntp"])
         else:
             return None
     except ValueError:

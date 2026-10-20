@@ -4030,6 +4030,7 @@ class Demo:
         state["seq"] += 1
         entry["stake_minor"] = stake
         entry["payout_minor"] = payout
+        entry["free_spins"] = bool(payout > 0 and stake == 0)
         entry["round_id"] = f"pp-{key[:12]}-{state['seq']}"
         try:
             result = self.settle_rgs_round(owner["player"], game_id,

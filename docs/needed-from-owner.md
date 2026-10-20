@@ -118,9 +118,12 @@ Full runbook: `docs/oauth.md`.
 - Sports (icons, bigger selections, count markets from live stats) is live.
 - Roda da Sorte (the new original, 97% RTP) is live.
 - Provider wallets: the harness proves our wallet answers + debits for all
-  sampled games. Two items are **code**, not credentials, and I keep working
-  them: Pragmatic Play's client parks on its splash off-origin, and Spribe
-  settles its round over a binary socket our tap does not decode.
+  sampled games, and every working publisher settles rounds on our books —
+  Hacksaw, Play'n GO, Spribe, PG Soft, Pragmatic Play (which now also pays a
+  free-spin win without booking a phantom stake, decision 0067). One item is
+  **code**, not credentials, and I keep working it: a real Pragmatic
+  free-spins trigger has not yet been driven through the deploy (the payout
+  path is unit-tested).
 
 ## How a deploy works (so you can do it too)
 

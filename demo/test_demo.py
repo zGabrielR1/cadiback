@@ -4550,6 +4550,10 @@ class PragmaticRoundTapTest(unittest.TestCase):
         # a win: R$2.00 staked, R$50.00 back, net +48.00
         won = (b"tw=50.00&balance=100,048.00&c=0.10&ntp=48.00&l=20&w=50.00")
         self.assertEqual(game_proxy.spin_round(won), (200, 5000))
+        # a free spin: the balance rose by the win alone, so `ntp` equals `w`
+        # and the nominal `c`×`l` bet was never taken
+        free = (b"tw=50.00&balance=100,050.00&c=0.10&ntp=50.00&l=20&w=50.00")
+        self.assertEqual(game_proxy.spin_round(free), (0, 5000))
         # reads are not rounds
         self.assertIsNone(game_proxy.spin_round(
             b"action=doInit&balance=100,000.00&balance_bonus=0.00"))
@@ -4613,6 +4617,26 @@ class PragmaticRoundTapTest(unittest.TestCase):
                   if r.get("type") == "publisher"]
         self.assertEqual(rounds[0]["game_id"], self.GAME)
         self.assertEqual(rounds[0]["stake_minor"], 100)
+
+    def test_a_free_spin_win_is_paid_without_a_phantom_stake(self):
+        """A free spin's answer still prints the triggering bet, but its net
+        is the win alone: the round is paid as a payout-only posting, and the
+        phantom stake is not learned for the spins that follow."""
+        self.demo.pragmatic_note_balance(self.token, self.GAME, self.opening)
+        free = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening + 5000, split=(0, 5000))
+        self.assertEqual((free["stake_minor"], free["payout_minor"]), (0, 5000))
+        self.assertTrue(free["free_spins"])
+        self.assertEqual(self.demo.books.available(self.player), 10000 + 5000)
+        # nothing was bet, so nothing is remembered as the session's stake
+        self.assertEqual(self.demo.pragmatic_books[self.token]["stake"], 0)
+        # the next paid spin still learns its own stake
+        lost = self.demo.pragmatic_note_balance(
+            self.token, self.GAME, self.opening + 5000 - 200)
+        self.assertEqual((lost["stake_minor"], lost["payout_minor"]), (200, 0))
+        self.assertFalse(lost.get("free_spins"))
+        self.assertEqual(self.demo.books.available(self.player), 10000 + 5000 - 200)
+        self.demo.books.assert_balanced()
 
     def test_a_partial_win_keeps_the_net_and_a_bigger_bet_relearns(self):
         """A round that returns part of a learned stake is booked with the

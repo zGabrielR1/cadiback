@@ -1,3 +1,24 @@
+CURRENTTASK: Pragmatic free spins settle without a phantom stake (decision
+0067) — the round tap now reads the publisher's own `ntp` instead of `c × l`
+when both are present, so a free spin's payout-only movement is booked as
+`stake 0 / payout w`. The paid-spin split is unchanged; `c × l` stays the
+fallback for an answer that carries no `ntp`.
+
+## STATUS
+
+- **THE NET IS THE AUTHORITY.** `game_proxy.spin_round` prefers `ntp` (the
+  publisher's own net) because it agrees with the saldo movement by definition
+  (`stake = payout − ntp`). A paid spin is identical; a free spin, where the
+  balance rose by the win alone and `c × l` still prints the triggering bet,
+  now reads `(0, w)` and reaches `settle_rgs_round`'s payout-only branch
+  (0065's rule). The tap logs `free_spins: true` for that shape.
+- **TESTED.** `PragmaticRoundTapTest` (11): the parser on a free-spin body, a
+  `0/5000` posting that keeps the net exact, no phantom stake learned for the
+  next spin, and every paid-spin case unchanged. Decision `0067`.
+- **OPEN:** no live free-spins trigger has been driven through the deploy yet
+  (covered by unit tests); an answer without `ntp` would still fall back to
+  `c × l`.
+
 CURRENTTASK: Better Auth for social login (decision 0066) — Google, Facebook
 and Apple replace the Authgear broker. A small self-hosted Node auth server
 runs beside the Python process, proxied same-origin; the wallet is linked by a

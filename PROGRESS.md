@@ -1,5 +1,21 @@
 # PROGRESS
 
+## DONE (2026-10-19 — Pragmatic free spins settle without a phantom stake, decision 0067)
+
+- **THE PUBLISHER'S NET IS THE AUTHORITY.** `spin_round` now prefers `ntp`
+  over `c × l` when both are present, because `ntp` is the field that agrees
+  with the saldo movement by definition (`stake = payout − ntp`). A paid spin
+  is unchanged; a **free spin** — where the balance rises by the win alone and
+  the answer still prints the triggering bet — reads `(0, w)` and reaches
+  `settle_rgs_round`'s payout-only branch (`Books.settle_casino_payout`, the
+  0065 rule). The tap logs `free_spins: true` for that shape.
+- **THE PHANTOM STAKE IS GONE.** A free-spin win posts `stake 0 / payout w`,
+  keeps the net exact, and is not learned as the session's stake, so the next
+  paid spin learns its own bet from its own loss.
+- Tests: `PragmaticRoundTapTest` (11, two new). Decision `0067`. Open: no live
+  free-spins trigger has been driven yet, and an answer without `ntp` still
+  falls back to `c × l`.
+
 ## DONE (2026-10-19 — Better Auth replaces Authgear for Google/Facebook/Apple, decision 0066)
 
 - **ONE SELF-HOSTED NODE PROCESS.** `auth-server/` runs Better Auth stateless
