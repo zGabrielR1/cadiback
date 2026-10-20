@@ -1,9 +1,11 @@
 # 0070 — Device sessions
 
-Date: 2026-10-20. Status: **shipped**. Closes the limit 0069 recorded: "a single
-device cannot be logged out alone" — a logout was a browser-side clear, and a
-stolen token stayed valid until `exp` unless the password was reset, which
-logged every device out.
+Date: 2026-10-20. Status: **shipped and deployed** (commit `9c2659e`, live on
+`cadiback.onrender.com`; unit/HTTP-verified locally, the four routes re-probed
+against the live service, and the served bundle carries the session list).
+Closes the limit 0069 recorded: "a single device cannot be logged out alone" —
+a logout was a browser-side clear, and a stolen token stayed valid until `exp`
+unless the password was reset, which logged every device out.
 
 ## The gap this closes
 

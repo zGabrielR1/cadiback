@@ -20,6 +20,12 @@
 - Tests: `DeviceSessionTest` (9) + `DeviceSessionHttpTest` (4). `frame` 50/50 ·
   `demo` 424/424 · `verify.py` 0. Decision `0070`. Open limit: the registry is
   one JSON file in one process, and on the free plan a deploy rebuilds `data/`.
+- **LIVE.** Commit `9c2659e`. On `cadiback.onrender.com`: the four new routes
+  answer 401 without a token (`/api/player/sessions`, `/api/player/logout`,
+  `/api/player/sessions/revoke`, and `/api/player` as before), health and the
+  storefront are 200, and the served bundle contains the session list and
+  `revoke-others`. A real login could not be scripted live because Turnstile
+  gates it; the owner's browser is the remaining check.
 
 ## DONE (2026-10-20 — signed player sessions, decision 0069)
 

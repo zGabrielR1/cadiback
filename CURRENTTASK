@@ -41,6 +41,11 @@ every row, closing 0069's "a single device cannot be logged out alone".
   A second replica or a persistent list needs the Postgres seam (0049).
 - **OPEN (cleanup):** the UI still sends the now-ignored `player` field; it is
   documentation, not authority (unchanged from 0069).
+- **LIVE.** Commit `9c2659e`. Probed `cadiback.onrender.com`: `/api/player`,
+  `/api/player/sessions`, `/api/player/logout` and
+  `/api/player/sessions/revoke` all 401 without a token; health and `/` are
+  200; the served bundle contains the session list and `revoke-others`. Login
+  is Turnstile-gated, so the owner verifies the list and logout in the browser.
 
 CURRENTTASK: Signed player sessions (decision 0069) — a player write no longer
 names its wallet; it presents a token. Login, signup and both social doors mint
