@@ -1,3 +1,32 @@
+CURRENTTASK: Self-service password reset over email (decision 0068) — a player
+who forgets a password can request a one-time link from the login form instead
+of asking an operator for an admin reset. The request surface is Turnstile-gated
+and answers identically for known and unknown accounts; the token is stored
+hashed, expires in 30 minutes, is single-use, and a newer request invalidates
+the older link. The reset email is the second trigger on the Resend rail.
+
+## STATUS
+
+- **THE LINK IS THE CREDENTIAL.** `request_password_reset` mints a 32-byte
+  `token_urlsafe` and emails `<storefront>/#reset=<token>`; the hash never
+  reaches the server, request logs, or a referrer. Only `sha256(token)` lives
+  in `data/password_resets.json`. `reset_player_password` consumes the row
+  before writing the new PBKDF2 hash, so two races cannot both succeed.
+- **NO MEMBERSHIP ORACLE.** Known account, unknown identifier, account with no
+  email, cooldown, and client-budget exhaustion all return
+  `{"requested": true}` after the same 250 ms delay. One mint per account per
+  minute, five per client per hour. A mail failure is swallowed.
+- **THE STOREFRONT KNOWS WHEN IT CAN DELIVER.** `/api/config` now carries
+  `password_reset_enabled` (mailer configured); the login form shows "Esqueci
+  minha senha" only then. The new modes are `forgot` and `reset`, and the
+  reset token is stripped from the address bar on boot.
+- **TESTED.** `PasswordResetTest` (6) and `PasswordResetHttpTest` (2): neutral
+  answers, hashed-at-rest, single use, invalidation, expiry, mail outage,
+  config flag, Turnstile gate and route wiring. Decision `0068`.
+- **OPEN (limit):** the player surface still keys on `player_id`; this changes
+  the password credential only, and there are no player sessions to revoke.
+  Moving players onto signed sessions is a larger, separate change.
+
 CURRENTTASK: Pragmatic free spins settle without a phantom stake (decision
 0067) — the round tap now reads the publisher's own `ntp` instead of `c × l`
 when both are present, so a free spin's payout-only movement is booked as

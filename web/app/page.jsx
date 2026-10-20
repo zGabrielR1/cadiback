@@ -83,6 +83,11 @@ export default function Page() {
   // and reachable only through the Ctrl+Shift+T shortcut in the modal.
   const [authMode, setAuthMode] = useState("login");
   const [authErrors, setAuthErrors] = useState({});
+  // Password reset (decision 0068): the raw token arrives in the URL hash and
+  // is handed straight to the reset form. It is cleared from the address bar
+  // on boot so a reload or a shared screenshot cannot replay it.
+  const [authNotice, setAuthNotice] = useState("");
+  const [resetToken, setResetToken] = useState("");
   // Cloudflare Turnstile (foundry.turnstile): the widget hands us a token, we
   // send it with the login/signup POST, and the server checks it at siteverify.
   // `authAttempt` is bumped after every submit so the widget is reset — a token
@@ -107,6 +112,7 @@ export default function Page() {
     email: "",
     cpf: "",
     password: "",
+    password_confirm: "",
     pix_key: "",
     bank_code: "",
     agency: "",
@@ -272,6 +278,26 @@ export default function Page() {
       .catch((e) => setMessage("Login social: " + e.message))
       .finally(() => setBusy(false));
   }, [setPlayer]);
+
+  // The reset email returns the browser to "/#reset=<token>" (decision 0068).
+  // A hash never reaches the server, so the one-time token stays out of
+  // request logs and referrers; it is removed from the address bar
+  // immediately and held only in component state until the form is sent.
+  useEffect(() => {
+    const raw = String(window.location.hash || "");
+    if (!raw.startsWith("#reset")) return;
+    const params = new URLSearchParams(raw.slice(1));
+    const token = params.get("reset");
+    window.history.replaceState(
+      null, "", window.location.pathname + window.location.search);
+    if (!token) return;
+    setResetToken(token);
+    setAuthMode("reset");
+    setAuthErrors({});
+    setAuthNotice("");
+    setForm((f) => ({ ...f, password: "", password_confirm: "" }));
+    setAcctOpen(true);
+  }, []);
 
   const startSocial = useCallback(async (provider) => {
     // Better Auth (decision 0066): ask the same-origin auth server for the
@@ -510,6 +536,8 @@ export default function Page() {
   const submitAuth = async () => {
     const errs = {};
     const complete = authMode === "complete";
+    const forgot = authMode === "forgot";
+    const reset = authMode === "reset";
     if (authMode === "login") {
       const id = String(form.identifier || "").trim();
       if (!id) errs.identifier = "informe seu usuário, email ou CPF";
@@ -524,6 +552,16 @@ export default function Page() {
         if (u) errs.identifier = u;
       }
       if (!String(form.password || "")) errs.password = "informe sua senha";
+    } else if (forgot) {
+      const e = validateEmail(String(form.identifier || "").trim());
+      if (e) errs.identifier = e;
+    } else if (reset) {
+      const p = validatePassword(form.password);
+      if (p) errs.password = p;
+      if (form.password !== form.password_confirm)
+        errs.password_confirm = "as senhas não coincidem";
+      if (!resetToken)
+        errs._ = "link expirado — peça um novo email";
     } else if (complete) {
       // the social path: the name/email come from the provider, the CPF is
       // mandatory (it keys the wallet), and the password is optional
@@ -566,7 +604,8 @@ export default function Page() {
           errs.holder_name = "informe o titular da conta";
       }
     }
-    if (!complete && serverConfig.turnstile_enabled &&
+    if ((authMode === "login" || authMode === "register" || forgot) &&
+        serverConfig.turnstile_enabled &&
         serverConfig.turnstile_site_key && !turnstileToken) {
       errs.turnstile = "confirme que você não é um robô";
     }
@@ -600,6 +639,33 @@ export default function Page() {
           pix_key: String(form.pix_key || "").trim(),
           password: String(form.password || ""),
         });
+      } else if (forgot) {
+        await api("POST", "/api/player/password/request", {
+          identifier: String(form.identifier || "").trim(),
+          ...turnstile,
+        });
+        setAuthErrors({});
+        setAuthNotice(
+          "Se houver uma conta com esse email, enviamos um link. " +
+          "Confira a caixa de entrada e o spam."
+        );
+        return;
+      } else if (reset) {
+        const row = await api("POST", "/api/player/password/reset", {
+          token: resetToken,
+          password: form.password,
+        });
+        setResetToken("");
+        setAuthMode("login");
+        setAuthErrors({});
+        setAuthNotice("Senha redefinida. Entre com a nova senha.");
+        setForm((f) => ({
+          ...f,
+          identifier: row.username || f.identifier,
+          password: "",
+          password_confirm: "",
+        }));
+        return;
       } else {
         profileRow = await api("POST", "/api/player", {
           name: String(form.name || "").trim(),
@@ -1107,14 +1173,19 @@ export default function Page() {
         }
         social={pendingSocial ? { ...pendingSocial.suggested } : null}
         remember={rememberMe}
+        notice={authNotice}
+        passwordResetEnabled={!!serverConfig.password_reset_enabled}
         onRemember={setRememberMe}
         onForm={(next) => {
           setForm(next);
           setAuthErrors({});
+          setAuthNotice("");
         }}
         onMode={(next) => {
           setAuthMode(next);
           setPendingSocial(null);
+          setAuthErrors({});
+          setAuthNotice("");
         }}
         onSubmit={submitAuth}
         onSocial={startSocial}
@@ -1124,6 +1195,9 @@ export default function Page() {
           setAcctOpen(false);
           setPendingSocial(null);
           setAuthMode("login");
+          setAuthErrors({});
+          setAuthNotice("");
+          setResetToken("");
         }}
       />
 

@@ -93,6 +93,25 @@ currently carries) — Resend accepts it and delivers only to the account owner'
 address, which is enough to verify the rail and to receive the test-send. Switch
 to your own domain before sending to real players.
 
+## Password reset
+
+The second trigger is **self-service password reset** (decision 0068):
+
+- `POST /api/player/password/request` mints a 32-byte token and emails
+  `<storefront>/#reset=<token>`. The request is Turnstile-gated when the rail
+  is configured and answers `{"requested": true}` even for an unknown account.
+- The link expires in 30 minutes, works once, and a newer request invalidates
+  older ones. Only the SHA-256 of the token is stored, in
+  `data/password_resets.json`.
+- `POST /api/player/password/reset` consumes it and replaces the password.
+- The storefront shows "Esqueci minha senha" only when
+  `/api/config` reports `password_reset_enabled: true`, which follows
+  `mailer.enabled` — with no Resend key the console mailer is not a player
+  surface.
+
+A mail failure is swallowed, exactly like the welcome email: the neutral
+answer is returned and the link stays available for a provider retry.
+
 ## What is *not* email
 
 Deposit and withdrawal receipts are **not** sent yet. The rail is wired, tested

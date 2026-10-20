@@ -3,7 +3,7 @@
 The one list of things that are waiting on you. Everything not here is either
 done and live, or code I can still work on without you.
 
-Last updated: 2026-10-19 (Better Auth replaces Authgear).
+Last updated: 2026-10-19 (self-service password reset, decision 0068).
 
 ## 1. Asaas production — configured, one paid deposit to close the loop
 
@@ -117,6 +117,9 @@ Full runbook: `docs/oauth.md`.
   saldo are live and verified.
 - Sports (icons, bigger selections, count markets from live stats) is live.
 - Roda da Sorte (the new original, 97% RTP) is live.
+- Password reset is live (decision 0068): "Esqueci minha senha" emails a
+  one-time link through the configured Resend rail. It is hidden when no mail
+  rail is configured, which is why your Resend key matters to that surface too.
 - Provider wallets: the harness proves our wallet answers + debits for all
   sampled games, and every working publisher settles rounds on our books —
   Hacksaw, Play'n GO, Spribe, PG Soft, Pragmatic Play (which now also pays a

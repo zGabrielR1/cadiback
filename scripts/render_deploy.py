@@ -68,6 +68,10 @@ SERVICE = {
         # Host — the same-origin guard needs the frontend named. See
         # `demo.server.same_origin`.
         {"key": "FRONTEND_ORIGINS", "value": "cadiback-web.vercel.app"},
+        # The canonical storefront origin for links that leave the process by
+        # email (password reset, decision 0068). A request header must never
+        # choose the host a reset token is sent to.
+        {"key": "PUBLIC_SITE_URL", "value": "https://cadiback-web.vercel.app"},
     ],
 }
 

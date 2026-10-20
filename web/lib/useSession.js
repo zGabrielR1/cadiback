@@ -32,6 +32,7 @@ export function useSession() {
     turnstile_site_key: "",
     oauth_enabled: false,
     oauth_providers: [],
+    password_reset_enabled: false,
   });
   const [refreshError, setRefreshError] = useState("");
   const [busy, setBusy] = useState(false);

@@ -55,6 +55,7 @@ from demo.server import (
     external_demo_url,
     fixture_catalog,
     frontend_hosts,
+    public_site_url,
     same_origin,
     static_file,
 )
@@ -2887,13 +2888,16 @@ class _RecordingMailer:
     def __init__(self, enabled: bool = True, fail: bool = False) -> None:
         self.enabled = enabled
         self.fail = fail
+        self.attempts = 0
         self.sent: list[dict] = []
 
     def send(self, message, *, idempotency_key: str = ""):
+        self.attempts += 1
         if self.fail:
             raise MailError("boom")
         to = ", ".join(a.email for a in message.recipients())
         self.sent.append({"to": to, "subject": message.subject,
+                          "text": message.text, "html": message.html,
                           "idempotency_key": idempotency_key})
         return SendResult(id=f"rec-{len(self.sent)}", provider=self.name)
 
@@ -2985,6 +2989,137 @@ class MailTest(unittest.TestCase):
     def test_admin_test_send_refuses_a_bad_address(self):
         with self.assertRaises(ValueError):
             self.demo.admin_mail_test(self._admin(), {"to": "not-an-email"})
+
+
+class PasswordResetTest(unittest.TestCase):
+    """Self-service password reset (decision 0068): the request surface is
+    not a membership oracle, the token is stored hashed, one request
+    invalidates the previous link, and a reset is single-use."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.mailer = _RecordingMailer()
+        self.demo = Demo(data_dir=self.tmp, mailer=self.mailer)
+        self.profile = self.demo.register_player(self._payload())
+
+    def _payload(self, **over):
+        body = {
+            "name": "Ana Souza",
+            "username": "ana.souza",
+            "email": "ana.souza@example.com",
+            "cpf": "529.982.247-25",
+            "password": "ana1234",
+            "pix_key": "ana.souza@example.com",
+        }
+        body.update(over)
+        return body
+
+    def _request(self, identifier="ana.souza@example.com",
+                 site_url="https://casa.test", remote_ip="203.0.113.9"):
+        return self.demo.request_password_reset(
+            {"identifier": identifier}, site_url=site_url,
+            remote_ip=remote_ip)
+
+    @staticmethod
+    def _token(text):
+        return text.split("#reset=", 1)[1].split()[0].strip()
+
+    def _wait_for_mail(self, count, timeout=2.0):
+        """The send runs on a daemon thread so the request time stays flat."""
+        deadline = time.time() + timeout
+        while len(self.mailer.sent) < count and time.time() < deadline:
+            time.sleep(0.01)
+        return len(self.mailer.sent)
+
+    def _request_token(self, **over):
+        before = len(self.mailer.sent)
+        self._request(**over)
+        self.assertEqual(self._wait_for_mail(before + 1), before + 1)
+        return self._token(self.mailer.sent[-1]["text"])
+
+    def test_request_answers_the_same_for_known_and_unknown_accounts(self):
+        self.assertEqual(self._request(), {"requested": True})
+        self.assertEqual(self._wait_for_mail(1), 1)
+        mail = self.mailer.sent[0]
+        self.assertEqual(mail["to"], "ana.souza@example.com")
+        self.assertIn("casa.test/#reset=", mail["text"])
+        self.assertNotIn("ana1234", mail["text"])
+        token = self._token(mail["text"])
+        self.assertGreater(len(token), 32)
+        # the raw token reaches no file: only its digest is persisted
+        with open(self.demo.password_resets.path, "r",
+                  encoding="utf-8") as handle:
+            stored = handle.read()
+        self.assertNotIn(token, stored)
+        self.assertIn(hashlib.sha256(token.encode("utf-8")).hexdigest(),
+                      stored)
+        # an unknown identifier gets the same answer and sends nothing
+        self.assertEqual(
+            self._request("ghost@example.com", remote_ip="203.0.113.10"),
+            {"requested": True})
+        self.assertEqual(len(self.mailer.sent), 1)
+        # a second request inside the cooldown is also silent
+        self.assertEqual(self._request(), {"requested": True})
+        self.assertEqual(len(self.mailer.sent), 1)
+
+    def test_reset_changes_the_password_and_the_link_is_single_use(self):
+        token = self._request_token()
+        self.assertTrue(self.demo.reset_player_password(token, "nova1234")["reset"])
+        with self.assertRaises(ValueError):
+            self.demo.login_player({"identifier": "ana.souza@example.com",
+                                    "password": "ana1234"})
+        out = self.demo.login_player({"identifier": "ana.souza@example.com",
+                                      "password": "nova1234"})
+        self.assertEqual(out["player_id"], self.profile["player_id"])
+        with self.assertRaises(ValueError):
+            self.demo.reset_player_password(token, "outra1234")
+        row = self.demo.players.read_all()[self.profile["player_id"]]
+        self.assertTrue(row["pw_hash"].startswith("pbkdf2_sha256$"))
+        self.assertNotIn("pw_salt", row)
+
+    def test_a_new_request_invalidates_the_previous_link(self):
+        first = self._request_token()
+        rows = self.demo.password_resets.read_all()
+        for row in rows.values():
+            row["created_at"] = 0  # step past the cooldown
+        self.demo.password_resets.write_all(rows)
+        second = self._request_token(remote_ip="203.0.113.11")
+        self.assertNotEqual(first, second)
+        with self.assertRaises(ValueError):
+            self.demo.reset_player_password(first, "nova1234")
+        self.assertTrue(
+            self.demo.reset_player_password(second, "nova1234")["reset"])
+
+    def test_an_expired_or_unknown_link_is_refused(self):
+        with self.assertRaises(ValueError):
+            self.demo.reset_player_password("nunca-existiu", "nova1234")
+        digest = hashlib.sha256(b"expired").hexdigest()
+        now = time.time()
+        self.demo.password_resets.write_all({
+            digest: {"player_id": self.profile["player_id"],
+                     "created_at": now - 100, "expires_at": now - 1}})
+        with self.assertRaises(ValueError):
+            self.demo.reset_player_password("expired", "nova1234")
+        self.assertEqual(self.demo.password_resets.read_all(), {})
+
+    def test_a_mail_outage_does_not_fail_the_request(self):
+        self.mailer.fail = True
+        self.assertEqual(self._request(), {"requested": True})
+        deadline = time.time() + 2
+        while self.mailer.attempts < 1 and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(self.mailer.attempts, 1)
+        self.assertEqual(len(self.mailer.sent), 0)
+        # the link was still minted, so a provider retry can deliver it
+        self.assertEqual(len(self.demo.password_resets.read_all()), 1)
+
+    def test_the_storefront_is_told_whether_reset_can_be_delivered(self):
+        self.assertTrue(
+            self.demo.public_config()["password_reset_enabled"])
+        off = Demo(data_dir=tempfile.mkdtemp(),
+                   mailer=_RecordingMailer(enabled=False))
+        self.assertFalse(
+            off.public_config()["password_reset_enabled"])
 
 
 class _RecordingVerifier:
@@ -3130,6 +3265,59 @@ class TurnstileHttpTest(unittest.TestCase):
         self.assertNotIn("anti-bot", body.get("error", ""))
 
 
+class PasswordResetHttpTest(unittest.TestCase):
+    """The route wiring for decision 0068: the request surface is behind the
+    bot gate and answers the same thing for an unknown account; the reset
+    surface refuses a link that never existed."""
+
+    def setUp(self):
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever,
+                                       daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.keep = DEMO.turnstile
+        DEMO.turnstile = _RecordingVerifier()
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        DEMO.turnstile = self.keep
+        self.server.shutdown()
+        self.server.server_close()
+
+    def _post(self, path, body):
+        data = json.dumps(body).encode("utf-8")
+        req = urllib.request.Request(
+            self.base + path, data=data, method="POST",
+            headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status, json.loads(resp.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            with exc:
+                return exc.code, json.loads(exc.read() or b"{}")
+
+    def test_the_request_is_gated_and_answers_without_an_account(self):
+        status, body = self._post(
+            "/api/player/password/request",
+            {"identifier": "ghost@example.com"})
+        self.assertEqual(status, 403)
+        self.assertIn("anti-bot", body["error"])
+        status, body = self._post(
+            "/api/player/password/request",
+            {"identifier": "ghost@example.com",
+             "cf-turnstile-response": "password_reset:ok"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {"requested": True})
+
+    def test_the_reset_route_refuses_a_link_that_never_existed(self):
+        status, body = self._post(
+            "/api/player/password/reset",
+            {"token": "nunca-existiu", "password": "nova1234"})
+        self.assertEqual(status, 400)
+        self.assertIn("inválido", body["error"])
+
+
 class SameOriginTest(unittest.TestCase):
     """The write guard: same-origin only, but it must see through the Vercel
     proxy, where the browser's Origin is the frontend host and the request Host
@@ -3172,6 +3360,22 @@ class SameOriginTest(unittest.TestCase):
         self.assertEqual(hosts, {"cadiback-web.vercel.app",
                                  "app.example.com", "x.io"})
         self.assertEqual(frontend_hosts({}), set())
+
+    def test_reset_links_never_trust_an_arbitrary_forwarded_host(self):
+        # an attacker who can set X-Forwarded-Host must not choose where the
+        # one-time reset token is sent (decision 0068)
+        self.assertEqual(public_site_url("https://evil.example", {}),
+                         "https://cadiback-web.vercel.app")
+        self.assertEqual(public_site_url("https://cadiback-web.vercel.app", {}),
+                         "https://cadiback-web.vercel.app")
+        self.assertEqual(public_site_url("https://cadiback.onrender.com", {}),
+                         "https://cadiback.onrender.com")
+        self.assertEqual(public_site_url("http://127.0.0.1:8765", {}),
+                         "http://127.0.0.1:8765")
+        self.assertEqual(
+            public_site_url("https://evil.example",
+                            {"PUBLIC_SITE_URL": "https://casa.example/"}),
+            "https://casa.example")
 
 
 # ---- Better Auth social login (decision 0066) ----

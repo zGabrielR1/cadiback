@@ -181,6 +181,37 @@ def frontend_hosts(env: dict[str, str] | None = None) -> set[str]:
     return {h for h in (_host_only(part) for part in raw.split(",")) if h}
 
 
+DEFAULT_PUBLIC_SITE_URL = "https://cadiback-web.vercel.app"
+
+
+def public_site_url(origin: str, env: dict[str, str] | None = None) -> str:
+    """The origin a password-reset email may safely point a player at.
+
+    `_our_origin()` is deliberately proxy-aware, but that also means it can be
+    steered by a caller-supplied `X-Forwarded-Host`. A reset link built from an
+    untrusted host is account-takeover material: the victim clicks the real
+    email and hands the token to the attacker's origin. So the configured
+    `PUBLIC_SITE_URL` wins, then only the known storefront hosts and loopback
+    are accepted, and anything else falls back to the canonical storefront.
+    """
+    source = env if env is not None else os.environ
+    configured = (source.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
+    if configured.startswith(("https://", "http://")):
+        return configured
+    try:
+        host = (urlparse(origin).hostname or "").lower()
+    except ValueError:
+        host = ""
+    allowed = frontend_hosts(source) | {
+        "cadiback-web.vercel.app",
+        "cadiback.onrender.com",
+    }
+    loopbacks = {"localhost", "127.0.0.1", "::1"}
+    if host in allowed or host in loopbacks:
+        return origin.rstrip("/")
+    return DEFAULT_PUBLIC_SITE_URL
+
+
 def same_origin(origin: str, host: str = "", forwarded_host: str = "",
                 extra_hosts=()) -> bool:
     """The write guard, as a pure decision (so it is tested without a socket).
@@ -276,6 +307,16 @@ HEARTBEAT_SECONDS = 30
 # again", which is a normal outcome for a social login and keeps no credential
 # material on disk.
 OAUTH_HANDOFF_TTL_SECONDS = 900
+
+# Password reset (decision 0068). The raw token only ever exists in the email
+# and in the browser's URL hash; the store keeps its SHA-256, so a copy of the
+# data directory cannot be turned back into a working link. One request per
+# minute per account and five per hour per address keep the mail rail from
+# becoming an amplifier, without telling the caller which accounts exist.
+PASSWORD_RESET_TTL_SECONDS = 30 * 60
+PASSWORD_RESET_COOLDOWN_SECONDS = 60
+PASSWORD_RESET_IP_WINDOW_SECONDS = 60 * 60
+PASSWORD_RESET_IP_MAX = 5
 
 # Promotions (demo): real mechanics through the double-entry wallet.
 # Welcome bonus: 100% of the first deposit, capped, released by turnover.
@@ -711,6 +752,12 @@ class Demo:
         self.oauth_links = Store(os.path.join(data_dir, "oauth_links.json"))
         self._oauth_lock = threading.RLock()
         self.oauth_handoffs: dict[str, dict] = {}
+        # Password reset (decision 0068): hashed one-time tokens, guarded by
+        # their own lock because a reset races a login, not the OAuth rail.
+        self.password_resets = Store(
+            os.path.join(data_dir, "password_resets.json"))
+        self._reset_lock = threading.RLock()
+        self._reset_ip: dict[str, list[float]] = {}
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -886,6 +933,11 @@ class Demo:
         config["asaas_enabled"] = self.asaas_available()
         config["crypto_enabled"] = self.crypto_available()
         config["crypto_coins"] = self.crypto_coins()
+        # A reset link is only useful when a mail rail can deliver it. With
+        # no key the console mailer is a development aid, not a player
+        # surface, so the storefront hides "Esqueci minha senha" (0068).
+        config["password_reset_enabled"] = bool(
+            getattr(self.mailer, "enabled", False))
         return config
 
     # ---- social login (Better Auth, decision 0066) ----
@@ -1286,6 +1338,154 @@ class Demo:
             time.sleep(0.25)
             raise ValueError("usuário/email/CPF ou senha inválidos")
         return self.profile(player_id)
+
+    # -- password reset (decision 0068) ---------------------------------
+    @staticmethod
+    def _reset_digest(token: str) -> str:
+        """The only form of the reset token that reaches disk."""
+        return hashlib.sha256(str(token or "").encode("utf-8")).hexdigest()
+
+    def request_password_reset(self, payload: dict, *, site_url: str = "",
+                               remote_ip: str = "") -> dict:
+        """Ask for a reset link, and answer the same thing either way.
+
+        A known account with an email gets one link; an unknown identifier, an
+        account with no email, a request inside the cooldown and an address
+        over its hourly budget all get the same `{"requested": true}` after the
+        same delay. That is the whole point: the request surface must not be a
+        membership oracle. The mail itself is best-effort, exactly like the
+        welcome email — a provider outage must not become an account probe.
+        """
+        ident = str((payload or {}).get("identifier")
+                    or (payload or {}).get("email") or "").strip()
+        data = self.players.read_all()
+        player_id = self._find_player(data, ident)
+        record = data.get(player_id or "")
+        email = str(record.get("email") or "") if isinstance(record, dict) else ""
+        token = ""
+        if email:
+            now = time.time()
+            with self._reset_lock:
+                recent = [t for t in self._reset_ip.get(remote_ip, [])
+                          if now - t < PASSWORD_RESET_IP_WINDOW_SECONDS]
+                if remote_ip:
+                    self._reset_ip[remote_ip] = recent
+                allowed = not remote_ip or len(recent) < PASSWORD_RESET_IP_MAX
+                rows = self.password_resets.read_all()
+                # expired links are dead weight; drop them on every request
+                rows = {key: row for key, row in rows.items()
+                        if isinstance(row, dict)
+                        and float(row.get("expires_at", 0)) > now}
+                last = max((float(row.get("created_at", 0))
+                            for row in rows.values()
+                            if row.get("player_id") == player_id), default=0.0)
+                if allowed and now - last >= PASSWORD_RESET_COOLDOWN_SECONDS:
+                    token = secrets.token_urlsafe(32)
+                    digest = self._reset_digest(token)
+                    # one live link per account: a newer request invalidates
+                    # every older one, so a lost email cannot be replayed later
+                    rows = {key: row for key, row in rows.items()
+                            if row.get("player_id") != player_id}
+                    rows[digest] = {
+                        "player_id": player_id,
+                        "created_at": now,
+                        "expires_at": now + PASSWORD_RESET_TTL_SECONDS,
+                    }
+                    if remote_ip:
+                        recent.append(now)
+                        self._reset_ip[remote_ip] = recent
+                self.password_resets.write_all(rows)
+        if token:
+            # Delivery runs off the request thread on purpose. A synchronous
+            # provider call would make a known account answer slower than an
+            # unknown one — exactly the membership oracle the neutral body is
+            # there to prevent. The thread is best-effort and daemon: a lost
+            # email costs a new request, never a stuck handler.
+            threading.Thread(
+                target=self._send_password_reset,
+                args=(email, token, site_url),
+                name="password-reset-mail", daemon=True).start()
+        # The same fixed delay the login surface pays, for the same reason.
+        time.sleep(0.25)
+        return {"requested": True}
+
+    def _send_password_reset(self, email: str, token: str,
+                             site_url: str) -> None:
+        """Best-effort delivery of the one link. The raw token is never
+        stored, logged by this process, or returned in an API answer."""
+        base = str(site_url or "").strip().rstrip("/")
+        if not base.startswith(("https://", "http://")):
+            base = "https://cadiback-web.vercel.app"
+        link = f"{base}/#reset={token}"
+        try:
+            self.mailer.send(
+                Message(
+                    to=email,
+                    subject="Redefinir sua senha — candibet",
+                    html=wrap_html(
+                        title="Redefinir senha",
+                        body="<p>Recebemos um pedido para redefinir a senha "
+                             "da sua conta.</p>"
+                             f'<p><a href="{html_escape(link)}">Criar uma nova '
+                             "senha</a></p>"
+                             f"<p>O link expira em "
+                             f"{PASSWORD_RESET_TTL_SECONDS // 60} minutos e só "
+                             "pode ser usado uma vez.</p>"
+                             "<p>Se não foi você, ignore este email: sua "
+                             "senha atual continua valendo.</p>",
+                        footer="Este é um ambiente de demonstração. Nenhum "
+                               "dinheiro real é movimentado."),
+                    text="Recebemos um pedido para redefinir a senha da sua "
+                         "conta.\n\n"
+                         f"Crie uma nova senha: {link}\n\n"
+                         f"O link expira em {PASSWORD_RESET_TTL_SECONDS // 60} "
+                         "minutos e só pode ser usado uma vez.\n\n"
+                         "Se não foi você, ignore este email: sua senha atual "
+                         "continua valendo.\n\n"
+                         "Ambiente de demonstração.",
+                ),
+                idempotency_key="reset:" + self._reset_digest(token),
+            )
+        except MailError:
+            pass  # a mail outage is not an account probe
+
+    def reset_player_password(self, token: str, new_password: str) -> dict:
+        """Consume one link and replace the password.
+
+        The token is removed *before* the new hash is written, so two races
+        on the same link cannot both succeed; a failure after the removal
+        costs the player a new request, never a working link left behind.
+        Every other outstanding link for the account dies with it.
+        """
+        password = validate_player_password(new_password)
+        digest = self._reset_digest(token)
+        now = time.time()
+        with self._reset_lock:
+            rows = self.password_resets.read_all()
+            row = rows.get(digest)
+            if not isinstance(row, dict) or \
+                    float(row.get("expires_at", 0)) <= now:
+                if digest in rows:
+                    rows.pop(digest, None)
+                    self.password_resets.write_all(rows)
+                raise ValueError("link de redefinição inválido ou expirado")
+            player_id = str(row.get("player_id") or "")
+            rows = {key: value for key, value in rows.items()
+                    if value.get("player_id") != player_id}
+            self.password_resets.write_all(rows)
+        data = self.players.read_all()
+        record = data.get(player_id)
+        if not isinstance(record, dict):
+            raise ValueError("conta não encontrada")
+        updated = dict(record)
+        updated["pw_hash"] = self.passwords.hash(password)
+        updated.pop("pw_salt", None)
+        updated["updated_at"] = datetime.now(
+            timezone.utc).isoformat(timespec="seconds")
+        data[player_id] = updated
+        self.players.write_all(data)
+        return {"reset": True,
+                "username": str(record.get("username") or "")}
 
     @staticmethod
     def _find_player(data: dict, ident: str) -> str | None:
@@ -5016,6 +5216,17 @@ class Handler(BaseHTTPRequestHandler):
                 body = self._body()
                 DEMO.require_turnstile(body, "login", self._client_ip())
                 self._send(200, DEMO.login_player(body))
+            elif path == "/api/player/password/request":
+                body = self._body()
+                DEMO.require_turnstile(body, "password_reset",
+                                       self._client_ip())
+                self._send(200, DEMO.request_password_reset(
+                    body, site_url=public_site_url(self._our_origin()),
+                    remote_ip=self._client_ip()))
+            elif path == "/api/player/password/reset":
+                body = self._body()
+                self._send(200, DEMO.reset_player_password(
+                    body.get("token") or "", body.get("password") or ""))
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._body()))
             elif path == "/api/deposit/pix":

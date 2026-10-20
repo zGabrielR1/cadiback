@@ -1,5 +1,27 @@
 # PROGRESS
 
+## DONE (2026-10-19 — self-service password reset over email, decision 0068)
+
+- **THE LAST ACCOUNT GAP IS CLOSED.** A player who forgot a password had no
+  way back in except an operator's `admin/users/reset`. The login form now has
+  "Esqueci minha senha": `POST /api/player/password/request` mints a 32-byte
+  token and emails `<storefront>/#reset=<token>`; the new `reset` form consumes
+  it through `POST /api/player/password/reset`. The mail rail (0047) carries
+  the second trigger.
+- **NO ORACLE, NO PLAINTEXT TOKEN.** Known account, unknown identifier, no
+  email, cooldown and client-budget exhaustion all get the same
+  `{"requested": true}` after the same delay. Only `sha256(token)` is stored;
+  the raw token exists in the email and the URL hash, which never reaches a
+  server log or referrer. 30-minute TTL, single use, one live link per account,
+  one mint/minute, five/client/hour.
+- **THE UI HIDES WHAT CANNOT WORK.** `/api/config` reports
+  `password_reset_enabled` (the mailer is configured); with only the console
+  mailer the "Esqueci minha senha" link is absent. The reset token is stripped
+  from the address bar on boot and held in component state.
+- Tests: `PasswordResetTest` (6) + `PasswordResetHttpTest` (2). Decision
+  `0068`; runbook updated in `docs/mail.md`. Open limit: the player surface is
+  still `player_id`-keyed, so there are no player sessions to revoke.
+
 ## DONE (2026-10-19 — Pragmatic free spins settle without a phantom stake, decision 0067)
 
 - **THE PUBLISHER'S NET IS THE AUTHORITY.** `spin_round` now prefers `ntp`

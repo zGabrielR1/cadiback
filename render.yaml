@@ -32,6 +32,11 @@ services:
       # (demo.server.same_origin). Comma-separated hostnames or origins.
       - key: FRONTEND_ORIGINS
         value: cadiback-web.vercel.app
+      # Canonical storefront origin for links that leave the process by email
+      # (password reset, decision 0068). Never derive this from a request
+      # header: a resettable Host/X-Forwarded-Host would poison the link.
+      - key: PUBLIC_SITE_URL
+        value: https://cadiback-web.vercel.app
       # Asaas Pix rail (decision 0045, runbook docs/asaas.md). Real Pix when
       # all four are set; the instant demo credit is the fallback when they
       # are not. `sync: false` keeps the secrets out of the repository: enter

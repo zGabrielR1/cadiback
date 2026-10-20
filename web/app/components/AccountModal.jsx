@@ -30,6 +30,8 @@ export default function AccountModal({
   oauthProviders = [],
   social = null,
   remember = true,
+  notice = "",
+  passwordResetEnabled = false,
   onForm,
   onMode,
   onRemember,
@@ -48,6 +50,7 @@ export default function AccountModal({
     }
     const onKey = (event) => {
       if (!testAccountsEnabled) return;
+      if (mode !== "login" && mode !== "register") return;
       if (event.ctrlKey && event.shiftKey &&
           (event.key === "T" || event.key === "t")) {
         event.preventDefault();
@@ -57,22 +60,33 @@ export default function AccountModal({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, testAccountsEnabled, onFillTest]);
+  }, [open, testAccountsEnabled, onFillTest, mode]);
 
   if (!open) return null;
   const isComplete = mode === "complete";
-  const isLogin = mode !== "register" && !isComplete;
+  const isLogin = mode === "login";
+  const isRegister = mode === "register";
+  const isForgot = mode === "forgot";
+  const isReset = mode === "reset";
   const title = isComplete
     ? "Complete seu cadastro"
     : isLogin
       ? "Entrar"
-      : "Criar sua conta";
+      : isRegister
+        ? "Criar sua conta"
+        : isForgot
+          ? "Esqueci minha senha"
+          : "Criar nova senha";
   const subtitle = isComplete
     ? "Você entrou com " + (social?.provider || "sua conta social") +
       ". Falta o CPF para abrir sua carteira (uma conta por CPF) e escolher um usuário."
     : isLogin
       ? "Acesse com seu usuário, email ou CPF e sua senha."
-      : "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor.";
+      : isRegister
+        ? "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor."
+        : isForgot
+          ? "Informe o email da sua conta. Se ela existir, enviaremos um link para criar uma nova senha."
+          : "Escolha uma nova senha. O link que você abriu só pode ser usado uma vez.";
   const field = (id, label, props, hint) => (
     <>
       <label htmlFor={id}>{label}</label>
@@ -92,7 +106,7 @@ export default function AccountModal({
       ) : null}
     </>
   );
-  const socialRow = !isComplete && oauthProviders.length > 0 ? (
+  const socialRow = (isLogin || isRegister) && oauthProviders.length > 0 ? (
     <div className="oauth-row">
       <span className="oauth-note">ou continue com</span>
       {oauthProviders.map((p) => (
@@ -181,6 +195,45 @@ export default function AccountModal({
               type: "password",
               autoComplete: "current-password",
               placeholder: "••••••",
+            })}
+            {passwordResetEnabled ? (
+              <button
+                type="button"
+                className="ghost"
+                style={{ width: "100%", marginTop: 6 }}
+                onClick={() => onMode("forgot")}
+              >
+                Esqueci minha senha
+              </button>
+            ) : null}
+          </>
+        ) : isForgot ? (
+          <>
+            {field("identifier", "Email da conta", {
+              name: "identifier",
+              autoComplete: "email",
+              inputMode: "email",
+              placeholder: "voce@email.com",
+            })}
+          </>
+        ) : isReset ? (
+          <>
+            {field(
+              "password",
+              "Nova senha",
+              {
+                name: "password",
+                type: "password",
+                autoComplete: "new-password",
+                placeholder: "Mínimo 6 caracteres, letras e números",
+              },
+              "Mínimo 6 caracteres, com letras e números."
+            )}
+            {field("password_confirm", "Confirme a nova senha", {
+              name: "password_confirm",
+              type: "password",
+              autoComplete: "new-password",
+              placeholder: "Repita a nova senha",
             })}
           </>
         ) : (
@@ -287,17 +340,24 @@ export default function AccountModal({
             <span>Lembrar de mim neste dispositivo</span>
           </label>
         ) : null}
+        {notice ? (
+          <p className="fok" role="status" style={{ marginTop: 10 }}>
+            {notice}
+          </p>
+        ) : null}
         {errors._ ? (
           <p className="ferr" role="alert" style={{ marginTop: 10 }}>
             {errors._}
           </p>
         ) : null}
         {socialRow}
-        {turnstileSiteKey && !isComplete ? (
+        {turnstileSiteKey && (isLogin || isRegister || isForgot) ? (
           <div style={{ marginTop: 12 }}>
             <TurnstileWidget
               siteKey={turnstileSiteKey}
-              action={isLogin ? "login" : "register"}
+              action={
+                isLogin ? "login" : isForgot ? "password_reset" : "register"
+              }
               onToken={onTurnstileToken}
               resetSignal={turnstileReset}
             />
@@ -319,7 +379,11 @@ export default function AccountModal({
               ? "Verificar CPF e entrar"
               : isLogin
                 ? "Entrar"
-                : "Criar conta e entrar"}
+                : isRegister
+                  ? "Criar conta e entrar"
+                  : isForgot
+                    ? "Enviar link"
+                    : "Redefinir senha"}
         </button>
         {secretFilled ? (
           <p className="fhint" style={{ marginTop: 8 }} role="status">
@@ -332,9 +396,15 @@ export default function AccountModal({
           <button
             className="ghost"
             style={{ width: "100%", marginTop: 8 }}
-            onClick={() => onMode(isLogin ? "register" : "login")}
+            onClick={() =>
+              onMode(isLogin ? "register" : isRegister ? "login" : "login")
+            }
           >
-            {isLogin ? "Ainda não tenho conta — criar" : "Já tenho conta — entrar"}
+            {isLogin
+              ? "Ainda não tenho conta — criar"
+              : isRegister
+                ? "Já tenho conta — entrar"
+                : "Voltar para entrar"}
           </button>
         )}
         <button
