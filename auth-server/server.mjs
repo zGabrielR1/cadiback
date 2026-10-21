@@ -19,6 +19,7 @@ import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 
 import { createAuth, enabledProviders, providerList } from "./auth.mjs";
+import { loadLocalAuthEnv } from "./local-env.mjs";
 
 const BASE_PATH = "/api/betterauth";
 
@@ -198,7 +199,7 @@ async function runBridge({ req, res, auth, env, url }) {
   res.end();
 }
 
-export async function startAuthServer(env = process.env) {
+export async function startAuthServer(env = loadLocalAuthEnv()) {
   const auth = await createAuth(env);
   const port = Number(env.BETTER_AUTH_INTERNAL_PORT || 3100);
   const host = env.BETTER_AUTH_INTERNAL_HOST || "127.0.0.1";

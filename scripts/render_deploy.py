@@ -171,6 +171,7 @@ def check_tree() -> int:
 KEY_FILE = os.path.join(os.path.expanduser("~"), ".render_api_key")
 REPO_FILE = os.path.join(os.path.expanduser("~"), ".render_repo")
 ENV_FILE = os.path.join(ROOT, ".env.render")
+LOCAL_ENV_FILE = os.path.join(ROOT, ".env.local")
 
 # The Asaas Pix rail (decision 0045, docs/asaas.md). These are secrets, so the
 # repository only ever holds `sync: false` placeholders in `render.yaml`; the
@@ -267,8 +268,9 @@ def _from_env_file(*, want_key: bool) -> str:
 
 
 def read_key() -> str:
-    """The Render API key: environment, then `.env.render`, then the home file."""
+    """The Render key: environment, .env.local, legacy file, then home file."""
     for value in (os.environ.get("RENDER_API_KEY", "").strip(),
+                  _env_pairs(LOCAL_ENV_FILE).get("RENDER_API_KEY", ""),
                   _from_env_file(want_key=True),
                   _first_line(KEY_FILE) if os.path.isfile(KEY_FILE) else ""):
         if value:
@@ -439,12 +441,12 @@ def read_supabase_env() -> list[dict]:
 def read_betterauth_env() -> list[dict]:
     """The Better Auth settings to carry to the host.
 
-    Same rule as the other rails: the environment wins over the gitignored
-    `.env.betterauth`, and a setting absent everywhere is simply not sent — so
+    The environment wins over `.env.local`, which overrides the legacy
+    `.env.betterauth`; a setting absent everywhere is simply not sent — so
     a deploy without provider credentials hides the social buttons instead of
     half-configuring a login that cannot complete.
     """
-    values = _env_pairs(BETTERAUTH_ENV_FILE)
+    values = {**_env_pairs(BETTERAUTH_ENV_FILE), **_env_pairs(LOCAL_ENV_FILE)}
     for name in BETTERAUTH_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()

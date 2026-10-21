@@ -17,6 +17,8 @@
 .git
 .gitattributes
 .gitignore
+.env
+.env.*
 archive
 decisions
 docs

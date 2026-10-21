@@ -1,3 +1,14 @@
+CURRENTTASK: Enable Google and Facebook Better Auth sign-in; keep credentials in .env.local.
+
+## STATUS (2026-10-21)
+
+- Root .env.local consolidates existing service credentials, the Google client id and Playwright extension token; gitignored and excluded from Docker context. Secret values were not printed.
+- Node sidecar, Python auth/session settings, and Render deploy auth settings now read .env.local over the legacy .env.betterauth file; exported variables win. Render API key also reads .env.local.
+- Google: existing web client in project i-return-425815-e9. Both production callback URLs are filled in the browser form but NOT saved. Google no longer reveals existing secrets; adding a second secret needs the pending action-time confirmation. Existing secret remains untouched.
+- Facebook: connected Chrome tab is at the login form; owner sign-in requested. No Facebook app has been changed.
+- Tests: auth-server 4/4; frame 50/50; demo + local-env 426/426; verify.py 0 problems.
+- Remaining: owner approval for Google callback save/additional secret, save new secret directly to .env.local, finish Meta app setup after owner login, merge provider credentials to Render, restart and verify both production flows. OAuth is NOT enabled yet.
+
 CURRENTTASK: Device sessions (decision 0070) — "Sair da conta" now ends the
 session on the server, and a player can see and end each device separately. The
 signed token gains a session id, the host keeps one row per token in

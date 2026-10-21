@@ -91,7 +91,7 @@ from .vendor import AggregatorError, VendorAggregator, VendorConfig
 # repository and the Docker build stay self-contained (decisions/0047).
 # NB: this is the stdlib-only copy — no dependency, so the operator's
 # "pip install nothing" contract is intact.
-from foundry.envfile import load_env
+from foundry.envfile import load_env, read_env_file
 from foundry.mail import MailError, Message, resolve_mailer, wrap_html
 from foundry.turnstile import FIELD_NAME, TurnstileError, resolve_verifier
 from foundry.betterauth import (BridgeError, SocialIdentity,
@@ -106,6 +106,7 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESEND_ENV_FILE = os.path.join(_REPO_ROOT, ".env.resend")
 TURNSTILE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.turnstile")
 BETTERAUTH_ENV_FILE = os.path.join(_REPO_ROOT, ".env.betterauth")
+LOCAL_ENV_FILE = os.path.join(_REPO_ROOT, ".env.local")
 
 # One refusal for every player-credential failure (decisions 0069, 0070): a
 # forged token, an expired one and a revoked device must be indistinguishable.
@@ -145,15 +146,18 @@ def turnstile_env(env_file: str = TURNSTILE_ENV_FILE, environ=None) -> dict[str,
 
 def betterauth_env(env_file: str = BETTERAUTH_ENV_FILE,
                    environ=None) -> dict[str, str]:
-    """The Better Auth settings: the file, then the real environment on top.
+    """Auth settings: legacy file, root .env.local, then exported environment.
 
     Same shape as `mail_env`. `.env.betterauth` holds the shared bridge secret,
     the public base URL and the provider list; the provider *credentials* are
     read only by the Node auth server, never here. Unconfigured is a normal
     state — the rail then hides the social buttons.
     """
-    return load_env(env_file, environ,
-                    secret_name="BETTER_AUTH_BRIDGE_SECRET")
+    values = load_env(env_file, {}, secret_name="BETTER_AUTH_BRIDGE_SECRET")
+    if env_file == BETTERAUTH_ENV_FILE:
+        values.update(read_env_file(LOCAL_ENV_FILE))
+    values.update(os.environ if environ is None else environ)
+    return values
 
 
 def session_env(env_file: str = BETTERAUTH_ENV_FILE,
@@ -165,7 +169,7 @@ def session_env(env_file: str = BETTERAUTH_ENV_FILE,
     into a player-only key, so this change needs no new owner step; a local
     run with neither falls back to a generated `data/player_session.key`.
     """
-    return load_env(env_file, environ)
+    return betterauth_env(env_file, environ)
 
 
 def external_demo_url(env: dict[str, str] | None = None) -> str | None:

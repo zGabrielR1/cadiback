@@ -40,8 +40,12 @@ browser ── /api/betterauth/* ──▶ Python (public listener)
 
 ## Credentials
 
-All of them live in the gitignored **`.env.betterauth`** at the repository
-root. `scripts/render_deploy.py` carries them to Render, merging them over the
+Keep credentials in the gitignored **`.env.local`** at the repository root.
+The auth server, Python backend and deploy script read it automatically;
+exported environment variables win over `.env.local`, which wins over the
+legacy `.env.betterauth` file. Keep these secrets out of `web/` and never use
+a `NEXT_PUBLIC_` prefix. Docker excludes all `.env` files from its context.
+`scripts/render_deploy.py` carries the auth settings to Render, merging them over the
 service's existing environment so dashboard-only keys survive; never commit
 them.
 
@@ -81,7 +85,8 @@ called, so there is no guessing. A mismatch is a provider-side
 1. Google Cloud Console → APIs & Services → Credentials → **Create
    credentials** → OAuth client ID → **Web application**.
 2. Add the authorized redirect URIs above.
-3. Put the client id and secret in `.env.betterauth`.
+3. Put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env.local`.
+   Google only reveals a newly created secret once; save it immediately.
 
 ### Facebook
 
@@ -91,6 +96,7 @@ called, so there is no guessing. A mismatch is a provider-side
    Redirect URIs.
 3. Facebook may omit the email even with the permission granted; the template
    writes a reserved `.invalid` placeholder and links on the stable account id.
+4. Save `FACEBOOK_CLIENT_ID` and `FACEBOOK_CLIENT_SECRET` in `.env.local`.
 
 ### Apple
 
