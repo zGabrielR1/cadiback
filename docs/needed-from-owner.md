@@ -3,7 +3,7 @@
 The one list of things that are waiting on you. Everything not here is either
 done and live, or code I can still work on without you.
 
-Last updated: 2026-10-19 (self-service password reset, decision 0068).
+Last updated: 2026-10-21 (Google OAuth live; Facebook reauthentication pending).
 
 ## 1. Asaas production — configured, one paid deposit to close the loop
 
@@ -87,13 +87,13 @@ Authgear dependency is gone. The wiring, the sidecar, the signed bridge and
 the CPF flow are done and verified locally. What is still needed is the three
 providers' own credentials, which only your accounts can issue:
 
-- **Google**: OAuth client ID + secret (Web application).
-- **Facebook**: App ID + App Secret.
+- **Google**: configured and live. Both production callbacks are registered; credentials are saved in `.env.local`. Real sign-in reached the CPF-completion step.
+- **Facebook**: existing `candiback` app found. Complete the open Meta password re-entry prompt so its app secret can be saved and callbacks configured.
 - **Apple**: Services ID, Team ID, Key ID, and the `.p8` private key (a paid
   Apple Developer account is required; Apple does not accept `localhost`).
 
-Put them in the gitignored `.env.betterauth` (the bridge/server secrets are
-already generated there), then run `python scripts/render_deploy.py --yes`.
+Put them in the gitignored root `.env.local` (existing auth and bridge secrets
+are retained there), then run `python scripts/render_deploy.py --yes`.
 The script now **merges** the environment by default, so dashboard-only
 variables (Better Auth, Turnstile, Resend, Supabase) survive a deploy. Use
 `--replace-env` only for a deliberate reset. Register these exact callbacks

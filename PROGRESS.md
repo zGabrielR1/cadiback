@@ -1,5 +1,13 @@
 # PROGRESS
 
+## IN PROGRESS (2026-10-21 - Better Auth provider activation)
+
+- Google is live on cadiback-web.vercel.app. Saved both production callbacks, added an additional secret with owner approval, stored credentials in gitignored .env.local and merged them into Render. Existing signing keys and Google secret preserved.
+- Deploy dep-dbchts67bikc73bjsdpg is live. A real Google sign-in reached the signed bridge and the storefront CPF-completion step; no CPF/wallet was created.
+- .env.local is read by Node, Python and the Render auth deploy path, and excluded from Docker context. Local support commit 734400b; auth-server 4 checks, frame 50, demo/local-env 426, verify.py clean.
+- Facebook app candiback (1116893704435145) exists; owner is signed in but Meta requires password re-entry to reveal the secret. Prompt is open. Facebook credentials and callback setup are still pending.
+
+
 ## DONE (2026-10-21 - React Bits storefront continuation)
 
 - Completed the inherited SpotlightCard integration in casino and sports heroes; theme-aware surfaces, responsive sports layout, keyboard focus styling.
