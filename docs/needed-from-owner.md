@@ -3,7 +3,7 @@
 The one list of things that are waiting on you. Everything not here is either
 done and live, or code I can still work on without you.
 
-Last updated: 2026-10-21 (Google OAuth live; Facebook reauthentication pending).
+Last updated: 2026-10-21 (Google OAuth live; Facebook email-permission approval pending).
 
 ## 1. Asaas production — configured, one paid deposit to close the loop
 
@@ -88,7 +88,7 @@ the CPF flow are done and verified locally. What is still needed is the three
 providers' own credentials, which only your accounts can issue:
 
 - **Google**: configured and live. Both production callbacks are registered; credentials are saved in `.env.local`. Real sign-in reached the CPF-completion step.
-- **Facebook**: existing `candiback` app found. Complete the open Meta password re-entry prompt so its app secret can be saved and callbacks configured.
+- **Facebook**: credentials are saved in `.env.local` and configured in Render; both production callbacks are registered. Approve adding the existing app's `email` permission to resolve Meta's `Invalid Scopes: email` error. This is the only additional permission requested. The app remains in development mode, so access is limited to its app roles/testers until publication.
 - **Apple**: Services ID, Team ID, Key ID, and the `.p8` private key (a paid
   Apple Developer account is required; Apple does not accept `localhost`).
 
