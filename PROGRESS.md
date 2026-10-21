@@ -6,7 +6,7 @@
 - Added missing sports helpers: accent-insensitive search, date/competition/favorite filters, valid market checks, and market/line-aware bet identity.
 - Added three Node regression checks in web/lib/sports.test.mjs. Preserved React Bits license and documented source/adaptations.
 - Removed a stray BOM in the inherited .ui-pass.py helper that prevented verification.
-- Local implementation; deployment and browser visual review have not been performed.
+- Deployed frontend commit 086df5e to Vercel production on 2026-10-21: dpl_961fEa2renZv3LB2vcUkhRLMAnoX, https://cadiback-web.vercel.app. Public page, catalog, config and health return 200; anonymous player route returns 401. Live bundles contain SpotlightCard, sports hero, and favorites. Browser navigation checked. Local gates: frontend build, verify.py, 50 frame tests, 424 demo tests, 3 sports regression tests passed.
 
 
 ## DONE (2026-10-20 — device sessions, decision 0070)
