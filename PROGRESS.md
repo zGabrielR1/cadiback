@@ -1,5 +1,14 @@
 # PROGRESS
 
+## DONE (2026-10-21 - React Bits storefront continuation)
+
+- Completed the inherited SpotlightCard integration in casino and sports heroes; theme-aware surfaces, responsive sports layout, keyboard focus styling.
+- Added missing sports helpers: accent-insensitive search, date/competition/favorite filters, valid market checks, and market/line-aware bet identity.
+- Added three Node regression checks in web/lib/sports.test.mjs. Preserved React Bits license and documented source/adaptations.
+- Removed a stray BOM in the inherited .ui-pass.py helper that prevented verification.
+- Local implementation; deployment and browser visual review have not been performed.
+
+
 ## DONE (2026-10-20 — device sessions, decision 0070)
 
 - **"SAIR" NOW SIGNS OUT.** The token carries a session id and the host keeps

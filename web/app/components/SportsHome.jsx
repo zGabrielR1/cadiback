@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import SpotlightCard from "./reactbits/SpotlightCard";
+import { filterFixtures, betIdentity, validMarkets } from "../../lib/sports.mjs";
 
 const SPORT_ORDER = [
   "soccer", "basketball", "tennis", "hockey", "volleyball", "futsal",
@@ -210,9 +212,7 @@ function tick(kind, i, selections) {
 }
 
 function pricedMarkets(f) {
-  return (f.markets || []).filter(
-    (m) => m.prices && m.prices.length === m.selections.length && m.prices.length > 0
-  );
+  return validMarkets(f);
 }
 
 /** The match-stats panel: a two-sided bar per stat the feed carried. Purely
@@ -247,7 +247,7 @@ function Stats({ stats }) {
 /** One fixture row, Sofascore-shaped: state on the left, teams stacked with
  *  the score right-aligned, and the main market's odds in a fixed column.
  *  Extra markets (the total) expand under a "mais mercados" toggle. */
-function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
+function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite }) {
   const [open, setOpen] = useState(false);
   const markets = pricedMarkets(f);
   const primary = markets.find((m) => PRIMARY_KINDS.has(m.kind)) || markets[0];
@@ -272,11 +272,10 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
       price,
       line: m.line == null ? null : m.line,
     });
-  const isPicked = (sel) =>
-    selectedBets && selectedBets.some((x) => x.fixtureKey === f.key && x.selection === sel);
+  const isPicked = (m, sel) => selectedBets?.some((x) => betIdentity(x) === betIdentity({ fixtureKey: f.key, marketKind: m.kind, line: m.line, selection: sel }));
 
   const renderOdds = (m) => (
-    <div className="sx-odds" key={m.key}>
+    <div className="sx-market-block" key={m.key || m.kind + String(m.line)}><span className="sx-market-label">{KIND_LABEL[m.kind] || m.kind}{m.line != null ? " · " + m.line : ""} · {m.pricing === "market" ? "Provedor" : "Modelo"}</span><div className="sx-odds">
       {m.pricing === "market" ? (
         <span
           className="sx-prov"
@@ -288,7 +287,9 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
       {m.selections.map((sel, i) => (
         <button
           key={sel}
-          className={"sx-odd" + (isPicked(sel) ? " on" : "")}
+          className={"sx-odd" + (isPicked(m, sel) ? " on" : "")}
+          disabled={final}
+          aria-pressed={!!isPicked(m, sel)}
           title={"Apostar em " + sel + " @ " + m.prices[i].toFixed(2)}
           onClick={pick(m, sel, m.prices[i])}
         >
@@ -296,12 +297,13 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
           <span className="sx-odd-price">{m.prices[i].toFixed(2)}</span>
         </button>
       ))}
-    </div>
+    </div></div>
   );
 
   return (
     <div className={"sx-row" + (live ? " live" : "")}>
       <div className="sx-state">
+        <button className="sx-save" aria-label={(favorite ? "Remover favorito: " : "Favoritar: ") + f.home + " × " + f.away} aria-pressed={favorite} onClick={() => onFavorite(f.key)}>{favorite ? "★" : "☆"}</button>
         {live ? (
           <span className="sx-live">
             <i />
@@ -328,8 +330,8 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
       <div className="sx-markets">
         {primary ? renderOdds(primary) : <span className="sx-nomarket">mercados em atualização</span>}
         {total ? renderOdds(total) : null}
-        {extras.length > 0 ? (
-          <button className="sx-more" onClick={() => setOpen((v) => !v)}>
+        {extras.length > 0 || f.stats ? (
+          <button className="sx-more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
             {open ? "menos mercados ▲" : "+" + extras.length + " mercados ▼"}
           </button>
         ) : null}
@@ -353,8 +355,20 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs }) {
   );
 }
 
-export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive }) {
+export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive, query = "" }) {
   const [sport, setSport] = useState(null);
+  const [date, setDate] = useState("all");
+  const [league, setLeague] = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem("candi-sport-favorites") || "[]"); if (Array.isArray(saved)) setFavorites(saved.filter(x => typeof x === "string")); } catch {}
+  }, []);
+  const toggleFavorite = (key) => setFavorites(previous => {
+    const next = previous.includes(key) ? previous.filter(x => x !== key) : [...previous, key];
+    try { localStorage.setItem("candi-sport-favorites", JSON.stringify(next)); } catch {}
+    return next;
+  });
   const [closed, setClosed] = useState({});
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -395,12 +409,10 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
         sportsShown[0] ||
         null;
 
-  const shown = useMemo(() => {
-    let pool = fixtures;
-    if (liveOnly) pool = pool.filter(isLive);
-    if (activeSport) pool = pool.filter((f) => (f.sport || "soccer") === activeSport);
-    return pool;
-  }, [fixtures, liveOnly, activeSport]);
+  const leagues = [...new Set(fixtures.filter(f => !activeSport || (f.sport || "soccer") === activeSport).map(f => f.competition).filter(Boolean))].sort();
+  const shown = useMemo(() => filterFixtures(fixtures, { liveOnly, sport: activeSport, query, date, league, favoritesOnly, favorites, nowMs }), [fixtures, liveOnly, activeSport, query, date, league, favoritesOnly, favorites, nowMs]);
+  const featured = shown.find(f => !isFinal(f));
+  const resetFilters = () => { setDate("all"); setLeague(""); setFavoritesOnly(false); };
 
   const groups = useMemo(() => {
     const countries = new Map();
@@ -430,6 +442,15 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
 
   return (
     <>
+      <SpotlightCard className="sx-hero" spotlightColor="#7bf5b4" intensity={0.12}>
+        <div className="sx-hero-copy"><span className="sx-eyebrow">CANDIBET / SPORTSBOOK</span>
+        <h1>O jogo começa<br /><em>na sua escolha.</em></h1>
+        <p>Explore os esportes. Acompanhe cada placar. Encontre seu próximo jogo.</p>
+        <div className="sx-metrics"><span><b>{fixtures.length}</b> partidas</span><span><b>{liveCount}</b> ao vivo</span><span><b>{sportsShown.length}</b> esportes</span></div></div>
+        <div className="sx-feature"><span className="sx-eyebrow">{featured ? (isLive(featured) ? "EM CAMPO AGORA" : "NA AGENDA") : "SEU PRÓXIMO JOGO"}</span>
+          {featured ? <><p>{featured.competition}</p><div className="sx-feature-teams"><b>{featured.home}</b><span>{isLive(featured) ? `${featured.home_score ?? "–"} : ${featured.away_score ?? "–"}` : "VS"}</span><b>{featured.away}</b></div><small>{isLive(featured) ? "Ao vivo · " + liveLabel(featured, nowMs) : kickLabel(featured.kickoff)}</small></> : <p>As partidas disponíveis aparecerão aqui.</p>}
+        </div>
+      </SpotlightCard>
       <div className="sporthead">
         <div>
           <h1>{liveOnly ? "Apostas ao Vivo" : "Apostas Esportivas"}</h1>
@@ -469,7 +490,8 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                 <button
                   key={s}
                   className={"sx-tab" + (s === activeSport ? " on" : "")}
-                  onClick={() => setSport(s)}
+                  aria-pressed={s === activeSport}
+                  onClick={() => { setSport(s); setLeague(""); }}
                 >
                   <SportIcon sport={s} size={26} />
                   <span className="sx-tab-text">{info.label}</span>
@@ -480,8 +502,15 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
             })}
           </div>
 
+          <div className="sx-toolbar">
+            <label>Quando<select value={date} onChange={e => setDate(e.target.value)}><option value="all">Todas as datas</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="upcoming">Próximas partidas</option><option value="results">Resultados</option></select></label>
+            <label>Competição<select value={league} onChange={e => setLeague(e.target.value)}><option value="">Todas as competições</option>{leagues.map(l => <option key={l}>{l}</option>)}</select></label>
+            <button className={"sx-filter" + (favoritesOnly ? " on" : "")} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(v => !v)}>☆ Favoritos ({favorites.length})</button>
+            <button className="sx-filter" onClick={resetFilters}>Limpar filtros</button>
+          </div>
           <div className="sx-controls">
             <button
+              aria-pressed={!!liveOnly}
               className={"sx-filter" + (liveOnly ? " on" : "")}
               onClick={() => onLive && onLive(!liveOnly)}
             >
@@ -497,7 +526,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
               <p className="sub">
                 {liveOnly
                   ? "Nenhuma partida ao vivo neste esporte agora."
-                  : "Nenhuma partida encontrada para este esporte."}
+                  : "Nenhuma partida corresponde aos filtros. Experimente outra data, competição ou busca."}
               </p>
             </section>
           ) : (
@@ -516,7 +545,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                     const isClosed = closed[key];
                     return (
                       <div className="sx-league" key={key}>
-                        <button className="sx-league-head" onClick={() => toggle(group.country, lg.league)}>
+                        <button className="sx-league-head" aria-expanded={!isClosed} onClick={() => toggle(group.country, lg.league)}>
                           <span className={"sx-caret" + (isClosed ? " closed" : "")}>▾</span>
                           <span className="sx-league-name">{lg.league}</span>
                           {lg.live ? <span className="sx-league-live">{lg.live} ao vivo</span> : null}
@@ -526,7 +555,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                           <div className="sx-league-body">
                             {lg.rows.map((f) => (
                               <EventRow key={f.key} f={f} onSelectBet={onSelectBet}
-                                        selectedBets={selectedBets} nowMs={nowMs} />
+                                        selectedBets={selectedBets} nowMs={nowMs} favorite={favorites.includes(f.key)} onFavorite={toggleFavorite} />
                             ))}
                           </div>
                         )}
@@ -540,7 +569,8 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
 
           <p style={{ fontSize: 11.5, color: "var(--mut)", marginTop: 12 }}>{sports.note}</p>
         </>
-      ) : null}
+      ) : <div className="sx-loading" role="status">Carregando calendário e mercados…</div>}
+      <details className="sx-guide"><summary>Entenda os mercados e as cotações</summary><p><b>1 · X · 2:</b> vitória da casa, empate ou vitória do visitante. <b>Total:</b> mais ou menos que a linha indicada. <b>Dupla chance:</b> dois resultados na mesma seleção. <b>Empate anula:</b> devolução em caso de empate.</p><p>As cotações identificadas como Modelo são simuladas; Provedor indica preços publicados pela fonte. O retorno potencial inclui o valor apostado. Partidas encerradas exibem resultados e não aceitam seleções.</p></details>
     </>
   );
 }

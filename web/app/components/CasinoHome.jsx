@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import SpotlightCard from "./reactbits/SpotlightCard";
 import { api, BRL } from "../../lib/api";
 import { readRecent } from "../../lib/localCache";
 
@@ -445,7 +446,8 @@ export default function CasinoHome({
 
   return (
     <>
-      <div
+      <SpotlightCard
+        spotlightColor="#7bf5b4" intensity={0.13}
         className="hero carousel"
         onTouchStart={(e) => {
           touch.current = e.touches[0].clientX;
@@ -477,7 +479,7 @@ export default function CasinoHome({
             ))}
           </div>
         </div>
-      </div>
+      </SpotlightCard>
 
       <div className="chips" style={{ marginTop: 14 }}>
         {QUICK_LINKS.map((q) => (

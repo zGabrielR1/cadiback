@@ -34,9 +34,9 @@ export default function Header({
 
       <header className="sticky">
         <div className="hwrap">
-          <div className="logo" onClick={() => onCasino("Todos")} style={{ cursor: "pointer" }}>
+          <button className="logo" aria-label="Candibet início" onClick={() => onCasino("Todos")}>
             Candi<span>bet</span>
-          </div>
+          </button>
           <nav className="main">
             <button
               className={view === "casino" && casinoCat === "Todos" ? "on" : ""}
@@ -72,7 +72,8 @@ export default function Header({
           <div className="spacer" />
           <input
             id="search"
-            placeholder="Buscar jogos, provedores…"
+            aria-label={view === "sport" ? "Buscar times, ligas ou países" : "Buscar jogos ou provedores"}
+            placeholder={view === "sport" ? "Times, ligas, países…" : "Buscar jogos, provedores…"}
             value={query}
             onChange={(e) => onQuery(e.target.value)}
           />

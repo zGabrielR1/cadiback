@@ -7,6 +7,7 @@ import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import CasinoHome from "./components/CasinoHome";
 import SportsHome from "./components/SportsHome";
+import { betIdentity } from "../lib/sports.mjs";
 import AdminPanel from "./components/AdminPanel";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -895,13 +896,13 @@ export default function Page() {
 
   const removeBet = (b) =>
     setSelectedBets((prev) =>
-      prev.filter((x) => !(x.fixtureKey === b.fixtureKey && x.selection === b.selection))
+      prev.filter((x) => !(betIdentity(x) === betIdentity(b)))
     );
 
   const selectBet = (b) =>
     setSelectedBets((prev) => {
       const idx = prev.findIndex(
-        (x) => x.fixtureKey === b.fixtureKey && x.selection === b.selection
+        (x) => betIdentity(x) === betIdentity(b)
       );
       return idx >= 0 ? prev.filter((_, i) => i !== idx) : [...prev, b];
     });
@@ -1067,6 +1068,7 @@ export default function Page() {
 
         {view === "sport" ? (
           <SportsHome
+            query={query}
             sports={sports}
             liveOnly={liveOnly}
             onSelectBet={selectBet}

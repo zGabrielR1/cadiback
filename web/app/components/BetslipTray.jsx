@@ -1,5 +1,6 @@
 "use client";
 
+import { betIdentity } from "../../lib/sports.mjs";
 import { BRL } from "../../lib/api";
 
 /** Floating sports betslip tray (F1 extract from page.jsx). Leg
@@ -42,7 +43,7 @@ export default function BetslipTray({
       </div>
       <div className="betslip-body">
         {bets.map((b) => (
-          <div className="betslip-match" key={b.fixtureKey + b.selection} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="betslip-match" key={betIdentity(b)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>
               {b.competition} · {b.home} × {b.away} — <b>{b.selection}</b> @{" "}
               <span style={{ color: "var(--acc)" }}>{b.price.toFixed(2)}</span>
