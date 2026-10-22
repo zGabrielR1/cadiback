@@ -1,3 +1,59 @@
+CURRENTTASK: Public sports, signed-in casino UI and release (0073).
+
+## STATUS (2026-10-22)
+
+- Sports is the default public view. A dismissible lower-left login invitation opens authentication; sports search stays in sports and its feed loads immediately.
+- Casino navigation opens login for guests. Lobby, game panels, details and publisher theater require a verified profile matching the active player. Logout/expiry clears casino state; an asynchronous launch cannot reopen a previous session's game. Existing backend permissions are unchanged as requested (UI only).
+- Refreshed shared dark surfaces, mint accent, navigation, sports hero/cards, forms, guest invitation and mobile layout. Sports-first mobile navigation and account entry are consistent. Light mode and reduced-motion rules retained.
+- Combined checks: Python 467 cases (454 passed, 13 opt-in Postgres skipped), wallet/frame 50/50, Node 9/9, final production rebuild passed. Structure/deploy preflight passed. Corrected a stale static-page test that assumed the casino-only landing's former brand text. Interactive browser QA blocked by the MCP browser's profile lock; computer-use browser inventory has no available surface.
+- Applied the additive identity migration to Supabase; identity_documents remains empty. No account import/reset, production restart, deployment or credential change.
+- Deployment blockers verified: live free Render instance has one non-test file-backed account and zero deposits/withdrawals/rounds. Free service has no shell; existing API has no identity export. Owner approval requested before discarding that account, or a live snapshot is required. Saved Vercel tokens identify an account with no access to cadiback-web (404); owner login/project-scoped access requested. Git main push withheld because Render auto-deploy is on and would restart the current filesystem.
+- Release secret scan found existing crypto credential literals in a tracked comment/test fixture. Replaced with synthetic examples; targeted CryptoTest 8/8 passed. Live keys unchanged; old Git history still contains those values and they need owner rotation.
+- Keep credentials and unrelated pre-existing untracked files out of the release. Decisions 0071/0072 are included in the intended combined release.
+
+---
+
+CURRENTTASK: PF/PJ signup, direct social login and provider deposit minimums (0072).
+
+## STATUS (2026-10-22)
+
+- Implemented manual PF/CPF and PJ/CNPJ signup, input masks, live check-digit feedback, duplicate-document protection and document login. Supports numeric and alphanumeric CNPJ. Public profiles redact documents and exclude raw Pix keys.
+- Google/Facebook create or reopen accounts directly from the signed provider identity, without CPF, username, password, bank or Pix completion forms. The obsolete completion endpoint/mode was removed. Social handoffs are single-use; the first withdrawal collects a Pix key through the authenticated player route.
+- Pix charges enforce R$5.00 before Asaas. Crypto minimums are queried per coin/network from NOWPayments in BRL with the same rate/fee settings as payment creation, rounded up, cached with explicit remaining lifetime and forcibly refreshed before creation. The UI disables subminimum/unknown-minimum payments and clamps low input on blur; backend checks cannot be bypassed by editing the browser.
+- Added stale-network quote protection, exact-cent amount parsing, retry on quote failure, inline cashier errors, longer charge timeout and clearing account-specific cashier drafts. Pix destination comparison preserves significant email punctuation, preventing a different email key from being treated as the registered destination.
+- Verification so far: full Python run passed 465 cases (13 opt-in Postgres skips), wallet/frame 50/50, Node checks 9/9. Browser tests with mocked APIs confirmed PF/PJ formatting/feedback, direct Google callback, first-withdrawal Pix-only prompt, amount clamping, disabled below-minimum payments, provider failure and retry. Final payout-key hardening tests passed 17/17; final full suite 467 cases (454 passed, 13 opt-in Postgres skips) and production build passed.
+- Read-only live NOWPayments query succeeded (USDT/TRC-20 snapshot rounded to R$99.34; not hardcoded). No real invoice, deposit, withdrawal, provider-setting change, production data import or deployment occurred. Credentials/signing keys were unchanged.
+- Remaining production step: deployment still needs the decision-0071 identity snapshot/import cutover; do not deploy an empty identity database over live accounts. Wallet/history persistence remains a separate limitation.
+
+---
+
+CURRENTTASK: Finish session cleanup and persistent identity (decision 0071).
+
+## STATUS (2026-10-22)
+
+- Owner selected frontend request cleanup, persistent device sessions and related platform improvements. Apple Developer enrollment was rejected; Apple remains disabled and is no longer the active work item.
+- Implemented removal of obsolete player fields from storefront action payloads. Requests identify the player through X-Player-Token.
+- Implemented SQL-backed device allowlist plus versioned account/social-link snapshots. Session cap/revocation are serialized per player; late activity touches cannot recreate a revoked session. Stale account writes are refused.
+- Added explicit atomic one-time import and additive RLS-enabled migration; files are never implicitly restored. A configured database failure stops startup, and database identity requires a stable environment signing secret.
+- Related improvements: retain browser login during network failures, clear profile/history on confirmed 401, ignore refresh responses for replaced credentials, pending/inline errors for session controls, Unicode token refusal, envs/ credential discovery, psycopg 3 URL normalization, separate identity/wallet storage diagnostics.
+- Validation: core 50/50; full Python suite passed (453 tests, 13 opt-in Postgres cases skipped); dedicated Postgres run 12/12 in disposable schemas; raw SQL migration and repeat application passed in a disposable schema; frontend API/sports checks 6/6. A subsequently added env precedence test passed with the 3 local-env checks. Production frontend build passed (Next 16.3.8); verify.py reports 0 problems; Render deploy preflight reports 0 problems.
+- No live identity import, production schema mutation or deployment. Existing live account files must be snapshotted/imported before cutover. Wallet/books and history remain file-backed; this does not enable multiple wallet replicas.
+- Next: perform the production snapshot/import/deploy cutover without replacing live accounts with an empty database. See decisions/0071-persistent-player-identity.md.
+
+---
+
+CURRENTTASK: Enable Sign in with Apple; save working credentials in root .env.local.
+
+## STATUS (2026-10-22 - Apple activation)
+
+- Owner redirected the priority to Apple; believes Facebook is working. Facebook was not re-tested in this session.
+- Existing Apple integration requires APPLE_CLIENT_ID (Services ID), APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY (escaped-newline .p8 contents). No Apple entries found in root .env.local or the checked legacy env files. Root .env.local is gitignored.
+- MCP confirmed owner sign-in and phone verification are complete. Services IDs showed no usable resources; /account redirects to Developer Program enrollment. Continued only to inspect the enrollment form: it requests legal name/address and shows United States as the account region. No enrollment information was submitted. An active developer membership/team must be available before credentials can be obtained.
+- Auth-server tests passed 4/4, including provider gating and Apple ES256 client-secret claims. This validates local code, not live Apple sign-in.
+- Next: owner completes Developer Program enrollment or provides access to an existing enrolled team (and corrects the Apple account region if necessary); then inspect the developer team, configure the App ID/Services ID and both production return URLs, create/download a Sign in with Apple key if needed, save the four real values in .env.local without printing secrets, and verify the live flow. No Apple credentials have been written and no deploy has been performed.
+
+---
+
 CURRENTTASK: Enable Google and Facebook Better Auth sign-in; keep credentials in .env.local.
 
 ## STATUS (2026-10-21)

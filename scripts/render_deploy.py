@@ -430,7 +430,10 @@ def read_supabase_env() -> list[dict]:
     `DATABASE_URL` travels: the backend never uses the anon/service keys
     (the storefront never talks to Supabase directly).
     """
-    values = _env_pairs(SUPABASE_ENV_FILE)
+    values = {**_env_pairs(os.path.join(os.path.dirname(SUPABASE_ENV_FILE), "envs", ".env.supabase")),
+              **_env_pairs(SUPABASE_ENV_FILE),
+              **_env_pairs(os.path.join(os.path.dirname(LOCAL_ENV_FILE), "envs", ".env.local")),
+              **_env_pairs(LOCAL_ENV_FILE)}
     for name in SUPABASE_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()
@@ -446,7 +449,10 @@ def read_betterauth_env() -> list[dict]:
     a deploy without provider credentials hides the social buttons instead of
     half-configuring a login that cannot complete.
     """
-    values = {**_env_pairs(BETTERAUTH_ENV_FILE), **_env_pairs(LOCAL_ENV_FILE)}
+    values = {**_env_pairs(os.path.join(os.path.dirname(BETTERAUTH_ENV_FILE), "envs", ".env.betterauth")),
+              **_env_pairs(BETTERAUTH_ENV_FILE),
+              **_env_pairs(os.path.join(os.path.dirname(LOCAL_ENV_FILE), "envs", ".env.local")),
+              **_env_pairs(LOCAL_ENV_FILE)}
     for name in BETTERAUTH_KEYS:
         if os.environ.get(name, "").strip():
             values[name] = os.environ[name].strip()

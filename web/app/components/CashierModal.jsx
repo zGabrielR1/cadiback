@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BRL } from "../../lib/api";
+import { amountMinor, depositAllowed, clampDeposit } from "../../lib/money.mjs";
 
 /** Cashier modal: deposit / Pix-withdraw tabs (F1 extract from page.jsx).
  * Money movement stays in the page handlers; this component is pure UI.
@@ -20,6 +21,14 @@ export default function CashierModal({
   withdrawAmount,
   onWithdrawAmount,
   receipt,
+  error = "",
+  depositLimit = null,
+  limitError = "",
+  onRetryLimit,
+  pixRegistered = false,
+  pixMasked = "",
+  withdrawPixKey = "",
+  onWithdrawPixKey,
   busy,
   onDeposit,
   onWithdraw,
@@ -37,6 +46,7 @@ export default function CashierModal({
   const [copied, setCopied] = useState(false);
   const realPix = asaasAvailable && method === "pix";
   const realCrypto = cryptoAvailable && method === "crypto";
+  const canDeposit = depositAllowed(depositAmount, depositLimit);
 
   const copyPix = async () => {
     try {
@@ -182,11 +192,29 @@ export default function CashierModal({
               <label htmlFor="dep">Valor (R$)</label>
               <input
                 id="dep"
+                type="number"
                 inputMode="decimal"
+                min={depositLimit ? depositLimit.min_minor / 100 : undefined}
+                step="0.01"
+                disabled={!depositLimit || !!busy}
                 value={depositAmount}
                 onChange={(e) => onDepositAmount(e.target.value)}
+                onBlur={() => onDepositAmount(clampDeposit(depositAmount, depositLimit))}
+                aria-describedby="deposit-minimum"
+                aria-invalid={depositLimit && !canDeposit ? "true" : undefined}
               />
-              <button disabled={busy} onClick={onDeposit} style={{ marginTop: 12 }}>
+              <p id="deposit-minimum" className={depositLimit && !canDeposit ? "ferr" : "fhint"} role="status">
+                {limitError ? "Não foi possível consultar o mínimo. O depósito está indisponível até atualizar."
+                  : !depositLimit ? "Consultando o mínimo de depósito…"
+                    : `Depósito mínimo: ${BRL(depositLimit.min_minor)}${depositLimit.provider === "demo" ? " (demonstração)" : " — " + depositLimit.provider + (realCrypto ? " nesta moeda/rede" : " via Pix")}. Valores menores não são aceitos.`}
+              </p>
+              {limitError ? <button className="ghost" onClick={onRetryLimit} disabled={busy}>Consultar novamente</button> : null}
+              {depositLimit && !canDeposit ? (
+                <button className="ghost" onClick={() => onDepositAmount((depositLimit.min_minor / 100).toFixed(2))}>
+                  Usar o mínimo de {BRL(depositLimit.min_minor)}
+                </button>
+              ) : null}
+              <button disabled={busy || !canDeposit} onClick={onDeposit} style={{ marginTop: 12 }}>
                 {realPix ? "Gerar Pix para pagar"
                   : realCrypto ? "Gerar cobrança cripto"
                   : "Confirmar Depósito Demo"}
@@ -207,6 +235,15 @@ export default function CashierModal({
           )
         ) : (
           <div>
+            {!pixRegistered ? (
+              <>
+                <label htmlFor="withdraw-pix-key">Chave Pix para receber saques</label>
+                <input id="withdraw-pix-key" value={withdrawPixKey} autoComplete="off"
+                  onChange={(e) => onWithdrawPixKey(e.target.value)}
+                  placeholder="Email, telefone com +55, chave aleatória, CPF ou CNPJ" />
+                <p className="fhint">Use uma chave de sua titularidade. Confira antes de confirmar: ela será cadastrada para os próximos saques.</p>
+              </>
+            ) : <p className="fhint">Destino Pix cadastrado: {pixMasked}</p>}
             <label htmlFor="wd">Valor (R$)</label>
             <input
               id="wd"
@@ -217,7 +254,7 @@ export default function CashierModal({
             <p className="sub" style={{ marginTop: 6 }}>
               O saque demo sai imediatamente para a chave Pix cadastrada em sua conta.
             </p>
-            <button disabled={busy} onClick={onWithdraw} style={{ marginTop: 12 }}>
+            <button disabled={busy || !amountMinor(withdrawAmount) || (!pixRegistered && !withdrawPixKey.trim())} onClick={onWithdraw} style={{ marginTop: 12 }}>
               Sacar agora via Pix
             </button>
             {receipt ? (
@@ -225,6 +262,7 @@ export default function CashierModal({
             ) : null}
           </div>
         )}
+        {error ? <p className="ferr" role="alert">{error}</p> : null}
         <button className="ghost" style={{ width: "100%", marginTop: 12 }} onClick={onClose}>
           Fechar
         </button>

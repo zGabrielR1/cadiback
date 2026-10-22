@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./api";
+import { api, getPlayerSession, setPlayerSession } from "./api";
 
 /** Shared player-session state (F1): player id, profile, history, health
  * and the busy flag, plus refresh() which reloads all three. Lifted out
@@ -74,13 +74,16 @@ export function useSession() {
   const refresh = useCallback(async () => {
     if (!player) return;
     const seq = ++refreshSeq.current;
+    const token = getPlayerSession()?.token;
+    const stillCurrent = () => seq === refreshSeq.current &&
+      token === getPlayerSession()?.token;
     try {
       const [p, h, hl] = await Promise.all([
         api("GET", "/api/player"),
         api("GET", "/api/history"),
         api("GET", "/api/health"),
       ]);
-      if (seq !== refreshSeq.current) return;
+      if (!stillCurrent()) return;
       setProfile(p);
       setHistory(h);
       setHealth(hl.status);
@@ -89,7 +92,13 @@ export function useSession() {
       if (hl.crypto && Array.isArray(hl.crypto.coins)) setCryptoCoins(hl.crypto.coins);
       setRefreshError("");
     } catch (e) {
-      if (seq !== refreshSeq.current) return;
+      if (!stillCurrent()) return;
+      if (e.status === 401) {
+        setPlayerSession(null);
+        setPlayer(null);
+        setProfile(null);
+        setHistory(null);
+      }
       setRefreshError(e.message);
     }
   }, [player]);

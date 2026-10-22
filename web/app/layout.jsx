@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Candibet — Cassino e Esporte",
-  description: "Demonstração — nenhum dinheiro real",
+  title: "Candibet — Esportes e Cassino",
+  description: "Acompanhe esportes, placares ao vivo e suas partidas favoritas.",
 };
 
 export default function RootLayout({ children }) {

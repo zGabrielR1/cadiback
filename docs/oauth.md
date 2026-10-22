@@ -1,7 +1,8 @@
 # Social login (Better Auth) — runbook
 
-Google, Facebook and Apple sign-in for players, with a mandatory **CPF** step
-for new social accounts. Better Auth (a TypeScript library we run ourselves)
+Google, Facebook and Apple sign-in for players. New social accounts sign in
+directly, with no CPF/username/password form; the first withdrawal collects a
+Pix key (decision 0072). Better Auth (a TypeScript library we run ourselves)
 owns the OAuth dance; the Python backend owns the wallet. Nothing is sent to
 a hosted identity broker, and the provider secrets never leave the Node
 process.
@@ -110,7 +111,7 @@ Apple requires a paid developer account and HTTPS — it does **not** accept
 4. Create a **Key** with *Sign in with Apple*; download the `.p8` once, note
    its Key ID and your Team ID.
 5. Put the three values and the `.p8` contents (`\n` escaped) in
-   `.env.betterauth`. The client secret JWT is generated at process start with
+   `.env.local`. The client secret JWT is generated at process start with
    a 180-day expiry (Apple's limit is six months).
 
 Apple sends the email only on the first consent. The stable `sub` is what
@@ -128,17 +129,22 @@ links the wallet afterwards.
 4. Python verifies the claim, then:
    - a `provider:subject` link, or an existing account with the same email,
      logs the player straight in;
-   - otherwise it returns a one-time handoff and the storefront opens the
-     **CPF completion** step.
-5. The browser lands on `/<#social=<token>>`; the storefront exchanges it at
-   `POST /api/auth/oauth/session` and either logs in or shows the CPF step.
+   - otherwise it creates a subject-keyed account without a document or Pix key.
+5. The browser exchanges its one-time handoff at `POST /api/auth/oauth/session`
+   and receives the profile and signed player token directly. No CPF completion
+   mode or completion endpoint remains.
 
-## CPF is the wallet key
+## Manual documents and social identity
 
-A social sign-in does **not** create an account on its own. The completion
-step requires a CPF that passes the check-digit validation **and** is unique —
-the same rule the password signup enforces — because the wallet id is derived
-from the CPF. One wallet per CPF, one per email, one per username.
+Manual PF signup checks a CPF; PJ signup checks a numeric or alphanumeric CNPJ.
+The existing PF wallet namespace remains unchanged, while PJ uses a separate
+CNPJ namespace. Social accounts use the signed provider/subject as their key.
+
+Social signup never asks for CPF, CNPJ, username, password or bank details.
+The first withdrawal collects a Pix key through the player-authenticated
+`POST /api/player/pix-key`; later withdrawals use that registered destination.
+Format/check-digit validation does not claim verification of document issuance
+or Pix-key ownership. See `decisions/0072-signup-and-provider-minimums.md`.
 
 ## Stateless means: the provider subject is the link
 
@@ -179,7 +185,7 @@ and the buttons stay hidden.
 | `502 servidor de autenticação indisponível` | the Python server cannot reach `BETTER_AUTH_INTERNAL_URL:3100`; start the sidecar. |
 | `#social_error=sessão social não encontrada` | the bridge ran without a Better Auth session cookie; usually a callback URL host mismatch. |
 | Apple login works once, then asks for the CPF again | the provider subject was not captured. Check that `mapProfileToUser` and `providerSubject` are intact and the user paths stay disabled. |
-| `#social_error=...` on a brand-new account | expected until the CPF step is completed. |
+| `#social_error=...` on a brand-new account | inspect the signed bridge error; social signup no longer has a CPF step. |
 
 ## What is stored
 

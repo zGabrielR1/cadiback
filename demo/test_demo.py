@@ -155,6 +155,8 @@ def _crypto_transport(payment: dict):
 
     def transport(method, url, api_key, payload, idempotency_key, timeout):
         calls.append((method, url, idempotency_key, payload))
+        if "/min-amount?" in url:
+            return {"min_amount": 0.2, "fiat_equivalent": 1.0}
         return payment
 
     transport.calls = calls
@@ -432,8 +434,8 @@ class CryptoTest(unittest.TestCase):
         # the shape a credentials file is often first written in: no `KEY=`.
         # The API key is the dashed one, the IPN secret the other — and the
         # order in the file must not matter.
-        key = "GTAFVTN-52VMMEQ-PT6FJK7-V4SMH6R"
-        secret = "e3ead52d-1904-4c51-83d7-9ac797b8034c"
+        key = "TESTKEY1-TESTKEY2-TESTKEY3"
+        secret = "00000000-0000-4000-8000-000000000001"
         for body in (f"{key}\n{secret}\n", f"{secret}\n{key}\n"):
             path = os.path.join(tempfile.mkdtemp(), ".env.crypto")
             with open(path, "w", encoding="utf-8") as handle:
@@ -553,7 +555,7 @@ class CryptoDepositTest(unittest.TestCase):
              "method": "crypto", "pay_currency": "usdttrc20",
              "deposit_id": "cr-ipn"},
             ipn_url="https://host.example/api/webhooks/crypto")
-        body = client.transport.calls[0][3]
+        body = next(c[3] for c in client.transport.calls if c[0] == "POST")
         self.assertEqual(body["ipn_callback_url"],
                          "https://host.example/api/webhooks/crypto")
         self.assertEqual(body["order_id"], "cr-ipn")
@@ -565,7 +567,7 @@ class CryptoDepositTest(unittest.TestCase):
             {"player": self.player, "amount_minor": 10000,
              "method": "crypto", "pay_currency": "usdttrc20",
              "deposit_id": "cr-noipn"})
-        self.assertNotIn("ipn_callback_url", client2.transport.calls[0][3])
+        self.assertNotIn("ipn_callback_url", next(c[3] for c in client2.transport.calls if c[0] == "POST"))
 
     def test_poll_confirms_exactly_once(self):
         self._install({"payment_id": "pay_1", "payment_status": "waiting",
@@ -1257,7 +1259,7 @@ class StaticServeTest(unittest.TestCase):
         self.assertIsNotNone(asset)
         self.assertEqual(asset[1], "text/html")
         with open(asset[0], "r", encoding="utf-8") as handle:
-            self.assertIn("Casa", handle.read())
+            self.assertIn("<html", handle.read())
 
     def test_next_export_preferred_when_built(self):
         with open(static_file("/index.html")[0], "r", encoding="utf-8") as handle:
@@ -3512,6 +3514,20 @@ class PlayerSessionHttpTest(unittest.TestCase):
         status, body = self._call("/api/player", token="ps1.forged.token")
         self.assertEqual(status, 401)
 
+    def test_deposit_limits_and_pix_registration_require_the_player_token(self):
+        status, _ = self._call("/api/deposit/limits?method=pix")
+        self.assertEqual(status, 401)
+        status, quote = self._call("/api/deposit/limits?method=pix", token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(quote["min_minor"], 1)  # local demo, no provider
+        status, _ = self._call("/api/player/pix-key", {"pix_key": "new@example.com"})
+        self.assertEqual(status, 401)
+        status, _ = self._call("/api/player/pix-key", {
+            "player": self.bia["player_id"], "pix_key": "ana.souza@example.com"},
+            token=self.ana["player_token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(self.demo.players.read_all()[self.bia["player_id"]]["pix_raw"], "bia.souza@example.com")
+
     def test_the_token_decides_who_acts_not_the_body(self):
         # Ana's token, Bia's id in the body: the credit lands on Ana
         before = self.demo.books.available(self.bia["player_id"])
@@ -3880,9 +3896,8 @@ def _signed(identity, now=None):
 
 class BetterAuthTest(unittest.TestCase):
     """Social login (decision 0066): a config-gated Better Auth bridge that
-    links an existing account by provider:subject or email, and forces a
-    **CPF** — validated and unique — before a new social account gets a wallet.
-    The CPF is the wallet key, so no account is created without one."""
+    links an existing account by provider:subject or email and opens a new
+    social account directly without a CPF/profile form (decision 0072)."""
 
     def _demo(self, providers=("google", "facebook"), secret=BRIDGE_SECRET):
         return Demo(data_dir=tempfile.mkdtemp(), betterauth=BetterAuthConfig(
@@ -3938,25 +3953,32 @@ class BetterAuthTest(unittest.TestCase):
         self.assertEqual(demo.oauth_links.read_all().get("google:sub-1"),
                          profile["player_id"])
 
-    def test_a_new_identity_requires_the_cpf_completion(self):
+    def test_a_new_identity_signs_in_without_document_or_pix(self):
         demo = self._demo()
-        body, signature = _signed(_social(provider="facebook", subject="f-9",
-                                          email="novo@example.com"))
+        body, signature = _signed(_social(provider="facebook", subject="f-9", email="novo@example.com"))
         result = demo.social_bridge(body, signature)
-        self.assertTrue(result["needs_profile"])
-        self.assertEqual(result["suggested"]["email"], "novo@example.com")
-        session = demo.oauth_session(result["token"])
-        self.assertTrue(session["needs_profile"])
-        profile = demo.oauth_complete_profile(result["token"], {
-            "cpf": "111.444.777-35", "username": "novato",
-            "pix_key": "novo@example.com"})
-        self.assertTrue(profile["player_id"].startswith("player-"))
+        self.assertFalse(result["needs_profile"])
+        profile = demo.oauth_session(result["token"])
+        self.assertFalse(profile["needs_profile"])
         self.assertEqual(profile["email"], "novo@example.com")
-        # a second sign-in on the same subject is now one tap
-        body, signature = _signed(_social(provider="facebook", subject="f-9",
-                                          email="novo@example.com"))
+        self.assertEqual(profile["cpf_masked"], "")
+        self.assertFalse(profile["pix_registered"])
+        self.assertNotIn("pix_raw", profile)
+        self.assertEqual(demo.player_from_token(profile["player_token"]), profile["player_id"])
         again = demo.social_bridge(body, signature)
-        self.assertFalse(again["needs_profile"])
+        self.assertEqual(demo.oauth_session(again["token"])["player_id"], profile["player_id"])
+
+    def test_facebook_withheld_email_links_by_subject_alone(self):
+        demo = self._demo()
+        placeholder = "f-42@facebook.placeholder.invalid"
+        body, signature = _signed(_social(provider="facebook", subject="f-42", email=placeholder, name="Pedro Lima"))
+        result = demo.social_bridge(body, signature)
+        profile = demo.oauth_session(result["token"])
+        self.assertEqual(profile["email"], placeholder)
+        self.assertFalse(profile["pix_registered"])
+        self.assertEqual(demo.oauth_links.read_all()["facebook:f-42"], profile["player_id"])
+        again = demo.social_bridge(body, signature)
+        self.assertEqual(demo.oauth_session(again["token"])["player_id"], profile["player_id"])
 
     def test_a_forged_or_stale_claim_is_refused_before_any_link(self):
         demo = self._demo()
@@ -3970,19 +3992,16 @@ class BetterAuthTest(unittest.TestCase):
             demo.social_bridge(stale, stale_sig)
         self.assertEqual(demo.oauth_links.read_all(), {})
 
-    def test_completion_refuses_a_bad_or_duplicate_cpf(self):
+    def test_handoff_is_single_use_and_cannot_select_another_account(self):
         demo = self._demo()
-        self._register(demo, cpf="529.982.247-25", email="taken@example.com")
-        body, signature = _signed(_social(email="novo2@example.com"))
+        existing = self._register(demo)
+        body, signature = _signed(_social(email="different@example.com"))
         token = demo.social_bridge(body, signature)["token"]
-        with self.assertRaises(ValueError):
-            demo.oauth_complete_profile(token, {
-                "cpf": "111.111.111-11", "username": "x",  # invalid check digits
-                "pix_key": "novo2@example.com"})
-        with self.assertRaises(ValueError):
-            demo.oauth_complete_profile(token, {
-                "cpf": "529.982.247-25",  # already has a wallet
-                "username": "outro", "pix_key": "novo2@example.com"})
+        profile = demo.oauth_session(token)
+        self.assertNotEqual(profile["player_id"], existing["player_id"])
+        with self.assertRaises(BridgeError):
+            demo.oauth_session(token)
+
 
 
 class _AuthStub(BaseHTTPRequestHandler):
@@ -4078,7 +4097,7 @@ class BetterAuthHttpTest(unittest.TestCase):
         status, _headers, data = self._call(
             "/api/auth/betterauth/session", body, headers)
         self.assertEqual(status, 200)
-        self.assertTrue(json.loads(data)["needs_profile"])
+        self.assertFalse(json.loads(data)["needs_profile"])
         status, _headers, _data = self._call(
             "/api/auth/betterauth/session", body,
             {"Content-Type": "application/json",
@@ -4123,7 +4142,8 @@ class DbSeamTest(unittest.TestCase):
 
     TABLES = ("players", "users", "sessions", "settings", "promos", "plays",
               "rounds", "books_postings", "crash_pending", "asaas_charges",
-              "exclusions", "sched_receipts", "sched_counters", "ledger")
+              "exclusions", "sched_receipts", "sched_counters", "ledger",
+              "identity_documents", "player_devices")
 
     def _scratch(self):
         from demo.db import make_engine, make_session_factory
@@ -4146,11 +4166,9 @@ class DbSeamTest(unittest.TestCase):
         from demo.models import Base
         self.assertEqual(set(Base.metadata.tables), set(self.TABLES))
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(
-                root, "supabase", "migrations",
-                "20261015000000_operator_schema.sql"),
-                "r", encoding="utf-8") as handle:
-            migration = handle.read()
+        from pathlib import Path
+        migration = "\n".join(p.read_text(encoding="utf-8") for p in sorted(
+            (Path(root) / "supabase" / "migrations").glob("*.sql")))
         for table in self.TABLES:
             self.assertIn(f"CREATE TABLE IF NOT EXISTS {table}", migration,
                           f"migration is missing {table}")

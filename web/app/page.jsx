@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, BRL, newDepositId, getAdminSession, setAdminSession, getPlayerSession, setPlayerSession } from "../lib/api";
-import { validateCPF, validateEmail, validateName, validatePassword, validateUsername } from "../lib/validation";
+import { validateCPF, validateCNPJ, validateEmail, validateName, validatePassword, validateUsername } from "../lib/validation";
+import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.mjs";
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import CasinoHome from "./components/CasinoHome";
@@ -41,7 +42,10 @@ export default function Page() {
   } = session;
 
   const [theme, setTheme] = useState("dark");
-  const [view, setView] = useState("casino");
+  const [view, setView] = useState("sport");
+  const authenticated = !!(player && profile?.player_id === player);
+  const [pendingCasino, setPendingCasino] = useState(null);
+  const [guestPromptDismissed, setGuestPromptDismissed] = useState(false);
   const [admin, setAdmin] = useState(null);
   const [casinoCat, setCasinoCat] = useState("Todos");
   const [liveOnly, setLiveOnly] = useState(false);
@@ -97,12 +101,8 @@ export default function Page() {
   const [authAttempt, setAuthAttempt] = useState(0);
   // "Lembrar de mim" only affects the login path: checked persists the
   // player id in localStorage, unchecked keeps it in sessionStorage so it
-  // dies with the tab. Signup and social completion keep the default.
+  // dies with the tab. Signup and social login keep the default.
   const [rememberMe, setRememberMe] = useState(true);
-  // The in-flight social sign-in: the one-time token from the OAuth callback
-  // plus the name/email the provider vouched for, shown while the player
-  // supplies the CPF that keys the wallet. Null on every password path.
-  const [pendingSocial, setPendingSocial] = useState(null);
   const onTurnstileToken = useCallback((token) => {
     setTurnstileToken(token || "");
   }, []);
@@ -111,7 +111,9 @@ export default function Page() {
     name: "",
     username: "",
     email: "",
+    person_type: "PF",
     cpf: "",
+    cnpj: "",
     password: "",
     password_confirm: "",
     pix_key: "",
@@ -124,6 +126,11 @@ export default function Page() {
   const [method, setMethod] = useState("pix");
   const [withdrawAmount, setWithdrawAmount] = useState("20.00");
   const [receipt, setReceipt] = useState("");
+  const [cashError, setCashError] = useState("");
+  const [withdrawPixKey, setWithdrawPixKey] = useState("");
+  const [depositLimit, setDepositLimit] = useState(null);
+  const [limitError, setLimitError] = useState("");
+  const [limitRetry, setLimitRetry] = useState(0);
   // The open Asaas Pix charge, if any: the cashier shows its QR and polls
   // until the provider confirms, then credits through the books.
   const [pixCharge, setPixCharge] = useState(null);
@@ -160,7 +167,6 @@ export default function Page() {
     const check = async () => {
       try {
         const row = await api("POST", "/api/deposit/pix/status", {
-          player,
           deposit_id: pixCharge.deposit_id,
         });
         if (stop) return;
@@ -191,7 +197,6 @@ export default function Page() {
     const check = async () => {
       try {
         const row = await api("POST", "/api/deposit/crypto/status", {
-          player,
           deposit_id: cryptoCharge.deposit_id,
         });
         if (stop) return;
@@ -222,11 +227,8 @@ export default function Page() {
     // a stored player session logs the visitor back in without the form;
     // /api/player derives the account from the token (decision 0069)
     const saved = getPlayerSession();
-    if (saved) {
-      api("GET", "/api/player")
-        .then((p) => setPlayer(p.player_id))
-        .catch(() => setPlayerSession(null));
-    }
+    // refresh() verifies the credential; a network outage must not erase it.
+    if (saved) setPlayer(saved.player_id);
     api("GET", "/api/catalog").then(setCatalog).catch(() => {});
   }, []);
 
@@ -238,8 +240,8 @@ export default function Page() {
   // The OAuth callback returns the browser to "/#social=<token>" (or
   // "#social_error=<msg>"). A hash never reaches the server, so the one-time
   // token stays out of request logs and referrers; we exchange it here, then
-  // clear it so a reload cannot replay it. A returning account logs straight
-  // in; a new one opens the CPF completion step.
+  // clear it so a reload cannot replay it. New and returning accounts both
+  // sign in directly; Pix is requested only when needed for a withdrawal.
   useEffect(() => {
     const raw = String(window.location.hash || "");
     if (!raw.startsWith("#social")) return;
@@ -256,26 +258,10 @@ export default function Page() {
     setBusy(true);
     api("POST", "/api/auth/oauth/session", { token })
       .then((row) => {
-        if (row.needs_profile) {
-          const s = row.suggested || {};
-          setForm((f) => ({
-            ...f,
-            name: s.name || "",
-            email: s.email || "",
-            cpf: "",
-            username: "",
-            pix_key: "",
-            password: "",
-          }));
-          setPendingSocial({ token, suggested: s });
-          setAuthMode("complete");
-          setAuthErrors({});
-          setAcctOpen(true);
-        } else {
-          setPlayerSession({ player_id: row.player_id, token: row.player_token });
-          setPlayer(row.player_id);
-          setAcctOpen(false);
-        }
+        setPlayerSession({ player_id: row.player_id, token: row.player_token });
+        setProfile(row);
+        setPlayer(row.player_id);
+        setAcctOpen(false);
       })
       .catch((e) => setMessage("Login social: " + e.message))
       .finally(() => setBusy(false));
@@ -362,11 +348,28 @@ export default function Page() {
   useEffect(() => {
     if (view !== "sport") return undefined;
     const load = () => api("GET", "/api/sports").then(setSports).catch(() => {});
+    load();
     const id = setInterval(load, 15000);
     return () => clearInterval(id);
   }, [view]);
 
+  useEffect(() => {
+    if (authenticated && pendingCasino) {
+      setCasinoCat(pendingCasino);
+      setPendingCasino(null);
+      setView("casino");
+    }
+    if (!authenticated) {
+      setActiveOfficialGame(null);
+      setOfficialToken(null);
+      setDetailGame(null);
+      setCurrent(null);
+      setView((value) => value === "casino" ? "sport" : value);
+    }
+  }, [authenticated, pendingCasino]);
+
   const go = (next) => {
+    if (next !== view) setQuery("");
     setView(next);
     if (next === "sport" && !sports) {
       api("GET", "/api/sports").then(setSports).catch((e) => setMessage(e.message));
@@ -381,6 +384,13 @@ export default function Page() {
   };
 
   const goCasino = (cat) => {
+    if (!authenticated) {
+      setPendingCasino(cat || "Todos");
+      setAuthMode("login");
+      setAuthNotice("Entre na sua conta para acessar o cassino.");
+      setAcctOpen(true);
+      return;
+    }
     setCasinoCat(cat || "Todos");
     go("casino");
   };
@@ -406,18 +416,18 @@ export default function Page() {
     setPlayer(null);
     setProfile(null);
     setHistory(null);
-    setPendingSocial(null);
     setAuthErrors({});
     setAuthMode("login");
     setCashOpen(false);
     setAcctOpen(false);
-    setView("casino");
+    setPendingCasino(null);
+    setView("sport");
     window.scrollTo(0, 0);
   };
 
   const onQuery = (value) => {
     setQuery(value);
-    if (view !== "casino") go("casino");
+    // Search stays within the current public sports or signed-in casino view.
   };
 
   const allOfficialGames = useMemo(() => {
@@ -431,21 +441,22 @@ export default function Page() {
   }, [catalog]);
 
   const play = (game) => {
+    if (!authenticated) { goCasino("Todos"); return; }
     // the game itself is cached on this machine, not just its id: Recentes
     // then has something to show before (or without) /api/catalog
     rememberGame(game);
-    api("POST", "/api/play", { player: player || "", game_id: game.game_id }).catch(() => {});
+    api("POST", "/api/play", { game_id: game.game_id }).catch(() => {});
     setBall(null);
     setLastRow(null);
     setMinesPicks([]);
     if (game.demo_url) {
+      const launchSession = getPlayerSession()?.token;
       const open = async () => {
         let src = game.demo_url;
         let token = null;
         if (player) {
           try {
             const w = await api("POST", "/api/wallet/launch", {
-              player,
               game_id: game.game_id,
             });
             token = w.token || null;
@@ -454,6 +465,7 @@ export default function Page() {
             /* session refused: fall back to the publisher's own page */
           }
         }
+        if (getPlayerSession()?.token !== launchSession) return;
         setOfficialToken(token);
         setActiveOfficialGame({ ...game, launch_url: src });
         setIframeKey((k) => k + 1);
@@ -497,7 +509,7 @@ export default function Page() {
     setChatLog((log) => [...log, { who: "me", text }]);
     setChatInput("");
     try {
-      const r = await api("POST", "/api/chat", { player: player || "", message: text });
+      const r = await api("POST", "/api/chat", { message: text });
       setChatLog((log) => [...log, { who: "bot", text: r.reply }]);
     } catch (e) {
       setChatLog((log) => [...log, { who: "bot", text: "central offline — tente de novo" }]);
@@ -529,6 +541,7 @@ export default function Page() {
         name: "Ana Souza",
         username: "ana.souza",
         email: "ana.souza@example.com",
+        person_type: "PF",
         cpf: "529.982.247-25",
         password: "ana1234",
         pix_key: "ana.souza@example.com",
@@ -542,22 +555,11 @@ export default function Page() {
 
   const submitAuth = async () => {
     const errs = {};
-    const complete = authMode === "complete";
     const forgot = authMode === "forgot";
     const reset = authMode === "reset";
     if (authMode === "login") {
       const id = String(form.identifier || "").trim();
-      if (!id) errs.identifier = "informe seu usuário, email ou CPF";
-      else if (id.includes("@")) {
-        const e = validateEmail(id);
-        if (e) errs.identifier = e;
-      } else if (/^[\d.\-\s]+$/.test(id)) {
-        const c = validateCPF(id);
-        if (c) errs.identifier = c;
-      } else {
-        const u = validateUsername(id);
-        if (u) errs.identifier = u;
-      }
+      if (!id) errs.identifier = "informe seu usuário, email, CPF ou CNPJ";
       if (!String(form.password || "")) errs.password = "informe sua senha";
     } else if (forgot) {
       const e = validateEmail(String(form.identifier || "").trim());
@@ -569,19 +571,6 @@ export default function Page() {
         errs.password_confirm = "as senhas não coincidem";
       if (!resetToken)
         errs._ = "link expirado — peça um novo email";
-    } else if (complete) {
-      // the social path: the name/email come from the provider, the CPF is
-      // mandatory (it keys the wallet), and the password is optional
-      const c = validateCPF(form.cpf);
-      if (c) errs.cpf = c;
-      const u = validateUsername(form.username);
-      if (u) errs.username = u;
-      if (!String(form.pix_key || "").trim())
-        errs.pix_key = "informe sua chave Pix";
-      if (String(form.password || "").trim()) {
-        const p = validatePassword(form.password);
-        if (p) errs.password = p;
-      }
     } else {
       const n = validateName(form.name);
       if (n) errs.name = n;
@@ -589,8 +578,9 @@ export default function Page() {
       if (u) errs.username = u;
       const e = validateEmail(form.email);
       if (e) errs.email = e;
-      const c = validateCPF(form.cpf);
-      if (c) errs.cpf = c;
+      const documentKind = form.person_type === "PJ" ? "cnpj" : "cpf";
+      const c = documentKind === "cnpj" ? validateCNPJ(form.cnpj) : validateCPF(form.cpf);
+      if (c) errs[documentKind] = c;
       const p = validatePassword(form.password);
       if (p) errs.password = p;
       if (!String(form.pix_key || "").trim())
@@ -618,11 +608,6 @@ export default function Page() {
     }
     setAuthErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    if (complete && !pendingSocial) {
-      setAuthErrors({ _: "sessão social expirada — entre com " +
-        "Google ou Facebook novamente" });
-      return;
-    }
     setBusy(true);
     try {
       const turnstile =
@@ -636,16 +621,6 @@ export default function Page() {
           password: form.password,
           remember: rememberMe,
           ...turnstile,
-        });
-      } else if (complete) {
-        profileRow = await api("POST", "/api/auth/oauth/complete", {
-          token: pendingSocial.token,
-          name: String(form.name || "").trim(),
-          email: String(form.email || "").trim(),
-          cpf: String(form.cpf || "").trim(),
-          username: String(form.username || "").trim(),
-          pix_key: String(form.pix_key || "").trim(),
-          password: String(form.password || ""),
         });
       } else if (forgot) {
         await api("POST", "/api/player/password/request", {
@@ -664,7 +639,7 @@ export default function Page() {
           password: form.password,
         });
         setResetToken("");
-        setAuthMode("login");
+      setAuthMode("login");
         setAuthErrors({});
         setAuthNotice("Senha redefinida. Entre com a nova senha.");
         setForm((f) => ({
@@ -679,7 +654,9 @@ export default function Page() {
           name: String(form.name || "").trim(),
           username: String(form.username || "").trim(),
           email: String(form.email || "").trim(),
-          cpf: String(form.cpf || "").trim(),
+          person_type: form.person_type || "PF",
+          cpf: form.person_type === "PJ" ? "" : String(form.cpf || "").trim(),
+          cnpj: form.person_type === "PJ" ? String(form.cnpj || "").trim() : "",
           password: form.password,
           pix_key: String(form.pix_key || "").trim(),
           bank: {
@@ -697,22 +674,61 @@ export default function Page() {
       );
       setPlayer(profileRow.player_id);
       setAuthErrors({});
-      setPendingSocial(null);
-      setAuthMode("login");
+        setAuthMode("login");
       setAcctOpen(false);
     } catch (e) {
       setAuthErrors({ _: e.message });
     } finally {
       setBusy(false);
       // a token is single-use: reset the widget so a retry mints a new one
-      if (!complete) setAuthAttempt((n) => n + 1);
+      setAuthAttempt((n) => n + 1);
     }
   };
 
+  const activeDepositLimit = matchingDepositLimit(depositLimit, method,
+    cryptoCoin || cryptoCoins[0]?.code || "usdttrc20");
+
+  useEffect(() => {
+    setWithdrawPixKey("");
+    setPixCharge(null);
+    setCryptoCharge(null);
+    setReceipt("");
+    setCashError("");
+    setDepositLimit(null);
+  }, [player]);
+
+  useEffect(() => {
+    if (!cashOpen || cashTab !== "dep" || !player || pixCharge || cryptoCharge) return;
+    let active = true;
+    let timer;
+    const load = async () => {
+      setDepositLimit(null);
+      setLimitError("");
+      try {
+        const coin = cryptoCoin || cryptoCoins[0]?.code || "usdttrc20";
+        const quote = await api("GET", `/api/deposit/limits?method=${encodeURIComponent(method)}&pay_currency=${encodeURIComponent(coin)}`);
+        if (active) {
+          setDepositLimit(quote);
+          timer = setTimeout(load, Math.max(1000, ((quote.valid_for_seconds || 60) - 1) * 1000));
+        }
+      } catch (e) {
+        if (active) setLimitError(e.message);
+      }
+    };
+    load();
+    return () => { active = false; clearTimeout(timer); };
+  }, [cashOpen, cashTab, player, method, cryptoCoin, cryptoCoins, !!profile?.is_test,
+      !!pixCharge, !!cryptoCharge, limitRetry]);
+
   const deposit = async () => {
+    setCashError("");
+    if (!depositAllowed(depositAmount, activeDepositLimit)) {
+      setCashError(activeDepositLimit ? "O mínimo para este depósito é " + BRL(activeDepositLimit.min_minor) + "." : "Aguarde a consulta do mínimo de depósito.");
+      return;
+    }
     setBusy(true);
     try {
-      const amount = Math.round(parseFloat(depositAmount.replace(",", ".")) * 100);
+      const amount = amountMinor(depositAmount);
       // A test account never touches the real rail: its deposits are the
       // instant, tagged test credit even when Asaas is configured.
       const realPix = asaasAvailable && method === "pix"
@@ -723,7 +739,6 @@ export default function Page() {
         // Real Pix: open the charge and let the poll effect confirm it. The
         // modal stays open showing the QR instead of crediting instantly.
         const charge = await api("POST", "/api/deposit/pix", {
-          player,
           amount_minor: amount,
           method: "pix",
           deposit_id: newDepositId(),
@@ -734,7 +749,6 @@ export default function Page() {
         // Real crypto: open a NOWPayments invoice, show the pay address, and
         // poll until the provider confirms.
         const charge = await api("POST", "/api/deposit/crypto", {
-          player,
           amount_minor: amount,
           method: "crypto",
           pay_currency: cryptoCoin || (cryptoCoins[0] && cryptoCoins[0].code) || "usdttrc20",
@@ -744,7 +758,6 @@ export default function Page() {
         setCryptoCharge(charge);
       } else {
         await api("POST", "/api/deposit", {
-          player,
           amount_minor: amount,
           method,
           deposit_id: newDepositId(),
@@ -753,18 +766,29 @@ export default function Page() {
         await refresh();
       }
     } catch (e) {
-      window.alert("Depósito: " + e.message);
+      setCashError("Depósito: " + e.message);
+      setDepositLimit(null);
+      setLimitRetry((value) => value + 1);
     } finally {
       setBusy(false);
     }
   };
 
   const withdraw = async () => {
+    setCashError("");
+    if (!amountMinor(withdrawAmount)) { setCashError("Informe um valor de saque válido."); return; }
+    if (!profile?.pix_registered && !withdrawPixKey.trim()) {
+      setCashError("Cadastre uma chave Pix para receber o saque."); return;
+    }
     setBusy(true);
     try {
-      const amount = Math.round(parseFloat(withdrawAmount.replace(",", ".")) * 100);
+      const amount = amountMinor(withdrawAmount);
+      if (!profile?.pix_registered) {
+        const updated = await api("POST", "/api/player/pix-key", { pix_key: withdrawPixKey.trim() });
+        setProfile(updated);
+        setWithdrawPixKey("");
+      }
       const row = await api("POST", "/api/withdraw", {
-        player,
         amount_minor: amount,
         payout_id: newDepositId(),
       });
@@ -773,7 +797,7 @@ export default function Page() {
       );
       await refresh();
     } catch (e) {
-      window.alert("Saque: " + e.message);
+      setCashError("Saque: " + e.message);
     } finally {
       setBusy(false);
     }
@@ -797,7 +821,6 @@ export default function Page() {
               ? `${kenoSpots}:${kenoPicks.join(",")}`
               : selection;
       const row = await api("POST", "/api/spin", {
-        player,
         game_id: current,
         stake_minor: stake,
         selection: sel,
@@ -843,7 +866,6 @@ export default function Page() {
     setBusy(true);
     try {
       const row = await api("POST", "/api/bet", {
-        player,
         legs: selectedBets.map((b) => ({
           fixture_key: b.fixtureKey,
           home: b.home,
@@ -876,7 +898,7 @@ export default function Page() {
     }
     setBusy(true);
     try {
-      const r = await api("POST", "/api/bonus", { player, kind });
+      const r = await api("POST", "/api/bonus", { kind });
       window.alert(
         (kind === "welcome"
           ? "✓ Bônus de Boas-Vindas creditado: "
@@ -917,7 +939,7 @@ export default function Page() {
         liveOnly={liveOnly}
         query={query}
         profile={profile}
-        player={player}
+        player={authenticated}
         admin={admin}
         theme={theme}
         onCasino={goCasino}
@@ -931,7 +953,7 @@ export default function Page() {
       />
 
       <div className="wrap">
-        {view === "casino" ? (
+        {view === "casino" && authenticated ? (
           <>
             <CasinoHome
               catalog={catalog}
@@ -1098,12 +1120,12 @@ export default function Page() {
         ) : null}
 
         <footer>
-          Candibet · Plataforma de demonstração e réplica 1:1 de alta fidelidade para uso pessoal e hobby · Nenhum dinheiro real envolvido · Jogos oficiais incorporados diretamente dos provedores · 18+.
+          Candibet · Esportes e entretenimento em um só lugar. · 18+ · Jogue com responsabilidade.
         </footer>
       </div>
 
       <GameTheater
-        game={activeOfficialGame}
+        game={authenticated ? activeOfficialGame : null}
         allGames={allOfficialGames}
         profile={profile}
         walletToken={officialToken}
@@ -1130,7 +1152,7 @@ export default function Page() {
       />
 
       <DetailModal
-        game={detailGame}
+        game={authenticated ? detailGame : null}
         isFav={isFav}
         onPlay={play}
         onToggleFav={toggleFav}
@@ -1144,10 +1166,18 @@ export default function Page() {
         method={method}
         onMethod={setMethod}
         depositAmount={depositAmount}
-        onDepositAmount={setDepositAmount}
+        onDepositAmount={(value) => { setDepositAmount(value); setCashError(""); }}
         withdrawAmount={withdrawAmount}
         onWithdrawAmount={setWithdrawAmount}
         receipt={receipt}
+        error={cashError}
+        depositLimit={activeDepositLimit}
+        limitError={limitError}
+        onRetryLimit={() => setLimitRetry((value) => value + 1)}
+        pixRegistered={!!profile?.pix_registered}
+        pixMasked={profile?.pix_masked || ""}
+        withdrawPixKey={withdrawPixKey}
+        onWithdrawPixKey={(value) => { setWithdrawPixKey(value); setCashError(""); }}
         busy={busy}
         onDeposit={deposit}
         onWithdraw={withdraw}
@@ -1180,7 +1210,6 @@ export default function Page() {
         oauthProviders={
           serverConfig.oauth_enabled ? serverConfig.oauth_providers || [] : []
         }
-        social={pendingSocial ? { ...pendingSocial.suggested } : null}
         remember={rememberMe}
         notice={authNotice}
         passwordResetEnabled={!!serverConfig.password_reset_enabled}
@@ -1192,7 +1221,6 @@ export default function Page() {
         }}
         onMode={(next) => {
           setAuthMode(next);
-          setPendingSocial(null);
           setAuthErrors({});
           setAuthNotice("");
         }}
@@ -1202,11 +1230,11 @@ export default function Page() {
         onFillTest={fillTestAccount}
         onClose={() => {
           setAcctOpen(false);
-          setPendingSocial(null);
           setAuthMode("login");
           setAuthErrors({});
           setAuthNotice("");
           setResetToken("");
+          setPendingCasino(null);
         }}
       />
 
@@ -1215,9 +1243,19 @@ export default function Page() {
         liveOnly={liveOnly}
         onCasino={goCasino}
         onSport={goSport}
-        onAccount={() => go("account")}
+        onAccount={openAccount}
         onCash={openCash}
       />
+
+      {!authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen ? (
+        <aside className="guest-login-card" aria-label="Acesse sua conta">
+          <button className="guest-login-dismiss" aria-label="Fechar convite para entrar" onClick={() => setGuestPromptDismissed(true)}>×</button>
+          <span className="guest-login-eyebrow">SUA PRÓXIMA JOGADA</span>
+          <strong>O esporte é para todos.<br />Sua conta abre mais possibilidades.</strong>
+          <p>Continue acompanhando os jogos ou entre para apostar e acessar o cassino.</p>
+          <button onClick={() => { setPendingCasino(null); setAuthMode("login"); setAcctOpen(true); }}>Entrar na minha conta <span aria-hidden="true">↗</span></button>
+        </aside>
+      ) : null}
 
       <ChatWidget
         open={chatOpen}

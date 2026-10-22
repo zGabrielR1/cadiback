@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import os
 
-from foundry.envfile import load_env
+from foundry.envfile import load_env, read_env_file
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SUPABASE_ENV_FILE = os.path.join(_REPO_ROOT, ".env.supabase")
+LOCAL_ENV_FILE = os.path.join(_REPO_ROOT, ".env.local")
 
 
 def db_env(env_file: str = SUPABASE_ENV_FILE, environ=None) -> dict[str, str]:
@@ -23,7 +24,17 @@ def db_env(env_file: str = SUPABASE_ENV_FILE, environ=None) -> dict[str, str]:
     holds the Supabase URL/keys plus `DATABASE_URL`, and an exported variable
     always wins — which is how the deploy supplies them without a file.
     """
-    return load_env(env_file, environ)
+    values = {}
+    if env_file == SUPABASE_ENV_FILE:
+        values.update(read_env_file(os.path.join(
+            os.path.dirname(env_file), "envs", os.path.basename(env_file))))
+    values.update(load_env(env_file, {}))
+    if env_file == SUPABASE_ENV_FILE:
+        values.update(read_env_file(os.path.join(
+            os.path.dirname(LOCAL_ENV_FILE), "envs", os.path.basename(LOCAL_ENV_FILE))))
+        values.update(read_env_file(LOCAL_ENV_FILE))
+    values.update(os.environ if environ is None else environ)
+    return values
 
 
 def database_url(env: dict[str, str] | None = None) -> str:
@@ -42,7 +53,12 @@ def make_engine(db_url: str):
     """One engine. Same signatures as wall-e's `db.py`, deliberately."""
     from sqlalchemy import create_engine
 
-    connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+    if db_url.startswith("postgres://"):
+        db_url = "postgresql+psycopg://" + db_url[len("postgres://"):]
+    elif db_url.startswith("postgresql://"):
+        db_url = "postgresql+psycopg://" + db_url[len("postgresql://"):]
+    connect_args = ({"check_same_thread": False} if db_url.startswith("sqlite")
+                    else {"connect_timeout": 10})
     return create_engine(db_url, connect_args=connect_args,
                          pool_pre_ping=True, future=True)
 

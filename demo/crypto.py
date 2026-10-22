@@ -24,6 +24,9 @@ import hmac
 import json
 import os
 import re
+import time
+import threading
+from decimal import Decimal, InvalidOperation, ROUND_CEILING
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -84,7 +87,7 @@ class CryptoCharge:
 
 
 # A NOWPayments API key is dash-separated uppercase groups
-# (`GTAFVTN-52VMMEQ-PT6FJK7-V4SMH6R`); an IPN secret is whatever the merchant
+# (`TESTKEY1-TESTKEY2-TESTKEY3`); an IPN secret is whatever the merchant
 # set in the dashboard (a UUID, typically). A credentials file tends to get
 # written whichever way is quickest at the time, so a *bare* line (no `KEY=`)
 # is classified by that shape rather than refused — and the file's line order
@@ -262,6 +265,41 @@ class CryptoClient:
             raise CryptoError("CRYPTO_BASE_URL must be https://")
         self.config = config
         self.transport = transport
+        self._minimum_cache = {}
+        self._minimum_lock = threading.Lock()
+
+    def minimum_payment(self, pay_currency: str, *, refresh: bool = False) -> dict:
+        """Merchant-specific minimum, same fixed-rate/fee flags as create.
+
+        Leaving currency_to unset uses the merchant's configured outcome,
+        as payment creation does. Never guess BRL from a crypto amount.
+        """
+        coin = str(pay_currency or "").lower()
+        if coin not in {code for code, _ in SUPPORTED_COINS}:
+            raise CryptoError("moeda não suportada")
+        with self._minimum_lock:
+            cached = self._minimum_cache.get(coin)
+            if cached and not refresh and time.monotonic() < cached[0]:
+                return {**cached[1], "valid_for_seconds": max(1, int(cached[0] - time.monotonic()))}
+            query = urllib.parse.urlencode({
+                "currency_from": coin, "fiat_equivalent": self.config.price_currency,
+                "is_fixed_rate": "true", "is_fee_paid_by_user": "false"})
+            raw = self._call("GET", "/min-amount?" + query, timeout=6)
+            try:
+                fiat = Decimal(str(raw["fiat_equivalent"]))
+                crypto = Decimal(str(raw["min_amount"]))
+                if not fiat.is_finite() or fiat <= 0 or not crypto.is_finite() or crypto <= 0:
+                    raise ValueError()
+                minimum = int((fiat * 100).to_integral_value(rounding=ROUND_CEILING))
+            except (KeyError, ValueError, InvalidOperation, TypeError, OverflowError):
+                raise CryptoError("Não foi possível consultar o mínimo desta rede. Tente novamente.") from None
+            if self.config.price_currency != "brl":
+                raise CryptoError("O caixa em reais exige cotação BRL da NOWPayments.")
+            quote = {"min_minor": minimum, "pay_currency": coin,
+                     "currency": "brl", "provider": "NOWPayments",
+                     "min_crypto": str(crypto), "valid_for_seconds": 60}
+            self._minimum_cache[coin] = (time.monotonic() + 60, quote)
+            return dict(quote)
 
     def _call(self, method: str, path: str, payload: dict | None = None,
               idem: str = "", timeout: int = 20) -> dict:
@@ -288,6 +326,10 @@ class CryptoClient:
                        ipn_url: str = "") -> CryptoCharge:
         if amount_cents <= 0:
             raise CryptoError("charge amount must be positive")
+        minimum = self.minimum_payment(pay_currency, refresh=True)
+        if amount_cents < minimum["min_minor"]:
+            amount = f'{minimum["min_minor"] / 100:.2f}'.replace(".", ",")
+            raise CryptoError(f"Mínimo nesta rede: R$ {amount} (NOWPayments).")
         body = {
             "price_amount": round(amount_cents / 100, 2),
             "price_currency": self.config.price_currency,

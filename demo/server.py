@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from html import escape as html_escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 from frame.compliance.sigap import (
     BRAZIL,
@@ -54,12 +54,14 @@ from .payments import (
     PaymentError,
     check_deposit_method,
     classify_pix_key,
+    canonical_pix_key,
     CRYPTO_METHODS,
     mask_pix_key,
     process_deposit,
     process_withdrawal,
     validate_bank_account,
     validate_cpf,
+    validate_cnpj,
     validate_email,
     validate_player_password,
     validate_username,
@@ -153,8 +155,15 @@ def betterauth_env(env_file: str = BETTERAUTH_ENV_FILE,
     read only by the Node auth server, never here. Unconfigured is a normal
     state — the rail then hides the social buttons.
     """
-    values = load_env(env_file, {}, secret_name="BETTER_AUTH_BRIDGE_SECRET")
+    values = {}
     if env_file == BETTERAUTH_ENV_FILE:
+        values.update(load_env(os.path.join(
+            os.path.dirname(env_file), "envs", os.path.basename(env_file)), {},
+            secret_name="BETTER_AUTH_BRIDGE_SECRET"))
+    values.update(load_env(env_file, {}, secret_name="BETTER_AUTH_BRIDGE_SECRET"))
+    if env_file == BETTERAUTH_ENV_FILE:
+        values.update(read_env_file(os.path.join(
+            os.path.dirname(LOCAL_ENV_FILE), "envs", os.path.basename(LOCAL_ENV_FILE))))
         values.update(read_env_file(LOCAL_ENV_FILE))
     values.update(os.environ if environ is None else environ)
     return values
@@ -672,6 +681,9 @@ class Demo:
         os.makedirs(data_dir, exist_ok=True)
         self.books = Books(os.path.join(data_dir, "books.jsonl"))
         self.players = Store(os.path.join(data_dir, "players.json"))
+        if db is not None:
+            from demo.identity_store import IdentityStore
+            self.players = IdentityStore(db, "players", self.players.path)
         # One hasher for both credential stores. New hashes are PBKDF2; the
         # old salted-SHA256 records keep verifying and are upgraded on the
         # next successful login (foundry.auth).
@@ -690,6 +702,7 @@ class Demo:
         self.deposits_today: dict[str, int] = {}
         self.deposit_days: dict[str, dict[str, object]] = {}
         self.pix_keys: dict[str, str] = {}
+        self._pix_registration_lock = threading.Lock()
         self.store = self.players
         self.plays_path = os.path.join(data_dir, "plays.jsonl")
         self.rounds_path = os.path.join(data_dir, "rounds.jsonl")
@@ -784,6 +797,8 @@ class Demo:
         else:
             self.betterauth = betterauth
         self.oauth_links = Store(os.path.join(data_dir, "oauth_links.json"))
+        if db is not None:
+            self.oauth_links = IdentityStore(db, "oauth_links", self.oauth_links.path)
         self._oauth_lock = threading.RLock()
         self.oauth_handoffs: dict[str, dict] = {}
         # Password reset (decision 0068): hashed one-time tokens, guarded by
@@ -803,6 +818,9 @@ class Demo:
         # no row is refused by `player_session`.
         self.player_devices = SessionRegistry(
             os.path.join(data_dir, SessionRegistry.FILE))
+        if db is not None:
+            from demo.device_store import DatabaseSessionRegistry
+            self.player_devices = DatabaseSessionRegistry(db)
 
     def _load_sessions(self) -> None:
         """Rebuild bearer sessions from disk so a restart does not forcibly
@@ -1077,32 +1095,21 @@ class Demo:
         return token
 
     def social_login(self, identity: SocialIdentity) -> dict:
-        """Link a verified social identity and issue a one-time handoff.
-
-        A `provider:subject` link, or an existing account with the same email,
-        logs straight in. Anything else opens the CPF completion step; the CPF
-        is the wallet key, so an account is never created here without one.
-        """
+        """Open the account from a verified provider identity; no CPF form."""
+        if identity.provider not in self.PROVIDER_LABELS or not identity.subject:
+            raise BridgeError("identidade social inválida")
         data = self.players.read_all()
         links = self.oauth_links.read_all()
         player_id = links.get(identity.key) or (
             self._find_player(data, identity.email) if identity.email else None)
-        if player_id and player_id in data:
+        if not player_id or player_id not in data:
+            player_id = self.register_player({}, identity=identity, issue_session=False)["player_id"]
+            # register_player persisted the provider link too.
+        else:
             links[identity.key] = player_id
             self.oauth_links.write_all(links)
-            return {"token": self._issue_handoff(
-                        {"player_id": player_id, "needs_profile": False}),
-                    "needs_profile": False}
-        suggested = {"name": identity.name, "email": identity.email,
-                     "provider": identity.provider}
-        return {
-            "token": self._issue_handoff({
-                "needs_profile": True, "provider": identity.provider,
-                "subject": identity.subject, "email": identity.email,
-                "name": identity.name, "suggested": suggested}),
-            "needs_profile": True,
-            "suggested": suggested,
-        }
+        return {"token": self._issue_handoff({"player_id": player_id}),
+                "needs_profile": False}
 
     def social_bridge(self, body: bytes, signature: str) -> dict:
         """Verify the auth server's signed claim, then link the identity.
@@ -1119,16 +1126,12 @@ class Demo:
 
     def oauth_session(self, token: str, *,
                       device: dict | None = None) -> dict:
-        """Exchange a handoff for the player profile, or tell the storefront
-        that this sign-in still needs a CPF."""
+        """Consume a one-time handoff and mint this browser's device session."""
         with self._oauth_lock:
             self._sweep_oauth()
-            handoff = self.oauth_handoffs.get(str(token or ""))
+            handoff = self.oauth_handoffs.pop(str(token or ""), None)
         if not handoff:
             raise BridgeError("sessão social inválida ou expirada")
-        if handoff.get("needs_profile"):
-            return {"needs_profile": True,
-                    "suggested": dict(handoff.get("suggested") or {})}
         player_id = str(handoff.get("player_id") or "")
         if player_id not in self.players.read_all():
             raise BridgeError("conta social não encontrada")
@@ -1137,26 +1140,6 @@ class Demo:
         return {"needs_profile": False,
                 **self._with_session(self.profile(player_id),
                                      device=device)}
-
-    def oauth_complete_profile(self, token: str, payload: dict, *,
-                               device: dict | None = None) -> dict:
-        """CPF verification for a new social user: validate the CPF (check
-        digits) and its uniqueness, plus username and Pix, then create the
-        wallet — the same rules the password signup enforces."""
-        with self._oauth_lock:
-            self._sweep_oauth()
-            handoff = self.oauth_handoffs.get(str(token or ""))
-        if not handoff or not handoff.get("needs_profile"):
-            raise BridgeError("sessão social inválida ou já concluída")
-        identity = SocialIdentity(subject=str(handoff.get("subject") or ""),
-                                  provider=str(handoff.get("provider") or ""),
-                                  email=str(handoff.get("email") or ""),
-                                  name=str(handoff.get("name") or ""))
-        profile = self.register_player(dict(payload or {}), identity=identity,
-                                       device=device)
-        with self._oauth_lock:
-            self.oauth_handoffs.pop(str(token or ""), None)
-        return profile
 
     def _exclusions_path(self) -> str:
         return os.path.join(os.path.dirname(self.players.path), "exclusions.json")
@@ -1196,7 +1179,7 @@ class Demo:
     # Credential material never leaves the store: profile() strips every
     # secret field, so a new secret only needs to be added to
     # _PLAYER_SECRETS to stay out of every API answer.
-    _PLAYER_SECRETS = ("pw_hash", "pw_salt")
+    _PLAYER_SECRETS = ("pw_hash", "pw_salt", "pix_raw")
 
     @staticmethod
     def _player_hash(password: str, salt: str) -> str:
@@ -1264,33 +1247,30 @@ class Demo:
 
     def register_player(self, payload: dict, *, is_test: bool = False,
                         identity: SocialIdentity | None = None,
-                        device: dict | None = None) -> dict:
-        """Strict account creation: name + username + email + CPF + password +
-        Pix key, every field validated. One wallet per CPF, one per email and
-        one per username — a duplicate is a login hint, not an overwrite.
+                        device: dict | None = None, issue_session: bool = True) -> dict:
+        """Manual PF/PJ accounts validate document check digits and uniqueness.
 
-        The payout bank account is optional: Pix settles to the key, so it
-        is demanded at signup only while the operator's
-        ``require_bank_at_signup`` is on. When any of the account fields is
-        supplied the whole account is validated (own-name rule included).
-        ``is_test`` marks a hidden test account; test accounts are exempt
-        from the signup requirement (the operator creates them) and are
-        refused at login while ``test_accounts_enabled`` is off.
-
-        ``identity`` is set only on the social path (Better Auth, decision
-        0066): the name and email then fall back to the values the provider
-        vouched for, the password becomes optional (a random unusable secret
-        keeps the column satisfied until the player sets one), and the
-        ``provider:subject`` link is recorded so the next sign-in is one tap.
-        The CPF is still required and still unique — that is the wallet key."""
-        name = (payload.get("name")
-                or (identity.name if identity else "") or "").strip()
+        Social accounts use the trusted provider subject instead of a document;
+        their withdrawal Pix key is collected only when first needed.
+        """
+        social = identity is not None
+        name = ((identity.name or "Conta " + identity.provider.title()) if social
+                else (payload.get("name") or "")).strip()
+        if social and len(name) < 2:
+            name = "Conta " + identity.provider.title()
         if len(name) < 2:
             raise ValueError("informe seu nome completo")
-        username = validate_username(payload.get("username") or "")
-        email = validate_email(payload.get("email")
-                               or (identity.email if identity else ""))
-        cpf = validate_cpf(payload.get("cpf") or "")
+        username = validate_username(
+            (identity.provider + "." + hashlib.sha256(identity.key.encode()).hexdigest()[:10])
+            if social else payload.get("username") or "")
+        email = validate_email((identity.email or
+            hashlib.sha256(identity.key.encode()).hexdigest()[:24] +
+            "@" + identity.provider + ".placeholder.invalid") if social else payload.get("email"))
+        person_type = str(payload.get("person_type") or "PF").upper() if not social else ""
+        if not social and person_type not in ("PF", "PJ"):
+            raise PaymentError("Escolha pessoa física (PF) ou jurídica (PJ).")
+        document = ("" if social else validate_cnpj(payload.get("cnpj") or "")
+                    if person_type == "PJ" else validate_cpf(payload.get("cpf") or ""))
         supplied_password = payload.get("password")
         if supplied_password:
             password = validate_player_password(supplied_password)
@@ -1298,8 +1278,8 @@ class Demo:
             password = secrets.token_urlsafe(32)  # unusable by design
         else:
             raise PaymentError("informe uma senha")
-        pix = classify_pix_key(payload.get("pix_key") or "")
-        bank = payload.get("bank") or {}
+        pix = None if social else classify_pix_key(payload.get("pix_key") or "")
+        bank = {} if social else payload.get("bank") or {}
         has_bank = any(str(bank.get(field) or "").strip()
                        for field in ("bank_code", "agency", "account",
                                      "holder_name"))
@@ -1308,14 +1288,16 @@ class Demo:
                 bank.get("bank_code"), bank.get("agency"),
                 bank.get("account"), bank.get("holder_name"), name,
             )
-        elif not is_test and self.settings_view()["require_bank_at_signup"]:
+        elif not social and not is_test and self.settings_view()["require_bank_at_signup"]:
             # the requirement is about *public* signup friction; an account
             # the operator creates in the painel is exempt from it
             raise PaymentError("informe banco, agência, conta e titular")
-        player_id = "player-" + slug("wallet", cpf)[:24]
+        player_id = "player-" + (slug("social-wallet", identity.key) if social else
+                                  slug("wallet-cnpj" if person_type == "PJ" else "wallet", document))[:24]
         data = self.players.read_all()
         if player_id in data:
-            raise ValueError("este CPF já tem conta — entre com sua senha")
+            label = "CNPJ" if person_type == "PJ" else "CPF" if person_type == "PF" else "login social"
+            raise ValueError(f"este {label} já tem conta — entre com sua senha")
         for other in data.values():
             if not isinstance(other, dict):
                 continue
@@ -1329,11 +1311,14 @@ class Demo:
             "name": name,
             "username": username,
             "email": email,
-            "cpf_masked": "***" + cpf[-4:],
+            "person_type": person_type,
+            "cpf_masked": f"***.***.***-{document[-2:]}" if person_type == "PF" else "",
+            "cnpj_masked": f"**.***.***/****-{document[-2:]}" if person_type == "PJ" else "",
+            "document_validation": "check_digits" if document else "not_requested",
             "pw_hash": self.passwords.hash(password),
-            "pix_kind": pix.kind,
-            "pix_masked": mask_pix_key(pix.raw),
-            "pix_raw": pix.raw,  # sole payout destination for this wallet
+            "pix_kind": pix.kind if pix else "",
+            "pix_masked": mask_pix_key(pix.raw) if pix else "",
+            "pix_raw": pix.raw if pix else "",  # collected at withdrawal for social accounts
             "bank": {
                 "bank_code": bank.get("bank_code"),
                 "agency": bank.get("agency"),
@@ -1346,7 +1331,8 @@ class Demo:
             "updated_at": now,
         }
         self.players.write_all(data)
-        self.pix_keys[player_id] = pix.raw
+        if pix:
+            self.pix_keys[player_id] = pix.raw
         if identity is not None:
             # remember the provider:subject link so this social sign-in is
             # one tap next time, regardless of a later email change
@@ -1357,7 +1343,8 @@ class Demo:
             self._send_welcome(player_id, data[player_id])
         # signup is also a login (decision 0069): the new account walks away
         # with the same signed session the login form hands out.
-        return self._with_session(self.profile(player_id), device=device)
+        profile = self.profile(player_id)
+        return self._with_session(profile, device=device) if issue_session else profile
 
     def login_player(self, payload: dict, *,
                      device: dict | None = None) -> dict:
@@ -1576,16 +1563,20 @@ class Demo:
                 if isinstance(row, dict) and str(row.get("email") or "") == ident:
                     return pid
             return None
-        try:
-            cpf = validate_cpf(ident)
-        except ValueError:
-            return None
-        candidate = "player-" + slug("wallet", cpf)[:24]
-        return candidate if candidate in data else None
+        for validator, namespace in ((validate_cpf, "wallet"), (validate_cnpj, "wallet-cnpj")):
+            try:
+                document = validator(ident)
+            except ValueError:
+                continue
+            candidate = "player-" + slug(namespace, document)[:24]
+            if candidate in data:
+                return candidate
+        return None
 
     def _public_profile(self, player_id: str, row: dict) -> dict:
-        return {k: v for k, v in row.items()
-                if k not in self._PLAYER_SECRETS}
+        return {**{k: v for k, v in row.items()
+                   if k not in self._PLAYER_SECRETS},
+                "pix_registered": bool(row.get("pix_raw"))}
 
     def profile(self, player_id: str) -> dict:
         data = self.players.read_all()
@@ -2044,7 +2035,7 @@ class Demo:
         if not stored_key:
             raise ValueError("no Pix key registered for this player")
         supplied = (payload.get("pix_key") or "").strip()
-        if supplied and normalize(supplied) != normalize(stored_key):
+        if supplied and canonical_pix_key(supplied) != canonical_pix_key(stored_key):
             raise ValueError(
                 "payout Pix key must match the key on file "
                 "(own-name rule: funds leave only to the registered key)")
@@ -2057,6 +2048,45 @@ class Demo:
             raise ValueError("duplicate payout_id: already withdrawn")
         receipt["available_minor"] = self.books.available(player_id)
         return receipt
+
+    def register_pix_key(self, player_id: str, raw: str) -> dict:
+        """Set the first withdrawal destination for this authenticated account.
+
+        An existing key cannot be silently replaced by a withdrawal request.
+        Validation confirms shape/check digits, not bank-account ownership.
+        """
+        with self._pix_registration_lock:
+            return self._register_pix_key(player_id, raw)
+
+    def _register_pix_key(self, player_id: str, raw: str) -> dict:
+        key = classify_pix_key(raw)
+        data = self.players.read_all()
+        row = data.get(player_id)
+        if not isinstance(row, dict):
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        existing = row.get("pix_raw") or ""
+        if existing and canonical_pix_key(existing) != canonical_pix_key(key.raw):
+            raise PaymentError("A conta já possui uma chave Pix cadastrada.")
+        if not existing:
+            row.update(pix_raw=key.raw, pix_kind=key.kind,
+                       pix_masked=mask_pix_key(key.raw),
+                       updated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+            data[player_id] = row
+            self.players.write_all(data)
+        self.pix_keys[player_id] = existing or key.raw
+        return self.profile(player_id)
+
+    def deposit_limits(self, player_id: str, method: str, coin: str = "") -> dict:
+        profile = self.players.read_all().get(player_id)
+        if not isinstance(profile, dict):
+            raise AuthError(PLAYER_SESSION_REFUSED)
+        method = check_deposit_method(method)
+        if not profile.get("is_test"):
+            if method == "pix" and self.asaas is not None:
+                return {"method": method, "min_minor": 500, "currency": "brl", "provider": "Asaas"}
+            if method == "crypto" and self.crypto is not None:
+                return {"method": method, **self.crypto.minimum_payment(coin)}
+        return {"method": method, "min_minor": 1, "currency": "brl", "provider": "demo"}
 
     # -- Asaas Pix (real sandbox charge; the books stay the source of truth) --
     # A pending charge is *not* a balance. Money reaches the player only when
@@ -4498,7 +4528,9 @@ class Demo:
         checked its freshness, so the main liveness check could never fail
         and every GET dirtied the scheduler state."""
         report = health(self.scheduler, self.ledger_path, self.books.path)
-        return {"status": report.status, "checks": report.as_dict()["checks"]}
+        return {"status": report.status, "checks": report.as_dict()["checks"],
+                "storage": {"identity": "database" if self._pg is not None else "files",
+                            "wallet": "files"}}
 
 
 DEMO = Demo()
@@ -4649,7 +4681,6 @@ class Handler(BaseHTTPRequestHandler):
         stake/win through the books.
         """
         import re as _re
-        from urllib.parse import parse_qs
         path = parsed.path
         if path == game_proxy.BRIDGE_PATH:
             self._send(200, game_proxy.bridge_script(), "text/javascript")
@@ -4842,7 +4873,6 @@ class Handler(BaseHTTPRequestHandler):
         any other proxied call.
         """
         import re as _re
-        from urllib.parse import parse_qs
         host = self._cookie("proxy_host")
         provider = self._cookie("proxy_provider")
         game_id = self._cookie("proxy_game")
@@ -5202,7 +5232,6 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/api/auth/oauth/start":
                 # compatibility for a storefront bundle built before 0066:
                 # it still navigates here, so start the Better Auth flow
-                from urllib.parse import parse_qs
                 provider = (parse_qs(parsed.query).get("provider") or [""])[0]
                 betterauth_proxy.start(self, provider)
                 return
@@ -5270,6 +5299,11 @@ class Handler(BaseHTTPRequestHandler):
                 # decision 0069: the identity comes from the session, never
                 # from a query string; `?id=` is deliberately ignored.
                 self._send(200, DEMO.profile(self._player_id()))
+            elif parsed.path == "/api/deposit/limits":
+                query = parse_qs(parsed.query)
+                self._send(200, DEMO.deposit_limits(
+                    self._player_id(), query.get("method", ["pix"])[0],
+                    query.get("pay_currency", [""])[0]))
             elif parsed.path == "/api/player/sessions":
                 # decision 0070: the caller's own devices, with its row marked
                 self._send(200, DEMO.player_sessions_view(
@@ -5287,7 +5321,6 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/live":
                 self._send(200, DEMO.live())
             elif parsed.path == "/api/wallet/status":
-                from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)
                 self._send(200, DEMO.wallet_status(query["token"][0]))
             elif parsed.path == "/api/pg/wallet":
@@ -5320,7 +5353,6 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/admin":
                 self._send(200, DEMO.admin_dashboard(self._bearer()))
             elif parsed.path == "/api/admin/player":
-                from urllib.parse import parse_qs
                 query = parse_qs(parsed.query)
                 self._send(200, DEMO.admin_player_dashboard(
                     self._bearer(), query["id"][0]))
@@ -5431,6 +5463,9 @@ class Handler(BaseHTTPRequestHandler):
                 body = self._body()
                 DEMO.require_turnstile(body, "login", self._client_ip())
                 self._send(200, DEMO.login_player(body, device=self._device()))
+            elif path == "/api/player/pix-key":
+                body = self._player_body()
+                self._send(200, DEMO.register_pix_key(body["player"], body.get("pix_key") or ""))
             elif path == "/api/player/logout":
                 # decision 0070: end this device only; the other rows stay
                 self._send(200, DEMO.logout_player(self._player_session()))
@@ -5533,10 +5568,6 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/auth/oauth/session":
                 self._send(200, DEMO.oauth_session(
                     self._body().get("token") or "", device=self._device()))
-            elif path == "/api/auth/oauth/complete":
-                body = self._body()
-                self._send(200, DEMO.oauth_complete_profile(
-                    body.get("token") or "", body, device=self._device()))
             elif path == "/api/admin/users":
                 self._send(200, DEMO.admin_create_user(
                     self._bearer(), self._body()))
@@ -5599,12 +5630,17 @@ def _ambient_db():
     test suite does) must never touch Supabase. A database is always an
     explicit choice, unlike mail/turnstile which self-resolve from ambient.
     """
-    try:
-        env = db_env()
-        if using_postgres(env):
-            return make_session_factory(make_engine(database_url(env)))
-    except Exception:
-        return None
+    env = db_env()
+    if using_postgres(env):
+        factory = make_session_factory(make_engine(database_url(env)))
+        # Fail startup on a missing migration/outage; never serve empty files
+        # after the operator deliberately configured durable identity storage.
+        from sqlalchemy import select
+        from demo.models import IdentityDocument, PlayerDevice
+        with factory() as db:
+            db.execute(select(IdentityDocument.name).limit(1))
+            db.execute(select(PlayerDevice.session_id).limit(1))
+        return factory
     return None
 
 
@@ -5612,7 +5648,11 @@ def run(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
     global DEMO
     # Postgres wiring (decision 0049): files stay the default when DATABASE_URL
     # is unset; with it, the ported stores read the database instead.
-    DEMO = Demo(db=_ambient_db(),
+    db = _ambient_db()
+    if db is not None and not any(session_env().get(key, "").strip() for key in
+                                  ("PLAYER_SESSION_SECRET", "BETTER_AUTH_SECRET")):
+        raise RuntimeError("database identity requires a persistent session signing secret")
+    DEMO = Demo(db=db,
                 betterauth=resolve_betterauth(env=betterauth_env()))
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"operator demo (NO REAL MONEY) on http://{host}:{port}")

@@ -3,20 +3,11 @@
 import { useEffect, useState } from "react";
 import TurnstileWidget from "./TurnstileWidget";
 import OAuthIcon from "./OAuthIcon";
+import { formatCPF, formatCNPJ, validateCPF, validateCNPJ, cpfDigits, cnpjCharacters } from "../../lib/validation";
 
-/** Player login, registration and social completion (Entrar / Criar conta /
- * Complete seu cadastro). Real-site shape: login takes username, email or CPF
- * plus password; registration takes name, username, email, CPF, password, the
- * Pix key and — only when the operator requires it — the payout account;
- * "complete" is the social path, where the name/email come from the provider
- * and the player still supplies the CPF that keys the wallet (plus a username
- * and Pix key). Every field is validated here and again on the server
- * (demo/payments.py + Demo.register_player); the page owns the form state and
- * the submit, this modal only renders.
- *
- * Test accounts are invisible: there is no button. Ctrl+Shift+T while the
- * modal is open fills the built-in test identity, and only while the
- * operator's test_accounts_enabled setting is on. */
+/** Manual PF/PJ signup and password login. Social providers sign in directly;
+ * the first withdrawal collects their Pix destination. Document validation
+ * checks formatting/check digits, not registration status or ownership. */
 export default function AccountModal({
   open,
   mode,
@@ -28,7 +19,6 @@ export default function AccountModal({
   turnstileSiteKey = "",
   turnstileReset = 0,
   oauthProviders = [],
-  social = null,
   remember = true,
   notice = "",
   passwordResetEnabled = false,
@@ -63,44 +53,46 @@ export default function AccountModal({
   }, [open, testAccountsEnabled, onFillTest, mode]);
 
   if (!open) return null;
-  const isComplete = mode === "complete";
   const isLogin = mode === "login";
   const isRegister = mode === "register";
   const isForgot = mode === "forgot";
   const isReset = mode === "reset";
-  const title = isComplete
-    ? "Complete seu cadastro"
-    : isLogin
+  const title = isLogin
       ? "Entrar"
       : isRegister
         ? "Criar sua conta"
         : isForgot
           ? "Esqueci minha senha"
           : "Criar nova senha";
-  const subtitle = isComplete
-    ? "Você entrou com " + (social?.provider || "sua conta social") +
-      ". Falta o CPF para abrir sua carteira (uma conta por CPF) e escolher um usuário."
-    : isLogin
-      ? "Acesse com seu usuário, email ou CPF e sua senha."
+  const subtitle = isLogin
+      ? "Acesse com seu usuário, email, CPF ou CNPJ e sua senha."
       : isRegister
-        ? "Uma conta por CPF. Validação de usuário, email e CPF no navegador e no servidor."
+        ? "Escolha PF ou PJ. CPF e CNPJ são formatados e validados antes do cadastro."
         : isForgot
           ? "Informe o email da sua conta. Se ela existir, enviaremos um link para criar uma nova senha."
           : "Escolha uma nova senha. O link que você abriu só pode ser usado uma vez.";
+  const fieldErrors = { ...errors };
+  const documentKind = form.person_type === "PJ" ? "cnpj" : "cpf";
+  const completeDocument = documentKind === "cnpj"
+    ? cnpjCharacters(form.cnpj).length === 14 : cpfDigits(form.cpf).length === 11;
+  const documentError = documentKind === "cnpj" ? validateCNPJ(form.cnpj) : validateCPF(form.cpf);
+  if (isRegister && completeDocument) fieldErrors[documentKind] = documentError;
   const field = (id, label, props, hint) => (
     <>
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
         value={form[props.name] || ""}
-        onChange={(e) => onForm({ ...form, [props.name]: e.target.value })}
-        aria-invalid={errors[props.name] ? "true" : undefined}
+        onChange={(e) => onForm({ ...form, [props.name]: props.name === "cpf" ? formatCPF(e.target.value) : props.name === "cnpj" ? formatCNPJ(e.target.value) : e.target.value })}
+        aria-invalid={fieldErrors[props.name] ? "true" : undefined}
         {...props}
       />
-      {errors[props.name] ? (
+      {fieldErrors[props.name] ? (
         <p className="ferr" role="alert">
-          {errors[props.name]}
+          {fieldErrors[props.name]}
         </p>
+      ) : props.name === documentKind && completeDocument && !documentError ? (
+        <p className="fok" role="status">{documentKind.toUpperCase()} válido — dígitos verificadores conferem.</p>
       ) : hint ? (
         <p className="fhint">{hint}</p>
       ) : null}
@@ -136,59 +128,12 @@ export default function AccountModal({
       <div className="sheet">
         <h3>{title}</h3>
         <p className="sub">{subtitle}</p>
-        {isComplete ? (
+        {isLogin ? (
           <>
-            <label>Nome</label>
-            <input value={social?.name || ""} readOnly disabled />
-            <label>Email</label>
-            <input value={social?.email || ""} readOnly disabled />
-            {field(
-              "cpf",
-              "CPF",
-              {
-                name: "cpf",
-                inputMode: "numeric",
-                autoComplete: "off",
-                placeholder: "000.000.000-00",
-              },
-              "Obrigatório e único: é a chave da sua carteira."
-            )}
-            {field(
-              "username",
-              "Nome de usuário",
-              {
-                name: "username",
-                autoComplete: "username",
-                autoCapitalize: "none",
-                spellCheck: "false",
-                placeholder: "seu.usuario",
-              },
-              "3-20 caracteres: letras, números, ponto, hífen ou _."
-            )}
-            {field("pix", "Chave Pix", {
-              name: "pix_key",
-              autoComplete: "off",
-              placeholder: "CPF, email, telefone ou EVP",
-            })}
-            {field(
-              "password",
-              "Senha (opcional)",
-              {
-                name: "password",
-                type: "password",
-                autoComplete: "new-password",
-                placeholder: "Defina se quiser entrar sem a conta social",
-              },
-              "Sem senha, você entra apenas com " +
-                (social?.provider || "sua conta social") + "."
-            )}
-          </>
-        ) : isLogin ? (
-          <>
-            {field("identifier", "Usuário, email ou CPF", {
+            {field("identifier", "Usuário, email, CPF ou CNPJ", {
               name: "identifier",
               autoComplete: "username",
-              placeholder: "seu.usuario, voce@email.com ou 000.000.000-00",
+              placeholder: "Usuário, email, CPF ou CNPJ",
             })}
             {field("password", "Senha", {
               name: "password",
@@ -238,9 +183,15 @@ export default function AccountModal({
           </>
         ) : (
           <>
-            {field("name", "Nome completo", {
+            <label htmlFor="person-type">Tipo de conta</label>
+            <select id="person-type" value={form.person_type || "PF"}
+              onChange={(e) => onForm({ ...form, person_type: e.target.value, cpf: "", cnpj: "" })}>
+              <option value="PF">Pessoa física (PF)</option>
+              <option value="PJ">Pessoa jurídica (PJ)</option>
+            </select>
+            {field("name", form.person_type === "PJ" ? "Razão social" : "Nome completo", {
               name: "name",
-              autoComplete: "name",
+              autoComplete: form.person_type === "PJ" ? "organization" : "name",
               placeholder: "Como está no seu documento",
             })}
             {field(
@@ -261,11 +212,12 @@ export default function AccountModal({
               inputMode: "email",
               placeholder: "voce@email.com",
             })}
-            {field("cpf", "CPF", {
-              name: "cpf",
-              inputMode: "numeric",
-              autoComplete: "off",
-              placeholder: "000.000.000-00",
+            {form.person_type === "PJ" ? field("cnpj", "CNPJ", {
+              name: "cnpj", inputMode: "text", autoCapitalize: "characters",
+              autoComplete: "off", maxLength: 18, placeholder: "00.000.000/0000-00",
+            }, "Aceita CNPJ numérico ou alfanumérico.") : field("cpf", "CPF", {
+              name: "cpf", inputMode: "numeric", autoComplete: "off",
+              maxLength: 14, placeholder: "000.000.000-00",
             })}
             {field(
               "password",
@@ -375,9 +327,7 @@ export default function AccountModal({
         >
           {busy
             ? "Aguarde…"
-            : isComplete
-              ? "Verificar CPF e entrar"
-              : isLogin
+            : isLogin
                 ? "Entrar"
                 : isRegister
                   ? "Criar conta e entrar"
@@ -392,7 +342,7 @@ export default function AccountModal({
               : "Conta de teste preenchida — crie a conta para entrar."}
           </p>
         ) : null}
-        {isComplete ? null : (
+        {(
           <button
             className="ghost"
             style={{ width: "100%", marginTop: 8 }}

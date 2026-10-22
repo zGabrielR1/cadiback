@@ -54,3 +54,14 @@ tab and the instant demo credit stays the fallback, exactly like Pix.
   TRC-20/ERC-20, USDC, LTC).
 - A test account (`is_test`) never touches this rail — it uses the tagged test
   deposit instead (decision 0057 §7).
+
+## Dynamic minimums (0072)
+
+The cashier queries the authenticated `/api/deposit/limits` endpoint for the
+selected coin/network. The server calls NOWPayments `/min-amount` for BRL,
+using the same fixed-rate and fee settings as payment creation and the
+merchant's configured outcome currency. BRL values round up to centavos.
+Quotes cache at most 60 seconds and expose remaining lifetime; creation forces
+a new lookup. Unknown minimums block the input and submit until retry succeeds.
+The UI clamps a smaller value on blur and always disables submission below
+minimum. No fixed high minimum or fabricated zero minimum is used.

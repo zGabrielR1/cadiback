@@ -9,6 +9,7 @@ export const newDepositId = () =>
 
 /** Millis before an in-flight request is abandoned. */
 export const REQUEST_TIMEOUT_MS = 8000;
+export const PAYMENT_TIMEOUT_MS = 30000;
 
 /** Player session, stored in one of the two browser stores.
  *
@@ -119,7 +120,8 @@ export async function api(method, path, body) {
   const session = getAdminSession();
   const player = getPlayerSession();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = /^\/api\/deposit\/(pix|crypto)$/.test(path) ? PAYMENT_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const r = await fetch(path, {
       method,
@@ -140,7 +142,11 @@ export async function api(method, path, body) {
       );
     }
     const j = await r.json();
-    if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
+    if (!r.ok) {
+      const error = new Error(j.error || "HTTP " + r.status);
+      error.status = r.status;
+      throw error;
+    }
     return j;
   } catch (e) {
     if (e.name === "AbortError") {

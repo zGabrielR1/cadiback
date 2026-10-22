@@ -1031,3 +1031,68 @@ footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line);
   .sx-tab { padding: 12px 22px; }
   .sx-icon { transform: scale(1.08); }
 }
+
+/* Sports-first storefront refresh: shared surfaces, navigation and guest entry. */
+[data-theme="dark"] {
+  --paper: #080e14; --card: #101b25; --card2: #0c151e;
+  --ink: #f3f7fa; --mut: #9aabb9; --line: #223340;
+  --acc: #68e4b1; --acc-soft: #142f2a; --on-acc: #08241b;
+  --night: #060b10; --field: #0b141d; --chip: #192733;
+  --glow: 0 0 24px rgba(104, 228, 177, .12);
+}
+body { background-image: radial-gradient(ellipse at 80% 0, rgba(44, 93, 94, .09), transparent 55%); }
+.topbar { padding-inline: max(20px, calc((100vw - 1512px) / 2)); font-size: 10px; letter-spacing: .1em; }
+header.sticky { background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(18px); }
+.hwrap { max-width: 1560px; min-height: 78px; gap: 18px; flex-wrap: wrap; }
+.logo { font-size: 27px; letter-spacing: -.07em; padding: 8px 0; background: transparent; color: var(--ink); }
+.logo span { text-shadow: none; }
+nav.main { gap: 4px; }
+nav.main button { font-size: 13px; padding: 11px 14px; border-radius: 999px; }
+.nav-lock { font-size: 13px; color: var(--mut); margin-left: 4px; }
+.live-dot { display: inline-block; width: 6px; height: 6px; margin-right: 4px; background: var(--acc); border-radius: 50%; box-shadow: 0 0 0 3px var(--acc-soft); vertical-align: middle; }
+.hwrap #search { max-width: 210px; border-radius: 999px; font-size: 12px; }
+.hwrap > button:not(.logo) { border-radius: 999px; font-size: 12px; padding: 10px 15px; }
+.wrap { max-width: 1512px; padding-top: 28px; }
+.sx-hero { position: relative; overflow: hidden; border-radius: 24px; padding: clamp(24px, 4vw, 58px); gap: 54px; min-height: 350px; background: radial-gradient(ellipse at 65% 130%, var(--acc-soft), transparent 65%), linear-gradient(125deg, var(--card), var(--card2)); }
+.sx-hero h1 { font-size: clamp(36px, 4.5vw, 66px); line-height: 1.04; font-weight: 800; margin: 22px 0; letter-spacing: -.055em; }
+.sx-hero-copy p { max-width: 390px; font-size: 14px; }
+.sx-eyebrow { font-size: 10px; letter-spacing: .19em; }
+.sx-metrics { gap: 32px; margin-top: 30px; }
+.sx-metrics b { font-size: 25px; letter-spacing: -.04em; margin-bottom: 3px; }
+.sx-feature { padding: 27px 30px; border-radius: 20px; background: color-mix(in srgb, var(--card) 80%, transparent); box-shadow: 0 18px 50px #00000015; }
+.sx-feature-teams { font-size: 20px; gap: 14px; }
+.sx-feature-teams span { font-size: 14px; letter-spacing: .14em; }
+.sporthead h1 { font-size: 24px; letter-spacing: -.04em; }
+.sx-sports { gap: 10px; padding-bottom: 6px; }
+.sx-tab { border-radius: 14px; transition: border-color .15s, background .15s; }
+.sx-toolbar { padding: 17px; border: 1px solid var(--line); border-radius: 16px; background: var(--card2); margin-block: 22px; }
+.sx-odd { border-radius: 10px; transition: background .15s, border-color .15s; }
+.sx-odd:hover:not(:disabled) { border-color: var(--acc); background: var(--acc-soft); }
+.modal { border-radius: 22px; box-shadow: 0 30px 120px #0008; }
+footer { padding-block: 36px; margin-top: 30px; color: var(--mut); font-size: 11px; }
+.guest-login-card { position: fixed; bottom: 24px; left: 24px; z-index: 35; width: 344px; padding: 25px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--ink); box-shadow: 0 18px 70px #0005; }
+.guest-login-eyebrow { display: block; margin-bottom: 12px; color: var(--acc); font-size: 9px; font-weight: 800; letter-spacing: .16em; }
+.guest-login-card strong { display: block; font-size: 20px; line-height: 1.3; letter-spacing: -.035em; }
+.guest-login-card p { color: var(--mut); font-size: 12px; line-height: 1.65; margin: 12px 0 18px; }
+.guest-login-card > button:last-child { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-radius: 10px; font-size: 12px; }
+.guest-login-card .guest-login-dismiss { position: absolute; top: 10px; right: 10px; background: transparent; color: var(--mut); border: 0; padding: 2px 8px; font-size: 22px; width: auto; }
+@media (max-width: 1200px) { .hwrap { gap: 10px; } .hwrap #search { order: 10; max-width: none; flex: 1 0 100%; } .hwrap .spacer { min-width: 0; } }
+@media (max-width: 760px) {
+  .hwrap { min-height: 68px; padding: 12px 16px; }
+  .hwrap .logo { font-size: 25px; }
+  .hwrap > .ghost, .hwrap nav.main { display: none; }
+  .hwrap #search { display: block; }
+  .topbar { padding: 7px 16px; font-size: 8px; }
+  .wrap { padding-top: 18px; }
+  .sx-hero { grid-template-columns: 1fr; gap: 24px; min-height: 0; padding: 26px; border-radius: 20px; }
+  .sx-hero h1 { font-size: clamp(36px, 8vw, 54px); }
+  .sx-feature { padding: 22px; }
+  .sx-feature-teams { font-size: 17px; }
+  .sx-metrics { gap: 25px; }
+  .guest-login-card { left: 12px; bottom: 84px; width: min(344px, calc(100vw - 24px)); padding: 20px; }
+  .guest-login-card strong { font-size: 17px; }
+  .guest-login-card p { margin: 9px 0 13px; }
+  .bottomnav { background: var(--card2); padding-bottom: env(safe-area-inset-bottom); }
+  .bottomnav button { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

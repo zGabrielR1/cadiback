@@ -64,7 +64,6 @@ export default function CrashPanel({
     setStarting(true);
     try {
       const r = await api("POST", "/api/crash/start", {
-        player,
         stake_minor: stake,
       });
       const base = Math.max(0, (r.server_now || 0) - (r.started_at || 0));
@@ -88,7 +87,6 @@ export default function CrashPanel({
     if (!round) return;
     try {
       const r = await api("POST", "/api/crash/cashout", {
-        player,
         token: round.token,
       });
       setLive(r.win ? r.multiplier : r.bust);

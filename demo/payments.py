@@ -45,15 +45,29 @@ def digits_only(value: str) -> str:
 def validate_cpf(cpf: str) -> str:
     """Normalise and check a CPF; the arithmetic lives in foundry.auth."""
     try:
+        if not re.fullmatch(r"[0-9.\-\s]+", str(cpf or "")):
+            raise DocumentError("CPF inválido")
         return _validate_cpf(cpf)
     except DocumentError as exc:
         raise PaymentError(str(exc)) from exc
 
 
 def validate_cnpj(cnpj: str) -> str:
-    """Normalise and check a CNPJ; the arithmetic lives in foundry.auth."""
+    """Numeric and 2026 alphanumeric CNPJ, using Receita's ASCII-48 rule."""
     try:
-        return _validate_cnpj(cnpj)
+        number = re.sub(r"[./\-\s]", "", str(cnpj or "")).upper()
+        if not re.fullmatch(r"[A-Z0-9]{12}[0-9]{2}", number):
+            raise DocumentError("CNPJ inválido: informe 14 caracteres")
+        if number.isdigit():
+            return _validate_cnpj(number)
+        weights = (5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2)
+        for length, factors in ((12, weights), (13, (6,) + weights)):
+            remainder = sum((ord(ch) - 48) * weight for ch, weight in
+                            zip(number[:length], factors)) % 11
+            digit = 0 if remainder < 2 else 11 - remainder
+            if int(number[length]) != digit:
+                raise DocumentError("CNPJ inválido: dígitos verificadores não conferem")
+        return number
     except DocumentError as exc:
         raise PaymentError(str(exc)) from exc
 
@@ -120,6 +134,10 @@ def classify_pix_key(raw: str) -> PixKey:
         return PixKey(value, "email")
     if _EVP.match(value):
         return PixKey(value, "evp")
+    document = re.sub(r"[./\-\s]", "", value).upper()
+    if re.fullmatch(r"[A-Z0-9]{12}[0-9]{2}", document):
+        validate_cnpj(document)
+        return PixKey(document, "cnpj")
     only = digits_only(value)
     if len(only) == 11:
         try:
@@ -180,6 +198,20 @@ def mask_pix_key(raw: str) -> str:
     if len(value) > 8:
         return f"{value[:3]}***{value[-3:]}"
     return "***"
+
+
+def canonical_pix_key(raw: str) -> tuple[str, str]:
+    """Compare key identity without erasing significant email punctuation."""
+    key = classify_pix_key(raw)
+    if key.kind == "cpf":
+        value = validate_cpf(key.raw)
+    elif key.kind == "cnpj":
+        value = validate_cnpj(key.raw)
+    elif key.kind == "phone":
+        value = digits_only(key.raw)
+    else:
+        value = key.raw.lower()  # email/UUID: preserve dots, hyphens and +
+    return key.kind, value
 
 
 def check_deposit_method(method: str) -> str:

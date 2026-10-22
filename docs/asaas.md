@@ -175,3 +175,11 @@ committed:
 | 400 `não pode ser menor que R$ 5,00` | below Asaas's R$5,00 minimum charge. |
 | Paid but no balance | The webhook token does not match, the amount does not match, or the charge ref is different. The poll should still credit within 5s. |
 | Asaas retries the webhook | The server answered 5xx (a transient fault). Retries are expected and safe: confirmation is idempotent. |
+
+## Cashier minimum (0072)
+
+Configured Pix charges require at least **R$5.00**. The authenticated deposit
+limit endpoint reports 500 centavos to the frontend, whose input minimum,
+warning, blur clamp and disabled submit match the server. The Asaas client
+refuses smaller amounts before creating a charge. Provider minimums were not
+changed in the dashboard. Demo/test accounts keep the separate demo rail.

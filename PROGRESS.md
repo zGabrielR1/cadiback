@@ -1,12 +1,71 @@
 # PROGRESS
 
+## IMPLEMENTED LOCALLY (2026-10-22 — public sports and casino login, 0073)
+
+- Sports-first anonymous landing, immediate sports feed and contextual search; dismissible lower-left login card. Casino navigation opens login and all casino surfaces require a server-verified matching profile. Session loss clears games; stale asynchronous launches are ignored. Backend access rules unchanged.
+- Shared slate/mint surfaces, sports hero/cards, simpler desktop and mobile navigation, form surfaces and responsive guest entry; light mode and reduced motion retained.
+- Combined Python suite 467 cases passed (13 optional Postgres skips), frame 50/50, Node 9/9; final production build, anonymous HTML export check and deploy preflight passed. Browser connector is locked and computer-use has no available browser; interactive QA was not completed this turn.
+- Additive Supabase identity tables applied, with zero account documents and no import. Production remains unchanged: one non-test file-backed account, zero financial/game activity. Render free has no shell/export; approval to recreate this account or a snapshot is pending. Saved Vercel token cannot access the project; owning account access requested. No push/restart/deploy or secrets changed.
+
+## IMPLEMENTED (2026-10-22 - signup and cashier minimums, decision 0072)
+
+- Manual PF/PJ signup validates and masks CPF/numeric or alphanumeric CNPJ, preserves existing PF wallet identifiers, separates PJ documents and allows CNPJ login. Check-digit validation does not claim ownership or Receita registration status. Public profiles exclude raw Pix keys.
+- Google/Facebook no longer open a CPF/profile form: signed provider identities create or link accounts directly. Single-use handoffs mint the browser session once. Pix is collected at the first withdrawal; registered destinations cannot be silently replaced, including punctuation-different email keys.
+- Configured Asaas Pix enforces R$5.00. NOWPayments limits come from the selected coin/network in BRL, round upward and are refreshed before invoice creation. Unknown/low values disable payment; input clamps on blur; retry, stale-quote protection, exact cents and inline errors cover the browser flow.
+- Full Python baseline passed 465 cases with 13 opt-in Postgres skips; frame 50/50; Node 9/9; mocked browser checks passed for registration, direct social callback, first withdrawal, minimums and provider failure/retry. Final post-hardening suite passed 467 cases (454 passed, 13 opt-in Postgres skips); production build passed. Structure verifier and deployment preflight report zero problems.
+- No production deploy/import or real financial transaction. The live NOWPayments call was a read-only minimum lookup. Decision 0071's identity snapshot/import is still required before deploying the combined tree.
+
+
+## IMPLEMENTED (2026-10-22 - durable player identity and session cleanup, decision 0071)
+
+- Removed obsolete player identity fields from storefront action requests; the signed token header remains authoritative.
+- With the explicit Postgres seam, device sessions, account profiles/revocation epochs and social links persist in player_devices/identity_documents. Account revisions refuse stale writes; per-player transaction locks enforce session caps and revocations across instances. Activity updates cannot revive logged-out sessions.
+- Added an atomic one-time import command, additive RLS-enabled migration, database startup checks, stable-key requirement, envs/ credential discovery and psycopg 3 URL normalization. No implicit restore, live import or deployment occurred.
+- Browser refresh preserves saved login on network failures, clears account data on confirmed 401 and ignores responses for replaced credentials. Session controls disable pending actions and report inline errors. Non-ASCII malformed tokens receive normal authentication refusal.
+- Verification: frame 50/50; Python suite 453 tests with 13 opt-in Postgres cases skipped, no failures; dedicated Postgres integration 12/12; raw migration plus repeat application passed in an isolated schema; Node API/sports tests 6/6. Added database env precedence regression also passes. Production frontend build passed (Next 16.3.8); verify.py 0 problems; Render deploy preflight 0 problems.
+- Deployment limit: snapshot/import current live identity first and preserve signing keys. Wallet balances/history and remaining unported stores still use files; health reports the storage split. Do not deploy an empty identity destination over live accounts.
+
+
 ## IN PROGRESS (2026-10-21 - Better Auth provider activation)
 
 - Google is live on cadiback-web.vercel.app. Saved both production callbacks, added an additional secret with owner approval, stored credentials in gitignored .env.local and merged them into Render. Existing signing keys and Google secret preserved.
 - Deploy dep-dbchts67bikc73bjsdpg is live. A real Google sign-in reached the signed bridge and the storefront CPF-completion step; no CPF/wallet was created.
 - .env.local is read by Node, Python and the Render auth deploy path, and excluded from Docker context. Local support commit 734400b; auth-server 4 checks, frame 50, demo/local-env 426, verify.py clean.
 - Facebook app candiback (1116893704435145): owner supplied secret, saved in .env.local and merged into Render. Both callback URLs persisted after reload; deploy dep-dbci4s8473hc73eamni0 is live and /providers lists both providers. Default Facebook login is blocked by Meta Invalid Scopes: email; email permission is available to add and awaiting owner approval. App remains in development mode.
+- CODE-SIDE HARDENING (2026-10-22, improvement agent): while the Facebook email permission waits on the owner, verified the code already handles the exact state Meta sends today — email withheld, so the auth server fills `<subject>@facebook.placeholder.invalid` (auth-server/auth.mjs `mapProfile`). `validate_email` accepts the `.invalid` placeholder (its regex only checks shape, not the reserved-TLD the mailer refuses), so a Facebook user without the permission can still complete a CPF and get a wallet, and a returning Facebook user re-links on the `provider:subject` key alone — never on the placeholder email (`demo/server.py` `social_login`/`register_player` save the link on completion). Added `BetterAuthTest.test_facebook_withheld_email_links_by_subject_alone` locking that in: CPF completion with the placeholder, the `facebook:f-42` link persisted, and a second email-less sign-in resolving to the same wallet one tap. Metric: `frame` 50/50 · `demo` 425 tests, 419 passing (the 6 `sqlalchemy` Postgres-seam errors are pre-existing and unchanged) · `verify.py` 0 problems. No deploy, no owner step.
+- RECOMMENDED NEXT: owner adds the Facebook `email` permission (Meta `/use_cases/customize/?use_case_enum=FB_LOGIN` permissions screen), then a real Facebook sign-in through the callback and signed bridge to CPF completion — the flow the new test now guards. If the owner prefers no waiting, the recurring OPEN cleanup (the storefront still sends the now-ignored `player` field from decisions 0069/0070) is the next unblocked code-side step.
 
+
+## DONE (2026-10-21 — React Bits heroes fixed: the spotlight card composites over the hero)
+
+- **THE HEROES WERE FLATTENED.** The inherited SpotlightCard set
+  `background-color: var(--card)`, and the CSS `background` shorthand resets
+  `background-color`, so by source order the solid card color won over each
+  hero's own `background` gradient. The casino hero lost its green/gold radial
+  glows and the sports hero its accent wash — both collapsed to a flat dark
+  slab. The grain stays at opacity 0 (`grain=0`) and the spotlight light is 0
+  until hover, so the only visible wound was the dead background (plus a
+  harmless doubled border ring).
+- **THE CARD NOW COMPOSITES.** `.spotlight-card` surface → `transparent`, so an
+  element that carries its own background keeps it; the spotlight light, grain,
+  edge and border still blend on top. Dropped the three `--spotlight-card-*`
+  CSS vars the JSX injected — never read by the CSS, and the surface one was
+  the clobber. The two hero usages (casino `.hero.carousel`, sports `.sx-hero`)
+  keep their gradients and the React Bits effect. Commit `a108b4e`.
+- **VERIFIED.** Local static build green; headless screenshots at 1440px before
+  and after show the casino green/gold glows and the sports accent wash back,
+  the spotlight/border effects intact. Gates: `verify.py` 0, `frame` 50/50,
+  `demo` 418 pass (6 pre-existing `sqlalchemy` seam errors), `sports.test.mjs`
+  3/3.
+- **LIVE ON RENDER.** Pushed to `origin/main`; deploy `dep-dbcls3jrjlhs73dujgpg`
+  is live at `https://cadiback.onrender.com` (the image builds its own
+  `web/out` from the fixed source, env merged, 28 vars). A production
+  screenshot confirms the restored hero. **VERCEL NOT DEPLOYED:** the two
+  `vck_` tokens in `.env.local` / `.env.vercel` resolve to the same `limited`
+  account and return "Project not found" for `cadiback-web` — the prior Vercel
+  deploys used credentials that are gone. The push auto-deploys Vercel only if
+  that project is git-connected to `zGabrielR1/cadiback`; otherwise the owner
+  runs `vercel deploy --prod` with a working token.
 
 ## DONE (2026-10-21 - React Bits storefront continuation)
 

@@ -4,18 +4,8 @@
 export default function BottomNav({ view, liveOnly, onCasino, onSport, onAccount, onCash }) {
   return (
     <nav className="bottomnav">
-      <button
-        className={view === "casino" ? "on" : ""}
-        onClick={() => onCasino("Todos")}
-      >
-        Cassino
-      </button>
-      <button
-        className={view === "sport" && !liveOnly ? "on" : ""}
-        onClick={() => onSport(false)}
-      >
-        Esportes
-      </button>
+      <button className={view === "sport" && !liveOnly ? "on" : ""} onClick={() => onSport(false)}>Esportes</button>
+      <button className={view === "casino" ? "on" : ""} onClick={() => onCasino("Todos")}>Cassino</button>
       <button
         className={view === "sport" && liveOnly ? "on" : ""}
         onClick={() => onSport(true)}

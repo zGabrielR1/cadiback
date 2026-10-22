@@ -145,7 +145,7 @@ class PlayerSessions:
     # -- verification ------------------------------------------------
     def verify(self, token: str, *, now: float | None = None) -> PlayerSession:
         token = str(token or "").strip()
-        if not token or len(token) > 2048:
+        if not token or len(token) > 2048 or not token.isascii():
             raise PlayerSessionError("sessão do jogador ausente")
         parts = token.split(".")
         if len(parts) != 3 or parts[0] != VERSION:
@@ -306,6 +306,10 @@ class SessionRegistry:
             rows = self._read()
             row = rows.get(session.session_id)
             if not isinstance(row, dict):
+                return False
+            if row.get("player") != session.player_id or \
+                    row.get("epoch") != session.epoch or \
+                    self._expires(row) != session.expires_at:
                 return False
             if self._expires(row) <= instant:
                 rows.pop(session.session_id, None)

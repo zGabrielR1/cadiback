@@ -42,3 +42,22 @@ class LocalAuthEnvTest(unittest.TestCase):
                 self.assertEqual(env["GOOGLE_CLIENT_SECRET"], "exported")
                 self.assertNotIn("RENDER_API_KEY", env)
                 self.assertEqual(deploy.read_key(), "local-render")
+
+
+class LocalDatabaseEnvTest(unittest.TestCase):
+    def test_packaged_files_root_overrides_and_process_precedence(self):
+        from demo import db
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "envs").mkdir()
+            legacy = root / ".env.supabase"
+            local = root / ".env.local"
+            (root / "envs/.env.supabase").write_text("DATABASE_URL=packaged\n")
+            legacy.write_text("DATABASE_URL=root\n")
+            (root / "envs/.env.local").write_text("DATABASE_URL=packaged-local\n")
+            with patch.object(db, "SUPABASE_ENV_FILE", str(legacy)), \
+                 patch.object(db, "LOCAL_ENV_FILE", str(local)):
+                self.assertEqual(db.db_env(str(legacy), {})["DATABASE_URL"], "packaged-local")
+                local.write_text("DATABASE_URL=root-local\n")
+                self.assertEqual(db.db_env(str(legacy), {})["DATABASE_URL"], "root-local")
+                self.assertEqual(db.db_env(str(legacy), {"DATABASE_URL": "exported"})["DATABASE_URL"], "exported")

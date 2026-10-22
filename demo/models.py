@@ -1,7 +1,7 @@
 """Postgres models (decision 0049). One model per migration table.
 
-This file and `supabase/migrations/20261015000000_operator_schema.sql` describe
-the same fourteen tables; `DbSeamTest` fails if they drift apart (every model
+This file and `supabase/migrations/` describe
+the same tables; `DbSeamTest` fails if they drift apart (every model
 table must appear as a CREATE TABLE in the migration). Column rules:
 
   * ids stay TEXT in their current shapes — no UUID migration;
@@ -20,6 +20,29 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
+
+
+class IdentityDocument(Base):
+    """Versioned account/link snapshots, preserving the existing profile shape."""
+    __tablename__ = "identity_documents"
+
+    name: Mapped[str] = mapped_column(primary_key=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class PlayerDevice(Base):
+    __tablename__ = "player_devices"
+
+    session_id: Mapped[str] = mapped_column(primary_key=True)
+    player: Mapped[str] = mapped_column(index=True)
+    epoch: Mapped[int] = mapped_column(BigInteger)
+    created: Mapped[int] = mapped_column(BigInteger)
+    seen: Mapped[int] = mapped_column(BigInteger)
+    expires: Mapped[int] = mapped_column(BigInteger, index=True)
+    remember: Mapped[bool] = mapped_column(Boolean)
+    user_agent: Mapped[str] = mapped_column(default="")
+    ip: Mapped[str] = mapped_column(default="")
 
 
 # Surrogate keys: BIGSERIAL on Postgres (64-bit, correct long-term), INTEGER

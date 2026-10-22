@@ -81,14 +81,19 @@ backend with `turnstile_login` off.
 4. Backend `DATABASE_URL` set where Python runs; file paths retire.
 5. Live-verify exactly as in 0045/0047/0048; record the result in the decision.
 
-## Still file-backed
+## Persistent identity (decision 0071)
 
-`players` (and therefore the social-login links in `oauth_links.json`,
-decision 0054) are not ported yet: `Demo.players` is a JSON `Store`, and an
-`oauth_links` table would be read by nothing until the player store moves. The
-`oauth_links` map (`provider:subject → player_id`) joins the migration when
-`players` does, in the same ported-store step (this is the decision-0049 plan
-continuing, not a separate one).
+Apply `20261022000000_persistent_identity.sql` for `identity_documents` and
+`player_devices`. Player profiles, session epochs, provider links and per-device
+revocation are now database-backed when `DATABASE_URL` is configured. Root
+`.env.supabase` overrides `envs/.env.supabase`; local settings in `envs/.env.local`
+and root `.env.local` override those, with exported variables winning. Bare
+`postgresql://` URLs use the installed psycopg 3 driver.
+
+Existing live files require the explicit one-time identity import described
+in `docs/sessions.md`. No files are imported automatically. The wallet/books,
+rounds and other unported stores remain on disk; do not run multiple wallet
+replicas or claim full platform durability.
 
 ## Writes through the Vercel proxy
 

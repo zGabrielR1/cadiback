@@ -256,8 +256,8 @@ class AsaasClient:
 
     def create_pix_charge(self, *, txid: str, amount_cents: int,
                           description: str = "") -> Charge:
-        if amount_cents <= 0:
-            raise AsaasError("charge amount must be positive")
+        if amount_cents < 500:
+            raise AsaasError("O depósito mínimo por Pix é R$ 5,00.")
         due = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
         body = {
             "customer": self.config.customer_id,

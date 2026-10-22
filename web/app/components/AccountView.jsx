@@ -49,6 +49,7 @@ function deviceName(userAgent) {
 export default function AccountView({ profile, player, health, history, refreshError, onChanged, onLogout }) {
   const [sessions, setSessions] = useState(null);
   const [sessionError, setSessionError] = useState("");
+  const [endingSession, setEndingSession] = useState(false);
 
   const loadSessions = () => {
     api("GET", "/api/player/sessions")
@@ -69,6 +70,9 @@ export default function AccountView({ profile, player, health, history, refreshE
   }, [player]);
 
   const endSession = async (sessionId) => {
+    if (endingSession) return;
+    setEndingSession(true);
+    setSessionError("");
     try {
       const result = await api("POST", "/api/player/sessions/revoke", {
         session_id: sessionId,
@@ -77,23 +81,29 @@ export default function AccountView({ profile, player, health, history, refreshE
       if (result.current) onLogout();
       else loadSessions();
     } catch (e) {
-      window.alert(e.message);
+      setSessionError(e.message);
+    } finally {
+      setEndingSession(false);
     }
   };
 
   const endOtherSessions = async () => {
+    if (endingSession) return;
+    setEndingSession(true);
+    setSessionError("");
     try {
       await api("POST", "/api/player/sessions/revoke-others");
       loadSessions();
     } catch (e) {
-      window.alert(e.message);
+      setSessionError(e.message);
+    } finally {
+      setEndingSession(false);
     }
   };
 
   const selfExclude = async () => {
     try {
       await api("POST", "/api/self-exclude", {
-        player,
         until: "2027-01-01",
       });
       window.alert("Autoexclusão ativada no ambiente de demonstração.");
@@ -103,7 +113,7 @@ export default function AccountView({ profile, player, health, history, refreshE
   };
   const liftBlock = async () => {
     try {
-      await api("POST", "/api/self-exclude-lift", { player });
+      await api("POST", "/api/self-exclude-lift");
       window.alert("Bloqueio de autoexclusão removido.");
     } catch (e) {
       window.alert(e.message);
@@ -118,6 +128,10 @@ export default function AccountView({ profile, player, health, history, refreshE
           {profile ? (
             <>
               <b>{profile.name}</b> · {profile.player_id}
+              {profile.cnpj_masked || profile.cpf_masked ? (
+                <div className="sub">{profile.person_type === "PJ" ? "PJ · CNPJ " : "PF · CPF "}
+                  {profile.cnpj_masked || profile.cpf_masked}</div>
+              ) : null}
               <br />
               {profile.username ? (
                 <>
@@ -163,8 +177,8 @@ export default function AccountView({ profile, player, health, history, refreshE
           a senha e o saldo não mudam.
         </div>
         {sessionError ? (
-          <div className="err" style={{ fontSize: 12.5 }}>
-            falha ao carregar sessões: {sessionError}
+          <div className="err" role="alert" style={{ fontSize: 12.5 }}>
+            Sessões: {sessionError}
           </div>
         ) : null}
         {sessions === null ? (
@@ -209,6 +223,7 @@ export default function AccountView({ profile, player, health, history, refreshE
                       className="ghost"
                       style={{ width: "auto", fontSize: 11.5, padding: "4px 8px" }}
                       onClick={() => endSession(s.id)}
+                      disabled={endingSession}
                     >
                       {s.current ? "Sair" : "Encerrar"}
                     </button>
@@ -221,7 +236,7 @@ export default function AccountView({ profile, player, health, history, refreshE
         <button
           className="ghost"
           style={{ width: "auto", marginTop: 12 }}
-          disabled={!sessions || sessions.length < 2}
+          disabled={endingSession || !sessions || sessions.length < 2}
           onClick={endOtherSessions}
         >
           Encerrar as outras sessões

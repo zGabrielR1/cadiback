@@ -129,3 +129,24 @@ Invariant: the books sum to zero at all times. `assert_balanced()` enforces it.
 - `CURRENTTASK` is the objective; `PROGRESS.md` is the state.
 - `decisions/` is the audit trail: newest file wins on conflict.
 - `frame/tests/` is the spec: if it isn't tested by execution, it isn't true.
+
+## Durable identity (0071)
+
+`Demo(db=factory)` selects SQL-backed account/social-link snapshots and device
+rows. `identity_store.py` rejects stale writes using a revision counter;
+`device_store.py` locks per player for device creation/revocation and updates
+activity conditionally. `scripts/import_identity.py` performs an explicit atomic
+file cutover into an empty database. No implicit restore runs on boot. Wallet
+books and other unported state remain file-backed.
+
+## Signup and payment minimums (0072)
+
+Manual accounts select PF/CPF or PJ/CNPJ. Social accounts derive identity from
+signed provider/subject claims and sign in directly, collecting Pix only at
+withdrawal. The browser consumes a one-time social handoff; the obsolete CPF
+completion flow is removed. Document validators live in `demo/payments.py`
+and `web/lib/validation.js`; they cover numeric/alphanumeric CNPJ check digits.
+`GET /api/deposit/limits` supplies authenticated provider/network minimums.
+The UI gates and clamps amounts; provider clients enforce them again before
+charge creation. Display quotes cache briefly; invoice creation refreshes the
+NOWPayments quote. See decision 0072 for validation, privacy and flow limits.

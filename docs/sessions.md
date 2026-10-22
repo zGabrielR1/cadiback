@@ -151,3 +151,25 @@ the list marks the caller, logout ends one device only, a stranger cannot
 revoke by id, "revoke others" keeps the caller, the 20-row cap, the throttled
 touch, expiry pruning, a 0069-shaped token without a session id, an operator
 reset emptying the list, and the four routes answering 401 without a token.
+
+## Durable identity storage (decision 0071)
+
+With `DATABASE_URL` configured, device sessions live in `player_devices`, and
+player profiles (including revocation epochs) plus social links live in
+`identity_documents`. Local runs without a database still use files. Account
+changes use revision checks; concurrent stale writes are refused with a retry
+message. Session touches cannot resurrect a revoked row.
+
+Apply `supabase/migrations/20261022000000_persistent_identity.sql` before
+starting this version against Postgres. A configured database that is unavailable
+or missing this migration stops startup; it never silently reverts to files.
+Keep `PLAYER_SESSION_SECRET` or `BETTER_AUTH_SECRET` stable across deployments.
+
+For an existing instance, stop identity writes, snapshot its current identity
+files, then validate with `python -m scripts.import_identity --data-dir <snapshot>`.
+Add `--apply` for the atomic one-time import into an empty identity database.
+Never automatically import stale files on boot.
+
+The wallet and history are still file-backed; persisting identity alone does
+not make balances durable. Health reports `storage.identity` and `storage.wallet`
+separately. See `decisions/0071-persistent-player-identity.md` for cutover and limits.

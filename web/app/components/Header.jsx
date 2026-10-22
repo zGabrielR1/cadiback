@@ -28,46 +28,20 @@ export default function Header({
       <div className="topbar">
         <span>18+ · Jogue com responsabilidade</span>
         <span>
-          Candibet · <b>Réplica 1:1 de Alta Fidelidade</b>
+          <b>Seu jogo. Seu ritmo.</b>
         </span>
       </div>
 
       <header className="sticky">
         <div className="hwrap">
-          <button className="logo" aria-label="Candibet início" onClick={() => onCasino("Todos")}>
+          <button className="logo" aria-label="Candibet início" onClick={() => onSport(false)}>
             Candi<span>bet</span>
           </button>
           <nav className="main">
-            <button
-              className={view === "casino" && casinoCat === "Todos" ? "on" : ""}
-              onClick={() => onCasino("Todos")}
-            >
-              Cassino
-            </button>
-            <button
-              className={view === "casino" && casinoCat === "Slots" ? "on" : ""}
-              onClick={() => onCasino("Slots")}
-            >
-              Slots
-            </button>
-            <button
-              className={view === "casino" && casinoCat === "Crash" ? "on" : ""}
-              onClick={() => onCasino("Crash")}
-            >
-              Crash
-            </button>
-            <button
-              className={view === "sport" && !liveOnly ? "on" : ""}
-              onClick={() => onSport(false)}
-            >
-              Esportes
-            </button>
-            <button
-              className={view === "sport" && liveOnly ? "on" : ""}
-              onClick={() => onSport(true)}
-            >
-              Ao Vivo
-            </button>
+            <button className={view === "sport" && !liveOnly ? "on" : ""} onClick={() => onSport(false)}>Esportes</button>
+            <button className={view === "sport" && liveOnly ? "on" : ""} onClick={() => onSport(true)}><span className="live-dot" /> Ao vivo</button>
+            <button className={view === "casino" ? "on" : ""} onClick={() => onCasino("Todos")}>Cassino {!player ? <span className="nav-lock" aria-label="Login necessário">↗</span> : null}</button>
+            {player ? <button className={view === "casino" && casinoCat === "Slots" ? "on" : ""} onClick={() => onCasino("Slots")}>Slots</button> : null}
           </nav>
           <div className="spacer" />
           <input
@@ -96,8 +70,8 @@ export default function Header({
           <button className="ghost" onClick={onTheme}>
             {theme === "light" ? "Escuro" : "Claro"}
           </button>
-          <button className="ghost" onClick={onCash}>
-            Caixa
+          <button className="ghost header-cash" onClick={onCash}>
+            Depositar
           </button>
           <button onClick={onAccount}>{player ? "Minha conta" : "Entrar"}</button>
         </div>

@@ -22,6 +22,9 @@ No real money moves; no commercial legal or regulatory obligations.
 | `auth-server/` | The self-hosted Better Auth process (TypeScript, stateless): Google/Facebook/Apple, the signed identity bridge. Started beside Python in the container and proxied same-origin at `/api/betterauth/*` (decision 0066) |
 | `demo/betterauth_proxy.py` | Same-origin proxy to the auth sidecar: public host as `X-Forwarded-Host`, every `Set-Cookie` preserved |
 | `demo/player_session.py` | Signed player sessions (decisions 0069, 0070): the `ps1.…` token every player route derives the account from, the live-session registry behind per-device logout, and epoch revocation |
+| `demo/device_store.py`, `demo/identity_store.py` | Database device allowlist and versioned account/social-link persistence (decision 0071) |
+| `scripts/import_identity.py`, `demo/test_persistence.py` | Explicit one-time identity cutover and deployment/concurrency regressions |
+| `demo/test_signup_cashier.py`, `web/lib/signup-cashier.test.mjs` | PF/PJ signup, direct social login, withdrawal Pix and deposit minimum regressions (0072) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
 | `Dockerfile`, `render.yaml` | The deploy: one container, two processes (Python + the Node auth server), built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
@@ -31,7 +34,7 @@ No real money moves; no commercial legal or regulatory obligations.
 | `docs/needed-from-owner.md` | The short list of what is waiting on the owner (Asaas prod keys, OAuth provider credentials) |
 | `docs/mail.md` | Email via Resend: credentials, the console fallback, the test-send |
 | `docs/turnstile.md` | Cloudflare Turnstile: credentials, the no-op-when-unconfigured rule, the widget domains |
-| `docs/oauth.md` | Social login (Better Auth): the sidecar/proxy/bridge shape, Google/Facebook/Apple setup, the CPF-completion flow, the no-op-when-unconfigured rule |
+| `docs/oauth.md` | Social login (Better Auth): the sidecar/proxy/bridge shape, Google/Facebook/Apple setup, direct social signup, the no-op-when-unconfigured rule |
 | `docs/supabase.md` | Supabase Postgres + Vercel: credentials, env vars, cutover checklist |
 | `docs/sessions.md` | Signed player sessions (decisions 0069, 0070): the token, the live-session list, revocation, the signing key |
 | `supabase/` | Postgres schema as migrations (decision 0049); applied in the dashboard, mirrored by `demo/models.py` |
