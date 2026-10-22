@@ -69,6 +69,7 @@ export default function CashierModal({
   return (
     <div
       className={"modal" + (open ? " open" : "")}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="Caixa"

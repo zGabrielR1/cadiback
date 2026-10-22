@@ -1096,3 +1096,9 @@ footer { padding-block: 36px; margin-top: 30px; color: var(--mut); font-size: 11
   .bottomnav button { font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+.sx-feed-error { display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--gold); border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; background: var(--card); }
+.sx-feed-error strong { font-size: 13px; }
+.sx-feed-error p { margin: 6px 0 0; color: var(--mut); font-size: 12px; line-height: 1.6; }
+.sx-feed-error button { flex-shrink: 0; font-size: 12px; }
+@media (max-width: 640px) { .sx-feed-error { align-items: stretch; flex-direction: column; gap: 12px; } }

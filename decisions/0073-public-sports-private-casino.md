@@ -24,3 +24,11 @@ or the owner's explicit approval of losing that account. Saved Vercel tokens
 resolve to an account without access to cadiback-web; deployment needs the
 owning account or its Git integration. Credentials and unrelated untracked
 artifacts must not be committed.
+
+Follow-up reliability pass: sports polling now retains the last successful board,
+shows an error/retry and update time, refuses malformed payloads and ignores late
+responses after leaving sports. Polls run sequentially. Dialogs trap keyboard
+focus, restore the opener, lock scrolling and close with Escape; details are
+included. Logout clears local UI immediately while server revocation finishes.
+HTML/malformed-JSON API refusals retain HTTP status for session-expiry handling.
+Public deployments remain unchanged pending the documented cutover/access gates.

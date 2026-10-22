@@ -53,3 +53,18 @@ test("remember choice removes the other credential; logout clears both stores", 
   setPlayerSession(null);
   assert.equal(getPlayerSession(), null);
 });
+
+test("HTML and malformed JSON refusals retain status without leaking server content", async (t) => {
+  const original = { window: globalThis.window, fetch: globalThis.fetch };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.window = { localStorage: storage(), sessionStorage: storage() };
+  for (const status of [401, 503]) {
+    for (const contentType of ["text/html", "application/json"]) {
+      globalThis.fetch = async () => new Response("internal proxy details", {
+        status, headers: { "content-type": contentType },
+      });
+      await assert.rejects(api("GET", "/api/player"), (error) =>
+        error.status === status && !error.message.includes("internal proxy details"));
+    }
+  }
+});

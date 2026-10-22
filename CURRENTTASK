@@ -1,3 +1,16 @@
+CURRENTTASK: General storefront reliability and accessibility improvements.
+
+## STATUS (2026-10-22)
+
+- Rechecked both public sites: neither serves the new guest/casino UI. Saved Vercel credentials still return project-not-found, and GitHub reports no deployment integration status. The prior account-loss confirmation remains unanswered; no production push/restart was performed.
+- Sports keeps its last successful feed during outages, displays an explicit failure/retry state and last-update time, validates the response shape and ignores responses after leaving the view. Polls run sequentially rather than overlapping; duplicate navigation fetches removed.
+- Logout clears the local account/casino immediately while the already-dispatched server revocation finishes. Non-JSON and malformed-JSON API errors preserve HTTP status so confirmed 401 expiry can clear stale sessions, without exposing proxy response content.
+- Dialogs focus their input/control, contain keyboard focus, restore the opener, and close with Escape; game details now also lock background scrolling and close with Escape. Game theater has explicit dialog semantics.
+- Node 10/10, frame 50/50, demo regression suite 426/426, production build, anonymous HTML export check, structure verification and deploy preflight all passed. Interactive browser verification remains blocked by the MCP profile lock.
+- Prior combined release fa863eb remains local. Safe deployment still requires preserving the one live file-backed non-test account or explicit approval to recreate it, plus Vercel owning-account access. Additive identity schema is already prepared; no account data imported or removed.
+
+---
+
 CURRENTTASK: Public sports, signed-in casino UI and release (0073).
 
 ## STATUS (2026-10-22)

@@ -1,5 +1,12 @@
 # PROGRESS
 
+## IMPLEMENTED LOCALLY (2026-10-22 — storefront recovery and accessibility)
+
+- Visible sports-feed failure/retry with retained last-successful fixtures and update time; sequential polling ignores departed-view responses and rejects malformed feeds. Duplicate navigation fetches removed.
+- Immediate local logout while server revocation completes; proxy HTML/malformed-JSON refusals preserve status for session-expiry handling without exposing response bodies. Node 10/10, frame 50/50, demo suite 426/426, production build, anonymous HTML check, structure verification and deploy preflight passed.
+- Dialog input focus, keyboard containment, opener restoration and consistent Escape/scroll locking, including game details; theater dialog semantics added. Interactive verification remains blocked by MCP browser profile lock.
+- Public hosts still serve the previous release. No production push/restart/deploy: live account preservation/recreation decision and Vercel owning-project access remain unresolved.
+
 ## IMPLEMENTED LOCALLY (2026-10-22 — public sports and casino login, 0073)
 
 - Sports-first anonymous landing, immediate sports feed and contextual search; dismissible lower-left login card. Casino navigation opens login and all casino surfaces require a server-verified matching profile. Session loss clears games; stale asynchronous launches are ignored. Backend access rules unchanged.

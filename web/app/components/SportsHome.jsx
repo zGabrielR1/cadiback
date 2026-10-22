@@ -355,7 +355,7 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
   );
 }
 
-export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive, query = "" }) {
+export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive, query = "", loading = false, error = "", updatedAt = null, onRetry }) {
   const [sport, setSport] = useState(null);
   const [date, setDate] = useState("all");
   const [league, setLeague] = useState("");
@@ -451,6 +451,12 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
           {featured ? <><p>{featured.competition}</p><div className="sx-feature-teams"><b>{featured.home}</b><span>{isLive(featured) ? `${featured.home_score ?? "–"} : ${featured.away_score ?? "–"}` : "VS"}</span><b>{featured.away}</b></div><small>{isLive(featured) ? "Ao vivo · " + liveLabel(featured, nowMs) : kickLabel(featured.kickoff)}</small></> : <p>As partidas disponíveis aparecerão aqui.</p>}
         </div>
       </SpotlightCard>
+      {error ? (
+        <section className="sx-feed-error" role="status">
+          <div><strong>{sports ? "Atualização indisponível" : "Não conseguimos carregar as partidas"}</strong><p>{error}{sports ? " As últimas partidas carregadas continuam visíveis." : ""}</p></div>
+          <button className="ghost" disabled={loading} onClick={onRetry}>{loading ? "Atualizando…" : "Tentar novamente"}</button>
+        </section>
+      ) : null}
       <div className="sporthead">
         <div>
           <h1>{liveOnly ? "Apostas ao Vivo" : "Apostas Esportivas"}</h1>
@@ -465,7 +471,8 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
             <>
               <span className="badge b-ok">{liveCount} ao vivo</span>
               <span style={{ color: "var(--mut)", fontSize: 11.5 }}>
-                fonte: {sports.source}
+                {loading ? "Atualizando… · " : ""}fonte: {sports.source}
+                {updatedAt ? " · Atualizado às " + new Date(updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
               </span>
             </>
           ) : (
@@ -569,7 +576,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
 
           <p style={{ fontSize: 11.5, color: "var(--mut)", marginTop: 12 }}>{sports.note}</p>
         </>
-      ) : <div className="sx-loading" role="status">Carregando calendário e mercados…</div>}
+      ) : !error ? <div className="sx-loading" role="status">Carregando calendário e mercados…</div> : null}
       <details className="sx-guide"><summary>Entenda os mercados e as cotações</summary><p><b>1 · X · 2:</b> vitória da casa, empate ou vitória do visitante. <b>Total:</b> mais ou menos que a linha indicada. <b>Dupla chance:</b> dois resultados na mesma seleção. <b>Empate anula:</b> devolução em caso de empate.</p><p>As cotações identificadas como Modelo são simuladas; Provedor indica preços publicados pela fonte. O retorno potencial inclui o valor apostado. Partidas encerradas exibem resultados e não aceitam seleções.</p></details>
     </>
   );

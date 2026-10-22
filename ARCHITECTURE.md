@@ -60,6 +60,7 @@ demo/
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier
     ├── app/components/SportsHome.jsx   sport tabs, country→league groups, live scoreboard + odds
+    ├── lib/useSportsFeed.js           sequential refresh, visible retry and last-successful board
     ├── app/components/CasinoHome.jsx   lobby: unified cards + official demos
     ├── app/globals.css     dark default + light toggle
     └── lib/api.js          shared fetch helper

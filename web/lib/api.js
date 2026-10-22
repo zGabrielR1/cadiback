@@ -137,13 +137,22 @@ export async function api(method, path, body) {
     // "JSON.parse: unexpected character at line 1 column 1".
     const type = r.headers.get("content-type") || "";
     if (!type.includes("application/json")) {
-      throw new Error(
+      const error = new Error(
         `resposta inesperada do servidor (HTTP ${r.status}, ${type || "sem content-type"})`
       );
+      error.status = r.status;
+      throw error;
     }
-    const j = await r.json();
+    let j;
+    try {
+      j = await r.json();
+    } catch (cause) {
+      const error = new Error(`resposta inválida do servidor (HTTP ${r.status})`);
+      error.status = r.status;
+      throw error;
+    }
     if (!r.ok) {
-      const error = new Error(j.error || "HTTP " + r.status);
+      const error = new Error(j?.error || "HTTP " + r.status);
       error.status = r.status;
       throw error;
     }

@@ -5,6 +5,7 @@ export default function DetailModal({ game, isFav, onPlay, onToggleFav, onClose 
   return (
     <div
       className={"modal" + (game ? " open" : "")}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="Detalhes do jogo"

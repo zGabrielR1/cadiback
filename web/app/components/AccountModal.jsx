@@ -118,6 +118,7 @@ export default function AccountModal({
   return (
     <div
       className={"modal" + (open ? " open" : "")}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={title}

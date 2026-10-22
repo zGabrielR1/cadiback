@@ -6,6 +6,7 @@ import { validateCPF, validateCNPJ, validateEmail, validateName, validatePasswor
 import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.mjs";
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
+import { useSportsFeed } from "../lib/useSportsFeed";
 import CasinoHome from "./components/CasinoHome";
 import SportsHome from "./components/SportsHome";
 import { betIdentity } from "../lib/sports.mjs";
@@ -51,7 +52,8 @@ export default function Page() {
   const [liveOnly, setLiveOnly] = useState(false);
   const [catalog, setCatalog] = useState(null);
   const [query, setQuery] = useState("");
-  const [sports, setSports] = useState(null);
+  const sportsFeed = useSportsFeed(view === "sport");
+  const { sports } = sportsFeed;
   const [current, setCurrent] = useState(null);
   const [activeOfficialGame, setActiveOfficialGame] = useState(null);
   const [officialToken, setOfficialToken] = useState(null);
@@ -139,24 +141,53 @@ export default function Page() {
   const [cryptoCharge, setCryptoCharge] = useState(null);
   const [cryptoCoin, setCryptoCoin] = useState("");
 
-  const anyModal = cashOpen || acctOpen || !!activeOfficialGame;
+  const anyModal = cashOpen || acctOpen || !!activeOfficialGame || !!detailGame;
   useEffect(() => {
     if (!anyModal) return undefined;
+    const previousFocus = document.activeElement;
+    const dialog = document.querySelector(".game-modal, .modal.open");
+    const focusable = () => [...(dialog?.querySelectorAll(
+      'a[href], button, input:not([type="hidden"]), select, textarea, iframe, [tabindex]'
+    ) || [])].filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
+    const focusFirst = () => (focusable()[0] || dialog)?.focus({ preventScroll: true });
+    const frame = requestAnimationFrame(() => {
+      const input = dialog?.querySelector('input:not([type="hidden"]):not(:disabled)');
+      if (input) input.focus({ preventScroll: true });
+      else focusFirst();
+    });
+    const onFocus = (event) => {
+      if (dialog && !dialog.contains(event.target)) focusFirst();
+    };
     const onKey = (e) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         if (activeOfficialGame) setActiveOfficialGame(null);
         else if (cashOpen) setCashOpen(false);
-        else setAcctOpen(false);
+        else if (acctOpen) setAcctOpen(false);
+        else setDetailGame(null);
+      }
+      if (e.key === "Tab") {
+        const items = focusable();
+        if (!items.length) { e.preventDefault(); dialog?.focus(); return; }
+        if (e.shiftKey && document.activeElement === items[0]) {
+          e.preventDefault(); items.at(-1).focus();
+        } else if (!e.shiftKey && document.activeElement === items.at(-1)) {
+          e.preventDefault(); items[0].focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);
+    document.addEventListener("focusin", onFocus);
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("keydown", onKey);
+      document.removeEventListener("focusin", onFocus);
       document.body.style.overflow = previous;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
-  }, [anyModal, cashOpen, activeOfficialGame]);
+  }, [anyModal, cashOpen, acctOpen, activeOfficialGame, detailGame]);
 
   // Poll the open Pix charge until Asaas confirms it — the webhook may not
   // reach a local instance, and the server settles idempotently, so a poll
@@ -346,14 +377,6 @@ export default function Page() {
   }, [player, refresh]);
 
   useEffect(() => {
-    if (view !== "sport") return undefined;
-    const load = () => api("GET", "/api/sports").then(setSports).catch(() => {});
-    load();
-    const id = setInterval(load, 15000);
-    return () => clearInterval(id);
-  }, [view]);
-
-  useEffect(() => {
     if (authenticated && pendingCasino) {
       setCasinoCat(pendingCasino);
       setPendingCasino(null);
@@ -371,9 +394,6 @@ export default function Page() {
   const go = (next) => {
     if (next !== view) setQuery("");
     setView(next);
-    if (next === "sport" && !sports) {
-      api("GET", "/api/sports").then(setSports).catch((e) => setMessage(e.message));
-    }
     if (next === "account" || next === "promos") refresh();
     window.scrollTo(0, 0);
   };
@@ -409,9 +429,7 @@ export default function Page() {
   const logout = async () => {
     // decision 0070: end this device on the server too. The local clear runs
     // even if the call fails — a dead token still ends the local session.
-    try {
-      await api("POST", "/api/player/logout");
-    } catch (e) {}
+    const request = api("POST", "/api/player/logout").catch(() => {});
     setPlayerSession(null);
     setPlayer(null);
     setProfile(null);
@@ -423,6 +441,7 @@ export default function Page() {
     setPendingCasino(null);
     setView("sport");
     window.scrollTo(0, 0);
+    await request;
   };
 
   const onQuery = (value) => {
@@ -1092,6 +1111,10 @@ export default function Page() {
           <SportsHome
             query={query}
             sports={sports}
+            loading={sportsFeed.loading}
+            error={sportsFeed.error}
+            updatedAt={sportsFeed.updatedAt}
+            onRetry={sportsFeed.retry}
             liveOnly={liveOnly}
             onSelectBet={selectBet}
             selectedBets={selectedBets}

@@ -155,6 +155,10 @@ export default function GameTheater({
   return (
     <div
       className="game-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={game.title}
+        tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
