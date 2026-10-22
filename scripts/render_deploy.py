@@ -622,16 +622,26 @@ def get_env_vars(service_id: str, key: str) -> list[dict]:
     some rows arrive as `{"envVar": {…}}`; every shape is unwrapped here so a
     merge never silently drops a variable.
     """
-    answer = _call(f"/services/{service_id}/env-vars", key)
-    rows = answer.get("envVars") if isinstance(answer, dict) else answer
     out: list[dict] = []
-    for row in rows or []:
-        if not isinstance(row, dict):
-            continue
-        env = row.get("envVar") if isinstance(row.get("envVar"), dict) else row
-        name = str(env.get("key") or "").strip()
-        if name:
-            out.append({"key": name, "value": env.get("value", "")})
+    cursor = ""
+    while True:
+        from urllib.parse import urlencode
+        query = urlencode({"limit": 100, **({"cursor": cursor} if cursor else {})})
+        answer = _call(f"/services/{service_id}/env-vars?{query}", key)
+        rows = answer.get("envVars") if isinstance(answer, dict) else answer
+        for row in rows or []:
+            if not isinstance(row, dict):
+                continue
+            env = row.get("envVar") if isinstance(row.get("envVar"), dict) else row
+            name = str(env.get("key") or "").strip()
+            if name:
+                out.append({"key": name, "value": env.get("value", "")})
+        if len(rows or []) < 100:
+            break
+        following = rows[-1].get("cursor", "")
+        if not following or following == cursor:
+            raise RenderError("cannot read complete environment; refusing partial merge")
+        cursor = following
     return out
 
 
@@ -787,10 +797,8 @@ def run(key: str, repo: str, force: bool,
         set_env_vars(service_id, key, env_list)
         print(f"env:     replaced with {len(env_list)} variable(s)")
     else:
-        try:
-            current = get_env_vars(service_id, key)
-        except RenderError:
-            current = []
+        # A failed read cannot safely become a full environment replacement.
+        current = get_env_vars(service_id, key)
         merged = merge_env_vars(current, env_list)
         set_env_vars(service_id, key, merged)
         print(f"env:     {len(merged)} variable(s), "

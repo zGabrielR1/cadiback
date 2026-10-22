@@ -1,3 +1,15 @@
+CURRENTTASK: Deploy the approved combined release.
+
+## STATUS (2026-10-22)
+
+- Owner explicitly approved recreating the existing file-backed account and proceeding with deployment. No further account-loss approval is required for this cutover.
+- Fixed Render environment pagination: read all pages before merge, refuse replacement if the read fails. Three deployment regressions passed. Live service has 28 settings; previous default API page exposed only 20. Existing signing/provider credentials are preserved.
+- Applying/preparing the identity cutover against the database DSN actually configured on Render; empty destination initialized with an explicit import receipt. No existing database identities are overwritten.
+- Saved Vercel credentials still cannot access cadiback-web (404). Proceed with complete storefront/backend on cadiback.onrender.com; publishing the Vercel origin separately still needs project access.
+- Production Git push/deploy and smoke checks in progress. Windows Git Schannel could not acquire credentials for HTTPS; per-command OpenSSL transport works with certificate verification enabled.
+
+---
+
 CURRENTTASK: General storefront reliability and accessibility improvements.
 
 ## STATUS (2026-10-22)

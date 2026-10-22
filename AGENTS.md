@@ -27,6 +27,7 @@ No real money moves; no commercial legal or regulatory obligations.
 | `demo/test_signup_cashier.py`, `web/lib/signup-cashier.test.mjs` | PF/PJ signup, direct social login, withdrawal Pix and deposit minimum regressions (0072) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
 | `web/lib/useSportsFeed.js` | Sequential sports refresh, retry/error state and last-successful board retention |
+| `scripts/test_render_deploy.py` | Environment pagination and fail-closed credential-preservation regressions |
 | `Dockerfile`, `render.yaml` | The deploy: one container, two processes (Python + the Node auth server), built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |
 | `docs/deploy-easy.md` | Ship it: gates, the two paths, smoke checks, triage |

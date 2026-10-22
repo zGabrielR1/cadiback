@@ -1,5 +1,11 @@
 # PROGRESS
 
+## RELEASE IN PROGRESS (2026-10-22 ? owner-approved cutover)
+
+- Owner approved recreating the sole file-backed account. Render destination identity schema/cutover is prepared without overwriting any database identities.
+- Fixed environment pagination and unsafe fallback-on-read-error before deployment; all 28 existing service settings, including signing/Facebook credentials, are preserved. Deployment regressions 3/3 passed.
+- Vercel project remains inaccessible to saved tokens. Deploy complete frontend/backend to Render, then smoke-check; Vercel publication remains a separate access blocker.
+
 ## IMPLEMENTED LOCALLY (2026-10-22 — storefront recovery and accessibility)
 
 - Visible sports-feed failure/retry with retained last-successful fixtures and update time; sequential polling ignores departed-view responses and rejects malformed feeds. Duplicate navigation fetches removed.
