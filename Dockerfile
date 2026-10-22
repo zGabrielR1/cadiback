@@ -7,7 +7,7 @@
 #   docker build -t candibet .
 #   docker run -p 8080:8080 candibet
 #
-# Stdlib-only backend, so there is no pip install step.
+# Postgres identity and sessions require the Python dependencies below.
 #
 # The storefront is built INSIDE the image, from source. That is what makes a
 # remote host work with no help from the build machine: the deploy is the
@@ -53,6 +53,11 @@ ENV PYTHONUNBUFFERED=1 \
     NODE_ENV=production
 
 WORKDIR /app
+
+# Keep runtime database dependencies in the image, independently of the
+# developer's environment. The durable identity path fails closed without them.
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Node for the auth sidecar. Better Auth's dependency graph needs Node >= 22
 # (Kysely pins that floor) and Debian's nodejs is older, so install the official

@@ -84,7 +84,7 @@ DOCKER_BUILD = {"env": "docker", "dockerContext": ".", "dockerfilePath":
                 SERVICE["dockerfilePath"]}
 
 # Files the image must be able to build and run without anything else.
-REQUIRED = ["Dockerfile", ".dockerignore", "render.yaml",
+REQUIRED = ["Dockerfile", ".dockerignore", "render.yaml", "requirements.txt",
             "web/package.json", "web/package-lock.json", "web/next.config.js",
             "web/app/page.jsx", "frame/__init__.py", "demo/server.py",
             "probes/provider-demos.json"]
@@ -93,7 +93,7 @@ REQUIRED = ["Dockerfile", ".dockerignore", "render.yaml",
 # Dockerfile's first stage builds the storefront from these.
 MUST_REACH_IMAGE = ["web/app", "web/lib", "web/public",
                     "web/package.json", "web/package-lock.json",
-                    "web/next.config.js", "frame", "demo", "probes"]
+                    "web/next.config.js", "frame", "demo", "probes", "requirements.txt"]
 
 
 def _patterns(name: str) -> list[str]:
@@ -141,6 +141,8 @@ def check_tree() -> int:
             problems.append("Dockerfile does not copy the storefront from a "
                             "build stage: the export would have to be committed, "
                             "and the deploy would depend on the build machine")
+        if "pip install" not in dockerfile or "-r requirements.txt" not in dockerfile:
+            problems.append("Dockerfile must install requirements.txt for database identity")
 
     committed = _tracked("web/out")
     if committed:

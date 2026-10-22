@@ -6,6 +6,7 @@ CURRENTTASK: Deploy the approved combined release.
 - Fixed Render environment pagination: read all pages before merge, refuse replacement if the read fails. Three deployment regressions passed. Live service has 28 settings; previous default API page exposed only 20. Existing signing/provider credentials are preserved.
 - Applying/preparing the identity cutover against the database DSN actually configured on Render; empty destination initialized with an explicit import receipt. No existing database identities are overwritten.
 - Saved Vercel credentials still cannot access cadiback-web (404). Proceed with complete storefront/backend on cadiback.onrender.com; publishing the Vercel origin separately still needs project access.
+- Git push through 698b54f succeeded. Render built dep-dbd6ch3ncjis73egj1b0 but startup failed because the image never installed requirements.txt (sqlalchemy missing); the old instance was retained. Added runtime pip installation and a deployment preflight guard.
 - Render database cutover prepared and all 28 environment values preserved. Production push is waiting on GitHub device sign-in: Windows credential store is unavailable, cached credentials are absent, and GCM’s own TLS request also fails in this session. A standard Git Credential Manager device flow is waiting; its token remains in process memory and will push main on successful authorization. No production deployment/restart yet. Vercel CLI also times out; saved project tokens remain unauthorized. No further account-reset approval needed.
 
 ---
