@@ -1,3 +1,17 @@
+CURRENTTASK: Combined release live on Render; publish the Vercel frontend.
+
+## STATUS (2026-10-22)
+
+- PUSHED: all platform changes and runtime dependency fix are on main through 42fad4dc77707fd8f0eb67828d555d036457fd8a.
+- LIVE: Render deploy dep-dbd6gsrbc2fs73a1116g at https://cadiback.onrender.com. Full sports-first storefront and backend are deployed. Anonymous HTML has the sports board/login invitation and no casino lobby; health is ok; identity storage is database; unauthenticated player access returns 401; Google/Facebook and configured PIX/crypto rails are present; live sports returned 320 fixtures from Flashscore.
+- Owner approved the fresh identity cutover. Destination schema/import receipt were prepared against Render's actual database DSN without overwriting existing database identities. Signing/provider settings were preserved (all 28 env vars).
+- Initial build 698b54f failed startup because the Dockerfile omitted requirements.txt installation. Fixed runtime pip installation and added a preflight guard; subsequent build/startup passed. Three deployment regressions, six deployment/env tests combined, structure checks and deploy preflight pass. Linux wheels are available for the Python 3.14 runtime.
+- Vercel domain still serves the previous frontend. Saved tokens lack project access. Official CLI device sign-in is now waiting for the owning Vercel account; credentials will be stored in the ignored envs/.env.vercel-cli directory. Git authorization remains available in process memory through verification, avoiding additional sign-in prompts for corrections.
+- Wallet/history and other unported stores remain files on one free Render instance; identity/device persistence does not make wallet state durable or permit wallet replicas.
+- Documentation-only status commit uses [skip render] so publishing this record does not restart the live service. No real payment/invoice/withdrawal was created during release checks.
+
+---
+
 CURRENTTASK: Deploy the approved combined release.
 
 ## STATUS (2026-10-22)

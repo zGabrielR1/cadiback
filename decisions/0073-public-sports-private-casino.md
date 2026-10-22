@@ -32,3 +32,10 @@ focus, restore the opener, lock scrolling and close with Escape; details are
 included. Logout clears local UI immediately while server revocation finishes.
 HTML/malformed-JSON API refusals retain HTTP status for session-expiry handling.
 Public deployments remain unchanged pending the documented cutover/access gates.
+
+Release: the owner approved recreating the sole live file-backed account.
+The combined application is live on Render at commit 42fad4d, deployment
+`dep-dbd6gsrbc2fs73a1116g`; anonymous HTML, storage/health, sports and auth-provider
+checks passed. Docker now installs requirements.txt so the database seam can
+start, and deployment configuration reads all remote environment pages before
+merging. The Vercel hostname still needs its owning-account authorization.

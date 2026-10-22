@@ -1,5 +1,12 @@
 # PROGRESS
 
+## LIVE ON RENDER (2026-10-22 — combined release)
+
+- Deploy dep-dbd6gsrbc2fs73a1116g serves commit 42fad4d at https://cadiback.onrender.com. Includes durable identity/device sessions, PF/PJ validation/masks, direct social login, withdrawal Pix registration, provider deposit minimums, public sports/casino UI login, storefront revamp and reliability/accessibility improvements.
+- Live read-only checks passed: public sports and guest login prompt, hidden anonymous casino lobby, healthy database identity storage, Google/Facebook provider listing, configured payment rails, 320 sports fixtures, and protected player route 401. No real financial action was tested.
+- Runtime dependency installation was missing from the Docker image; added pip installation of requirements.txt and a deploy preflight guard. The first failed update retained the old service; the corrected deployment is live. Existing 28 remote settings/signing secrets preserved and approved fresh identity cutover initialized without overwriting database identities.
+- Vercel origin remains old pending owning-account CLI device authorization. Wallet/history remain file-backed; deployment only made identity/device data durable. Documentation status is pushed with [skip render] to avoid restarting the verified live instance.
+
 ## RELEASE IN PROGRESS (2026-10-22 ? owner-approved cutover)
 
 - Owner approved recreating the sole file-backed account. Render destination identity schema/cutover is prepared without overwriting any database identities.
