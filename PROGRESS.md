@@ -1,5 +1,12 @@
 # PROGRESS
 
+## LIVE ON BOTH HOSTS (2026-10-22 — Vercel publication complete)
+
+- Vercel deployment dpl_AaHmNgaGZ6nV2mY6Zc3KJxZgBFvn is READY and serves https://cadiback-web.vercel.app. Complete updated backend/storefront remains live at https://cadiback.onrender.com (Render dep-dbd6gsrbc2fs73a1116g, code 42fad4d).
+- Public Vercel smoke checks passed: 200 sports-first UI and guest login prompt, absent anonymous casino lobby, healthy API proxy with database identity, Google/Facebook provider listing, configured payment rails, 320 sports fixtures and protected player 401. No financial action or new end-to-end social sign-in was performed.
+- Official CLI login restored project access; new credentials stay in ignored envs/.env.vercel-cli/auth.json. Existing linked project was deployed from web/ using --prod --yes and that global-config directory. No replacement project/domain or security setting changes.
+- Completion documentation is pushed with [skip render] to keep the verified live instance running. Wallet/history remain file-backed, as previously documented.
+
 ## LIVE ON RENDER (2026-10-22 — combined release)
 
 - Deploy dep-dbd6gsrbc2fs73a1116g serves commit 42fad4d at https://cadiback.onrender.com. Includes durable identity/device sessions, PF/PJ validation/masks, direct social login, withdrawal Pix registration, provider deposit minimums, public sports/casino UI login, storefront revamp and reliability/accessibility improvements.

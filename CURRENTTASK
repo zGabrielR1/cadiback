@@ -1,3 +1,16 @@
+CURRENTTASK: Combined release published and verified on both production hosts.
+
+## STATUS (2026-10-22)
+
+- COMPLETE: https://cadiback-web.vercel.app now serves the updated frontend. Vercel deployment dpl_AaHmNgaGZ6nV2mY6Zc3KJxZgBFvn is READY and aliased to the production domain. Deployment came from the existing linked web/ project, without creating a replacement project.
+- Live anonymous Vercel checks passed: HTTP 200 with public sports and guest login prompt, no casino lobby; API proxy health ok with database identity; Google/Facebook provider listing; configured OAuth/PIX/crypto; 320 sports fixtures; protected player route 401. No real invoice, deposit or withdrawal was created. Interactive browser QA remains unavailable; these were public HTTP/HTML/API checks, not a new end-to-end provider sign-in.
+- Backend/storefront remains live on Render deploy dep-dbd6gsrbc2fs73a1116g, code commit 42fad4d. All combined authentication, payment minimum, casino UI, revamp and reliability changes are published.
+- Fresh official Vercel CLI login restored project access. Working CLI credentials are in ignored envs/.env.vercel-cli/auth.json; old tokens in legacy env files were insufficiently scoped. Deploy from web/ with --prod --yes --global-config ../envs/.env.vercel-cli. Local CLI update-check cache warnings did not prevent the deployment.
+- Git main contains the release; documentation-only completion status uses [skip render] to avoid restarting the verified backend. No unrelated untracked files or credentials were committed. Git's temporary in-memory authorization is closed after the final status push.
+- Retained limitation: wallet/history and unported state remain files on the single free Render instance. Database identity/session persistence is verified; it is not wallet persistence.
+
+---
+
 CURRENTTASK: Combined release live on Render; publish the Vercel frontend.
 
 ## STATUS (2026-10-22)

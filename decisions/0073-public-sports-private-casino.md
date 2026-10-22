@@ -39,3 +39,9 @@ The combined application is live on Render at commit 42fad4d, deployment
 checks passed. Docker now installs requirements.txt so the database seam can
 start, and deployment configuration reads all remote environment pages before
 merging. The Vercel hostname still needs its owning-account authorization.
+
+Vercel publication completed: deployment `dpl_AaHmNgaGZ6nV2mY6Zc3KJxZgBFvn`
+is READY at https://cadiback-web.vercel.app. Public HTML and proxied health,
+config, providers, sports and protected-player checks passed. Fresh official CLI
+authorization restored access to the existing project. CLI credentials remain
+in ignored envs/.env.vercel-cli; no financial test transaction was created.
