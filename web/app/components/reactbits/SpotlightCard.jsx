@@ -268,12 +268,7 @@ const SpotlightCard = ({
     <div
       ref={rootRef}
       className={`spotlight-card${className ? ` ${className}` : ''}`}
-      style={{
-        '--spotlight-card-surface': palette.surface,
-        '--spotlight-card-border': palette.border,
-        '--spotlight-card-shadow': palette.shadow,
-        ...style
-      }}
+      style={{ ...style }}
       {...rest}
     >
       <span ref={lightRef} className="spotlight-card__light" aria-hidden="true" />

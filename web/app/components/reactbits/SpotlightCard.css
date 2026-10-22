@@ -3,7 +3,10 @@
   isolation: isolate;
   overflow: hidden;
   border-radius: 20px;
-  background-color: var(--card);
+  /* Transparent so the card composites over a wrapped element that already
+     carries its own background (e.g. the casino/sports heroes); the spotlight
+     light, grain and edge still blend on top of that background. */
+  background-color: transparent;
 }
 
 .spotlight-card__light,
