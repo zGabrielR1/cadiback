@@ -259,12 +259,12 @@ button.sx-teams:hover .sx-name { text-decoration: underline; text-underline-offs
   .sporthead h1 { font-size: 21px; margin: 0; }
   .sx-name { font-size: 12px; }
   .sporthead .ed-kicker, .sporthead .sub, .sportfeed > span:not(.badge) { display: none; }
-  .sx-toolbar { display: flex; gap: 8px; padding: 8px; margin-block: 10px; }
+  .ed-board .sx-toolbar { display: flex; gap: 8px; padding: 8px; margin-block: 10px; }
   .sx-toolbar > label:not(.sx-market-view), .sx-toolbar > .sx-filter { display: none; }
   .sx-toolbar.filters-open > label:not(.sx-market-view), .sx-toolbar.filters-open > .sx-filter { display: flex; }
   .sx-toolbar .sx-market-view { display: flex; flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 6px; font-size: 10px; }
   .sx-market-view select { min-width: 0; width: 100%; min-height: 44px; }
-  .mobile-filter-trigger, .mobile-live-filter { display: block; width: auto; flex: 0 0 auto; min-height: 44px; margin: 0; padding: 8px; font-size: 11px; background: var(--card); color: var(--ink); }
+  .sx-toolbar .mobile-filter-trigger, .sx-toolbar .mobile-live-filter { display: block; width: auto; flex: 0 0 auto; min-height: 44px; margin: 0; padding: 8px; font-size: 11px; background: var(--card); color: var(--ink); }
   .mobile-live-filter[aria-pressed="true"] { background: var(--acc); color: var(--on-acc); }
   .sx-controls > button { display: none; }
   .sx-controls { margin: 0 0 8px; }

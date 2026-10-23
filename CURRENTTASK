@@ -6,7 +6,7 @@ CURRENTTASK: Approved redesign and softer dark mode (0077).
 - Corner invitation compacts after exploration. Casino copy describes actual tasks and avoids unsupported fidelity/payment-speed claims.
 - Public sportsbook quotes validate current server fixtures/markets/prices; one leg per fixture. Inline changed-price review, errors and confirmed receipt; retries preserve request identity. See decision 0077.
 - Build, structure/preflight, 15 Node tests, 50 core tests, 431 demo tests, 90 responsive browser checks and mocked quote-review/lost-response/mobile-receipt tests pass. No live wager or payment QA.
-- Vercel preview READY: https://cadiback-id7ld6hls-memy2.vercel.app (deployment dpl_8BRZTyw2UxEoJ9FrXRpm47TnKudW; Vercel authentication enabled). Production remains the prior release: new UI and server must ship together. GitHub saved credentials unavailable; device sign-in requested from owner. Backend push/deploy and production promotion remain pending authentication. Remote admin aggregate before deploy: zero rounds, deposits, withdrawals or liabilities; health OK.
+- Vercel preview READY: https://cadiback-d3p0j0vww-memy2.vercel.app (deployment dpl_DHHr1QeE2RgpdHazAa7Y799Jbgcg; Vercel authentication enabled). Production remains the prior release: new UI and server must ship together. GitHub saved credentials unavailable; device sign-in requested from owner. Backend push/deploy and production promotion remain pending authentication. Remote admin aggregate before deploy: zero rounds, deposits, withdrawals or liabilities; health OK.
 
 ---
 
