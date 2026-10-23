@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Reveal from "./Reveal";
-import SpotlightCard from "./reactbits/SpotlightCard";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { filterFixtures, betIdentity, validMarkets } from "../../lib/sports.mjs";
+import BetBuilder from "./BetBuilder";
+import OddsButton from "./OddsButton";
 
 const SPORT_ORDER = [
   "soccer", "basketball", "tennis", "hockey", "volleyball", "futsal",
@@ -289,12 +289,12 @@ function Stats({ stats }) {
 /** One fixture row, Sofascore-shaped: state on the left, teams stacked with
  *  the score right-aligned, and the main market's odds in a fixed column.
  *  Extra markets (the total) expand under a "mais mercados" toggle. */
-function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite }) {
+function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite, onBuild, marketView }) {
   const [open, setOpen] = useState(false);
   const markets = pricedMarkets(f);
-  const primary = markets.find((m) => PRIMARY_KINDS.has(m.kind)) || markets[0];
-  const total = markets.find((m) => m.kind === TOTAL_KIND) || null;
-  const extras = markets.filter((m) => m !== primary && m !== total);
+  const primary = marketView === 'result' ? markets.find(m => PRIMARY_KINDS.has(m.kind)) || markets[0] : markets.find(m=>m.kind===marketView);
+  const extras = markets.filter((m) => m !== primary);
+  const TeamTag = (f.sport || 'soccer') === 'soccer' ? 'button' : 'div';
   const live = isLive(f);
   const final = isFinal(f);
   const home = f.home_score;
@@ -327,8 +327,9 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
         </span>
       ) : null}
       {m.selections.map((sel, i) => (
-        <button
+        <OddsButton
           key={sel}
+          price={m.prices[i]}
           className={"sx-odd" + (isPicked(m, sel) ? " on" : "")}
           disabled={final}
           aria-pressed={!!isPicked(m, sel)}
@@ -337,7 +338,7 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
         >
           <span className="sx-odd-tick">{tick(m.kind, i, m.selections)}</span>
           <span className="sx-odd-price">{m.prices[i].toFixed(2)}</span>
-        </button>
+        </OddsButton>
       ))}
     </div></div>
   );
@@ -358,7 +359,7 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
         )}
       </div>
 
-      <div className="sx-teams">
+      <TeamTag className="sx-teams" onClick={TeamTag==='button'?()=>onBuild(f.key):undefined} aria-label={TeamTag==='button'?`Ver partida: ${f.home} × ${f.away}`:undefined}>
         <div className={"sx-team" + (showScore && home != null && (away == null || home > away) ? " lead" : "")}>
           <span className="sx-name">{f.home}</span>
           {showScore ? <span className="sx-score">{home ?? "–"}</span> : null}
@@ -367,16 +368,18 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
           <span className="sx-name">{f.away}</span>
           {showScore ? <span className="sx-score">{away ?? "–"}</span> : null}
         </div>
-      </div>
+      </TeamTag>
 
       <div className="sx-markets">
         {primary ? renderOdds(primary) : <span className="sx-nomarket">mercados em atualização</span>}
-        {total ? renderOdds(total) : null}
+        <div className="sx-market-actions">
+        {(f.sport || 'soccer') === 'soccer' ? <button className="sx-build" onClick={() => onBuild(f.key)}>Criar Aposta <span aria-hidden="true">↗</span></button> : null}
         {extras.length > 0 || f.stats ? (
           <button className="sx-more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-            {open ? "menos mercados ▲" : "+" + extras.length + " mercados ▼"}
+            {open ? "Recolher ▲" : extras.length ? "+" + extras.length + " mercados ▼" : "Estatísticas ▼"}
           </button>
         ) : null}
+        </div>
       </div>
 
       {open ? (
@@ -397,8 +400,16 @@ function EventRow({ f, onSelectBet, selectedBets, nowMs, favorite, onFavorite })
   );
 }
 
-export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets, onLive, query = "", loading = false, error = "", updatedAt = null, onRetry, authenticated = false, onCasino }) {
+export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleBet, selectedBets, onLive, query = "", loading = false, error = "", updatedAt = null, onRetry, authenticated = false, onCasino, onExplore }) {
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderKey, setBuilderKey] = useState('');
+  const listScroll = useRef(0);
+  const openBuilder = key => { listScroll.current=window.scrollY; onExplore?.(); setBuilderKey(key || ''); setBuilderOpen(true); window.setTimeout(() => document.getElementById('sports-workspace')?.scrollIntoView({ block: 'start' }), 0); };
+  const closeBuilder = () => { setBuilderOpen(false); window.setTimeout(()=>window.scrollTo({top:listScroll.current,behavior:'instant'}),0); };
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [marketView, setMarketView] = useState('result');
   const [sport, setSport] = useState(null);
+  const [railCollapsed, setRailCollapsed] = useState(false);
   const [date, setDate] = useState("all");
   const [league, setLeague] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -453,18 +464,13 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
 
   const leagues = [...new Set(fixtures.filter(f => !activeSport || (f.sport || "soccer") === activeSport).map(f => f.competition).filter(Boolean))].sort();
   const shown = useMemo(() => filterFixtures(fixtures, { liveOnly, sport: activeSport, query, date, league, favoritesOnly, favorites, nowMs }), [fixtures, liveOnly, activeSport, query, date, league, favoritesOnly, favorites, nowMs]);
-  const featured = shown.find(f => !isFinal(f));
+  const featured = shown.find(f=>!isFinal(f)&&favorites.includes(f.key)) || [...shown.filter(f=>!isFinal(f))].sort((a,b)=>Object.keys(b.stats||{}).length-Object.keys(a.stats||{}).length)[0];
   const resetFilters = () => { setDate("all"); setLeague(""); setFavoritesOnly(false); };
 
-  // The editorial opening is the public storefront, not a results list: a
-  // live-only visit or a search returns straight to the board.
-  const editorial = !liveOnly && !query;
+  const showHighlight = !liveOnly && !query && !builderOpen;
   const featuredLive = featured ? isLive(featured) : false;
   const heroMarkets = featured ? pricedMarkets(featured) : [];
   const heroMarket = heroMarkets.find((m) => PRIMARY_KINDS.has(m.kind)) || heroMarkets[0] || null;
-  const stripSports = sportsShown.length > 0
-    ? sportsShown.slice(0, 6)
-    : ["soccer", "basketball", "tennis", "esports"];
   const heroPicked = (selection) =>
     !!heroMarket && !!selectedBets?.some((bet) =>
       betIdentity(bet) === betIdentity(betFor(featured, heroMarket, selection, 0))
@@ -508,47 +514,26 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
 
   return (
     <>
-      {editorial ? (
-        <>
-          <SpotlightCard className="sx-hero ed-hero" spotlightColor="#7bf5b4" intensity={0.16}>
-            <div className="ed-atmosphere" aria-hidden="true">
-              <span className="ed-orb ed-orb-a" />
-              <span className="ed-orb ed-orb-b" />
-              <span className="ed-hero-word">CANDIBET</span>
+      <nav id="sports-workspace" className="sports-workspace-nav" aria-label="Menu de apostas esportivas" onClick={onExplore}>
+        <button aria-pressed={!builderOpen} onClick={() => setBuilderOpen(false)}>Partidas e mercados</button>
+        <button aria-pressed={builderOpen} onClick={() => openBuilder()}>Criar Aposta</button>
+        <span>Estatísticas e seleções da partida</span>
+      </nav>
+      {builderOpen ? <BetBuilder key={builderKey} fixtures={fixtures} initialKey={builderKey} query={query} source={sports?.source} loading={loading} error={error} updatedAt={updatedAt} onRetry={onRetry} onUseSingleBet={onUseSingleBet} onBack={closeBuilder} /> : <>
+      {showHighlight && featured ? <button className="mobile-feature" onClick={()=> (featured.sport||'soccer')==='soccer'?openBuilder(featured.key):jumpToBoard()}><span>{isLive(featured)?'Ao vivo':'Em destaque'} · {featured.competition}</span><strong>{featured.home} × {featured.away}</strong><b>{isLive(featured)?`${featured.home_score??'—'} : ${featured.away_score??'—'}`:'↗'}</b></button> : null}
+      {showHighlight ? (
+        <section className="book-highlight" aria-label="Destaque esportivo">
+          <svg className="book-field" viewBox="0 0 640 320" fill="none" aria-hidden="true"><rect x="20" y="20" width="600" height="280" rx="2"/><path d="M320 20v280M20 100h80v120H20m600-120h-80v120h80M20 132h30v56H20m600-56h-30v56h30"/><circle cx="320" cy="160" r="52"/><circle cx="320" cy="160" r="3"/></svg>
+          <div className="book-highlight-copy">
+            <span className="ed-kicker"><i className="live-dot" /> CENTRAL DE APOSTAS</span>
+            <h1>O jogo não para.</h1>
+            <p>Placares ao vivo. Mercados em um toque.</p>
+            <div className="book-stats"><span><b>{liveCount}</b> ao vivo</span><span><b>{fixtures.length}</b> partidas</span><LocalClock /></div>
+            <div className="book-actions">
+              <button onClick={() => jumpToBoard("live")}>Ao vivo agora</button>
+              <button className="ghost" onClick={() => jumpToBoard("today")}>Jogos de hoje</button>
             </div>
-
-            <div className="ed-hero-copy">
-              <span className="ed-kicker"><i aria-hidden="true" /> CANDIBET / SPORTSBOOK</span>
-              <h1>O jogo começa<br /><em>na sua escolha.</em></h1>
-              <p>
-                Cotações em movimento, placares ao vivo e um cassino no mesmo
-                ritmo. Encontre o seu próximo jogo — e escolha com calma.
-              </p>
-              <div className="ed-hero-actions">
-                <button type="button" className="ed-cta" onClick={() => jumpToBoard("today")}>
-                  Ver partidas de hoje <span aria-hidden="true">↓</span>
-                </button>
-                <button type="button" className="ed-cta ed-cta-ghost" onClick={() => jumpToBoard("live")}>
-                  <span className="ed-live-dot" aria-hidden="true" /> Ao vivo agora
-                </button>
-              </div>
-              <div className="ed-hero-meta">
-                <LocalClock />
-                <span className="ed-meta-rule" aria-hidden="true" />
-                <span>BRASIL · 18+</span>
-                <span className="ed-meta-rule" aria-hidden="true" />
-                <span>{fixtures.length} partidas · {liveCount} ao vivo</span>
-              </div>
-            </div>
-
-            <div className="ed-hero-side">
-              <div className="ed-float ed-float-token" aria-hidden="true">
-                <span>C</span><small>CANDIBET</small>
-              </div>
-              <div className="ed-float ed-float-slip" aria-hidden="true">
-                <small>BOLETIM</small><b>1 · X · 2</b><i />
-              </div>
-
+          </div>
               <div className="ed-ticket">
                 <div className="ed-ticket-head">
                   <span>{featured ? (featuredLive ? "AO VIVO AGORA" : "NA AGENDA") : "A RODADA"}</span>
@@ -584,8 +569,9 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                         </span>
                         <div className="ed-ticket-odds">
                           {heroMarket.selections.map((selection, index) => (
-                            <button
-                              key={selection}
+                            <OddsButton
+                              key={featured.key + ':' + heroMarket.kind + ':' + String(heroMarket.line) + ':' + selection}
+                              price={heroMarket.prices[index]}
                               type="button"
                               className={"ed-ticket-odd" + (heroPicked(selection) ? " on" : "")}
                               aria-pressed={heroPicked(selection)}
@@ -594,7 +580,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                             >
                               <span>{tick(heroMarket.kind, index, heroMarket.selections)}</span>
                               <b>{heroMarket.prices[index].toFixed(2)}</b>
-                            </button>
+                            </OddsButton>
                           ))}
                         </div>
                       </div>
@@ -611,85 +597,22 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                   </div>
                 )}
               </div>
-            </div>
-          </SpotlightCard>
-
-          <Reveal as="section" className="ed-manifesto">
-            <div className="ed-manifesto-aside">
-              <span className="ed-kicker">A CASA / 01</span>
-              <span className="ed-manifesto-mark">C.</span>
-              <span className="ed-manifesto-note">BRASIL · 18+</span>
-            </div>
-            <div className="ed-manifesto-body">
-              <h2>O jogo é imprevisível. <em>A sua leitura, não.</em></h2>
-              <p>
-                Cotações em movimento, placares ao vivo e um cassino no mesmo
-                ritmo. A gente tira o ruído para você enxergar a próxima
-                jogada — e deixa a escolha com quem importa.
-              </p>
-              <div className="ed-manifesto-strip" aria-label="Esportes disponíveis">
-                {stripSports.map((sport) => (
-                  <span key={sport}>{meta(sport).label}</span>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-
-          <section className="ed-duo" aria-labelledby="ed-duo-title">
-            <Reveal as="div" className="ed-duo-head">
-              <span className="ed-kicker">ESCOLHA SEU RITMO / 02</span>
-              <h2 id="ed-duo-title">Um só lugar. <em>Dois jeitos de jogar.</em></h2>
-            </Reveal>
-            <div className="ed-duo-grid">
-              <Reveal as="article" className="ed-card ed-card-sport" delay={80}>
-                <span className="ed-card-orbit" aria-hidden="true" />
-                <div className="ed-card-top">
-                  <span className="ed-card-icon" aria-hidden="true">↗</span>
-                  <span className="ed-card-number">01</span>
-                </div>
-                <div className="ed-card-copy">
-                  <span className="ed-card-kicker">ESPORTES</span>
-                  <h3>O apito<br /><em>é seu.</em></h3>
-                  <p>
-                    Partidas ao vivo, mercados principais e favoritos no mesmo
-                    lugar. Leia o jogo e escolha antes do próximo minuto.
-                  </p>
-                </div>
-                <div className="ed-card-foot">
-                  <span>AO VIVO · PRÉ-JOGO</span>
-                  <button type="button" onClick={() => jumpToBoard("today")}>
-                    Ver partidas <span aria-hidden="true">↗</span>
-                  </button>
-                </div>
-              </Reveal>
-
-              <Reveal as="article" className="ed-card ed-card-casino" delay={180}>
-                <span className="ed-card-glow" aria-hidden="true" />
-                <div className="ed-card-top">
-                  <span className="ed-card-icon" aria-hidden="true">↘</span>
-                  <span className="ed-card-number">02</span>
-                </div>
-                <div className="ed-card-copy">
-                  <span className="ed-card-kicker">CASSINO</span>
-                  <h3>A mesa está<br /><em>aberta.</em></h3>
-                  <p>
-                    Slots, crash e mesas ao vivo com o mesmo saldo e a mesma
-                    conta. Um ritmo diferente, sem sair da casa.
-                  </p>
-                </div>
-                <div className="ed-card-foot">
-                  <span>SLOTS · CRASH · MESAS</span>
-                  <button type="button" onClick={() => (onCasino ? onCasino("Todos") : jumpToBoard())}>
-                    {authenticated ? "Explorar o cassino" : "Entrar no cassino"}{" "}
-                    <span aria-hidden="true">↗</span>
-                  </button>
-                </div>
-              </Reveal>
-            </div>
-          </section>
-        </>
+        </section>
       ) : null}
 
+      <div className={'sports-board-layout' + (railCollapsed ? ' rail-collapsed' : '')} onClick={onExplore}>
+        <aside className="sport-rail" aria-label="Navegação de esportes">
+          <div className="sport-rail-head"><span>Explorar</span><button aria-label={railCollapsed ? 'Expandir navegação esportiva' : 'Recolher navegação esportiva'} aria-expanded={!railCollapsed} onClick={() => setRailCollapsed(value => !value)}>{railCollapsed ? '›' : '‹'}</button></div>
+          <button className="sport-rail-item" aria-pressed={!!liveOnly} title="Eventos ao vivo" onClick={() => onLive?.(!liveOnly)}><span className="live-dot" /><span className="rail-label">Ao vivo</span><span className="rail-count">{liveCount}</span></button>
+          <button className="sport-rail-item" aria-pressed={favoritesOnly} title="Favoritos" onClick={() => setFavoritesOnly(value => !value)}><span aria-hidden="true">☆</span><span className="rail-label">Favoritos</span><span className="rail-count">{favorites.length}</span></button>
+          <div className="rail-section-label">Esportes</div>
+          {sportsShown.map(item => <button key={item} className="sport-rail-item" aria-pressed={activeSport === item} aria-label={meta(item).label} title={meta(item).label} onClick={() => { setSport(item); setLeague(''); }}><SportIcon sport={item} size={18} /><span className="rail-label">{meta(item).label}</span><span className="rail-count">{fixtures.filter(f => (f.sport || 'soccer') === item && (!liveOnly || isLive(f))).length}</span></button>)}
+          <div className="rail-detail">
+            <div className="rail-section-label">Competições</div>
+            {leagues.slice(0, 6).map(item => <button className="rail-league" key={item} aria-pressed={league === item} onClick={() => setLeague(league === item ? '' : item)}>{item}</button>)}
+            <details><summary>Países e ligas</summary>{[...new Set(fixtures.filter(f => !activeSport || (f.sport || 'soccer') === activeSport).map(f => f.country || 'Internacional'))].sort().map(country => <details className="rail-country" key={country}><summary>{country}</summary>{[...new Set(fixtures.filter(f => (f.country || 'Internacional') === country && (!activeSport || (f.sport || 'soccer') === activeSport)).map(f => f.competition).filter(Boolean))].map(item => <button className="rail-league" key={item} aria-pressed={league === item} onClick={() => setLeague(item)}>{item}</button>)}</details>)}</details>
+          </div>
+        </aside>
       <div id="sports-board" className="ed-board">
         {error ? (
           <section className="sx-feed-error" role="status">
@@ -700,13 +623,13 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
         <div className="sporthead">
           <div>
             <span className="ed-kicker">
-              {query ? "BUSCA / A RODADA" : liveOnly ? "AO VIVO / AGORA" : "A RODADA / EM TEMPO REAL"}
+              {query ? "RESULTADOS DA BUSCA" : liveOnly ? "EM ANDAMENTO" : "PRÉ-JOGO E AO VIVO"}
             </span>
             <h1>{liveOnly ? "Apostas ao Vivo" : "Apostas Esportivas"}</h1>
             <p className="sub">
               {liveOnly
                 ? "Partidas em andamento agora, com placar e cotações em tempo real."
-                : "Separadas por esporte e competição, com placares e melhores mercados."}
+                : "Escolha o esporte, encontre a partida e selecione sua cotação."}
             </p>
           </div>
           <div className="sportfeed">
@@ -752,7 +675,10 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
               })}
             </div>
 
-            <div className="sx-toolbar">
+            <div className={'sx-toolbar' + (filterOpen?' filters-open':'')}>
+              <button className="mobile-filter-trigger" aria-expanded={filterOpen} onClick={()=>setFilterOpen(value=>!value)}>Filtros{date!=='all'||league||favoritesOnly?' · ativos':''}</button>
+              <label className="sx-market-view">Mercado<select value={marketView} onChange={e=>setMarketView(e.target.value)}><option value="result">Resultado</option><option value="total">Total</option><option value="btts">Ambas marcam</option><option value="corners">Escanteios</option><option value="cards">Cartões</option></select></label>
+              <button className="mobile-live-filter" aria-pressed={!!liveOnly} onClick={()=>onLive?.(!liveOnly)}>Ao vivo</button>
               <label>Quando<select value={date} onChange={e => setDate(e.target.value)}><option value="all">Todas as datas</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="upcoming">Próximas partidas</option><option value="results">Resultados</option></select></label>
               <label>Competição<select value={league} onChange={e => setLeague(e.target.value)}><option value="">Todas as competições</option>{leagues.map(l => <option key={l}>{l}</option>)}</select></label>
               <button className={"sx-filter" + (favoritesOnly ? " on" : "")} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(v => !v)}>☆ Favoritos ({favorites.length})</button>
@@ -805,7 +731,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
                             <div className="sx-league-body">
                               {lg.rows.map((f) => (
                                 <EventRow key={f.key} f={f} onSelectBet={onSelectBet}
-                                          selectedBets={selectedBets} nowMs={nowMs} favorite={favorites.includes(f.key)} onFavorite={toggleFavorite} />
+                                          selectedBets={selectedBets} nowMs={nowMs} favorite={favorites.includes(f.key)} onFavorite={toggleFavorite} onBuild={openBuilder} marketView={marketView} />
                               ))}
                             </div>
                           )}
@@ -822,6 +748,8 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, selectedBets
         ) : !error ? <div className="sx-loading" role="status">Carregando calendário e mercados…</div> : null}
         <details className="sx-guide"><summary>Entenda os mercados e as cotações</summary><p><b>1 · X · 2:</b> vitória da casa, empate ou vitória do visitante. <b>Total:</b> mais ou menos que a linha indicada. <b>Dupla chance:</b> dois resultados na mesma seleção. <b>Empate anula:</b> devolução em caso de empate.</p><p>As cotações identificadas como Modelo são simuladas; Provedor indica preços publicados pela fonte. O retorno potencial inclui o valor apostado. Partidas encerradas exibem resultados e não aceitam seleções.</p></details>
       </div>
+      </div>
+      </>}
     </>
   );
 }

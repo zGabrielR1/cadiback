@@ -22,6 +22,7 @@ export default function Header({
   onTheme,
   onCash,
   onAccount,
+  onHelp,
 }) {
   return (
     <>
@@ -29,6 +30,7 @@ export default function Header({
         <span>18+ · Jogue com responsabilidade</span>
         <span>
           <b>Seu jogo. Seu ritmo.</b>
+          <button className="topbar-help" onClick={onHelp}>Ajuda</button>
         </span>
       </div>
 
@@ -59,7 +61,7 @@ export default function Header({
                 : ""}
             </span>
           ) : null}
-          <button className="ghost" onClick={onPromos}>
+          <button className="ghost header-promos" onClick={onPromos}>
             Promoções
           </button>
           {admin ? (

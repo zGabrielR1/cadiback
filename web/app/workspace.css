@@ -1,0 +1,161 @@
+/* Taste study applied to a working sportsbook: restrained chrome, aligned data. */
+.book-highlight { background: var(--card2); }
+.hero.ed-casino-hero { background: var(--card2); }
+.game-caption, .game-category { font-size: 11px; }
+.sx-row.live { background: var(--card); }
+.sx-country-head { font-size: 12px; text-transform: none; }
+.sx-market-label, .ed-ticket-label, .ed-ticket-status { font-size: 11px; }
+.sx-tab.on { background: var(--card); color: var(--ink); border-bottom-width: 1px; }
+.sx-tab.on .sx-tab-count { color: var(--mut); }
+.sx-build { display: inline-flex; gap: 12px; width: auto; margin: 4px 0 0; padding: 6px 0; background: transparent; color: var(--ink); font-size: 12px; border-radius: 0; border-bottom: 1px solid var(--acc); }
+.sports-workspace-nav { display: flex; align-items: center; gap: 24px; margin: 0 0 16px; border-bottom: 1px solid var(--line); scroll-margin-top: 136px; }
+.sports-workspace-nav button { width: auto; margin: 0; padding: 12px 0; border: 0; border-bottom: 1px solid transparent; border-radius: 0; color: var(--mut); background: transparent; font-size: 14px; white-space: nowrap; }
+.sports-workspace-nav button[aria-pressed="true"] { border-bottom-color: var(--acc); color: var(--ink); }
+.sports-workspace-nav > span { margin-left: auto; font-size: 12px; color: var(--mut); }
+.bet-builder { --builder-pad: 20px; padding-bottom: 32px; }
+.bet-builder h1, .bet-builder h2, .bet-builder h3 { font-family: var(--body-font); text-transform: none; letter-spacing: 0; }
+.builder-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 24px 0; }
+.builder-title-row h1 { margin: 0; font-size: 28px; }
+.builder-title-row p { color: var(--mut); font-size: 14px; margin: 8px 0 0; }
+.builder-title-row button { width: auto; margin: 0; font-size: 13px; }
+.builder-fixture-label { font-size: 13px; margin: 0 0 8px; }
+#builder-fixture { width: 100%; max-width: 740px; margin: 0 0 20px; min-height: 44px; padding: 10px 12px; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 6px; }
+.builder-match { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px; margin-bottom: 16px; background: var(--card2); border-radius: 6px; }
+.builder-match > div { min-width: 0; }
+.builder-match > div > span { font-size: 12px; color: var(--mut); }
+.builder-match h2 { margin: 8px 0 0; font-size: 22px; line-height: 1.3; }
+.builder-match h2 span { color: var(--mut); padding: 0 8px; font-weight: 400; }
+.builder-score { display: grid; justify-items: end; flex-shrink: 0; gap: 6px; }
+.builder-score strong { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.builder-grid { display: grid; grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.builder-mobile-tabs { display: none; }
+.builder-panel { min-width: 0; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: var(--builder-pad); }
+.builder-panel h2 { font-size: 16px; line-height: 1.3; margin: 0; }
+.builder-panel h3 { font-size: 14px; font-weight: 600; margin: 0; line-height: 1.4; }
+.builder-panel p { line-height: 1.55; }
+.builder-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.builder-panel-head > span { color: var(--mut); font-size: 12px; white-space: nowrap; }
+.builder-caption, .builder-source { color: var(--mut); font-size: 12px; line-height: 1.55; }
+.builder-comparison .builder-caption { margin: 0 0 16px; }
+.builder-comparison .builder-caption:last-child { margin: 16px 0 0; }
+.builder-comparison table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.builder-comparison th { font-weight: 400; text-align: left; line-height: 1.4; }
+.builder-comparison thead th { font-size: 12px; color: var(--mut); vertical-align: bottom; padding-bottom: 12px; overflow-wrap: anywhere; }
+.builder-comparison th:first-child { width: 48%; }
+.builder-comparison td, .builder-comparison th { padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.builder-comparison td, .builder-comparison thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.builder-comparison td { font-size: 14px; font-weight: 600; }
+.builder-comparison .is-missing { color: var(--mut); font-weight: 400; }
+.builder-tabs { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: thin; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.builder-tabs button { width: auto; margin: 0; padding: 10px 0; flex-shrink: 0; color: var(--mut); background: transparent; border-radius: 0; border-bottom: 1px solid transparent; font-size: 13px; }
+.builder-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--acc); }
+.builder-context { color: var(--mut); font-size: 13px; margin: 0 0 20px; }
+.builder-market { padding: 0 0 20px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.builder-market-name { display: flex; gap: 8px; align-items: start; justify-content: space-between; margin-bottom: 10px; }
+.builder-market-name > span { font-size: 11px; color: var(--mut); white-space: nowrap; }
+.builder-prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.builder-prices button { width: 100%; min-width: 0; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px; margin: 0; background: var(--card); color: var(--ink); border: 1px solid var(--line); font-size: 13px; text-align: left; }
+.builder-prices button strong { flex-shrink: 0; font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; }
+.builder-prices button[aria-pressed="true"] { border-bottom-color: var(--acc); }
+.builder-prices button:hover:not(:disabled) { border-color: var(--mut); }
+.builder-prices button:disabled, .draft-single:disabled, .builder-combine:disabled { opacity: 1; color: var(--mut); cursor: not-allowed; }
+.builder-coverage { font-size: 12px; color: var(--mut); line-height: 1.6; }
+.builder-coverage summary { cursor: pointer; color: var(--ink); padding: 8px 0; }
+.builder-coverage ul { padding-left: 18px; }
+.builder-empty { padding: 20px 0; }
+.builder-empty p { color: var(--mut); font-size: 13px; }
+.builder-draft { position: sticky; top: 120px; }
+.builder-draft ul { list-style: none; margin: 0; padding: 0; }
+.builder-draft li { display: grid; grid-template-columns: minmax(0, 1fr) auto 24px; gap: 8px; border-bottom: 1px solid var(--line); padding: 14px 0; }
+.builder-draft li > div { display: grid; gap: 6px; }
+.builder-draft li span { color: var(--mut); font-size: 12px; }
+.builder-draft li strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.builder-draft li > b { font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.draft-remove { background: transparent; color: var(--mut); width: 24px; height: 24px; padding: 0; margin: -4px 0 0; font-size: 22px; }
+.draft-single { grid-column: 1 / -1; text-align: left; width: auto; justify-self: start; padding: 8px 0; margin: 0; background: transparent; color: var(--ink); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.builder-empty-draft { color: var(--mut); font-size: 13px; margin: 20px 0; }
+.builder-combination { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; margin-top: 20px; }
+.builder-combine { width: 100%; background: var(--chip); font-size: 12px; padding: 12px; margin: 8px 0 0; }
+.builder-source { margin: 20px 0 0; }
+.builder-feed-note { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--line); font-size: 13px; }
+.builder-feed-note button { width: auto; margin: 0; white-space: nowrap; }
+.builder-notice { color: var(--ink); font-size: 12px; }
+body:has(.bet-builder) .guest-login-card { display: none; }
+/* Authentication has its own spacious context; dense market sizing stays outside. */
+.auth-modal.open { align-items: center; padding: 32px; border-radius: 0; background: #05080db8; }
+.auth-sheet { display: grid; grid-template-columns: 300px minmax(0, 1fr); max-width: 860px; max-height: calc(100dvh - 64px); padding: 0; border-radius: 12px; overflow: auto; box-shadow: 0 24px 90px #0005; }
+.auth-aside { padding: 36px 32px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; background: var(--card2); border-right: 1px solid var(--line); }
+.auth-wordmark { font-family: var(--display-font); font-size: 32px; letter-spacing: -.04em; }
+.auth-wordmark span { color: var(--acc); }
+.auth-aside h2 { font-size: 34px; line-height: 1.12; margin: 0 0 20px; }
+.auth-aside p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mut); }
+.auth-aside p.auth-responsibility { font-size: 12px; }
+.auth-main { padding: 40px; position: relative; min-width: 0; }
+.auth-main .auth-close { position: absolute; right: 16px; top: 12px; width: 32px; height: 32px; padding: 0; margin: 0; font-size: 26px; background: transparent; color: var(--mut); }
+.auth-heading { margin-bottom: 28px; padding-right: 10px; }
+.auth-heading h3 { font-family: var(--body-font); font-size: 26px; line-height: 1.2; margin: 0 0 12px; }
+.auth-heading p.sub { font-size: 14px; line-height: 1.6; }
+.auth-mode-nav { display: flex; gap: 28px; margin-bottom: 28px; border-bottom: 1px solid var(--line); }
+.auth-mode-nav button { width: auto; margin: 0; padding: 0 0 12px; color: var(--mut); background: transparent; border-radius: 0; border-bottom: 1px solid transparent; font-size: 14px; }
+.auth-mode-nav button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--acc); }
+.auth-field { margin: 0 0 22px; }
+.auth-field label, .auth-main form > label { font-size: 14px; margin: 0 0 9px; color: var(--ink); }
+.auth-main input:not([type="checkbox"]), .auth-main select { min-height: 48px; padding: 12px 14px; border-radius: 6px; font-size: 15px; margin: 0; }
+.auth-main select { width: 100%; background: var(--field); color: var(--ink); border: 1px solid var(--line); margin-bottom: 22px; }
+.auth-input-wrap { position: relative; }
+.auth-input-wrap:has(.auth-reveal) input { padding-right: 76px; }
+.auth-input-wrap .auth-reveal { position: absolute; right: 8px; top: 6px; min-height: 36px; width: auto; margin: 0; padding: 6px 8px; background: transparent; color: var(--mut); font-size: 12px; }
+.auth-main .auth-forgot { display: block; width: auto; margin: -10px 0 24px auto; padding: 4px 0; font-size: 13px; background: transparent; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.auth-main .remember { display: flex; align-items: center; gap: 10px; font-size: 13px; margin: 0 0 24px; color: var(--mut); }
+.auth-main .remember input { width: 17px; height: 17px; margin: 0; accent-color: var(--acc); }
+.auth-main .auth-submit { width: 100%; min-height: 48px; padding: 12px; font-size: 15px; }
+.auth-main form > .fhint, .auth-main form > .ferr { margin-top: 10px; margin-bottom: 22px; }
+.auth-main .oauth-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 24px 0; }
+.auth-main .oauth-note { grid-column: 1 / -1; font-size: 12px; text-align: center; margin-bottom: 8px; }
+.auth-main .oauth-btn { width: 100%; padding: 12px 8px; justify-content: center; min-height: 48px; font-size: 12px; }
+.auth-main .oauth-btn:only-of-type { grid-column: 1 / -1; }
+.auth-main form > .ghost { font-size: 13px; padding: 10px; background: transparent; border: 0; color: var(--mut); }
+.topbar .topbar-help { width: auto; padding: 0; margin: 0 0 0 20px; background: transparent; color: var(--mut); font-size: 11px; text-transform: none; }
+@media (max-width: 1200px) {
+  .builder-grid { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); }
+  .builder-draft { position: static; grid-column: 1 / -1; }
+}
+@media (max-width: 980px) {
+  .auth-sheet { grid-template-columns: 1fr; max-width: 560px; }
+  .auth-aside { display: none; }
+}
+@media (max-width: 760px) {
+  .sports-workspace-nav { gap: 24px; margin-bottom: 12px; }
+  .sports-workspace-nav > span { display: none; }
+  .sports-workspace-nav button { min-height: 44px; font-size: 13px; }
+  .builder-title-row { margin: 20px 0; align-items: start; }
+  .builder-title-row h1 { font-size: 24px; }
+  .builder-title-row p { font-size: 13px; line-height: 1.5; }
+  .builder-title-row button { font-size: 12px; max-width: 100px; padding: 8px; }
+  .builder-match { padding: 16px; gap: 16px; }
+  .builder-match h2 { font-size: 18px; }
+  .builder-score strong { font-size: 22px; }
+  .builder-grid { grid-template-columns: 1fr; }
+  .builder-mobile-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .builder-mobile-tabs button { width: auto; min-height: 44px; margin: 0; padding: 8px 0; border-radius: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--mut); font-size: 13px; }
+  .builder-mobile-tabs button[aria-pressed="true"] { border-bottom-color: var(--acc); color: var(--ink); }
+  .builder-grid[data-pane="markets"] .builder-comparison, .builder-grid[data-pane="markets"] .builder-draft,
+  .builder-grid[data-pane="stats"] .builder-market-panel, .builder-grid[data-pane="stats"] .builder-draft,
+  .builder-grid[data-pane="draft"] .builder-market-panel, .builder-grid[data-pane="draft"] .builder-comparison { display: none; }
+  .bet-builder { --builder-pad: 16px; }
+  .builder-market-panel { grid-row: 1; }
+  .builder-draft { grid-row: 2; }
+  .builder-comparison { grid-row: 3; }
+  .builder-tabs { gap: 20px; }
+  .builder-tabs button { min-height: 44px; font-size: 13px; }
+  .builder-prices { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+  .builder-market-name { flex-wrap: wrap; }
+  .builder-feed-note { align-items: start; flex-direction: column; }
+  .auth-modal.open { padding: 12px; align-items: center; }
+  .auth-sheet { display: block; max-width: 480px; max-height: calc(100dvh - 24px); border-radius: 10px; }
+  .auth-aside { display: none; }
+  .auth-main { padding: 40px 24px 28px; }
+  .auth-heading h3 { font-size: 25px; max-width: 260px; }
+  .auth-main .oauth-row { grid-template-columns: 1fr; }
+  .auth-main .oauth-btn { font-size: 14px; }
+}

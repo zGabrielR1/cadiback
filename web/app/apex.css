@@ -1,0 +1,277 @@
+/* APEX / Precision Noir, adapted to Candibet's established identity. */
+@font-face { font-family: Geist; src: url('/fonts/Geist-Variable.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url('/fonts/GeistMono-Variable.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
+:root { --body-font: Geist, Arial, sans-serif; --number-font: 'Geist Mono', monospace; --ease-precise: cubic-bezier(.22, 1, .36, 1); }
+[data-theme="dark"] {
+  --paper: #1c232b; --night: #141a21; --card2: #242d37; --card: #2e3946; --chip: #3a4756;
+  --ink: #eff3f6; --mut: #b9c4cf; --line: #ffffff1c; --field: #202933;
+  --acc: #c7e96a; --acc-soft: #35432a; --on-acc: #1d2710; --bad: #ff8290; --gold: #f5c57b;
+  --data-accent: #9fd3de; --glow: none;
+}
+[data-theme="light"] { --data-accent: #17657b; --mut: #606977; --line: #dfe3e8; }
+body { font-family: var(--body-font); }
+button, input, select, textarea { transition: border-color 160ms var(--ease-precise), background-color 160ms var(--ease-precise), color 160ms var(--ease-precise); }
+button { border-radius: 8px; }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+input::placeholder { color: var(--mut); opacity: .8; }
+header.sticky { background: var(--card2); border-bottom-color: var(--line); }
+.topbar { font-size: 10px; }
+.hwrap { min-height: 72px; }
+.hwrap #search { min-height: 38px; background: var(--field); border-radius: 10px; border-color: var(--line); }
+.hwrap > button:not(.logo) { min-height: 38px; border-radius: 10px; }
+.hwrap .bal { font-family: var(--number-font); font-size: 12px; background: var(--field); color: var(--ink); border-color: var(--line); padding: 12px; }
+.hwrap nav.main button { font-size: 13px; }
+.hwrap nav.main button.on::after { height: 2px; background: var(--acc); }
+.wrap { padding-top: 18px; }
+.sports-workspace-nav { margin-bottom: 18px; }
+.sports-workspace-nav button { font-size: 13px; }
+.sports-workspace-nav > span { font-size: 11px; }
+.book-highlight { position: relative; overflow: hidden; padding: 24px; gap: 32px; border-radius: 20px; background: radial-gradient(ellipse at 85% 0%, #d7ff3f08, transparent 64%), var(--card2); }
+.book-highlight > :not(.book-field) { position: relative; z-index: 1; }
+.book-field { position: absolute; right: -8%; top: -55px; width: 65%; height: 140%; stroke: var(--acc); stroke-width: .7; opacity: .12; transform: rotate(-12deg); pointer-events: none; }
+.book-highlight h1 { font-size: clamp(32px, 3.5vw, 50px); letter-spacing: -.025em; }
+.book-highlight-copy > p { line-height: 1.6; }
+.book-stats { margin-top: 18px; }
+.book-stats b, .ed-clock { font-family: var(--number-font); font-weight: 500; }
+.book-stats b { color: var(--ink); font-size: 17px; }
+.book-actions button { border-radius: 10px; min-height: 40px; }
+.ed-ticket { padding: 18px; border-radius: 14px; background: var(--card); border-color: #ffffff12; }
+.ed-ticket-head { letter-spacing: .05em; font-size: 10px; }
+.ed-ticket-team b { font-size: 15px; font-weight: 550; }
+.ed-ticket-team strong, .ed-ticket-odd b { font-family: var(--number-font); font-weight: 550; }
+.ed-ticket-team strong { color: var(--ink); }
+.ed-ticket-status { color: var(--data-accent); }
+.ed-ticket-odd { border-radius: 8px; position: relative; }
+.ed-ticket-label { margin-top: 10px; }
+.sports-board-layout { display: grid; grid-template-columns: 204px minmax(0, 1fr); align-items: start; gap: 24px; margin-top: 24px; }
+.sports-board-layout.rail-collapsed { grid-template-columns: 48px minmax(0, 1fr); }
+.sports-board-layout .ed-board { min-width: 0; padding-top: 0; }
+.sport-rail { position: sticky; top: 100px; max-height: calc(100dvh - 120px); overflow-y: auto; scrollbar-width: thin; padding: 0 12px 12px 0; border-right: 1px solid var(--line); }
+.sport-rail-head { display: flex; align-items: center; justify-content: space-between; color: var(--ink); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.sport-rail-head button { margin: 0; padding: 0; height: 36px; width: 36px; color: var(--mut); background: var(--card); font-size: 24px; font-weight: 400; }
+.sport-rail-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 42px; margin: 2px 0; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; color: var(--mut); background: transparent; font-size: 12px; text-align: left; }
+.sport-rail-item > svg, .sport-rail-item > span:first-child { flex-shrink: 0; }
+.sport-rail-item[aria-pressed="true"] { color: var(--ink); background: var(--card); border-left-color: var(--acc); }
+.sport-rail-item:hover { background: var(--card); color: var(--ink); }
+.rail-count { margin-left: auto; font-family: var(--number-font); color: var(--mut); font-size: 10px; }
+.rail-section-label { color: var(--mut); font-size: 11px; margin: 22px 10px 10px; }
+.rail-league { display: block; width: 100%; text-align: left; margin: 0; padding: 9px 10px; font-size: 11px; line-height: 1.4; background: transparent; color: var(--mut); }
+.rail-league:hover, .rail-league[aria-pressed="true"] { background: var(--card); color: var(--ink); }
+.rail-detail summary { font-size: 11px; padding: 12px 10px; color: var(--mut); cursor: pointer; }
+.rail-country { margin-left: 8px; }
+.rail-collapsed .rail-label, .rail-collapsed .rail-count, .rail-collapsed .rail-detail, .rail-collapsed .rail-section-label, .rail-collapsed .sport-rail-head > span { display: none; }
+.rail-collapsed .sport-rail { padding-right: 6px; }
+.rail-collapsed .sport-rail-item { padding: 8px; justify-content: center; }
+.rail-collapsed .sport-rail-head { justify-content: center; }
+.sporthead h1 { font-size: 30px; }
+.sporthead .ed-kicker { color: var(--data-accent); font-size: 10px; letter-spacing: .03em; }
+.sportfeed { flex-wrap: wrap; }
+.sportfeed .b-ok { font-size: 10px; border: 0; background: var(--acc-soft); }
+.sx-toolbar { background: var(--card2); border-radius: 12px; padding: 12px; }
+.sx-toolbar select { min-height: 36px; border-radius: 8px; }
+.sx-filter { min-height: 36px; border-radius: 8px; font-size: 11px; }
+.sx-country { padding: 0; }
+.sx-country-head { padding: 4px 8px 10px; font-weight: 500; }
+.sx-league { border-radius: 12px; overflow: hidden; border-color: var(--line); }
+.sx-league-head { background: var(--card2); padding: 11px 12px; font-size: 12px; }
+.sx-row { padding: 14px 12px; background: var(--card2); }
+.sx-row.live { background: var(--card2); }
+.sx-live, .sx-league-live { color: var(--acc); }
+.sx-live i { background: var(--acc); animation: none; }
+.sx-time, .sx-score, .sx-odd-price { font-family: var(--number-font); font-variant-numeric: tabular-nums; }
+.sx-name { font-size: 12px; color: var(--ink); font-weight: 450; }
+.sx-team { gap: 14px; }
+.sx-score { font-size: 13px; }
+.sx-team.lead .sx-score { color: var(--ink); }
+.sx-odd { position: relative; min-width: 68px; min-height: 48px; padding: 8px 12px; gap: 4px; border: 1px solid #ffffff0d; border-radius: 8px; background: var(--chip); }
+.sx-odd:hover:not(:disabled), .ed-ticket-odd:hover:not(:disabled) { background: var(--card); border-color: #ffffff40; }
+.sx-odd-price { font-size: 15px; color: var(--ink); font-weight: 550; }
+.sx-odd-tick { color: var(--mut); font-size: 10px; font-weight: 450; }
+.sx-odd.on, .ed-ticket-odd.on, .builder-prices button[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: var(--on-acc); }
+.sx-odd.on .sx-odd-price, .sx-odd.on .sx-odd-tick, .ed-ticket-odd.on b, .ed-ticket-odd.on span { color: var(--on-acc); }
+.sx-odd:disabled { opacity: .7; cursor: not-allowed; }
+.sx-market-label { font-size: 10px; color: var(--mut); }
+.sx-build { font-size: 11px; color: var(--data-accent); border-bottom-color: transparent; }
+.sx-build:hover { border-bottom-color: var(--data-accent); }
+.sx-odd[data-odds-change], .ed-ticket-odd[data-odds-change] { border-color: var(--data-accent); }
+.odds-movement { position: absolute; top: 3px; right: 5px; color: var(--data-accent); font-size: 10px; line-height: 1; }
+.on .odds-movement { color: var(--on-acc); }
+.builder-panel, .builder-match { border-radius: 14px; }
+.builder-prices button { border-radius: 8px; }
+.builder-prices strong, .builder-score strong, .builder-comparison td, .builder-draft li > b { font-family: var(--number-font); }
+.builder-tabs button[aria-selected="true"], .builder-mobile-tabs button[aria-pressed="true"] { border-bottom-color: var(--acc); }
+.builder-source { color: var(--data-accent); }
+.hero.ed-casino-hero { border-radius: 20px; border-color: var(--line); background: radial-gradient(ellipse at 100% 100%, #57c7e809, transparent 60%), var(--card2); }
+.gcard .game-launch { border-radius: 12px; border-color: var(--line); }
+.gcard .game-launch:hover { border-color: #ffffff40; }
+.gbody { padding-top: 10px; }
+.game-caption { margin-top: 4px; }
+.layout .panel { border-radius: 14px; }
+.auth-sheet { border-radius: 24px; background: var(--card); }
+.auth-aside { background: var(--card2); }
+.auth-main input:not([type="checkbox"]), .auth-main select { border-radius: 10px; }
+.auth-main .auth-submit, .auth-main .oauth-btn { border-radius: 10px; }
+.modal:not(.auth-modal) .sheet { border-radius: 22px 22px 0 0; }
+.modal input, .modal select, .modal textarea { border-radius: 10px; }
+.guest-login-card { display: block; position: fixed; bottom: 24px; left: 24px; z-index: 35; width: 360px; padding: 26px; border: 1px solid #d7ff3f66; border-top: 3px solid var(--acc); border-radius: 18px; background: var(--card); box-shadow: 0 16px 60px #0008; }
+.guest-login-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; font-size: 11px; letter-spacing: 0; color: var(--mut); }
+.guest-login-card strong { display: block; font-family: var(--display-font); font-size: 30px; line-height: 1.08; letter-spacing: -.02em; }
+.guest-login-card p { margin: 14px 0 20px; font-size: 12px; line-height: 1.6; color: var(--mut); }
+.guest-login-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.guest-login-actions button { width: 100%; min-height: 44px; margin: 0; padding: 10px 14px; font-size: 12px; border-radius: 10px; }
+.guest-login-actions button:first-child { display: flex; justify-content: space-between; align-items: center; }
+.guest-login-card .guest-login-dismiss { width: 36px; height: 36px; top: 12px; right: 12px; margin: 0; padding: 0; }
+.betslip-tray { position: fixed; right: 20px; top: 116px; bottom: auto; width: 340px; max-height: calc(100dvh - 136px); overflow: auto; border: 1px solid var(--line); border-top: 2px solid var(--acc); border-radius: 16px; background: var(--card2); box-shadow: 0 12px 40px #0004; z-index: 36; }
+.betslip-head { display: flex; align-items: center; gap: 12px; padding: 18px; background: transparent; color: var(--ink); border-bottom: 1px solid var(--line); }
+.betslip-desktop-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.betslip-desktop-title b, .betslip-toggle b { font-family: var(--number-font); background: var(--chip); color: var(--acc); padding: 3px 7px; border-radius: 6px; font-size: 11px; }
+.betslip-head .betslip-clear { margin: 0 0 0 auto; width: 30px; height: 30px; padding: 0; background: transparent; color: var(--mut); font-size: 23px; }
+.betslip-head .betslip-toggle { display: none; }
+.betslip-body { padding: 18px; }
+.betslip-balance { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px; font-size: 11px; color: var(--mut); }
+.betslip-balance b { color: var(--ink); font-family: var(--number-font); font-size: 12px; font-weight: 500; }
+.betslip-login-note { color: var(--mut); font-size: 12px; line-height: 1.6; margin: 0 0 16px; }
+.betslip-match { display: grid; grid-template-columns: minmax(0, 1fr) auto 20px; align-items: start; gap: 10px; padding: 16px 0; border-bottom: 1px solid var(--line); margin: 0; }
+.betslip-match > div { display: grid; gap: 7px; }
+.betslip-event { font-size: 12px; line-height: 1.5; }
+.betslip-competition { font-size: 10px; color: var(--mut); }
+.betslip-market { font-size: 11px; color: var(--mut); }
+.betslip-match strong { font-size: 13px; color: var(--ink); font-weight: 550; }
+.betslip-price { font-family: var(--number-font); font-size: 13px; }
+.betslip-remove { margin: -3px 0 0; padding: 0; width: 20px; height: 24px; background: transparent; color: var(--mut); font-size: 20px; }
+.betslip-pick { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 12px; }
+.betslip-pick b { font-family: var(--number-font); font-weight: 500; }
+.betslip-body > label { margin-top: 22px; font-size: 12px; }
+.betslip-stake-row { display: flex; align-items: center; gap: 12px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; }
+.betslip-stake-row > span { color: var(--mut); font-size: 13px; }
+.betslip-stake-row input { width: 100%; min-width: 0; border: 0; outline-offset: 0; background: transparent; padding: 10px 0; font-family: var(--number-font); font-size: 20px; }
+.betslip-quick-chips { display: flex; gap: 6px; margin-top: 10px; }
+.betslip-quick-chips button { flex: 1; width: auto; margin: 0; padding: 8px 3px; min-height: 34px; background: var(--chip); color: var(--mut); font-size: 10px; border-radius: 6px; }
+.betslip-payout { display: grid; gap: 10px; margin: 24px 0 10px; font-size: 12px; color: var(--mut); }
+.betslip-payout b { font-family: var(--number-font); font-weight: 500; font-size: 28px; color: var(--ink); }
+.betslip-estimate { font-size: 10px; line-height: 1.6; color: var(--mut); margin-bottom: 20px; }
+.betslip-error { font-size: 12px; color: var(--bad); line-height: 1.5; }
+.betslip-submit { width: 100%; min-height: 46px; padding: 12px; border-radius: 10px; font-size: 13px; }
+.betslip-submit:disabled { opacity: 1; background: var(--chip); color: var(--mut); cursor: not-allowed; }
+@media (min-width: 1281px) {
+  body:has(.betslip-tray) .wrap { margin-right: 380px; max-width: none; }
+  .sports-board-layout .sx-sports { display: none; }
+}
+@media (min-width: 1101px) and (max-width: 1280px) { .sports-board-layout .sx-sports { display: none; } }
+@media (max-width: 1280px) {
+  .betslip-tray { top: auto; bottom: 20px; right: 20px; width: 380px; max-height: min(70dvh, 700px); }
+  .betslip-head { padding: 10px 14px; }
+  .betslip-desktop-title { display: none; }
+  .betslip-head .betslip-toggle { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex: 1; width: auto; margin: 0; padding: 6px 0; background: transparent; color: var(--ink); font-size: 13px; min-height: 36px; }
+  .betslip-toggle > span { display: flex; align-items: center; gap: 10px; }
+  .betslip-tray:not(.is-expanded) .betslip-body { display: none; }
+  .builder-grid { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); }
+}
+@media (max-width: 1100px) {
+  .sports-board-layout, .sports-board-layout.rail-collapsed { grid-template-columns: 1fr; }
+  .sport-rail { display: none; }
+  .book-highlight { gap: 20px; }
+}
+@media (min-width: 761px) and (max-width: 980px) {
+  .hwrap { gap: 8px; }
+  .hwrap .header-promos { display: none; }
+  .hwrap nav.main button { padding-inline: 8px; font-size: 12px; }
+  .hwrap nav.main button:nth-child(4) { display: none; }
+  .hwrap .bal { padding: 8px; font-size: 10px; }
+  .hwrap > button:not(.logo) { padding-inline: 10px; font-size: 12px; }
+}
+@media (max-width: 760px) {
+  .hwrap { min-height: 60px; padding: 10px 12px; }
+  .hwrap > button:not(.logo) { min-height: 40px; }
+  .hwrap .bal { font-size: 10px; padding: 8px; }
+  .wrap { padding-top: 10px; }
+  .book-highlight { padding: 16px; border-radius: 16px; }
+  .book-highlight h1 { font-size: 30px; }
+  .book-field { width: 100%; height: 70%; right: -20%; top: 25%; }
+  .ed-ticket { padding: 14px; border-radius: 12px; }
+  .ed-ticket-team b { font-size: 13px; }
+  .ed-ticket-odd { min-height: 44px; padding: 9px; }
+  .ed-ticket-odd b { font-size: 14px; }
+  .sports-board-layout { margin-top: 18px; }
+  .sporthead h1 { font-size: 27px; }
+  .sx-row { padding: 12px 8px; }
+  .sx-name { font-size: 11px; }
+  .sx-odd { min-width: 44px; min-height: 44px; padding: 7px 5px; }
+  .sx-odd-price { font-size: 13px; }
+  .sx-market-label { font-size: 9px; }
+  .sx-sports .sx-tab { min-height: 44px; }
+  .builder-grid { grid-template-columns: 1fr; }
+  .auth-sheet { border-radius: 18px; }
+  .auth-heading h3 { max-width: none; font-size: 24px; }
+  .guest-login-card { display: block; left: 12px; bottom: calc(70px + env(safe-area-inset-bottom)); width: min(306px, calc(100vw - 24px)); padding: 20px; border-radius: 16px; }
+  .guest-login-card strong { font-size: 25px; }
+  .guest-login-card p { margin: 10px 0 14px; font-size: 11px; line-height: 1.5; }
+  .guest-login-eyebrow { margin-bottom: 12px; font-size: 10px; }
+  .guest-login-card .guest-login-dismiss { top: 8px; right: 8px; min-height: 36px; }
+  .guest-login-actions { gap: 8px; }
+  .guest-login-actions button { padding: 9px 12px; font-size: 11px; }
+  .betslip-tray { right: 12px; bottom: calc(64px + env(safe-area-inset-bottom)); width: calc(100vw - 24px); max-height: 70dvh; border-radius: 16px; }
+  .betslip-tray.is-expanded .betslip-body { padding: 16px; }
+  .betslip-stake-row input { min-height: 44px; }
+  .betslip-quick-chips button { min-height: 40px; }
+  .bottomnav { border-top-color: var(--line); background: var(--card2); }
+}
+/* Market discovery and transaction feedback share the existing surface system. */
+.mobile-feature, .mobile-filter-trigger, .mobile-live-filter { display: none; }
+@media (min-width: 761px) {
+  .book-highlight { padding: 18px 24px; gap: 24px; }
+  .book-highlight h1 { font-size: clamp(30px, 3vw, 40px); margin-block: 10px; }
+  .book-highlight-copy > p, .book-stats { display: none; }
+  .book-actions { margin-top: 18px; }
+  .ed-ticket { padding: 14px; }
+}
+button.sx-teams { background: transparent; color: var(--ink); border: 0; text-align: left; margin: 0; padding: 4px 0; border-radius: 4px; }
+button.sx-teams:hover .sx-name { text-decoration: underline; text-underline-offset: 3px; }
+.sx-market-actions { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
+.sx-market-actions button { width: auto; margin: 0; }
+.sx-toolbar { flex-wrap: wrap; }
+.sx-market-view { min-width: 130px; }
+.betslip-toggle small { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--mut); font-weight: 400; }
+.betslip-notice, .betslip-changed { color: var(--data-accent); font-size: 12px; line-height: 1.5; }
+.betslip-changed { display: block; margin-top: 6px; }
+.betslip-quote-review ul { list-style: none; padding: 0; font-size: 12px; }
+.betslip-quote-review li, .betslip-receipt dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.betslip-quote-review s { color: var(--mut); }
+.betslip-receipt .betslip-body { display: block; padding: 18px; }
+.betslip-receipt dl { font-size: 12px; }
+.betslip-receipt dd { margin: 0; overflow-wrap: anywhere; text-align: right; font-family: var(--number-font); }
+.guest-login-card.is-compact { width: 270px; padding: 12px 16px; }
+.guest-login-card.is-compact > strong, .guest-login-card.is-compact > p { display: none; }
+.guest-login-card.is-compact .guest-login-eyebrow { margin-bottom: 8px; }
+.guest-login-card.is-compact .guest-login-actions { padding-right: 16px; }
+.builder-prices button { flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.builder-prices button span { overflow-wrap: anywhere; line-height: 1.4; }
+.builder-prices button strong { align-self: flex-end; }
+@media (max-width: 1100px) {
+  .book-highlight { display: none; }
+  .sports-workspace-nav { margin-bottom: 10px; }
+  .mobile-feature { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; width: 100%; padding: 12px; margin: 0; background: var(--card2); color: var(--ink); text-align: left; border: 1px solid var(--line); }
+  .mobile-feature > span { color: var(--mut); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-feature strong { font-size: 13px; grid-column: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-feature b { grid-column: 2; grid-row: 1 / 3; align-self: center; font-family: var(--number-font); font-size: 15px; }
+  .sports-board-layout { margin-top: 12px; }
+  .sporthead { align-items: center; gap: 8px; margin-bottom: 10px; }
+  .sporthead h1 { font-size: 21px; margin: 0; }
+  .sx-name { font-size: 12px; }
+  .sporthead .ed-kicker, .sporthead .sub, .sportfeed > span:not(.badge) { display: none; }
+  .sx-toolbar { display: flex; gap: 8px; padding: 8px; margin-block: 10px; }
+  .sx-toolbar > label:not(.sx-market-view), .sx-toolbar > .sx-filter { display: none; }
+  .sx-toolbar.filters-open > label:not(.sx-market-view), .sx-toolbar.filters-open > .sx-filter { display: flex; }
+  .sx-toolbar .sx-market-view { display: flex; flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 6px; font-size: 10px; }
+  .sx-market-view select { min-width: 0; width: 100%; min-height: 44px; }
+  .mobile-filter-trigger, .mobile-live-filter { display: block; width: auto; flex: 0 0 auto; min-height: 44px; margin: 0; padding: 8px; font-size: 11px; background: var(--card); color: var(--ink); }
+  .mobile-live-filter[aria-pressed="true"] { background: var(--acc); color: var(--on-acc); }
+  .sx-controls > button { display: none; }
+  .sx-controls { margin: 0 0 8px; }
+  .sx-country-head, .sx-league-head { min-height: 32px; padding-block: 8px; }
+  .sx-market-actions { gap: 8px; flex-wrap: wrap; }
+  .guest-login-card.is-compact { width: 246px; padding: 10px 14px; }
+  .betslip-toggle > span:first-child { flex-wrap: wrap; gap: 4px 8px; }
+  .betslip-toggle small { flex-basis: 100%; max-width: 190px; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }

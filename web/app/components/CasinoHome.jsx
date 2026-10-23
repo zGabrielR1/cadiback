@@ -115,52 +115,17 @@ function GameCard({ game, onPlay, onDetails }) {
   const providerLabel = (game.provider || "").replace(/_/g, " ").toUpperCase();
 
   return (
-    <div className="gcard" onClick={() => (onDetails ? onDetails(game) : onPlay(game))} style={{ cursor: "pointer" }}>
-      <div className={"tile " + tone(game.game_id)}>
+    <article className="gcard">
+      <button className={"tile game-launch " + tone(game.game_id)} onClick={() => onPlay(game)} aria-label={"Jogar " + game.title}>
         <CoverArt game={game} />
-        <span
-          className="badge"
-          style={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            background: "rgba(0,0,0,0.65)",
-            color: "var(--acc)",
-            border: "1px solid var(--acc)",
-            fontSize: 10.5,
-          }}
-        >
-          {game.category || "Slots"}
-        </span>
-        <div className="play-hover-btn">
-          <div className="play-circle">▶</div>
-        </div>
-      </div>
+        <span className="game-category">{game.category || "Slots"}</span>
+        <span className="play-hover-btn"><span className="play-circle">▶</span></span>
+      </button>
       <div className="gbody">
-        <b style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {game.title}
-        </b>
-        <div className="gmeta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>{providerLabel}</span>
-          {game.rtp ? <span style={{ color: "var(--gold)" }}>RTP {game.rtp}%</span> : null}
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPlay(game);
-          }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            boxShadow: "var(--glow)",
-          }}
-        >
-          <span style={{ fontSize: 12 }}>▶</span> Jogar Agora
-        </button>
+        <b>{game.title}</b>
+        <div className="game-caption"><span>{providerLabel}</span>{onDetails ? <button className="game-info" onClick={() => onDetails(game)} aria-label={"Detalhes de " + game.title}>ⓘ</button> : null}</div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -199,27 +164,27 @@ export default function CasinoHome({
     () => [
       {
         title: "Gates of Olympus & Aviator",
-        sub: "Jogue os maiores sucessos mundiais incorporados com 100% de fidelidade diretamente no site.",
+        sub: "Encontre seus favoritos e consulte os jogos disponíveis de cada provedor.",
         cta: "Jogar Agora",
         go: "lobby",
       },
       {
-        title: "Cassino & Apostas 1:1",
-        sub: "Réplica de alta fidelidade para uso pessoal e hobby: saldo virtual, slots, crash e ao vivo.",
+        title: "Encontre seu próximo jogo",
+        sub: "Explore slots, crash e jogos de mesa. Salve seus favoritos para voltar depois.",
         cta: "Explorar Jogos",
         go: "lobby",
       },
       {
-        title: "Depósito e Saque Instantâneos",
-        sub: "Simulação de pagamentos Pix em tempo real para testar fluxos completos da plataforma.",
+        title: "Seu saldo, em um só lugar",
+        sub: "Consulte as opções de depósito e saque e acompanhe o status de cada operação no caixa.",
         cta: player ? "Ir para o Caixa" : "Entrar / Cadastrar",
         go: "cash",
       },
       {
-        title: "Super Odds & Principais Mercados",
-        sub: "Cotações reais atualizadas para os principais campeonatos do Brasil e do mundo.",
-        cta: "Ver Apostas",
-        go: "sports",
+        title: "Explore por provedor",
+        sub: "Use os filtros do catálogo para descobrir os jogos disponíveis e comparar categorias.",
+        cta: "Explorar catálogo",
+        go: "lobby",
       },
     ],
     [player]
@@ -460,7 +425,7 @@ export default function CasinoHome({
           setBanner((b) => (b + (dx < 0 ? 1 : banners.length - 1)) % banners.length);
         }}
       >
-        <div style={{ padding: "34px 28px", width: "100%" }}>
+        <div className="casino-banner-copy">
           <span className="ed-kicker"><i aria-hidden="true" /> CANDIBET / CASSINO</span>
           <h1>{banners[banner].title}</h1>
           <p>{banners[banner].sub}</p>

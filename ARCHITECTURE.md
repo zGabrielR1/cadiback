@@ -1,5 +1,7 @@
 # ARCHITECTURE — operator
 
+The public sports transaction seam is `demo/sports_quotes.py`: current-board canonical selection/price validation, exposed by `/api/sports/quote` and enforced by `/api/bet`. `web/lib/sports-slip.mjs` shares board/slip selection and availability rules; receipt retries are resolved by player/request ID before consulting moved markets. See decision 0077.
+
 A 1:1 high-fidelity hobby simulation of a modern betting platform and casino for personal usage.
 The frame outlives the model: `core/` never imports `verticals/` or `models/`;
 verticals and pricing providers plug into one frame instead of forking it.
@@ -60,6 +62,10 @@ demo/
 web/                        React 19 + Next 16 App Router (static export)
     ├── app/page.jsx        shell: casino, sports, embedded official game player, cashier
     ├── app/components/SportsHome.jsx   sport tabs, country→league groups, live scoreboard + odds
+    ├── app/components/BetBuilder.jsx   match research, team counts, market groups and selection drafts
+    ├── app/components/OddsButton.jsx   quote-derived transient directional feedback
+    ├── app/apex.css                   Precision Noir tokens, sports rail and responsive betslip
+    ├── lib/bet-builder.mjs             missing-data semantics and current-quote draft reconciliation
     ├── lib/useSportsFeed.js           sequential refresh, visible retry and last-successful board
     ├── app/components/CasinoHome.jsx   lobby: unified cards + official demos
     ├── app/globals.css     dark default + light toggle

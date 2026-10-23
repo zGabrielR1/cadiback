@@ -1,3 +1,19 @@
+## 2026-10-23 — Softer dark mode and approved redesign (0077)
+
+Implemented the approved discovery and transaction improvements, retaining Candibet identity. Dark mode uses lighter graphite surfaces and softer accents; compact event highlights and disclosed filters prioritize markets on smaller screens. The board uses one selection per fixture, matching server current-quote validation. Inline errors, explicit changed-price acceptance, server receipts and stable retry identity are covered by tests. Build, structure/preflight, Node 15/15, core 50/50, demo 431/431, responsive 90-check browser pass and transaction browser checks pass. Vercel preview dpl_8BRZTyw2UxEoJ9FrXRpm47TnKudW is READY; production/backend deployment awaits GitHub device authentication. See CURRENTTASK for the publication boundary.
+
+## 2026-10-23 — APEX / Precision Noir (0076)
+
+Live at https://cadiback-web.vercel.app, Vercel dpl_HmwLntZfmXrJLcadUkJonBPzrvCB (READY). Retained Candibet/Barlow identity and spacious auth; added graphite/chartreuse/cyan layers, real Geist/Geist Mono fonts, collapsible sports rail, context-sensitive desktop/mobile betslip and quote-derived movement feedback. Corner invitation is stronger, scroll-persistent and available on phones, with dismissal and login/signup actions. Build, Node 13/13, core 50/50, demo 426/426, structure/preflight, 90 responsive browser checks, 57 builder/auth checks and casino compatibility pass. Live desktop/tablet/mobile verification confirms loaded fonts, invitation, reserved slip space, keyboard behavior and no page errors/overflow.
+
+## 2026-10-23 — Criar Aposta and spacious authentication (0075)
+
+Live on https://cadiback-web.vercel.app, Vercel dpl_E3Nt2zBhdtb4aHCfNAWhHhrEJy4v (READY). Added football match research, supplied team counts/scorer markets, grouped selections, refreshed drafts and single-bet transfer; unavailable historical/player stats and joint pricing remain explicit. Authentication has a wider responsive form, password visibility and Enter submission. Taste skill installed locally and applied; design lessons documented in docs/uiagentlearning.md. Final build, Node 13/13, core 50/50, demo 426/426, structure/preflight, 57 viewport browser checks and live desktop/mobile checks pass. Live feed: 320 fixtures, inspected builder 167 football choices and 8 scorer selections; no page errors/overflow. Backend and provider settings unchanged.
+
+## 2026-10-23 — Sportsbook visual identity (0074)
+
+Published to the existing Vercel frontend: Barlow fonts, compact sportsbook opening, denser sports/odds styling, direct-play casino covers and mobile lobby layout. Removed the editorial/serif introduction. Build, structure/preflight, 10 Node tests, 50 core tests and 426 demo tests pass. Mocked browser checks at 1440/390/320px pass with no page errors or horizontal overflow. Production HTML/fonts, backend health, 320-fixture feed and authentication boundary verified. Deployment: dpl_28bonF8FbAf5U6APohrjvwNhhNmp at https://cadiback-web.vercel.app.
+
 # PROGRESS
 
 ## LIVE ON BOTH HOSTS (2026-10-22 — Vercel publication complete)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, BRL, newDepositId, getAdminSession, setAdminSession, getPlayerSession, setPlayerSession } from "../lib/api";
 import { validateCPF, validateCNPJ, validateEmail, validateName, validatePassword, validateUsername } from "../lib/validation";
 import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.mjs";
@@ -10,6 +10,7 @@ import { useSportsFeed } from "../lib/useSportsFeed";
 import CasinoHome from "./components/CasinoHome";
 import SportsHome from "./components/SportsHome";
 import { betIdentity } from "../lib/sports.mjs";
+import { toggleSelection, toLegs, fromQuote, selectionAvailability } from "../lib/sports-slip.mjs";
 import AdminPanel from "./components/AdminPanel";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -47,7 +48,7 @@ export default function Page() {
   const authenticated = !!(player && profile?.player_id === player);
   const [pendingCasino, setPendingCasino] = useState(null);
   const [guestPromptDismissed, setGuestPromptDismissed] = useState(false);
-  const [guestPromptNearTop, setGuestPromptNearTop] = useState(true);
+  const [guestPromptCompact, setGuestPromptCompact] = useState(false);
   const [admin, setAdmin] = useState(null);
   const [casinoCat, setCasinoCat] = useState("Todos");
   const [liveOnly, setLiveOnly] = useState(false);
@@ -61,6 +62,16 @@ export default function Page() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(1);
   const [selectedBets, setSelectedBets] = useState([]);
+  const [slipState, setSlipState] = useState({status:'idle'});
+  const slipRequest = useRef(false);
+  const betRequestId = useRef(null);
+  const availability = selectionAvailability(selectedBets, sports);
+  useEffect(() => { setSlipState({status:'idle'}); betRequestId.current=null; }, [player]);
+  useEffect(() => {
+    const compact = () => { if (window.scrollY > 160) setGuestPromptCompact(true); };
+    window.addEventListener('scroll', compact, {passive:true});
+    return () => window.removeEventListener('scroll', compact);
+  }, []);
   const [betAmount, setBetAmount] = useState("10");
   const [stake, setStake] = useState(500);
   const [reels, setReels] = useState(["—", "—", "—"]);
@@ -143,14 +154,7 @@ export default function Page() {
   const [cryptoCoin, setCryptoCoin] = useState("");
 
   const anyModal = cashOpen || acctOpen || !!activeOfficialGame || !!detailGame;
-  // The invitation belongs to the opening view. Once the reader scrolls into
-  // the board it slides away instead of sitting on top of a match row.
-  useEffect(() => {
-    const sync = () => setGuestPromptNearTop(window.scrollY < 560);
-    sync();
-    window.addEventListener("scroll", sync, { passive: true });
-    return () => window.removeEventListener("scroll", sync);
-  }, []);
+  // Overlays keep keyboard focus and restore the original control on close.
   useEffect(() => {
     if (!anyModal) return undefined;
     const previousFocus = document.activeElement;
@@ -872,49 +876,62 @@ export default function Page() {
   };
 
   const placeBet = async () => {
+    if (slipRequest.current) return;
     if (!player) {
+      setAuthMode("login");
+      setAuthErrors({});
       setAcctOpen(true);
       return;
     }
     if (selectedBets.length === 0) return;
-    const totalOdds = selectedBets.reduce((acc, b) => acc * b.price, 1);
-    const val = parseFloat(betAmount.replace(",", "."));
-    if (isNaN(val) || val <= 0) {
-      window.alert("Informe um valor válido.");
+    const stakeMinor = amountMinor(betAmount);
+    if (stakeMinor === null) {
+      setSlipState({status:'error',message:'Informe um valor válido.'});
       return;
     }
-    const stakeMinor = Math.round(val * 100);
     if (
       profile &&
       profile.available_minor + (profile.bonus_minor || 0) < stakeMinor
     ) {
-      window.alert("Saldo insuficiente para esta aposta demo.");
+      setSlipState({status:'error',message:'Saldo insuficiente para esta aposta demo.'});
       return;
     }
+    const token = getPlayerSession()?.token;
+    const sentBets = selectedBets;
+    slipRequest.current = true;
     setBusy(true);
+    setSlipState({status:'checking',message:'Conferindo mercados e cotações…'});
     try {
+      const fingerprint = JSON.stringify([toLegs(sentBets),stakeMinor]);
+      // A retry first resolves the original request, even if the board has
+      // moved since a response was lost. The server can return its receipt.
+      const retry = betRequestId.current?.fingerprint === fingerprint;
+      const quote = retry ? betRequestId.current.quote : await api('POST','/api/sports/quote',{legs:toLegs(sentBets)});
+      if (getPlayerSession()?.token !== token) return;
+      if (!Array.isArray(quote.legs) || quote.legs.length !== sentBets.length) throw new Error('Não foi possível conferir as cotações. Tente novamente.');
+      if (quote.legs.some((leg,index)=>leg.price!==sentBets[index].price)) {
+        setSlipState({status:'review',message:'As cotações mudaram. Revise os novos preços.',quote});
+        return;
+      }
+      if (!retry) betRequestId.current={fingerprint,id:newDepositId(),quote};
+      setSlipState({status:'submitting',message:'Enviando aposta…'});
       const row = await api("POST", "/api/bet", {
-        legs: selectedBets.map((b) => ({
-          fixture_key: b.fixtureKey,
-          home: b.home,
-          away: b.away,
-          competition: b.competition,
-          market_kind: b.marketKind,
-          selection: b.selection,
-          price: b.price,
-          line: b.line == null ? null : b.line,
-        })),
+        legs: quote.legs,
         stake_minor: stakeMinor,
-        bet_id: newDepositId(),
+        bet_id: betRequestId.current.id,
       });
-      window.alert(
-        `✓ Aposta registrada!\n${totalOdds.toFixed(2)} @ combinada\n${selectedBets.map(b => `${b.selection} @ ${b.price.toFixed(2)}`).join("\n")}\nValor: ${BRL(stakeMinor)}\nConsolidação automática pelo resultado real ao fim das partidas — acompanhe no Histórico.`
-      );
+      if (getPlayerSession()?.token !== token) return;
+      setSlipState({status:'accepted',receipt:row,selections:sentBets});
       setSelectedBets([]);
+      betRequestId.current=null;
       refresh();
     } catch (e) {
-      window.alert(e.message);
+      if (getPlayerSession()?.token !== token) return;
+      setSlipState(e.code==='odds_changed' && Array.isArray(e.details?.legs)
+        ? {status:'review',message:e.message,quote:e.details}
+        : {status:'error',message:e.message,code:e.code});
     } finally {
+      slipRequest.current=false;
       setBusy(false);
     }
   };
@@ -944,24 +961,26 @@ export default function Page() {
     }
   };
 
-  const removeBet = (b) =>
-    setSelectedBets((prev) =>
-      prev.filter((x) => !(betIdentity(x) === betIdentity(b)))
-    );
+  const removeBet = (b) => {
+    if (slipRequest.current) return;
+    setSelectedBets(prev=>prev.filter(x=>betIdentity(x)!==betIdentity(b)));
+    setSlipState({status:'idle'});
+  };
 
-  const selectBet = (b) =>
-    setSelectedBets((prev) => {
-      const idx = prev.findIndex(
-        (x) => betIdentity(x) === betIdentity(b)
-      );
-      return idx >= 0 ? prev.filter((_, i) => i !== idx) : [...prev, b];
-    });
+  const selectBet = b => {
+    if (slipRequest.current) return;
+    const replaced=selectedBets.some(x=>x.fixtureKey===b.fixtureKey && betIdentity(x)!==betIdentity(b));
+    setSelectedBets(prev=>toggleSelection(prev,b));
+    setSlipState({status:'idle',message:replaced?'Seleção da mesma partida substituída. Use uma seleção por partida.':''});
+    setGuestPromptCompact(true);
+  };
 
   const currentGame = allGames.find((g) => g.game_id === current) || null;
 
   return (
     <>
       <Header
+        onHelp={() => setChatOpen(value => !value)}
         view={view}
         casinoCat={casinoCat}
         liveOnly={liveOnly}
@@ -1126,6 +1145,8 @@ export default function Page() {
             onRetry={sportsFeed.retry}
             liveOnly={liveOnly}
             onSelectBet={selectBet}
+            onUseSingleBet={(bet) => { if (!slipRequest.current) { setSelectedBets([bet]); setSlipState({status:'idle'}); } }}
+            onExplore={() => setGuestPromptCompact(true)}
             selectedBets={selectedBets}
             onLive={setLiveOnly}
             authenticated={authenticated}
@@ -1162,6 +1183,7 @@ export default function Page() {
               <button type="button" onClick={() => goCasino("Todos")}>Cassino</button>
               <button type="button" onClick={() => go("promos")}>Promoções</button>
               <button type="button" onClick={openCash}>Caixa</button>
+              <button type="button" onClick={() => setChatOpen(true)}>Ajuda</button>
             </nav>
           </div>
         </footer>
@@ -1184,13 +1206,17 @@ export default function Page() {
       />
 
       <BetslipTray
+        state={slipState}
+        availability={availability}
+        onAcceptQuote={() => { setSelectedBets(fromQuote(slipState.quote)); setSlipState({status:'idle',message:'Novas cotações aceitas. Confira o valor e confirme.'}); betRequestId.current=null; }}
+        onHistory={() => go('account')}
         bets={selectedBets}
         profile={profile}
         betAmount={betAmount}
         onBetAmount={setBetAmount}
         busy={busy}
         onRemove={removeBet}
-        onClear={() => setSelectedBets([])}
+        onClear={() => { if (!slipRequest.current) { setSelectedBets([]); setSlipState({status:'idle'}); } }}
         onPlace={placeBet}
       />
 
@@ -1290,18 +1316,19 @@ export default function Page() {
         onCash={openCash}
       />
 
-      {!authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen ? (
+      {!authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen && !chatOpen && selectedBets.length === 0 ? (
         <aside
-          className={"guest-login-card" + (guestPromptNearTop ? "" : " is-away")}
+          className={'guest-login-card' + (guestPromptCompact ? ' is-compact' : '')}
           aria-label="Acesse sua conta"
-          aria-hidden={!guestPromptNearTop}
-          inert={guestPromptNearTop ? undefined : true}
         >
           <button className="guest-login-dismiss" aria-label="Fechar convite para entrar" onClick={() => setGuestPromptDismissed(true)}>×</button>
-          <span className="guest-login-eyebrow">SUA PRÓXIMA JOGADA</span>
-          <strong>O esporte é para todos.<br />Sua conta abre mais possibilidades.</strong>
-          <p>Continue acompanhando os jogos ou entre para apostar e acessar o cassino.</p>
-          <button onClick={() => { setPendingCasino(null); setAuthMode("login"); setAcctOpen(true); }}>Entrar na minha conta <span aria-hidden="true">↗</span></button>
+          <span className="guest-login-eyebrow"><span className="live-dot" /> Sua conta Candibet</span>
+          <strong>Entre no jogo.<br />Seu próximo lance começa aqui.</strong>
+          <p>Acompanhe seu saldo, prepare seu boletim e tenha seus jogos sempre à mão.</p>
+          <div className="guest-login-actions">
+            <button onClick={() => { setPendingCasino(null); setAuthMode("login"); setAcctOpen(true); }}>Entrar <span aria-hidden="true">↗</span></button>
+            <button className="ghost" onClick={() => { setPendingCasino(null); setAuthMode("register"); setAcctOpen(true); }}>Criar conta</button>
+          </div>
         </aside>
       ) : null}
 

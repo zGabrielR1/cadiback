@@ -1,3 +1,49 @@
+CURRENTTASK: Approved redesign and softer dark mode (0077).
+
+## STATUS (2026-10-23)
+
+- Implemented lighter graphite dark-mode layers, restrained lime, compact phone/tablet event highlight, disclosed filters, one primary market per row, market selector, match-detail list-position restoration and long-label layouts.
+- Corner invitation compacts after exploration. Casino copy describes actual tasks and avoids unsupported fidelity/payment-speed claims.
+- Public sportsbook quotes validate current server fixtures/markets/prices; one leg per fixture. Inline changed-price review, errors and confirmed receipt; retries preserve request identity. See decision 0077.
+- Build, structure/preflight, 15 Node tests, 50 core tests, 431 demo tests, 90 responsive browser checks and mocked quote-review/lost-response/mobile-receipt tests pass. No live wager or payment QA.
+- Vercel preview READY: https://cadiback-id7ld6hls-memy2.vercel.app (deployment dpl_8BRZTyw2UxEoJ9FrXRpm47TnKudW; Vercel authentication enabled). Production remains the prior release: new UI and server must ship together. GitHub saved credentials unavailable; device sign-in requested from owner. Backend push/deploy and production promotion remain pending authentication. Remote admin aggregate before deploy: zero rounds, deposits, withdrawals or liabilities; health OK.
+
+---
+
+CURRENTTASK: APEX / Precision Noir adaptation and stronger login invitation (0076).
+
+## STATUS (2026-10-23)
+
+- Implemented graphite/chartreuse/cyan surfaces, self-hosted Geist interface and numerical fonts with Barlow brand/display retained; refined surfaces/controls and authentic match highlight.
+- Added collapsible desktop sports rail and reserved desktop betslip; tablet/phone have an expandable summary, inline stake errors, explicit estimated return and keyboard collapse/focus restoration. Quote arrows derive only from real quote changes.
+- Corner login invitation is larger, visible while scrolling and on phones, with login/signup actions and dismissal; active transaction/account views take precedence. Fixed guest bet confirmation reopening signup after signup was last used.
+- Build, 13 frontend tests, 50 core tests, 426 demo tests, structure/preflight pass. Browser pass 90 checks at 1440/1100/768/390/320, plus builder/auth compatibility 57 checks; no page errors. Final 90-check responsive pass and casino compatibility checks passed with zero page errors/overflow. Tablet header and mobile login measure reviewed and corrected. LIVE: https://cadiback-web.vercel.app, Vercel dpl_HmwLntZfmXrJLcadUkJonBPzrvCB (READY). Production checks passed: both Geist fonts load; 360px invitation persists/dismisses correctly; rail collapses; desktop slip reserves content space; tablet slip expands/collapses and restores focus; phone invitation/login work without overflow or page errors. HTTP page/fonts/health/sports checks pass (320 fixtures), player route remains 401.
+
+---
+
+CURRENTTASK: Criar Aposta, spacious login and taste-skill refinement (0075).
+
+## STATUS (2026-10-23)
+
+- Implemented football match research with current team stats, grouped markets, supplied scorer selections, a reconciled draft and single-selection transfer. Same-match combined pricing and missing historical/player-level stats are explicitly unavailable. Mobile has separate Markets/Statistics/Draft panes.
+- Authentication now has a spacious responsive dialog, semantic form/Enter submission, password visibility and clearer field spacing; existing PF/PJ/social/Turnstile/recovery contracts retained. Taste-guided refinements preserve the approved brand, flatten banners and move help out of the way of odds.
+- Installed Leonxlnx/taste-skill locally through direct-download fallback after the requested npx command encountered Git TLS failure. Read its app-screen guidance and applied Data terminal (seed 501942732, palette/type kept). Created docs/uiagentlearning.md.
+- Checks: final production build, Node 13/13, core 50/50, demo 426/426, structure/preflight pass. Browser pass: 57 checks at 1440/768/390/320px, no page errors; desktop/tablet/phone/light and empty/signup screenshots reviewed. Source lint: zero FAIL, two documented semantic warnings. Stock skill inspector timed out at Page.enable; no clean inspector claim.
+- LIVE: https://cadiback-web.vercel.app, Vercel dpl_E3Nt2zBhdtb4aHCfNAWhHhrEJy4v (READY). Public page carries Criar Aposta; proxied health ok; sports returns 320 fixtures; Google/Facebook providers configured; protected player route returns 401. Live browser verification passed: 167 football match options, 8 supplied scorer selections on the inspected match, single-bet transfer, country search, mobile statistics pane, no overflow, login focus/form/social providers and Escape; zero page errors.
+
+---
+
+CURRENTTASK: Sportsbook visual identity refresh and Vercel release (0074).
+
+## STATUS (2026-10-23)
+
+- Implemented self-hosted Barlow typography, compact match highlight, slate/lime betting surfaces, denser sports navigation and odds, direct-play casino covers with separate details controls, smaller banners and streamlined mobile filters. Removed the long editorial introduction and serif/decorative layer.
+- Validation: production export build passed; Node 10/10, frame 50/50, demo 426/426; structure verification and Render preflight report zero problems. Browser checks with simulated API responses passed at 1440, 390 and 320px: no page errors or horizontal overflow, sports search/odds selection/betslip and casino details passed. Desktop/mobile screenshots visually reviewed.
+- LIVE: https://cadiback-web.vercel.app on Vercel deployment dpl_28bonF8FbAf5U6APohrjvwNhhNmp (READY). Production HTML and bundled fonts return 200; new sportsbook markup present, former editorial introduction absent; proxied health ok; sports returns 320 fixtures; Google/Facebook providers available; unauthenticated player route correctly returns 401. Backend and provider configuration unchanged.
+- Live browser verification passed on the production hostname: Barlow loaded, 157 football event rows rendered, mobile has no horizontal overflow, selecting odds opens the betslip, and no page errors were observed.
+
+---
+
 CURRENTTASK: Combined release published and verified on both production hosts.
 
 ## STATUS (2026-10-22)

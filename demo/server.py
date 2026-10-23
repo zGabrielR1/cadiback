@@ -77,6 +77,7 @@ from .arcade import (ARCADE_GAME_IDS, CRASH_GAME_ID, CRASH_GROWTH_PER_SEC,
                      crash_multiplier_at, theoretical_rtp as
                      arcade_theoretical_rtp)
 from . import behaviour
+from .sports_quotes import SportsQuoteError, quote_legs, require_same_prices
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
 from . import pg_proxy
@@ -2766,6 +2767,35 @@ class Demo:
             "stake_minor": final["stake_minor"],
             "available_minor": final["available_minor"],
         }
+
+    def quote_sports_bet(self, payload: dict) -> dict:
+        return quote_legs(payload.get("legs"), self.sports_showcase())
+
+    def place_sports_bet(self, payload: dict) -> dict:
+        # Public entry point: source identities/prices, never client-supplied
+        # totals. The low-level bet method also serves internal simulation tests.
+        legs = payload.get("legs")
+        if legs is None:
+            legs = [payload]
+        # A response can be lost after a confirmed debit. Replaying the same
+        # request ID returns its receipt, never a second stake.
+        for row in self._all_rounds():
+            if row.get("type") != "sports" or row.get("player") != payload.get("player") or row.get("round_id") != payload.get("bet_id"):
+                continue
+            old = row.get("legs") or []
+            try:
+                same = isinstance(legs, list) and len(old) == len(legs) and int(payload.get("stake_minor")) == row.get("stake_minor") and all(
+                    str(a.get("fixture_key")) == str(b.get("fixture_key")) and str(a.get("market_kind", "1x2")) == str(b.get("market_kind", "1x2"))
+                    and a.get("selection") == b.get("selection") and float(a.get("price")) == float(b.get("price"))
+                    and a.get("line") == b.get("line") for a, b in zip(old, legs))
+            except (TypeError, ValueError, AttributeError):
+                same = False
+            if not same:
+                raise SportsQuoteError("Esta referência já foi usada com outros dados.", "idempotency_conflict")
+            return row
+        quote = self.quote_sports_bet({"legs": legs})
+        require_same_prices(legs, quote)
+        return self.bet({**payload, "legs": quote["legs"]})
 
     def bet(self, payload: dict) -> dict:
         player_id = payload["player"]
@@ -5532,9 +5562,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, DEMO.wallet_credit(self._body()))
             elif path == "/api/wallet/round":
                 self._send(200, DEMO.wallet_round(self._body()))
+            elif path == "/api/sports/quote":
+                self._send(200, DEMO.quote_sports_bet(self._body()))
             elif path == "/api/bet":
+                body = self._player_body()
                 DEMO.settle_pending()
-                self._send(200, DEMO.bet(self._player_body()))
+                self._send(200, DEMO.place_sports_bet(body))
             elif path == "/api/settle":
                 settled = DEMO.settle_pending()
                 self._send(200, {"settled": len(settled), "rows": settled})
@@ -5614,6 +5647,8 @@ class Handler(BaseHTTPRequestHandler):
             # a bot gate: 403, not a validation 400 — the request was refused,
             # not malformed
             self._send(403, {"error": str(exc)})
+        except SportsQuoteError as exc:
+            self._send(409, {"error": str(exc), "code": exc.code, "details": exc.details})
         except DuplicatePosting as exc:
             self._send(400, {"error": f"duplicate id: {exc}"})
         except (KeyError, ValueError) as exc:

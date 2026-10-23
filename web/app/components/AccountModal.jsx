@@ -32,6 +32,8 @@ export default function AccountModal({
   onClose,
 }) {
   const [secretFilled, setSecretFilled] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  useEffect(() => { setShowPassword(false); }, [open, mode]);
 
   useEffect(() => {
     if (!open) {
@@ -65,9 +67,9 @@ export default function AccountModal({
           ? "Esqueci minha senha"
           : "Criar nova senha";
   const subtitle = isLogin
-      ? "Acesse com seu usuário, email, CPF ou CNPJ e sua senha."
+      ? "Entre com email, usuário, CPF ou CNPJ."
       : isRegister
-        ? "Escolha PF ou PJ. CPF e CNPJ são formatados e validados antes do cadastro."
+        ? "Preencha seus dados. Você pode criar uma conta pessoal ou de empresa."
         : isForgot
           ? "Informe o email da sua conta. Se ela existir, enviaremos um link para criar uma nova senha."
           : "Escolha uma nova senha. O link que você abriu só pode ser usado uma vez.";
@@ -78,25 +80,30 @@ export default function AccountModal({
   const documentError = documentKind === "cnpj" ? validateCNPJ(form.cnpj) : validateCPF(form.cpf);
   if (isRegister && completeDocument) fieldErrors[documentKind] = documentError;
   const field = (id, label, props, hint) => (
-    <>
+    <div className="auth-field">
       <label htmlFor={id}>{label}</label>
+      <div className="auth-input-wrap">
       <input
         id={id}
         value={form[props.name] || ""}
         onChange={(e) => onForm({ ...form, [props.name]: props.name === "cpf" ? formatCPF(e.target.value) : props.name === "cnpj" ? formatCNPJ(e.target.value) : e.target.value })}
         aria-invalid={fieldErrors[props.name] ? "true" : undefined}
+        aria-describedby={fieldErrors[props.name] || hint || (props.name === documentKind && completeDocument && !documentError) ? id + '-message' : undefined}
         {...props}
+        type={props.type === 'password' && showPassword ? 'text' : props.type}
       />
+      {props.type === 'password' ? <button type="button" className="auth-reveal" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? 'Ocultar' : 'Mostrar'}</button> : null}
+      </div>
       {fieldErrors[props.name] ? (
-        <p className="ferr" role="alert">
+        <p id={id + '-message'} className="ferr" role="alert">
           {fieldErrors[props.name]}
         </p>
       ) : props.name === documentKind && completeDocument && !documentError ? (
-        <p className="fok" role="status">{documentKind.toUpperCase()} válido — dígitos verificadores conferem.</p>
+        <p id={id + '-message'} className="fok" role="status">{documentKind.toUpperCase()} válido — dígitos verificadores conferem.</p>
       ) : hint ? (
-        <p className="fhint">{hint}</p>
+        <p id={id + '-message'} className="fhint">{hint}</p>
       ) : null}
-    </>
+    </div>
   );
   const socialRow = (isLogin || isRegister) && oauthProviders.length > 0 ? (
     <div className="oauth-row">
@@ -117,7 +124,7 @@ export default function AccountModal({
   ) : null;
   return (
     <div
-      className={"modal" + (open ? " open" : "")}
+      className={"modal auth-modal" + (open ? " open" : "")}
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
@@ -126,9 +133,17 @@ export default function AccountModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="sheet">
-        <h3>{title}</h3>
-        <p className="sub">{subtitle}</p>
+      <div className={"sheet auth-sheet" + (isRegister ? " auth-register" : "")}>
+        <aside className="auth-aside">
+          <div className="auth-wordmark">candi<span>bet</span></div>
+          <div><h2>O próximo jogo.<br />A sua leitura.</h2><p>Esportes, mercados ao vivo e cassino. Tudo na sua conta.</p></div>
+          <p className="auth-responsibility">18+ · Jogue com responsabilidade.</p>
+        </aside>
+        <div className="auth-main">
+        <button type="button" className="auth-close" aria-label="Fechar acesso à conta" onClick={onClose}>×</button>
+        <div className="auth-heading"><h3>{isLogin ? 'Bom ter você de volta.' : title}</h3><p className="sub">{subtitle}</p></div>
+        {(isLogin || isRegister) ? <div className="auth-mode-nav" aria-label="Tipo de acesso"><button type="button" aria-pressed={isLogin} onClick={() => onMode('login')}>Entrar</button><button type="button" aria-pressed={isRegister} onClick={() => onMode('register')}>Criar conta</button></div> : null}
+        <form onSubmit={event => { event.preventDefault(); onSubmit(); }}>
         {isLogin ? (
           <>
             {field("identifier", "Usuário, email, CPF ou CNPJ", {
@@ -145,8 +160,7 @@ export default function AccountModal({
             {passwordResetEnabled ? (
               <button
                 type="button"
-                className="ghost"
-                style={{ width: "100%", marginTop: 6 }}
+                className="auth-forgot"
                 onClick={() => onMode("forgot")}
               >
                 Esqueci minha senha
@@ -303,7 +317,6 @@ export default function AccountModal({
             {errors._}
           </p>
         ) : null}
-        {socialRow}
         {turnstileSiteKey && (isLogin || isRegister || isForgot) ? (
           <div style={{ marginTop: 12 }}>
             <TurnstileWidget
@@ -322,7 +335,8 @@ export default function AccountModal({
           </div>
         ) : null}
         <button
-          onClick={onSubmit}
+          type="submit"
+          className="auth-submit"
           disabled={!!busy}
           style={{ marginTop: 14 }}
         >
@@ -336,6 +350,7 @@ export default function AccountModal({
                     ? "Enviar link"
                     : "Redefinir senha"}
         </button>
+        {socialRow}
         {secretFilled ? (
           <p className="fhint" style={{ marginTop: 8 }} role="status">
             {isLogin
@@ -345,6 +360,7 @@ export default function AccountModal({
         ) : null}
         {(
           <button
+            type="button"
             className="ghost"
             style={{ width: "100%", marginTop: 8 }}
             onClick={() =>
@@ -358,13 +374,8 @@ export default function AccountModal({
                 : "Voltar para entrar"}
           </button>
         )}
-        <button
-          className="ghost"
-          style={{ width: "100%", marginTop: 8 }}
-          onClick={onClose}
-        >
-          Fechar
-        </button>
+        </form>
+        </div>
       </div>
     </div>
   );

@@ -60,12 +60,12 @@ export default function ChatWidget({ open, log, input, onInput, onSend, onToggle
           </div>
         </div>
       ) : null}
-      <button
+      {open ? <button
         onClick={onToggle}
         style={{ position: "fixed", right: 16, bottom: 76, zIndex: 40, width: "auto", padding: "10px 16px", borderRadius: 999 }}
       >
-        {open ? "Fechar Chat" : "💬 Ajuda"}
-      </button>
+        Fechar Chat
+      </button> : null}
     </>
   );
 }

@@ -120,7 +120,7 @@ export async function api(method, path, body) {
   const session = getAdminSession();
   const player = getPlayerSession();
   const controller = new AbortController();
-  const timeout = /^\/api\/deposit\/(pix|crypto)$/.test(path) ? PAYMENT_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const timeout = /^\/api\/deposit\/(pix|crypto)$/.test(path) || ['/api/sports/quote','/api/bet'].includes(path) ? PAYMENT_TIMEOUT_MS : path === '/api/sports' ? 20000 : REQUEST_TIMEOUT_MS;
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const r = await fetch(path, {
@@ -154,6 +154,8 @@ export async function api(method, path, body) {
     if (!r.ok) {
       const error = new Error(j?.error || "HTTP " + r.status);
       error.status = r.status;
+      error.code = j?.code;
+      error.details = j?.details;
       throw error;
     }
     return j;

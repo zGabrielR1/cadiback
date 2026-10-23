@@ -1,4 +1,6 @@
 import "./globals.css";
+import "./workspace.css";
+import "./apex.css";
 
 export const metadata = {
   title: "Candibet — Esportes e Cassino",
@@ -9,6 +11,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" data-theme="dark">
       <head>
+        <link rel="preload" href="/fonts/Geist-Variable.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/BarlowSemiCondensed-Bold.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         {/* Set before first paint so the reveal layer can hide only when
             JavaScript is actually available; no-JS readers still get the
             whole page. */}

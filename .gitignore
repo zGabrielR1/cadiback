@@ -22,6 +22,9 @@ deploy/.wrangler/
 .vercel/
 web/.vercel/
 
+# Local screenshots, browser measurements and dealt design scratch.
+.taste-skill/
+
 # the live ledger, profiles, rounds and admin sessions — a deployment starts
 # with its own (OPERATOR_DATA_DIR), and this is someone's play money history
 demo/data/
