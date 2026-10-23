@@ -1,5 +1,7 @@
 CURRENTTASK: Approved redesign and softer dark mode (0077).
 
+Owner follow-up recorded in `docs/design-feedback.md`: less rounding; dark mode should be darker with softer contrast; Criar Aposta should start with all sports and provide sport-appropriate research, keeping selected-event context. These notes are pending implementation and are not included in the existing preview. Owner requested renewed GitHub authentication to publish the prepared release.
+
 ## STATUS (2026-10-23)
 
 - Implemented lighter graphite dark-mode layers, restrained lime, compact phone/tablet event highlight, disclosed filters, one primary market per row, market selector, match-detail list-position restoration and long-label layouts.
