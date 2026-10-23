@@ -47,6 +47,7 @@ export default function Page() {
   const authenticated = !!(player && profile?.player_id === player);
   const [pendingCasino, setPendingCasino] = useState(null);
   const [guestPromptDismissed, setGuestPromptDismissed] = useState(false);
+  const [guestPromptNearTop, setGuestPromptNearTop] = useState(true);
   const [admin, setAdmin] = useState(null);
   const [casinoCat, setCasinoCat] = useState("Todos");
   const [liveOnly, setLiveOnly] = useState(false);
@@ -142,6 +143,14 @@ export default function Page() {
   const [cryptoCoin, setCryptoCoin] = useState("");
 
   const anyModal = cashOpen || acctOpen || !!activeOfficialGame || !!detailGame;
+  // The invitation belongs to the opening view. Once the reader scrolls into
+  // the board it slides away instead of sitting on top of a match row.
+  useEffect(() => {
+    const sync = () => setGuestPromptNearTop(window.scrollY < 560);
+    sync();
+    window.addEventListener("scroll", sync, { passive: true });
+    return () => window.removeEventListener("scroll", sync);
+  }, []);
   useEffect(() => {
     if (!anyModal) return undefined;
     const previousFocus = document.activeElement;
@@ -1282,7 +1291,12 @@ export default function Page() {
       />
 
       {!authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen ? (
-        <aside className="guest-login-card" aria-label="Acesse sua conta">
+        <aside
+          className={"guest-login-card" + (guestPromptNearTop ? "" : " is-away")}
+          aria-label="Acesse sua conta"
+          aria-hidden={!guestPromptNearTop}
+          inert={guestPromptNearTop ? undefined : true}
+        >
           <button className="guest-login-dismiss" aria-label="Fechar convite para entrar" onClick={() => setGuestPromptDismissed(true)}>×</button>
           <span className="guest-login-eyebrow">SUA PRÓXIMA JOGADA</span>
           <strong>O esporte é para todos.<br />Sua conta abre mais possibilidades.</strong>
