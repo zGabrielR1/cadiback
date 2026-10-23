@@ -1119,6 +1119,8 @@ export default function Page() {
             onSelectBet={selectBet}
             selectedBets={selectedBets}
             onLive={setLiveOnly}
+            authenticated={authenticated}
+            onCasino={goCasino}
           />
         ) : null}
 
@@ -1142,8 +1144,17 @@ export default function Page() {
           />
         ) : null}
 
-        <footer>
-          Candibet · Esportes e entretenimento em um só lugar. · 18+ · Jogue com responsabilidade.
+        <footer className="site-footer">
+          <div className="footer-mark" aria-hidden="true">CANDIBET<span>.</span></div>
+          <div className="footer-bottom">
+            <p>Candibet · Esportes e entretenimento em um só lugar. · 18+ · Jogue com responsabilidade.</p>
+            <nav aria-label="Navegação do rodapé">
+              <button type="button" onClick={() => goSport(false)}>Esportes</button>
+              <button type="button" onClick={() => goCasino("Todos")}>Cassino</button>
+              <button type="button" onClick={() => go("promos")}>Promoções</button>
+              <button type="button" onClick={openCash}>Caixa</button>
+            </nav>
+          </div>
         </footer>
       </div>
 

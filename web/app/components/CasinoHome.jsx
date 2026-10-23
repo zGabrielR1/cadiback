@@ -448,7 +448,7 @@ export default function CasinoHome({
     <>
       <SpotlightCard
         spotlightColor="#7bf5b4" intensity={0.13}
-        className="hero carousel"
+        className="hero carousel ed-casino-hero"
         onTouchStart={(e) => {
           touch.current = e.touches[0].clientX;
         }}
@@ -461,6 +461,7 @@ export default function CasinoHome({
         }}
       >
         <div style={{ padding: "34px 28px", width: "100%" }}>
+          <span className="ed-kicker"><i aria-hidden="true" /> CANDIBET / CASSINO</span>
           <h1>{banners[banner].title}</h1>
           <p>{banners[banner].sub}</p>
           <div className="cta">
