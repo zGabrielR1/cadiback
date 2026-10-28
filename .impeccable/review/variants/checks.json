@@ -1,0 +1,563 @@
+{
+  "results": [
+    {
+      "name": "1440 original default",
+      "pass": true
+    },
+    {
+      "name": "1440 classic dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic search visible",
+      "pass": true
+    },
+    {
+      "name": "1440 classic distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "1440 classic guest no slip",
+      "pass": true
+    },
+    {
+      "name": "1440 classic light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue search visible",
+      "pass": true
+    },
+    {
+      "name": "1440 blue distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "1440 blue guest no slip",
+      "pass": true
+    },
+    {
+      "name": "1440 blue light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 search filters board",
+      "pass": true
+    },
+    {
+      "name": "1440 switching preserves search",
+      "pass": true
+    },
+    {
+      "name": "1440 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "1440 switching preserves favorite filter",
+      "pass": true
+    },
+    {
+      "name": "1440 switching preserves expanded markets",
+      "pass": true
+    },
+    {
+      "name": "1440 public research",
+      "pass": true
+    },
+    {
+      "name": "1440 classic detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 research restores focus",
+      "pass": true
+    },
+    {
+      "name": "1440 login validation",
+      "pass": true
+    },
+    {
+      "name": "1440 appearance persists reload",
+      "pass": true
+    },
+    {
+      "name": "1440 direct original link",
+      "pass": true
+    },
+    {
+      "name": "1440 direct blue link",
+      "pass": true
+    },
+    {
+      "name": "768 original default",
+      "pass": true
+    },
+    {
+      "name": "768 classic dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 classic search visible",
+      "pass": true
+    },
+    {
+      "name": "768 classic distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "768 classic guest no slip",
+      "pass": true
+    },
+    {
+      "name": "768 classic light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 blue dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 blue search visible",
+      "pass": true
+    },
+    {
+      "name": "768 blue distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "768 blue guest no slip",
+      "pass": true
+    },
+    {
+      "name": "768 blue light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 search filters board",
+      "pass": true
+    },
+    {
+      "name": "768 switching preserves search",
+      "pass": true
+    },
+    {
+      "name": "768 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "768 switching preserves favorite filter",
+      "pass": true
+    },
+    {
+      "name": "768 switching preserves expanded markets",
+      "pass": true
+    },
+    {
+      "name": "768 public research",
+      "pass": true
+    },
+    {
+      "name": "768 classic detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 blue detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 research restores focus",
+      "pass": true
+    },
+    {
+      "name": "768 login validation",
+      "pass": true
+    },
+    {
+      "name": "768 appearance persists reload",
+      "pass": true
+    },
+    {
+      "name": "768 direct original link",
+      "pass": true
+    },
+    {
+      "name": "768 direct blue link",
+      "pass": true
+    },
+    {
+      "name": "390 original default",
+      "pass": true
+    },
+    {
+      "name": "390 classic dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic search visible",
+      "pass": true
+    },
+    {
+      "name": "390 classic distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "390 classic guest no slip",
+      "pass": true
+    },
+    {
+      "name": "390 classic light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue search visible",
+      "pass": true
+    },
+    {
+      "name": "390 blue distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "390 blue guest no slip",
+      "pass": true
+    },
+    {
+      "name": "390 blue light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 search filters board",
+      "pass": true
+    },
+    {
+      "name": "390 switching preserves search",
+      "pass": true
+    },
+    {
+      "name": "390 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "390 switching preserves favorite filter",
+      "pass": true
+    },
+    {
+      "name": "390 switching preserves expanded markets",
+      "pass": true
+    },
+    {
+      "name": "390 public research",
+      "pass": true
+    },
+    {
+      "name": "390 classic detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 research restores focus",
+      "pass": true
+    },
+    {
+      "name": "390 login validation",
+      "pass": true
+    },
+    {
+      "name": "390 appearance persists reload",
+      "pass": true
+    },
+    {
+      "name": "390 direct original link",
+      "pass": true
+    },
+    {
+      "name": "390 direct blue link",
+      "pass": true
+    },
+    {
+      "name": "320 original default",
+      "pass": true
+    },
+    {
+      "name": "320 classic dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 classic search visible",
+      "pass": true
+    },
+    {
+      "name": "320 classic distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "320 classic guest no slip",
+      "pass": true
+    },
+    {
+      "name": "320 classic light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 blue dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 blue search visible",
+      "pass": true
+    },
+    {
+      "name": "320 blue distinct highlight count",
+      "pass": true
+    },
+    {
+      "name": "320 blue guest no slip",
+      "pass": true
+    },
+    {
+      "name": "320 blue light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 search filters board",
+      "pass": true
+    },
+    {
+      "name": "320 switching preserves search",
+      "pass": true
+    },
+    {
+      "name": "320 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "320 switching preserves favorite filter",
+      "pass": true
+    },
+    {
+      "name": "320 switching preserves expanded markets",
+      "pass": true
+    },
+    {
+      "name": "320 public research",
+      "pass": true
+    },
+    {
+      "name": "320 classic detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 blue detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 research restores focus",
+      "pass": true
+    },
+    {
+      "name": "320 login validation",
+      "pass": true
+    },
+    {
+      "name": "320 appearance persists reload",
+      "pass": true
+    },
+    {
+      "name": "320 direct original link",
+      "pass": true
+    },
+    {
+      "name": "320 direct blue link",
+      "pass": true
+    },
+    {
+      "name": "1440 appearance preserves stake",
+      "pass": true
+    },
+    {
+      "name": "1440 appearance preserves selection",
+      "pass": true
+    },
+    {
+      "name": "1440 blue slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic wallet fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue wallet fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 classic actual price retained",
+      "pass": true
+    },
+    {
+      "name": "1440 blue casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 blue actual price retained",
+      "pass": true
+    },
+    {
+      "name": "390 appearance preserves stake",
+      "pass": true
+    },
+    {
+      "name": "390 appearance preserves selection",
+      "pass": true
+    },
+    {
+      "name": "390 blue slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic wallet fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue wallet fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 classic actual price retained",
+      "pass": true
+    },
+    {
+      "name": "390 blue casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 blue actual price retained",
+      "pass": true
+    },
+    {
+      "name": "classic error feed state",
+      "pass": true
+    },
+    {
+      "name": "classic empty feed state",
+      "pass": true
+    },
+    {
+      "name": "blue error feed state",
+      "pass": true
+    },
+    {
+      "name": "blue empty feed state",
+      "pass": true
+    },
+    {
+      "name": "direct blue works with storage blocked",
+      "pass": true
+    },
+    {
+      "name": "switch works with storage blocked",
+      "pass": true
+    },
+    {
+      "name": "no browser runtime errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "classic-1440-dark-fold.png",
+    "classic-1440.png",
+    "classic-1440-light-fold.png",
+    "blue-1440-dark-fold.png",
+    "blue-1440.png",
+    "blue-1440-light-fold.png",
+    "detail-classic-1440.png",
+    "detail-blue-1440.png",
+    "login-blue-1440.png",
+    "login-classic-1440.png",
+    "classic-768-dark-fold.png",
+    "classic-768-light-fold.png",
+    "blue-768-dark-fold.png",
+    "blue-768-light-fold.png",
+    "classic-390-dark-fold.png",
+    "classic-390.png",
+    "classic-390-light-fold.png",
+    "blue-390-dark-fold.png",
+    "blue-390.png",
+    "blue-390-light-fold.png",
+    "detail-classic-390.png",
+    "detail-blue-390.png",
+    "login-blue-390.png",
+    "login-classic-390.png",
+    "classic-320-dark-fold.png",
+    "classic-320-light-fold.png",
+    "blue-320-dark-fold.png",
+    "blue-320-light-fold.png",
+    "slip-blue-1440.png",
+    "slip-classic-1440.png",
+    "account-classic-1440.png",
+    "cashier-classic-1440.png",
+    "account-blue-1440.png",
+    "cashier-blue-1440.png",
+    "casino-classic-1440.png",
+    "casino-blue-1440.png",
+    "slip-blue-390.png",
+    "slip-classic-390.png",
+    "account-classic-390.png",
+    "cashier-classic-390.png",
+    "account-blue-390.png",
+    "cashier-blue-390.png",
+    "casino-classic-390.png",
+    "casino-blue-390.png",
+    "feed-classic-error.png",
+    "feed-classic-empty.png",
+    "feed-blue-error.png",
+    "feed-blue-empty.png"
+  ]
+}

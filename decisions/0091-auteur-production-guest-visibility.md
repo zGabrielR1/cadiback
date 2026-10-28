@@ -1,0 +1,13 @@
+# 0091 — Auteur Sports desk production and guest visibility
+
+The owner enthusiastically approved0090, requested that signed-out visitors not see account/wallet or betting controls while retaining those features after login, and explicitly authorized deployment. That approval satisfies Auteur's mockup gate and includes the whole existing frontend integration.
+
+Implementation: normal builds select auteur; NEXT_PUBLIC_LOCAL_BLUE still builds the separate local Blue. New auteur.css provides the approved shared tokens and typography over the existing functional components. SportsHome gains real-feed score strip and context desk, one aligned row per fixture and working discovery controls. AccountView replaces the decorative balance ring with readable financial type and section navigation; cashier adds persistent context while keeping provider minimums, review, payment status and validation. Authentication/signup/social/recovery, terminal/game and admin contracts are reused.
+
+Guest controls are removed through conditional rendering: account view/cashier require authenticated state, header funds depend on validated profile, mobile More omits account/promotions/cash, guest catalog navigation stays absent even if a portal preference remains, guest detail omits the account advertisement, and no guest slip is mounted. Logout clears selected bets and protected views. A neutral Entrar door remains; public odds open research rather than submitting a selection. This is presentation and existing session gating, not a new backend authorization scheme.
+
+Published Vercel dpl_2GvN6watgvdMaqX7p9ZyDtRDmPDG READY at https://cadiback-web.vercel.app (immutable https://cadiback-fezqt80ev-memy2.vercel.app). Existing secret BACKEND_URL retained, no environment mutation or backend deploy.
+
+Checks: static export and hosted server build; verify0; core50/backend426; six Node test files. Local and published controlled-API browser62/62 at1440/768/390/320 cover guest hiding, dark/light, public detail, context/filter recovery, login, authenticated selection/cashier/account and no page errors/overflow. Extra12/12 cover logout/signup/portal/owner-panel entry. Actual production page/fonts/health/sports200, sports320Flashscorefixtures, unauthenticated player401. No real credentials/accounts/financial transactions exercised.
+
+New CSS slopscan0FAIL/0WARN. Public systemscan passes on feed-error view, within budget and with visible input focus; this does not substitute for a full authenticated state crawl. Full source scan retains one old unused SpotlightCard listener finding and uppercase metadata warning. No new systemscan suppression. Browser captures are the functional evidence for member surfaces. Licence texts shipped beside both local fonts.

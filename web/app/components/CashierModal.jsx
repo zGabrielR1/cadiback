@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BRL } from "../../lib/api";
 import { amountMinor, depositAllowed, clampDeposit } from "../../lib/money.mjs";
 
@@ -20,6 +20,8 @@ export default function CashierModal({
   onDepositAmount,
   withdrawAmount,
   onWithdrawAmount,
+  availableMinor = null,
+  bonusMinor = 0,
   receipt,
   error = "",
   depositLimit = null,
@@ -44,9 +46,14 @@ export default function CashierModal({
   onClose,
 }) {
   const [copied, setCopied] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  useEffect(() => { setReviewOpen(false); }, [open, tab]);
   const realPix = asaasAvailable && method === "pix";
   const realCrypto = cryptoAvailable && method === "crypto";
   const canDeposit = depositAllowed(depositAmount, depositLimit);
+  const withdrawMinor = amountMinor(withdrawAmount);
+  const canWithdraw = !!withdrawMinor && (pixRegistered || !!withdrawPixKey.trim()) && !busy;
+  const fundsAfter = availableMinor != null && withdrawMinor != null ? Math.max(0, availableMinor - withdrawMinor) : null;
 
   const copyPix = async () => {
     try {
@@ -77,8 +84,8 @@ export default function CashierModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="sheet">
-        <h3>Caixa da Conta</h3>
+      <div className="sheet cashier-sheet"><div className="cashier-main">
+        <h3>Sua carteira</h3><p className="sub">Acompanhe cada etapa do depósito e da retirada.</p>
         <div className="tabs">
           <button className={tab === "dep" ? "on" : ""} onClick={() => onTab("dep")}>
             Depositar
@@ -255,9 +262,26 @@ export default function CashierModal({
             <p className="sub" style={{ marginTop: 6 }}>
               O saque demo sai imediatamente para a chave Pix cadastrada em sua conta.
             </p>
-            <button disabled={busy || !amountMinor(withdrawAmount) || (!pixRegistered && !withdrawPixKey.trim())} onClick={onWithdraw} style={{ marginTop: 12 }}>
-              Sacar agora via Pix
-            </button>
+            {reviewOpen ? (
+              <div className="cashier-review" role="group" aria-label="Revisar saque">
+                <dl>
+                  <div><dt>Saldo disponível</dt><dd>{availableMinor != null ? BRL(availableMinor) : "—"}</dd></div>
+                  {bonusMinor > 0 ? <div><dt>Bônus (não sacável)</dt><dd>{BRL(bonusMinor)}</dd></div> : null}
+                  <div><dt>Valor do saque</dt><dd>{withdrawMinor != null ? BRL(withdrawMinor) : "—"}</dd></div>
+                  <div><dt>Saldo após o saque</dt><dd>{fundsAfter != null ? BRL(fundsAfter) : "—"}</dd></div>
+                  <div><dt>Destino</dt><dd>{pixRegistered ? pixMasked : withdrawPixKey.trim()}</dd></div>
+                  <div><dt>Taxa e prazo</dt><dd>Sem taxa · crédito imediato na conta demo</dd></div>
+                </dl>
+                <div className="cashier-review-actions">
+                  <button className="ghost" disabled={busy} onClick={() => setReviewOpen(false)}>Voltar</button>
+                  <button disabled={!canWithdraw} onClick={() => { setReviewOpen(false); onWithdraw(); }}>Confirmar saque de {withdrawMinor != null ? BRL(withdrawMinor) : "—"}</button>
+                </div>
+              </div>
+            ) : (
+              <button disabled={!canWithdraw} onClick={() => setReviewOpen(true)} style={{ marginTop: 12 }}>
+                Revisar saque via Pix
+              </button>
+            )}
             {receipt ? (
               <div style={{ fontSize: 12.5, color: "var(--acc)", marginTop: 8 }}>{receipt}</div>
             ) : null}
@@ -267,7 +291,7 @@ export default function CashierModal({
         <button className="ghost" style={{ width: "100%", marginTop: 12 }} onClick={onClose}>
           Fechar
         </button>
-      </div>
+      </div><aside className="cashier-context"><h3>Cada etapa à vista.</h3><ol><li>Escolha o método e consulte o valor mínimo.</li><li>Confira os dados antes de confirmar.</li><li>Acompanhe o status e a confirmação do provedor.</li></ol><p>Uma atualização de página não duplica o crédito. As retiradas exigem revisão antes do envio.</p></aside></div>
     </div>
   );
 }

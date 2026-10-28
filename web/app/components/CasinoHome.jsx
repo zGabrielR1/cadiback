@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import SpotlightCard from "./reactbits/SpotlightCard";
+import UIIcon from "./UIIcon";
+import { validMarkets } from "../../lib/sports.mjs";
 import { api, BRL } from "../../lib/api";
 import { readRecent } from "../../lib/localCache";
 
@@ -29,28 +30,15 @@ const CATEGORIES = [
   "Promoções",
 ];
 
-function gameIcon(gameId) {
-  if (gameId.includes("olympus")) return "⚡";
-  if (gameId.includes("bonanza")) return "🍬";
-  if (gameId.includes("sugar")) return "🍭";
-  if (gameId.includes("bass")) return "🎣";
-  if (gameId.includes("starlight")) return "👑";
-  if (gameId.includes("dog")) return "🐶";
-  if (gameId.includes("wolf")) return "🐺";
-  if (gameId.includes("fruit")) return "🍓";
-  if (gameId.includes("aviator")) return "✈️";
-  if (gameId.includes("space")) return "🚀";
-  if (gameId.includes("city")) return "🎲";
-  if (gameId.includes("dead")) return "📜";
-  if (gameId.includes("roulette")) return "🎯";
-  if (gameId.includes("blackjack")) return "🃏";
-  if (gameId.includes("baccarat")) return "🂡";
-  if (gameId.includes("tiger")) return "🐯";
-  if (gameId.includes("mahjong")) return "🀄";
-  if (gameId.includes("neon")) return "💎";
-  if (gameId.includes("fortune")) return "🪙";
-  return "🎰";
-}
+// Home-made promotions: real games curated by the operator with a concrete,
+// stated benefit. Each entry must name the game and the benefit; nothing is
+// fabricated beyond what the catalog actually offers.
+const PROMO_GAME_IDS = [
+  "pp:gates-of-olympus",
+  "spribe:aviator",
+  "pp:sweet-bonanza",
+  "pp:big-bass-bonanza",
+];
 
 function tone(gameId) {
   if (gameId.includes("olympus") || gameId.includes("starlight")) return "t-fort";
@@ -63,9 +51,9 @@ function tone(gameId) {
   return "t-neon";
 }
 
-function Section({ title, note, action, onAction, children }) {
+function Section({ title, note, action, onAction, className = "", children }) {
   return (
-    <section className="panel" style={{ marginTop: 14 }}>
+    <section className={"panel casino-section " + className}>
       <div
         style={{
           display: "flex",
@@ -97,33 +85,31 @@ function Empty({ children }) {
 
 function CoverArt({ game }) {
   const [stage, setStage] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const slug = (game.game_id || "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
-  if (stage === 2) return <span style={{ fontSize: 44 }}>{gameIcon(game.game_id)}</span>;
   const src = stage === 1 ? `/games/${slug}.svg` : game.cover || `/games/${slug}.svg`;
-  return (
-    <img
-      src={src}
-      alt={game.title || "game"}
-      onError={() => setStage((s) => s + 1)}
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-    />
-  );
+  return <>
+    {!loaded || stage === 2 ? <span className="club-game-fallback" aria-hidden="true">{game.title || "Jogo"}</span> : null}
+    {stage < 2 ? <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => { setLoaded(false); setStage(value => value + 1); }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: loaded ? 1 : 0 }} /> : null}
+  </>;
 }
 
 /** Unified catalog card for both official provider games and in-house slots */
 function GameCard({ game, onPlay, onDetails }) {
   const providerLabel = (game.provider || "").replace(/_/g, " ").toUpperCase();
+  const isPromo = PROMO_GAME_IDS.includes(game.game_id);
 
   return (
     <article className="gcard">
       <button className={"tile game-launch " + tone(game.game_id)} onClick={() => onPlay(game)} aria-label={"Jogar " + game.title}>
         <CoverArt game={game} />
         <span className="game-category">{game.category || "Slots"}</span>
-        <span className="play-hover-btn"><span className="play-circle">▶</span></span>
+        {isPromo ? <span className="game-promo-badge">Promo</span> : null}
+        <span className="play-hover-btn"><span className="play-circle"><UIIcon name="play" size={22} /></span></span>
       </button>
       <div className="gbody">
         <b>{game.title}</b>
-        <div className="game-caption"><span>{providerLabel}</span>{onDetails ? <button className="game-info" onClick={() => onDetails(game)} aria-label={"Detalhes de " + game.title}>ⓘ</button> : null}</div>
+        <div className="game-caption"><span>{providerLabel}</span>{onDetails ? <button className="game-info" onClick={() => onDetails(game)} aria-label={"Detalhes de " + game.title}><UIIcon name="info" size={18} /></button> : null}</div>
       </div>
     </article>
   );
@@ -140,6 +126,8 @@ export default function CasinoHome({
   query,
   onQuery,
   initialCategory,
+  favTick,
+  onSport,
 }) {
   const [category, setCategory] = useState("Todos");
   const [provider, setProvider] = useState("Todos");
@@ -163,13 +151,13 @@ export default function CasinoHome({
   const banners = useMemo(
     () => [
       {
-        title: "Gates of Olympus & Aviator",
+        title: "Encontre seu próximo jogo",
         sub: "Encontre seus favoritos e consulte os jogos disponíveis de cada provedor.",
         cta: "Jogar Agora",
         go: "lobby",
       },
       {
-        title: "Encontre seu próximo jogo",
+        title: "Seus favoritos, por perto",
         sub: "Explore slots, crash e jogos de mesa. Salve seus favoritos para voltar depois.",
         cta: "Explorar Jogos",
         go: "lobby",
@@ -190,10 +178,13 @@ export default function CasinoHome({
     [player]
   );
 
+  const [bannerPaused, setBannerPaused] = useState(false);
   useEffect(() => {
+    if (bannerPaused) return undefined;
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
     const id = setInterval(() => setBanner((b) => (b + 1) % banners.length), 6000);
     return () => clearInterval(id);
-  }, [banners.length]);
+  }, [banners.length, bannerPaused]);
 
   useEffect(() => {
     const load = () => api("GET", "/api/sports").then(setSports).catch(() => {});
@@ -321,14 +312,14 @@ export default function CasinoHome({
   );
 
   const favIds = useMemo(() => {
-    // same re-read discipline as lsRecents: switching the tab re-reads
-    // storage, so a star toggled in the detail modal shows up
+    // re-read whenever the category changes OR a favorite is toggled in the
+    // detail modal (favTick bumps), so the Favoritos tab stays in sync
     try {
       return new Set(JSON.parse(window.localStorage.getItem("casa-favs") || "[]"));
     } catch (e) {
       return new Set();
     }
-  }, [category]);
+  }, [category, favTick]);
 
   const recentIds = useMemo(() => new Set(recentOrder), [recentOrder]);
 
@@ -368,7 +359,7 @@ export default function CasinoHome({
       case "Originais":
         return game.provider === "demo_studio" || game.category === "Originais";
       case "Promoções":
-        return game.game_id.includes("olympus") || game.game_id.includes("aviator") || game.game_id.includes("bonanza");
+        return PROMO_GAME_IDS.includes(game.game_id);
       case "Recentes":
         return recentIds.has(game.game_id);
       case "Favoritos":
@@ -392,12 +383,20 @@ export default function CasinoHome({
           (a, b) => recentOrder.indexOf(a.game_id) - recentOrder.indexOf(b.game_id)
         )
       : filtered;
-  const featured = all.filter((g) =>
-    ["pp:gates-of-olympus", "spribe:aviator", "pp:sweet-bonanza", "pp:spaceman", "pp:sugar-rush", "pp:big-bass-bonanza"].includes(g.game_id)
-  );
+  const FEATURED_IDS = ["pp:gates-of-olympus", "spribe:aviator", "pp:sweet-bonanza", "pp:spaceman", "pp:sugar-rush", "pp:big-bass-bonanza"];
+  const featured = (() => {
+    const picked = all.filter((g) => FEATURED_IDS.includes(g.game_id));
+    if (picked.length >= 3) return picked;
+    // Fallback: top games by recency, then by catalog order, so the section
+    // never silently disappears when the catalog lacks the fixed IDs.
+    const fallback = [...all]
+      .sort((a, b) => (b.last_played || 0) - (a.last_played || 0))
+      .slice(0, 6);
+    return fallback.length ? fallback : all.slice(0, 6);
+  })();
 
   const priced = sports
-    ? sports.fixtures.filter((f) => f.markets.length > 0).slice(0, 3)
+    ? (sports.fixtures || []).map(f => ({ ...f, markets: validMarkets(f) })).filter(f => f.markets.length > 0).slice(0, 3)
     : [];
 
   const act = (target) => {
@@ -411,9 +410,12 @@ export default function CasinoHome({
 
   return (
     <>
-      <SpotlightCard
-        spotlightColor="#7bf5b4" intensity={0.13}
+      <div
         className="hero carousel ed-casino-hero"
+        onMouseEnter={() => setBannerPaused(true)}
+        onMouseLeave={() => setBannerPaused(false)}
+        onFocus={() => setBannerPaused(true)}
+        onBlur={() => setBannerPaused(false)}
         onTouchStart={(e) => {
           touch.current = e.touches[0].clientX;
         }}
@@ -426,7 +428,6 @@ export default function CasinoHome({
         }}
       >
         <div className="casino-banner-copy">
-          <span className="ed-kicker"><i aria-hidden="true" /> CANDIBET / CASSINO</span>
           <h1>{banners[banner].title}</h1>
           <p>{banners[banner].sub}</p>
           <div className="cta">
@@ -445,7 +446,7 @@ export default function CasinoHome({
             ))}
           </div>
         </div>
-      </SpotlightCard>
+      </div>
 
       <div className="chips" style={{ marginTop: 14 }}>
         {QUICK_LINKS.map((q) => (
@@ -454,7 +455,7 @@ export default function CasinoHome({
             className={"qlink" + (category === q.category ? " on" : "")}
             onClick={() => setCategory(q.category)}
           >
-            <span aria-hidden>{q.icon}</span> {q.label}
+            <UIIcon name={q.category === "Favoritos" ? "star" : q.category === "Ao vivo" ? "live" : "data"} size={16} /> {q.label}
           </button>
         ))}
       </div>
@@ -506,11 +507,7 @@ export default function CasinoHome({
                     case "Originais":
                       return g.provider === "demo_studio" || g.category === "Originais";
                     case "Promoções":
-                      return (
-                        g.game_id.includes("olympus") ||
-                        g.game_id.includes("aviator") ||
-                        g.game_id.includes("bonanza")
-                      );
+                      return PROMO_GAME_IDS.includes(g.game_id);
                     default:
                       return g.category === c;
                   }
@@ -526,9 +523,23 @@ export default function CasinoHome({
           />
         </aside>
 
-        <div className="main">
+        <div className="main casino-content">
+          {category === "Promoções" ? (
+            <Section className="casino-catalog" title="Promoções ativas" note="Jogos selecionados pelo operador com condições especiais. Aproveite enquanto durar.">
+              <div className="boost" style={{ marginBottom: 12 }}>
+                <div className="boost-kind">Bônus de boas-vindas</div>
+                <div className="boost-name">100% do 1º depósito até R$ 500</div>
+                <div className="boost-odd">Rollover 20x</div>
+              </div>
+              <div className="boost">
+                <div className="boost-kind">Cashback diário</div>
+                <div className="boost-name">10% das perdas do dia até R$ 200</div>
+                <div className="boost-odd">Rollover 1x</div>
+              </div>
+            </Section>
+          ) : null}
           {category === "Todos" && !query && featured.length > 0 ? (
-            <Section title="Destaques & Mais Jogados" note="Os títulos mais populares integrados diretamente no site.">
+            <Section className="casino-catalog" title="Jogos em destaque" note="Uma seleção dos títulos disponíveis no catálogo.">
               <div className="rowscroll">
                 {featured.map((g) => (
                   <GameCard key={g.game_id} game={g} onPlay={onPlay} onDetails={onDetails} />
@@ -538,6 +549,7 @@ export default function CasinoHome({
           ) : null}
 
           <Section
+            className="casino-catalog"
             title={category === "Todos" ? "Todos os Jogos" : category}
             note={`${visible.length} jogo(s) disponível(is) para jogar diretamente`}
             action="Ver Todos"
@@ -657,7 +669,7 @@ export default function CasinoHome({
             ) : null}
           </Section>
 
-          <Section title="Jackpot Progressivo" note="Prêmio acumulado simulado — cresce com as apostas reais do dia.">
+          <Section title="Jackpot Progressivo" note="Prêmio acumulado das rodadas do ambiente de demonstração.">
             <div className="jackpot">
               <div>
                 <div className="jackpot-label">Mega Jackpot da Casa</div>
@@ -672,8 +684,8 @@ export default function CasinoHome({
           </Section>
 
           <Section
-            title="Super Odds em Destaque"
-            note="Principais partidas com cotações turbinadas da rodada."
+            title="Cotações esportivas"
+            note="Preços recebidos nos mercados disponíveis, sem ajustes promocionais."
           >
             {sports === null ? (
               <Empty>Carregando partidas…</Empty>
@@ -682,17 +694,18 @@ export default function CasinoHome({
             ) : (
               <div className="rowscroll">
                 {priced.map((f) => (
-                  <div className="boost" key={f.key}>
+                  <button className="boost boost-link" key={f.key} onClick={() => onSport?.(false)} aria-label={`Ver ${f.home} × ${f.away} no quadro esportivo`}>
                     <div className="boost-kind">{f.competition}</div>
                     <div className="boost-name">
                       {f.home} × {f.away}
                     </div>
+                    <div className="boost-kind">{f.markets[0].kind}{f.markets[0].line != null ? " · " + f.markets[0].line : ""} · {f.markets[0].pricing === "market" ? "Provedor" : "Modelo"}</div>
                     {f.markets[0].selections.map((sel, i) => (
                       <div className="boost-odd" key={sel}>
-                        {sel} {(f.markets[0].prices[i] * 1.1).toFixed(2)}
+                        {sel} {f.markets[0].prices[i].toFixed(2)}
                       </div>
                     ))}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -732,7 +745,7 @@ export default function CasinoHome({
             </div>
           </Section>
 
-          <Section title="Notícias da Plataforma">
+          {news?.items?.length ? <Section title="Notícias da Plataforma">
             <div className="news">
               {news === null ? (
                 <Empty>Carregando notícias…</Empty>
@@ -745,7 +758,7 @@ export default function CasinoHome({
                 ))
               )}
             </div>
-          </Section>
+          </Section> : null}
         </div>
       </div>
     </>

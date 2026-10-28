@@ -1,0 +1,1038 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T04:05:06.839785+00:00",
+  "title": "Design System: Candibet",
+  "extensions": {
+    "colorMeta": {
+      "original-dark-paper": {
+        "role": "neutral",
+        "displayName": "Original Dark Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0021 286.15)",
+          "oklch(26% 0.0021 286.15)",
+          "oklch(37% 0.0021 286.15)",
+          "oklch(49% 0.0021 286.15)",
+          "oklch(61% 0.0021 286.15)",
+          "oklch(73% 0.0021 286.15)",
+          "oklch(85% 0.0021 286.15)",
+          "oklch(95% 0.0021 286.15)"
+        ]
+      },
+      "original-dark-night": {
+        "role": "neutral",
+        "displayName": "Original Dark Night",
+        "tonalRamp": [
+          "oklch(15% 0.0024 286.07)",
+          "oklch(26% 0.0024 286.07)",
+          "oklch(37% 0.0024 286.07)",
+          "oklch(49% 0.0024 286.07)",
+          "oklch(61% 0.0024 286.07)",
+          "oklch(73% 0.0024 286.07)",
+          "oklch(85% 0.0024 286.07)",
+          "oklch(95% 0.0024 286.07)"
+        ]
+      },
+      "original-dark-card": {
+        "role": "neutral",
+        "displayName": "Original Dark Card",
+        "tonalRamp": [
+          "oklch(15% 0.0038 286.08)",
+          "oklch(26% 0.0038 286.08)",
+          "oklch(37% 0.0038 286.08)",
+          "oklch(49% 0.0038 286.08)",
+          "oklch(61% 0.0038 286.08)",
+          "oklch(73% 0.0038 286.08)",
+          "oklch(85% 0.0038 286.08)",
+          "oklch(95% 0.0038 286.08)"
+        ]
+      },
+      "original-dark-card2": {
+        "role": "neutral",
+        "displayName": "Original Dark Card2",
+        "tonalRamp": [
+          "oklch(15% 0.0020 286.21)",
+          "oklch(26% 0.0020 286.21)",
+          "oklch(37% 0.0020 286.21)",
+          "oklch(49% 0.0020 286.21)",
+          "oklch(61% 0.0020 286.21)",
+          "oklch(73% 0.0020 286.21)",
+          "oklch(85% 0.0020 286.21)",
+          "oklch(95% 0.0020 286.21)"
+        ]
+      },
+      "original-dark-field": {
+        "role": "neutral",
+        "displayName": "Original Dark Field",
+        "tonalRamp": [
+          "oklch(15% 0.0020 286.18)",
+          "oklch(26% 0.0020 286.18)",
+          "oklch(37% 0.0020 286.18)",
+          "oklch(49% 0.0020 286.18)",
+          "oklch(61% 0.0020 286.18)",
+          "oklch(73% 0.0020 286.18)",
+          "oklch(85% 0.0020 286.18)",
+          "oklch(95% 0.0020 286.18)"
+        ]
+      },
+      "original-dark-chip": {
+        "role": "neutral",
+        "displayName": "Original Dark Chip",
+        "tonalRamp": [
+          "oklch(15% 0.0037 286.15)",
+          "oklch(26% 0.0037 286.15)",
+          "oklch(37% 0.0037 286.15)",
+          "oklch(49% 0.0037 286.15)",
+          "oklch(61% 0.0037 286.15)",
+          "oklch(73% 0.0037 286.15)",
+          "oklch(85% 0.0037 286.15)",
+          "oklch(95% 0.0037 286.15)"
+        ]
+      },
+      "original-dark-ink": {
+        "role": "neutral",
+        "displayName": "Original Dark Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0027 286.35)",
+          "oklch(26% 0.0027 286.35)",
+          "oklch(37% 0.0027 286.35)",
+          "oklch(49% 0.0027 286.35)",
+          "oklch(61% 0.0027 286.35)",
+          "oklch(73% 0.0027 286.35)",
+          "oklch(85% 0.0027 286.35)",
+          "oklch(95% 0.0027 286.35)"
+        ]
+      },
+      "original-dark-mut": {
+        "role": "neutral",
+        "displayName": "Original Dark Mut",
+        "tonalRamp": [
+          "oklch(15% 0.0085 286.19)",
+          "oklch(26% 0.0085 286.19)",
+          "oklch(37% 0.0085 286.19)",
+          "oklch(49% 0.0085 286.19)",
+          "oklch(61% 0.0085 286.19)",
+          "oklch(73% 0.0085 286.19)",
+          "oklch(85% 0.0085 286.19)",
+          "oklch(95% 0.0085 286.19)"
+        ]
+      },
+      "original-dark-line": {
+        "role": "neutral",
+        "displayName": "Original Dark Line"
+      },
+      "original-dark-acc": {
+        "role": "primary",
+        "displayName": "Original Dark Acc",
+        "tonalRamp": [
+          "oklch(15% 0.2001 126.75)",
+          "oklch(26% 0.2001 126.75)",
+          "oklch(37% 0.2001 126.75)",
+          "oklch(49% 0.2001 126.75)",
+          "oklch(61% 0.2001 126.75)",
+          "oklch(73% 0.2001 126.75)",
+          "oklch(85% 0.2001 126.75)",
+          "oklch(95% 0.2001 126.75)"
+        ]
+      },
+      "original-dark-acc-soft": {
+        "role": "neutral",
+        "displayName": "Original Dark Acc Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0465 132.45)",
+          "oklch(26% 0.0465 132.45)",
+          "oklch(37% 0.0465 132.45)",
+          "oklch(49% 0.0465 132.45)",
+          "oklch(61% 0.0465 132.45)",
+          "oklch(73% 0.0465 132.45)",
+          "oklch(85% 0.0465 132.45)",
+          "oklch(95% 0.0465 132.45)"
+        ]
+      },
+      "original-dark-on-acc": {
+        "role": "primary",
+        "displayName": "Original Dark On Acc",
+        "tonalRamp": [
+          "oklch(15% 0.0484 128.21)",
+          "oklch(26% 0.0484 128.21)",
+          "oklch(37% 0.0484 128.21)",
+          "oklch(49% 0.0484 128.21)",
+          "oklch(61% 0.0484 128.21)",
+          "oklch(73% 0.0484 128.21)",
+          "oklch(85% 0.0484 128.21)",
+          "oklch(95% 0.0484 128.21)"
+        ]
+      },
+      "original-dark-data-accent": {
+        "role": "neutral",
+        "displayName": "Original Dark Data Accent",
+        "tonalRamp": [
+          "oklch(15% 0.0667 124.89)",
+          "oklch(26% 0.0667 124.89)",
+          "oklch(37% 0.0667 124.89)",
+          "oklch(49% 0.0667 124.89)",
+          "oklch(61% 0.0667 124.89)",
+          "oklch(73% 0.0667 124.89)",
+          "oklch(85% 0.0667 124.89)",
+          "oklch(95% 0.0667 124.89)"
+        ]
+      },
+      "original-dark-bad": {
+        "role": "neutral",
+        "displayName": "Original Dark Bad",
+        "tonalRamp": [
+          "oklch(15% 0.1113 12.28)",
+          "oklch(26% 0.1113 12.28)",
+          "oklch(37% 0.1113 12.28)",
+          "oklch(49% 0.1113 12.28)",
+          "oklch(61% 0.1113 12.28)",
+          "oklch(73% 0.1113 12.28)",
+          "oklch(85% 0.1113 12.28)",
+          "oklch(95% 0.1113 12.28)"
+        ]
+      },
+      "original-dark-bad-soft": {
+        "role": "neutral",
+        "displayName": "Original Dark Bad Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0363 20.36)",
+          "oklch(26% 0.0363 20.36)",
+          "oklch(37% 0.0363 20.36)",
+          "oklch(49% 0.0363 20.36)",
+          "oklch(61% 0.0363 20.36)",
+          "oklch(73% 0.0363 20.36)",
+          "oklch(85% 0.0363 20.36)",
+          "oklch(95% 0.0363 20.36)"
+        ]
+      },
+      "original-dark-gold": {
+        "role": "neutral",
+        "displayName": "Original Dark Gold",
+        "tonalRamp": [
+          "oklch(15% 0.2001 126.75)",
+          "oklch(26% 0.2001 126.75)",
+          "oklch(37% 0.2001 126.75)",
+          "oklch(49% 0.2001 126.75)",
+          "oklch(61% 0.2001 126.75)",
+          "oklch(73% 0.2001 126.75)",
+          "oklch(85% 0.2001 126.75)",
+          "oklch(95% 0.2001 126.75)"
+        ]
+      },
+      "original-light-paper": {
+        "role": "neutral",
+        "displayName": "Original Light Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0013 106.42)",
+          "oklch(26% 0.0013 106.42)",
+          "oklch(37% 0.0013 106.42)",
+          "oklch(49% 0.0013 106.42)",
+          "oklch(61% 0.0013 106.42)",
+          "oklch(73% 0.0013 106.42)",
+          "oklch(85% 0.0013 106.42)",
+          "oklch(95% 0.0013 106.42)"
+        ]
+      },
+      "original-light-night": {
+        "role": "neutral",
+        "displayName": "Original Light Night",
+        "tonalRamp": [
+          "oklch(15% 0.0061 56.04)",
+          "oklch(26% 0.0061 56.04)",
+          "oklch(37% 0.0061 56.04)",
+          "oklch(49% 0.0061 56.04)",
+          "oklch(61% 0.0061 56.04)",
+          "oklch(73% 0.0061 56.04)",
+          "oklch(85% 0.0061 56.04)",
+          "oklch(95% 0.0061 56.04)"
+        ]
+      },
+      "original-light-card": {
+        "role": "neutral",
+        "displayName": "Original Light Card",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(26% 0.0000 89.88)",
+          "oklch(37% 0.0000 89.88)",
+          "oklch(49% 0.0000 89.88)",
+          "oklch(61% 0.0000 89.88)",
+          "oklch(73% 0.0000 89.88)",
+          "oklch(85% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "original-light-card2": {
+        "role": "neutral",
+        "displayName": "Original Light Card2",
+        "tonalRamp": [
+          "oklch(15% 0.0013 106.42)",
+          "oklch(26% 0.0013 106.42)",
+          "oklch(37% 0.0013 106.42)",
+          "oklch(49% 0.0013 106.42)",
+          "oklch(61% 0.0013 106.42)",
+          "oklch(73% 0.0013 106.42)",
+          "oklch(85% 0.0013 106.42)",
+          "oklch(95% 0.0013 106.42)"
+        ]
+      },
+      "original-light-field": {
+        "role": "neutral",
+        "displayName": "Original Light Field",
+        "tonalRamp": [
+          "oklch(15% 0.0013 106.42)",
+          "oklch(26% 0.0013 106.42)",
+          "oklch(37% 0.0013 106.42)",
+          "oklch(49% 0.0013 106.42)",
+          "oklch(61% 0.0013 106.42)",
+          "oklch(73% 0.0013 106.42)",
+          "oklch(85% 0.0013 106.42)",
+          "oklch(95% 0.0013 106.42)"
+        ]
+      },
+      "original-light-chip": {
+        "role": "neutral",
+        "displayName": "Original Light Chip",
+        "tonalRamp": [
+          "oklch(15% 0.0013 106.42)",
+          "oklch(26% 0.0013 106.42)",
+          "oklch(37% 0.0013 106.42)",
+          "oklch(49% 0.0013 106.42)",
+          "oklch(61% 0.0013 106.42)",
+          "oklch(73% 0.0013 106.42)",
+          "oklch(85% 0.0013 106.42)",
+          "oklch(95% 0.0013 106.42)"
+        ]
+      },
+      "original-light-ink": {
+        "role": "neutral",
+        "displayName": "Original Light Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0061 56.04)",
+          "oklch(26% 0.0061 56.04)",
+          "oklch(37% 0.0061 56.04)",
+          "oklch(49% 0.0061 56.04)",
+          "oklch(61% 0.0061 56.04)",
+          "oklch(73% 0.0061 56.04)",
+          "oklch(85% 0.0061 56.04)",
+          "oklch(95% 0.0061 56.04)"
+        ]
+      },
+      "original-light-mut": {
+        "role": "neutral",
+        "displayName": "Original Light Mut",
+        "tonalRamp": [
+          "oklch(15% 0.0248 259.19)",
+          "oklch(26% 0.0248 259.19)",
+          "oklch(37% 0.0248 259.19)",
+          "oklch(49% 0.0248 259.19)",
+          "oklch(61% 0.0248 259.19)",
+          "oklch(73% 0.0248 259.19)",
+          "oklch(85% 0.0248 259.19)",
+          "oklch(95% 0.0248 259.19)"
+        ]
+      },
+      "original-light-line": {
+        "role": "neutral",
+        "displayName": "Original Light Line",
+        "tonalRamp": [
+          "oklch(15% 0.0081 253.86)",
+          "oklch(26% 0.0081 253.86)",
+          "oklch(37% 0.0081 253.86)",
+          "oklch(49% 0.0081 253.86)",
+          "oklch(61% 0.0081 253.86)",
+          "oklch(73% 0.0081 253.86)",
+          "oklch(85% 0.0081 253.86)",
+          "oklch(95% 0.0081 253.86)"
+        ]
+      },
+      "original-light-acc": {
+        "role": "primary",
+        "displayName": "Original Light Acc",
+        "tonalRamp": [
+          "oklch(15% 0.1371 150.07)",
+          "oklch(26% 0.1371 150.07)",
+          "oklch(37% 0.1371 150.07)",
+          "oklch(49% 0.1371 150.07)",
+          "oklch(61% 0.1371 150.07)",
+          "oklch(73% 0.1371 150.07)",
+          "oklch(85% 0.1371 150.07)",
+          "oklch(95% 0.1371 150.07)"
+        ]
+      },
+      "original-light-acc-soft": {
+        "role": "neutral",
+        "displayName": "Original Light Acc Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0181 155.83)",
+          "oklch(26% 0.0181 155.83)",
+          "oklch(37% 0.0181 155.83)",
+          "oklch(49% 0.0181 155.83)",
+          "oklch(61% 0.0181 155.83)",
+          "oklch(73% 0.0181 155.83)",
+          "oklch(85% 0.0181 155.83)",
+          "oklch(95% 0.0181 155.83)"
+        ]
+      },
+      "original-light-on-acc": {
+        "role": "primary",
+        "displayName": "Original Light On Acc",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(26% 0.0000 89.88)",
+          "oklch(37% 0.0000 89.88)",
+          "oklch(49% 0.0000 89.88)",
+          "oklch(61% 0.0000 89.88)",
+          "oklch(73% 0.0000 89.88)",
+          "oklch(85% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "original-light-data-accent": {
+        "role": "neutral",
+        "displayName": "Original Light Data Accent",
+        "tonalRamp": [
+          "oklch(15% 0.0793 221.72)",
+          "oklch(26% 0.0793 221.72)",
+          "oklch(37% 0.0793 221.72)",
+          "oklch(49% 0.0793 221.72)",
+          "oklch(61% 0.0793 221.72)",
+          "oklch(73% 0.0793 221.72)",
+          "oklch(85% 0.0793 221.72)",
+          "oklch(95% 0.0793 221.72)"
+        ]
+      },
+      "original-light-bad": {
+        "role": "neutral",
+        "displayName": "Original Light Bad",
+        "tonalRamp": [
+          "oklch(15% 0.1905 27.52)",
+          "oklch(26% 0.1905 27.52)",
+          "oklch(37% 0.1905 27.52)",
+          "oklch(49% 0.1905 27.52)",
+          "oklch(61% 0.1905 27.52)",
+          "oklch(73% 0.1905 27.52)",
+          "oklch(85% 0.1905 27.52)",
+          "oklch(95% 0.1905 27.52)"
+        ]
+      },
+      "original-light-bad-soft": {
+        "role": "neutral",
+        "displayName": "Original Light Bad Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0129 17.38)",
+          "oklch(26% 0.0129 17.38)",
+          "oklch(37% 0.0129 17.38)",
+          "oklch(49% 0.0129 17.38)",
+          "oklch(61% 0.0129 17.38)",
+          "oklch(73% 0.0129 17.38)",
+          "oklch(85% 0.0129 17.38)",
+          "oklch(95% 0.0129 17.38)"
+        ]
+      },
+      "original-light-gold": {
+        "role": "neutral",
+        "displayName": "Original Light Gold",
+        "tonalRamp": [
+          "oklch(15% 0.1455 49.00)",
+          "oklch(26% 0.1455 49.00)",
+          "oklch(37% 0.1455 49.00)",
+          "oklch(49% 0.1455 49.00)",
+          "oklch(61% 0.1455 49.00)",
+          "oklch(73% 0.1455 49.00)",
+          "oklch(85% 0.1455 49.00)",
+          "oklch(95% 0.1455 49.00)"
+        ]
+      },
+      "blue-dark-paper": {
+        "role": "neutral",
+        "displayName": "Blue Dark Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0044 264.46)",
+          "oklch(26% 0.0044 264.46)",
+          "oklch(37% 0.0044 264.46)",
+          "oklch(49% 0.0044 264.46)",
+          "oklch(61% 0.0044 264.46)",
+          "oklch(73% 0.0044 264.46)",
+          "oklch(85% 0.0044 264.46)",
+          "oklch(95% 0.0044 264.46)"
+        ]
+      },
+      "blue-dark-night": {
+        "role": "neutral",
+        "displayName": "Blue Dark Night",
+        "tonalRamp": [
+          "oklch(15% 0.0044 264.46)",
+          "oklch(26% 0.0044 264.46)",
+          "oklch(37% 0.0044 264.46)",
+          "oklch(49% 0.0044 264.46)",
+          "oklch(61% 0.0044 264.46)",
+          "oklch(73% 0.0044 264.46)",
+          "oklch(85% 0.0044 264.46)",
+          "oklch(95% 0.0044 264.46)"
+        ]
+      },
+      "blue-dark-card": {
+        "role": "neutral",
+        "displayName": "Blue Dark Card",
+        "tonalRamp": [
+          "oklch(15% 0.0064 258.36)",
+          "oklch(26% 0.0064 258.36)",
+          "oklch(37% 0.0064 258.36)",
+          "oklch(49% 0.0064 258.36)",
+          "oklch(61% 0.0064 258.36)",
+          "oklch(73% 0.0064 258.36)",
+          "oklch(85% 0.0064 258.36)",
+          "oklch(95% 0.0064 258.36)"
+        ]
+      },
+      "blue-dark-card2": {
+        "role": "neutral",
+        "displayName": "Blue Dark Card2",
+        "tonalRamp": [
+          "oklch(15% 0.0066 258.37)",
+          "oklch(26% 0.0066 258.37)",
+          "oklch(37% 0.0066 258.37)",
+          "oklch(49% 0.0066 258.37)",
+          "oklch(61% 0.0066 258.37)",
+          "oklch(73% 0.0066 258.37)",
+          "oklch(85% 0.0066 258.37)",
+          "oklch(95% 0.0066 258.37)"
+        ]
+      },
+      "blue-dark-field": {
+        "role": "neutral",
+        "displayName": "Blue Dark Field",
+        "tonalRamp": [
+          "oklch(15% 0.0067 258.37)",
+          "oklch(26% 0.0067 258.37)",
+          "oklch(37% 0.0067 258.37)",
+          "oklch(49% 0.0067 258.37)",
+          "oklch(61% 0.0067 258.37)",
+          "oklch(73% 0.0067 258.37)",
+          "oklch(85% 0.0067 258.37)",
+          "oklch(95% 0.0067 258.37)"
+        ]
+      },
+      "blue-dark-chip": {
+        "role": "neutral",
+        "displayName": "Blue Dark Chip",
+        "tonalRamp": [
+          "oklch(15% 0.0156 264.30)",
+          "oklch(26% 0.0156 264.30)",
+          "oklch(37% 0.0156 264.30)",
+          "oklch(49% 0.0156 264.30)",
+          "oklch(61% 0.0156 264.30)",
+          "oklch(73% 0.0156 264.30)",
+          "oklch(85% 0.0156 264.30)",
+          "oklch(95% 0.0156 264.30)"
+        ]
+      },
+      "blue-dark-ink": {
+        "role": "neutral",
+        "displayName": "Blue Dark Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0029 264.54)",
+          "oklch(26% 0.0029 264.54)",
+          "oklch(37% 0.0029 264.54)",
+          "oklch(49% 0.0029 264.54)",
+          "oklch(61% 0.0029 264.54)",
+          "oklch(73% 0.0029 264.54)",
+          "oklch(85% 0.0029 264.54)",
+          "oklch(95% 0.0029 264.54)"
+        ]
+      },
+      "blue-dark-mut": {
+        "role": "neutral",
+        "displayName": "Blue Dark Mut",
+        "tonalRamp": [
+          "oklch(15% 0.0166 266.25)",
+          "oklch(26% 0.0166 266.25)",
+          "oklch(37% 0.0166 266.25)",
+          "oklch(49% 0.0166 266.25)",
+          "oklch(61% 0.0166 266.25)",
+          "oklch(73% 0.0166 266.25)",
+          "oklch(85% 0.0166 266.25)",
+          "oklch(95% 0.0166 266.25)"
+        ]
+      },
+      "blue-dark-line": {
+        "role": "neutral",
+        "displayName": "Blue Dark Line",
+        "tonalRamp": [
+          "oklch(15% 0.0134 261.73)",
+          "oklch(26% 0.0134 261.73)",
+          "oklch(37% 0.0134 261.73)",
+          "oklch(49% 0.0134 261.73)",
+          "oklch(61% 0.0134 261.73)",
+          "oklch(73% 0.0134 261.73)",
+          "oklch(85% 0.0134 261.73)",
+          "oklch(95% 0.0134 261.73)"
+        ]
+      },
+      "blue-dark-acc": {
+        "role": "primary",
+        "displayName": "Blue Dark Acc",
+        "tonalRamp": [
+          "oklch(15% 0.1526 272.46)",
+          "oklch(26% 0.1526 272.46)",
+          "oklch(37% 0.1526 272.46)",
+          "oklch(49% 0.1526 272.46)",
+          "oklch(61% 0.1526 272.46)",
+          "oklch(73% 0.1526 272.46)",
+          "oklch(85% 0.1526 272.46)",
+          "oklch(95% 0.1526 272.46)"
+        ]
+      },
+      "blue-dark-acc-soft": {
+        "role": "neutral",
+        "displayName": "Blue Dark Acc Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0704 270.37)",
+          "oklch(26% 0.0704 270.37)",
+          "oklch(37% 0.0704 270.37)",
+          "oklch(49% 0.0704 270.37)",
+          "oklch(61% 0.0704 270.37)",
+          "oklch(73% 0.0704 270.37)",
+          "oklch(85% 0.0704 270.37)",
+          "oklch(95% 0.0704 270.37)"
+        ]
+      },
+      "blue-dark-on-acc": {
+        "role": "primary",
+        "displayName": "Blue Dark On Acc",
+        "tonalRamp": [
+          "oklch(15% 0.0575 268.65)",
+          "oklch(26% 0.0575 268.65)",
+          "oklch(37% 0.0575 268.65)",
+          "oklch(49% 0.0575 268.65)",
+          "oklch(61% 0.0575 268.65)",
+          "oklch(73% 0.0575 268.65)",
+          "oklch(85% 0.0575 268.65)",
+          "oklch(95% 0.0575 268.65)"
+        ]
+      },
+      "blue-dark-data-accent": {
+        "role": "neutral",
+        "displayName": "Blue Dark Data Accent",
+        "tonalRamp": [
+          "oklch(15% 0.0782 275.03)",
+          "oklch(26% 0.0782 275.03)",
+          "oklch(37% 0.0782 275.03)",
+          "oklch(49% 0.0782 275.03)",
+          "oklch(61% 0.0782 275.03)",
+          "oklch(73% 0.0782 275.03)",
+          "oklch(85% 0.0782 275.03)",
+          "oklch(95% 0.0782 275.03)"
+        ]
+      },
+      "blue-dark-bad": {
+        "role": "neutral",
+        "displayName": "Blue Dark Bad",
+        "tonalRamp": [
+          "oklch(15% 0.0988 8.40)",
+          "oklch(26% 0.0988 8.40)",
+          "oklch(37% 0.0988 8.40)",
+          "oklch(49% 0.0988 8.40)",
+          "oklch(61% 0.0988 8.40)",
+          "oklch(73% 0.0988 8.40)",
+          "oklch(85% 0.0988 8.40)",
+          "oklch(95% 0.0988 8.40)"
+        ]
+      },
+      "blue-dark-bad-soft": {
+        "role": "neutral",
+        "displayName": "Blue Dark Bad Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0345 354.98)",
+          "oklch(26% 0.0345 354.98)",
+          "oklch(37% 0.0345 354.98)",
+          "oklch(49% 0.0345 354.98)",
+          "oklch(61% 0.0345 354.98)",
+          "oklch(73% 0.0345 354.98)",
+          "oklch(85% 0.0345 354.98)",
+          "oklch(95% 0.0345 354.98)"
+        ]
+      },
+      "blue-light-paper": {
+        "role": "neutral",
+        "displayName": "Blue Light Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0058 264.53)",
+          "oklch(26% 0.0058 264.53)",
+          "oklch(37% 0.0058 264.53)",
+          "oklch(49% 0.0058 264.53)",
+          "oklch(61% 0.0058 264.53)",
+          "oklch(73% 0.0058 264.53)",
+          "oklch(85% 0.0058 264.53)",
+          "oklch(95% 0.0058 264.53)"
+        ]
+      },
+      "blue-light-night": {
+        "role": "neutral",
+        "displayName": "Blue Light Night",
+        "tonalRamp": [
+          "oklch(15% 0.0116 264.51)",
+          "oklch(26% 0.0116 264.51)",
+          "oklch(37% 0.0116 264.51)",
+          "oklch(49% 0.0116 264.51)",
+          "oklch(61% 0.0116 264.51)",
+          "oklch(73% 0.0116 264.51)",
+          "oklch(85% 0.0116 264.51)",
+          "oklch(95% 0.0116 264.51)"
+        ]
+      },
+      "blue-light-card": {
+        "role": "neutral",
+        "displayName": "Blue Light Card"
+      },
+      "blue-light-card2": {
+        "role": "neutral",
+        "displayName": "Blue Light Card2",
+        "tonalRamp": [
+          "oklch(15% 0.0029 264.54)",
+          "oklch(26% 0.0029 264.54)",
+          "oklch(37% 0.0029 264.54)",
+          "oklch(49% 0.0029 264.54)",
+          "oklch(61% 0.0029 264.54)",
+          "oklch(73% 0.0029 264.54)",
+          "oklch(85% 0.0029 264.54)",
+          "oklch(95% 0.0029 264.54)"
+        ]
+      },
+      "blue-light-field": {
+        "role": "neutral",
+        "displayName": "Blue Light Field",
+        "tonalRamp": [
+          "oklch(15% 0.0070 268.55)",
+          "oklch(26% 0.0070 268.55)",
+          "oklch(37% 0.0070 268.55)",
+          "oklch(49% 0.0070 268.55)",
+          "oklch(61% 0.0070 268.55)",
+          "oklch(73% 0.0070 268.55)",
+          "oklch(85% 0.0070 268.55)",
+          "oklch(95% 0.0070 268.55)"
+        ]
+      },
+      "blue-light-chip": {
+        "role": "neutral",
+        "displayName": "Blue Light Chip",
+        "tonalRamp": [
+          "oklch(15% 0.0129 266.70)",
+          "oklch(26% 0.0129 266.70)",
+          "oklch(37% 0.0129 266.70)",
+          "oklch(49% 0.0129 266.70)",
+          "oklch(61% 0.0129 266.70)",
+          "oklch(73% 0.0129 266.70)",
+          "oklch(85% 0.0129 266.70)",
+          "oklch(95% 0.0129 266.70)"
+        ]
+      },
+      "blue-light-ink": {
+        "role": "neutral",
+        "displayName": "Blue Light Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0305 264.95)",
+          "oklch(26% 0.0305 264.95)",
+          "oklch(37% 0.0305 264.95)",
+          "oklch(49% 0.0305 264.95)",
+          "oklch(61% 0.0305 264.95)",
+          "oklch(73% 0.0305 264.95)",
+          "oklch(85% 0.0305 264.95)",
+          "oklch(95% 0.0305 264.95)"
+        ]
+      },
+      "blue-light-mut": {
+        "role": "neutral",
+        "displayName": "Blue Light Mut",
+        "tonalRamp": [
+          "oklch(15% 0.0348 262.38)",
+          "oklch(26% 0.0348 262.38)",
+          "oklch(37% 0.0348 262.38)",
+          "oklch(49% 0.0348 262.38)",
+          "oklch(61% 0.0348 262.38)",
+          "oklch(73% 0.0348 262.38)",
+          "oklch(85% 0.0348 262.38)",
+          "oklch(95% 0.0348 262.38)"
+        ]
+      },
+      "blue-light-line": {
+        "role": "neutral",
+        "displayName": "Blue Light Line",
+        "tonalRamp": [
+          "oklch(15% 0.0164 262.75)",
+          "oklch(26% 0.0164 262.75)",
+          "oklch(37% 0.0164 262.75)",
+          "oklch(49% 0.0164 262.75)",
+          "oklch(61% 0.0164 262.75)",
+          "oklch(73% 0.0164 262.75)",
+          "oklch(85% 0.0164 262.75)",
+          "oklch(95% 0.0164 262.75)"
+        ]
+      },
+      "blue-light-acc": {
+        "role": "primary",
+        "displayName": "Blue Light Acc",
+        "tonalRamp": [
+          "oklch(15% 0.1991 267.27)",
+          "oklch(26% 0.1991 267.27)",
+          "oklch(37% 0.1991 267.27)",
+          "oklch(49% 0.1991 267.27)",
+          "oklch(61% 0.1991 267.27)",
+          "oklch(73% 0.1991 267.27)",
+          "oklch(85% 0.1991 267.27)",
+          "oklch(95% 0.1991 267.27)"
+        ]
+      },
+      "blue-light-acc-soft": {
+        "role": "neutral",
+        "displayName": "Blue Light Acc Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0278 272.51)",
+          "oklch(26% 0.0278 272.51)",
+          "oklch(37% 0.0278 272.51)",
+          "oklch(49% 0.0278 272.51)",
+          "oklch(61% 0.0278 272.51)",
+          "oklch(73% 0.0278 272.51)",
+          "oklch(85% 0.0278 272.51)",
+          "oklch(95% 0.0278 272.51)"
+        ]
+      },
+      "blue-light-on-acc": {
+        "role": "primary",
+        "displayName": "Blue Light On Acc"
+      },
+      "blue-light-data-accent": {
+        "role": "neutral",
+        "displayName": "Blue Light Data Accent",
+        "tonalRamp": [
+          "oklch(15% 0.1991 267.27)",
+          "oklch(26% 0.1991 267.27)",
+          "oklch(37% 0.1991 267.27)",
+          "oklch(49% 0.1991 267.27)",
+          "oklch(61% 0.1991 267.27)",
+          "oklch(73% 0.1991 267.27)",
+          "oklch(85% 0.1991 267.27)",
+          "oklch(95% 0.1991 267.27)"
+        ]
+      },
+      "blue-light-bad": {
+        "role": "neutral",
+        "displayName": "Blue Light Bad",
+        "tonalRamp": [
+          "oklch(15% 0.1626 13.23)",
+          "oklch(26% 0.1626 13.23)",
+          "oklch(37% 0.1626 13.23)",
+          "oklch(49% 0.1626 13.23)",
+          "oklch(61% 0.1626 13.23)",
+          "oklch(73% 0.1626 13.23)",
+          "oklch(85% 0.1626 13.23)",
+          "oklch(95% 0.1626 13.23)"
+        ]
+      },
+      "blue-light-bad-soft": {
+        "role": "neutral",
+        "displayName": "Blue Light Bad Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0206 358.68)",
+          "oklch(26% 0.0206 358.68)",
+          "oklch(37% 0.0206 358.68)",
+          "oklch(49% 0.0206 358.68)",
+          "oklch(61% 0.0206 358.68)",
+          "oklch(73% 0.0206 358.68)",
+          "oklch(85% 0.0206 358.68)",
+          "oklch(95% 0.0206 358.68)"
+        ]
+      },
+      "utility-text": {
+        "role": "neutral",
+        "displayName": "Utility Text",
+        "tonalRamp": [
+          "oklch(15% 0.0043 56.37)",
+          "oklch(26% 0.0043 56.37)",
+          "oklch(37% 0.0043 56.37)",
+          "oklch(49% 0.0043 56.37)",
+          "oklch(61% 0.0043 56.37)",
+          "oklch(73% 0.0043 56.37)",
+          "oklch(85% 0.0043 56.37)",
+          "oklch(95% 0.0043 56.37)"
+        ]
+      },
+      "blue-action": {
+        "role": "primary",
+        "displayName": "Tournament Ultramarine"
+      },
+      "blue-action-ink": {
+        "role": "neutral",
+        "displayName": "Tournament Action Ink"
+      }
+    },
+    "typographyMeta": {
+      "original-headline": {
+        "displayName": "Original Headline",
+        "purpose": "Appearance-specific observed role."
+      },
+      "original-figure": {
+        "displayName": "Original Figure",
+        "purpose": "Original numeric role; never decorative."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Functional interface text in both appearances."
+      },
+      "blue-headline": {
+        "displayName": "Blue Headline",
+        "purpose": "Appearance-specific observed role."
+      },
+      "blue-team": {
+        "displayName": "Blue Team",
+        "purpose": "Blue fixture team names."
+      },
+      "blue-figure": {
+        "displayName": "Blue Figure",
+        "purpose": "Appearance-specific observed role."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating-menu",
+        "value": "0 8px 24px #0003",
+        "purpose": "Menus and Blue invitation."
+      },
+      {
+        "name": "betslip",
+        "value": "0 12px 40px #0004",
+        "purpose": "Floating selections."
+      },
+      {
+        "name": "authentication",
+        "value": "0 24px 90px #0005",
+        "purpose": "Authentication dialog."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-transition",
+        "value": "160ms cubic-bezier(.22, 1, .36, 1)",
+        "purpose": "Control color and border state; suppressed for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "header-wrap",
+        "value": "1200px"
+      },
+      {
+        "name": "sports-tabs",
+        "value": "1100px"
+      },
+      {
+        "name": "original-carousel",
+        "value": "768px"
+      },
+      {
+        "name": "phone",
+        "value": "760px"
+      },
+      {
+        "name": "narrow-phone",
+        "value": "360px"
+      },
+      {
+        "name": "blue-sports-tabs",
+        "value": "1000px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Original selected odds",
+      "kind": "button",
+      "description": "Filled selection treatment in Original.",
+      "html": "<button class=\"ds-original-odd\">1 <b>2.10</b></button>",
+      "css": ".ds-original-odd{background:var(--acc,#b9f34b);color:var(--on-acc,#172207);border:1px solid var(--acc,#b9f34b);border-radius:8px;padding:8px 12px;min-height:48px;font:550 15px \"Geist Mono\",monospace;display:flex;gap:16px;transition:background-color 160ms}.ds-original-odd:hover{filter:brightness(.96)}.ds-original-odd:focus-visible{outline:2px solid var(--acc,#b9f34b);outline-offset:3px}",
+      "refersTo": "original-odd-selected"
+    },
+    {
+      "name": "Blue selected odds",
+      "kind": "button",
+      "description": "Solid ultramarine selection treatment in the separate local Blue build.",
+      "html": "<button class=\"ds-blue-odd\"><span>1</span><b>2.10</b></button>",
+      "css": ".ds-blue-odd{display:flex;justify-content:space-between;gap:24px;min-height:42px;padding:10px;border:1px solid #4263eb;border-radius:5px;background:#4263eb;color:#fff;font:600 14px Geist,Arial,sans-serif}.ds-blue-odd:hover{filter:brightness(1.06)}.ds-blue-odd:focus-visible{outline:2px solid var(--acc,#b9f34b);outline-offset:3px}",
+      "refersTo": "blue-odd-selected"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "description": "Shared labeled search and focused container.",
+      "html": "<label class=\"ds-search\">Buscar <input aria-label=\"Buscar partidas\" placeholder=\"Buscar partidas\" /></label>",
+      "css": ".ds-search{display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid var(--line,#34383f);border-radius:8px;background:var(--field,#16181b);color:var(--mut,#adb2bd);font:13px Geist,Arial,sans-serif}.ds-search input{min-width:0;min-height:44px;border:0;background:transparent;color:var(--ink,#f4f5f7);font:inherit;outline:none}.ds-search:focus-within{outline:2px solid var(--acc,#8198ff);outline-offset:2px}",
+      "refersTo": "search"
+    },
+    {
+      "name": "Sports navigation",
+      "kind": "nav",
+      "description": "Horizontal navigation replaces the rail at compact widths.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Esportes\"><button aria-pressed=\"true\">Futebol</button><button>Basquete</button></nav>",
+      "css": ".ds-nav{display:flex;gap:8px;font:13px Geist,Arial,sans-serif}.ds-nav button{min-height:44px;padding:8px 14px;border:1px solid var(--line,#34383f);border-radius:6px;background:var(--card,#1e2023);color:var(--ink,#f4f5f7);font:inherit}.ds-nav button[aria-pressed=\"true\"]{background:#4263eb;color:#fff}.ds-nav button:hover{border-color:var(--mut,#adb2bd)}.ds-nav button:focus-visible{outline:2px solid var(--acc,#b9f34b);outline-offset:3px}"
+    },
+    {
+      "name": "Market filter",
+      "kind": "chip",
+      "description": "Compact explicit pressed-state filter.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Ao vivo</button>",
+      "css": ".ds-chip{min-height:40px;padding:8px 12px;background:var(--card,#1e2023);color:var(--ink,#f4f5f7);border:1px solid var(--line,#34383f);border-radius:5px;font:12px Geist,Arial,sans-serif}.ds-chip[aria-pressed=\"true\"]{border-color:var(--acc,#8198ff)}.ds-chip:hover{background:var(--chip,#292d35)}.ds-chip:focus-visible{outline:2px solid var(--acc,#b9f34b);outline-offset:3px}"
+    },
+    {
+      "name": "Blue fixture highlight",
+      "kind": "card",
+      "description": "Paired team typography in a quiet bordered highlight.",
+      "html": "<article class=\"ds-highlight\"><p>Futebol · Partida</p><h3>Equipe da casa<br>Equipe visitante</h3><small>Horário informado pela fonte</small></article>",
+      "css": ".ds-highlight{padding:16px 20px;border:1px solid var(--line,#34383f);border-radius:7px;background:var(--card,#1e2023);color:var(--ink,#f4f5f7);font:12px Geist,Arial,sans-serif}.ds-highlight p,.ds-highlight small{color:var(--mut,#adb2bd)}.ds-highlight h3{font:600 21px/1.35 \"Barlow Condensed\",sans-serif;margin:18px 0}"
+    },
+    {
+      "name": "Blue expandable filters",
+      "kind": "custom",
+      "description": "Compact competition/favorites/reset popup. On phones it is right aligned, opens above the summary and scrolls within the viewport.",
+      "html": "<details class=\"ds-blue-filters\"><summary>Filtros</summary><div><label>Competição<select><option>Todas as competições</option></select></label><button>Favoritos</button><button>Limpar filtros</button></div></details>",
+      "css": ".ds-blue-filters{position:relative;margin-left:auto;font:12px Geist,Arial,sans-serif;color:var(--ink,#f4f5f7)}.ds-blue-filters summary{cursor:pointer;min-height:36px;display:flex;align-items:center;padding:8px 12px;border:1px solid var(--line,#34383f);border-radius:5px}.ds-blue-filters>div{position:absolute;right:0;top:calc(100% + 8px);width:280px;max-width:calc(100vw - 32px);padding:16px;background:var(--card,#1e2023);border:1px solid var(--line,#34383f);border-radius:6px;box-shadow:0 8px 24px #0003;display:grid;gap:10px;z-index:10}.ds-blue-filters label{display:grid;gap:8px;color:var(--mut,#adb2bd)}.ds-blue-filters select,.ds-blue-filters button{min-height:40px;padding:8px;color:var(--ink,#f4f5f7);background:var(--field,#16181b);border:1px solid var(--line,#34383f);border-radius:5px;font:inherit}.ds-blue-filters button:hover{background:var(--chip,#292d35)}.ds-blue-filters summary:focus-visible,.ds-blue-filters button:focus-visible,.ds-blue-filters select:focus-visible{outline:2px solid var(--acc,#8198ff);outline-offset:3px}@media(max-width:760px){.ds-blue-filters{margin-left:auto}.ds-blue-filters summary{min-height:44px}.ds-blue-filters>div{top:auto;bottom:calc(100% + 8px);right:0;left:auto;max-height:calc(100dvh - 180px);overflow-y:auto}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Familiar Sportsbook, Two Appearances",
+    "overview": "Original is the default Candibet identity: near-black neutral layers, green actions, condensed sporting headlines and precise numeric data. Tournament Blue is a separate local build with graphite and cool-white surfaces, ultramarine actions, paired team highlights and aligned fixture rows. Each appearance supports dark and light themes.\n\nNormal builds pin Original. Tournament Blue is selected only at compile time with NEXT_PUBLIC_LOCAL_BLUE=1 and served separately by scripts/local_blue.py; it has an isolated temporary export and local account data. There is no appearance selector, query activation or stored appearance preference. Only the light/dark preference persists. Portuguese content, honest source distinctions and working account, wallet and selection flows remain the product foundation. The current source of truth is the cascade globals.css → workspace.css → apex.css → variants.css; Clubhouse and Nunito are archived development history, not active design guidance.",
+    "keyCharacteristics": [
+      "Original defaults to green and near-black; Blue is an explicit alternate.",
+      "Compact sports data with readable state and provenance.",
+      "Production Original and local-only Blue, each with light/dark support.",
+      "Local Geist, Barlow Condensed and Geist Mono assets with fixed functional roles."
+    ],
+    "rules": [
+      {
+        "name": "Build Boundary Rule",
+        "body": "Normal builds are Original; Blue is compile-time local-only. Theme remains an independent persisted preference. Never reactivate Blue in production through browser state.",
+        "section": "colors"
+      },
+      {
+        "name": "Data State Rule",
+        "body": "Selected, unavailable, loading and failed markets must remain distinguishable in both appearances and both themes.",
+        "section": "colors"
+      },
+      {
+        "name": "Three Roles Rule",
+        "body": "Original uses Geist for interface text, Barlow Condensed for display and Geist Mono for figures. Mono is a numeric role, never an additional decorative voice. Blue uses Geist for functional headings, body and figures, retaining Barlow Condensed for team names.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do preserve Original in normal production builds and keep Blue isolated locally.",
+      "Do use the active semantic variables so every surface works in both themes.",
+      "Do retain tabular figures, explicit selection state and truthful missing-data fallbacks.",
+      "Do keep keyboard focus visible and honor reduced motion."
+    ],
+    "donts": [
+      "Don't import archived Clubhouse styling or Nunito into the active cascade.",
+      "Don't expose browser query, storage or selector activation for Blue in production.",
+      "Don't add a fourth decorative type voice or spread Mono into body copy.",
+      "Don't invent statistics, popularity, volume or promotional claims."
+    ]
+  }
+}

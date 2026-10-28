@@ -1,0 +1,7 @@
+# 0084: Neutral near-black theme
+
+Owner requested deeper darkness with Mamyat as the visual reference. Read its dark tokens (#17110f ground, #211815 card): closely stepped dark surfaces and brand hue reserved for accents. Apply the same principle with neutral near-black/charcoal rather than copying Mamyat's brown brand.
+
+Dark tokens: ground #0c0c0d, header/panels #141415, raised card #1b1b1d, control #262628, field #101011. Ink and secondary text are neutral grays; muted sage replaces teal data accents, and selected navigation is dark charcoal. Candibet's green primary accent is retained. Native dark form controls use color-scheme: dark. No layout, light-theme token, asset or dependency changes.
+
+Existing APEX direction retained for this scoped palette correction. Production build and structure pass. 31 browser checks at 1440/768/390 pass with no page errors/overflow. All six light/dark screenshots reviewed. Text/control contrast pairs measured 6.54:1 to 14.48:1. Visual critique: colour 9/10, composition/type/interaction 8/10, inherited compact invitation remains dismissible. No draw/redraw or new imagery for this scoped palette edit. Stock inspector remains unavailable due to its prior CDP timeout; Playwright supplies visual verification. LIVE: Vercel dpl_rzyb581JLPyDTgGHUt4RkPkJ85ex READY at https://cadiback-web.vercel.app. Production page 200; served CSS confirms near-black ground, charcoal panels, neutral ink and retained green accent.

@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "name": "1440 casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 fixture text contained",
+      "pass": true
+    },
+    {
+      "name": "1440 supplied price retained",
+      "pass": true
+    },
+    {
+      "name": "390 casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 fixture text contained",
+      "pass": true
+    },
+    {
+      "name": "phone casino fixtures do not overlap",
+      "pass": true
+    },
+    {
+      "name": "390 supplied price retained",
+      "pass": true
+    },
+    {
+      "name": "no browser runtime errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "casino-1440.png",
+    "casino-390.png"
+  ]
+}

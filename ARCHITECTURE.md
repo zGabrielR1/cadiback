@@ -1,5 +1,19 @@
 # ARCHITECTURE — operator
 
+Sports availability is shared by `matchState` in `web/lib/sports.mjs`: board, detail, builder, discovery and slip use the same unavailable/live/final precedence and labels. Board/featured controls also pause during refresh errors; draft/slip contents remain reviewable (decision 0100).
+
+Public upcoming match calendar downloads use `web/lib/match-calendar.mjs` for scheduled-match eligibility and one-time UTF-8 iCalendar serialization. MarketDetail displays local kickoff/timezone, pauses export on feed failures, and downloads a public-only event with a stable fixture UID (decision 0099).
+
+Public copied match links optionally carry validated market category/search through `matchFiltersFromUrl`; MarketDetail restores these after mount. Navigation clears old match filters, and sharing excludes private selection state (decision 0098).
+
+Match-detail market discovery uses `web/lib/market-discovery.mjs` for labels, categories and conjunctive local search/selected-market filtering. MarketDetail owns these view filters independently of global fixture search and slip state; unknown market kinds remain discoverable. Tablet research stacks the supporting panels below the market column (decision 0097).
+
+Betslip feed-price review uses `applyPriceChanges` in `web/lib/sports-slip.mjs` to update prices only after explicit acceptance. BetslipTray compares prices/returns and supports unavailable-selection recovery; placement still uses the server quote and receipt contracts. Accepting a server quote refreshes the board snapshot (decision 0096).
+
+Sports discovery offers an explicit all-sports scope; Favorites and new searches enter that scope before optional narrowing. `web/lib/sports.mjs` filters current feed fixtures and recognizes localized sport names. SportsHome keeps Favorites in browser storage, synchronizes tabs, retains missing fixture keys, and groups competitions by country/sport/name (decision 0095).
+
+Public match links use `?match=<fixture key>` through `web/lib/match-link.mjs`. SportsHome synchronizes detail with browser history; MarketDetail offers clipboard/manual sharing. Links resolve against the current feed, with explicit loading/error/missing states (decision 0094).
+
 The public sports transaction seam is `demo/sports_quotes.py`: current-board canonical selection/price validation, exposed by `/api/sports/quote` and enforced by `/api/bet`. `web/lib/sports-slip.mjs` shares board/slip selection and availability rules; receipt retries are resolved by player/request ID before consulting moved markets. See decision 0077.
 
 A 1:1 high-fidelity hobby simulation of a modern betting platform and casino for personal usage.
@@ -137,6 +151,10 @@ Invariant: the books sum to zero at all times. `assert_balanced()` enforces it.
 - `decisions/` is the audit trail: newest file wins on conflict.
 - `frame/tests/` is the spec: if it isn't tested by execution, it isn't true.
 
+## Storefront appearances (0087)
+
+`web/app/page.jsx` owns the `classic` / `blue` appearance independently of the light/dark theme. `Header.jsx` supplies the Visual selector; `variants.css` scopes Blue tokens/layouts over the original globals/workspace/apex baseline. `SportsHome.jsx` shares feed/filter/favorite/detail/selection state between both compositions. `casa-design` stores the browser choice and `?visual=classic|blue` takes precedence when opening a link. Switching changes React state and CSS, not routes or player sessions. The superseded Clubhouse stylesheet is not imported. See DESIGN.md and decision 0087.
+
 ## Durable identity (0071)
 
 `Demo(db=factory)` selects SQL-backed account/social-link snapshots and device
@@ -157,3 +175,14 @@ and `web/lib/validation.js`; they cover numeric/alphanumeric CNPJ check digits.
 The UI gates and clamps amounts; provider clients enforce them again before
 charge creation. Display quotes cache briefly; invoice creation refreshes the
 NOWPayments quote. See decision 0072 for validation, privacy and flow limits.
+
+
+## Separate local Tournament Blue (0088)
+
+Normal builds remain Classic. NEXT_PUBLIC_LOCAL_BLUE=1 selects Blue at compile time in root layout and page; query/storage cannot select appearances. scripts/local_blue.py copies storefront sources and installed dependencies into a separate temporary build, exports Blue there, and serves it on localhost:8766 with an independent local account/books directory and database disabled. Production deploy was the approved Original snapshot taken before this local-only work. The prior runtime Visual selector documented in0087 is retired.
+
+## Auteur Sports desk (0091)
+Normal builds now select data-design=auteur. The scoped auteur.css layer and self-hosted Archivo/Source Sans3 fonts provide one frontend system across the existing working components; separate NEXT_PUBLIC_LOCAL_BLUE builds remain local Blue. SportsHome uses real feed score/context data, and account/cashier reuse current session/ledger/provider semantics. Financial/account UI is conditionally rendered only for a validated authenticated profile; logout clears selection state and private views. The neutral Entrar door and public match research remain. Vercel publication is frontend-only; backend and proxy contracts are unchanged.
+
+## Interaction and member-access repair (0092)
+Casino/catalog use validated authenticated state independently of the optional portal. Header/mobile builder intent invokes the existing SportsHome/BetBuilder workflow; the logo performs root document navigation. useSportsFeed exposes slow/error/empty recovery and passes a cancellation signal to api.js so retry/unmount aborts the current request. usePanelResize.js shares viewport-bound pointer/keyboard sizing between search and betslip. AccountView renders only the selected icon tab; cashier and session/ledger APIs are unchanged. Portal configuration is documented in docs/data-portal.md.

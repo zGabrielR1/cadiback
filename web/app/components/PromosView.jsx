@@ -139,15 +139,19 @@ export default function PromosView({ profile, player, busy, onClaim }) {
       <section className="panel">
         <h2>Dúvidas Frequentes</h2>
         <details className="faq" open>
-          <summary>Como funcionam os jogos oficiais?</summary>
+          <summary>Como funcionam as cotações?</summary>
           <p>
-            Todos os jogos oficiais de provedores líderes mundiais (Pragmatic Play, Spribe Aviator, Hacksaw Gaming, Play'n GO, Evolution) estão incorporados diretamente no site. Você joga diretamente em tela cheia com alta fidelidade sem necessidade de sair da plataforma.
+            As cotações são geradas pelo modelo da casa sobre o feed público de
+            partidas. Cada mercado é reprecificado a cada 30 segundos, e a
+            cotação exibida no boletim é conferida novamente antes do envio.
           </p>
         </details>
         <details className="faq">
-          <summary>Quais jogos estão disponíveis?</summary>
+          <summary>Quais esportes estão disponíveis?</summary>
           <p>
-            Você pode jogar Gates of Olympus, Aviator, Sweet Bonanza, Sugar Rush, Spaceman, Big Bass Bonanza, Roleta Europeia, Blackjack, Baccarat, além dos slots originais da casa.
+            Futebol, tênis, basquete, hóquei, beisebol, handebol, rugby, vôlei,
+            e-sports e futsal, com mercados de resultado, totais, dupla chance e
+            handicap conforme as regras de cada esporte.
           </p>
         </details>
         <details className="faq">
@@ -159,7 +163,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
         <details className="faq">
           <summary>A plataforma funciona no celular?</summary>
           <p>
-            Sim! Toda a interface, menus, boletim de apostas e os jogos oficiais são totalmente responsivos para computadores, tablets e smartphones.
+            Sim! Toda a interface, menus, boletim de apostas e mercados são totalmente responsivos para computadores, tablets e smartphones.
           </p>
         </details>
       </section>

@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "arial narrow",
+        "files": [
+          ".impeccable/mocks/decision/tournament-blue.html"
+        ],
+        "createdAt": "2026-10-24T03:33:10.685Z",
+        "reason": "Agent: archived unselected Tournament Blue concept intentionally retains its own typography; user selected Clubhouse in da8cd013.answer.json."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/tournament-blue.html"
+        ],
+        "createdAt": "2026-10-24T03:33:10.700Z",
+        "reason": "Agent: false positive in archived dark concept; detector assumes white backgrounds, while rendered check of 124 text elements found minimum contrast 4.57:1 on actual backgrounds."
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          "web/app/variants.css"
+        ],
+        "createdAt": "2026-10-24T03:46:45.144Z",
+        "reason": "User requested restoration of the original Candibet UI; Geist is its existing functional UI face, retained across the two appearances."
+      }
+    ]
+  }
+}

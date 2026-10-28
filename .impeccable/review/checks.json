@@ -1,0 +1,504 @@
+{
+  "results": [
+    {
+      "name": "1440 featured fixtures",
+      "pass": true
+    },
+    {
+      "name": "1440 visible search",
+      "pass": true
+    },
+    {
+      "name": "1440 guest has no slip",
+      "pass": true
+    },
+    {
+      "name": "1440 public sports only",
+      "pass": true
+    },
+    {
+      "name": "1440 font loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 save favorite",
+      "pass": true
+    },
+    {
+      "name": "1440 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "1440 empty search",
+      "pass": true
+    },
+    {
+      "name": "1440 public match research",
+      "pass": true
+    },
+    {
+      "name": "1440 public read-only prices",
+      "pass": true
+    },
+    {
+      "name": "1440 detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 return restores focus",
+      "pass": true
+    },
+    {
+      "name": "1440 extra markets",
+      "pass": true
+    },
+    {
+      "name": "1440 login opens",
+      "pass": true
+    },
+    {
+      "name": "1440 login validation",
+      "pass": true
+    },
+    {
+      "name": "1440 register fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 modal restores focus",
+      "pass": true
+    },
+    {
+      "name": "1440 access code rejection",
+      "pass": true
+    },
+    {
+      "name": "1440 data gate unlock",
+      "pass": true
+    },
+    {
+      "name": "768 featured fixtures",
+      "pass": true
+    },
+    {
+      "name": "768 visible search",
+      "pass": true
+    },
+    {
+      "name": "768 guest has no slip",
+      "pass": true
+    },
+    {
+      "name": "768 public sports only",
+      "pass": true
+    },
+    {
+      "name": "768 font loaded",
+      "pass": true
+    },
+    {
+      "name": "tablet invitation content height",
+      "pass": true
+    },
+    {
+      "name": "768 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 save favorite",
+      "pass": true
+    },
+    {
+      "name": "768 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "768 empty search",
+      "pass": true
+    },
+    {
+      "name": "768 public match research",
+      "pass": true
+    },
+    {
+      "name": "768 public read-only prices",
+      "pass": true
+    },
+    {
+      "name": "768 detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 return restores focus",
+      "pass": true
+    },
+    {
+      "name": "768 extra markets",
+      "pass": true
+    },
+    {
+      "name": "768 login opens",
+      "pass": true
+    },
+    {
+      "name": "768 login validation",
+      "pass": true
+    },
+    {
+      "name": "768 register fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 modal restores focus",
+      "pass": true
+    },
+    {
+      "name": "768 access code rejection",
+      "pass": true
+    },
+    {
+      "name": "768 data gate unlock",
+      "pass": true
+    },
+    {
+      "name": "390 featured fixtures",
+      "pass": true
+    },
+    {
+      "name": "390 visible search",
+      "pass": true
+    },
+    {
+      "name": "390 guest has no slip",
+      "pass": true
+    },
+    {
+      "name": "390 public sports only",
+      "pass": true
+    },
+    {
+      "name": "390 font loaded",
+      "pass": true
+    },
+    {
+      "name": "390 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 save favorite",
+      "pass": true
+    },
+    {
+      "name": "390 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "390 empty search",
+      "pass": true
+    },
+    {
+      "name": "390 public match research",
+      "pass": true
+    },
+    {
+      "name": "390 public read-only prices",
+      "pass": true
+    },
+    {
+      "name": "390 detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 return restores focus",
+      "pass": true
+    },
+    {
+      "name": "390 extra markets",
+      "pass": true
+    },
+    {
+      "name": "390 login opens",
+      "pass": true
+    },
+    {
+      "name": "390 login validation",
+      "pass": true
+    },
+    {
+      "name": "390 register fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 modal restores focus",
+      "pass": true
+    },
+    {
+      "name": "390 access code rejection",
+      "pass": true
+    },
+    {
+      "name": "390 data gate unlock",
+      "pass": true
+    },
+    {
+      "name": "320 featured fixtures",
+      "pass": true
+    },
+    {
+      "name": "320 visible search",
+      "pass": true
+    },
+    {
+      "name": "320 guest has no slip",
+      "pass": true
+    },
+    {
+      "name": "320 public sports only",
+      "pass": true
+    },
+    {
+      "name": "320 font loaded",
+      "pass": true
+    },
+    {
+      "name": "320 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 save favorite",
+      "pass": true
+    },
+    {
+      "name": "320 favorites filter",
+      "pass": true
+    },
+    {
+      "name": "320 empty search",
+      "pass": true
+    },
+    {
+      "name": "320 public match research",
+      "pass": true
+    },
+    {
+      "name": "320 public read-only prices",
+      "pass": true
+    },
+    {
+      "name": "320 detail fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 return restores focus",
+      "pass": true
+    },
+    {
+      "name": "320 extra markets",
+      "pass": true
+    },
+    {
+      "name": "320 login opens",
+      "pass": true
+    },
+    {
+      "name": "320 login validation",
+      "pass": true
+    },
+    {
+      "name": "320 register fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 modal restores focus",
+      "pass": true
+    },
+    {
+      "name": "320 access code rejection",
+      "pass": true
+    },
+    {
+      "name": "320 data gate unlock",
+      "pass": true
+    },
+    {
+      "name": "1440 authenticated selection",
+      "pass": true
+    },
+    {
+      "name": "1440 slip no decorative stripe",
+      "pass": true
+    },
+    {
+      "name": "1440 slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "desktop slip reserves space",
+      "pass": true
+    },
+    {
+      "name": "1440 account view",
+      "pass": true
+    },
+    {
+      "name": "1440 account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 cashier fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 withdrawal form",
+      "pass": true
+    },
+    {
+      "name": "1440 gated casino",
+      "pass": true
+    },
+    {
+      "name": "1440 casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1440 catalog-truth banner",
+      "pass": true
+    },
+    {
+      "name": "1440 supplied sports price",
+      "pass": true
+    },
+    {
+      "name": "1440 empty news omitted",
+      "pass": true
+    },
+    {
+      "name": "1440 authored game info icon",
+      "pass": true
+    },
+    {
+      "name": "1440 settled game art",
+      "pass": true
+    },
+    {
+      "name": "390 authenticated selection",
+      "pass": true
+    },
+    {
+      "name": "390 slip no decorative stripe",
+      "pass": true
+    },
+    {
+      "name": "390 slip fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 account view",
+      "pass": true
+    },
+    {
+      "name": "390 account fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 cashier fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 withdrawal form",
+      "pass": true
+    },
+    {
+      "name": "390 gated casino",
+      "pass": true
+    },
+    {
+      "name": "390 casino fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 catalog-truth banner",
+      "pass": true
+    },
+    {
+      "name": "390 supplied sports price",
+      "pass": true
+    },
+    {
+      "name": "390 empty news omitted",
+      "pass": true
+    },
+    {
+      "name": "390 authored game info icon",
+      "pass": true
+    },
+    {
+      "name": "390 settled game art",
+      "pass": true
+    },
+    {
+      "name": "error feed state",
+      "pass": true
+    },
+    {
+      "name": "empty feed state",
+      "pass": true
+    },
+    {
+      "name": "no browser runtime errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "desktop.png",
+    "1440-light-fold.png",
+    "1440-dark-fold.png",
+    "detail-1440.png",
+    "login-1440.png",
+    "portal-1440.png",
+    "user-768.png",
+    "768-light-fold.png",
+    "768-dark-fold.png",
+    "mobile.png",
+    "390-light-fold.png",
+    "390-dark-fold.png",
+    "detail-390.png",
+    "login-390.png",
+    "register-390.png",
+    "portal-390.png",
+    "user-320.png",
+    "320-light-fold.png",
+    "320-dark-fold.png",
+    "slip-1440.png",
+    "account-1440.png",
+    "cashier-1440.png",
+    "casino-1440.png",
+    "slip-390.png",
+    "account-390.png",
+    "cashier-390.png",
+    "casino-390.png",
+    "feed-error.png",
+    "feed-empty.png"
+  ]
+}

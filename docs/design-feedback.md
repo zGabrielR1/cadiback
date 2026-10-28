@@ -1,6 +1,6 @@
 # Owner feedback — 2026-10-23
 
-Recorded before renewing GitHub authentication for publication. These are follow-up requirements, not changes already implemented in release 0077.
+Recorded before renewing GitHub authentication for publication. Implemented in release 0078: sport-first discovery, selected-event detail context, sport-specific research, darker low-contrast surfaces and reduced radii. See decision 0078 and CURRENTTASK for validation and deployment.
 
 - **Rounding:** the interface is somewhat too rounded. Reduce radii on structural containers and controls while preserving the current Candibet identity.
 - **Dark mode:** the lighter revision went too far. Return to darker surfaces and reduce harsh contrast between adjacent backgrounds, borders, text and accents. The desired change is softer contrast, not a lighter overall theme. Preserve readable text and clear selected states.

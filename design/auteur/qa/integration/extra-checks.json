@@ -1,0 +1,50 @@
+[
+  {
+    "name": "1440 private account available",
+    "pass": true
+  },
+  {
+    "name": "1440 logout hides private controls",
+    "pass": true
+  },
+  {
+    "name": "1440 portal fits",
+    "pass": true
+  },
+  {
+    "name": "1440 PF PJ signup retained",
+    "pass": true
+  },
+  {
+    "name": "1440 admin fits",
+    "pass": true
+  },
+  {
+    "name": "1440 no errors",
+    "pass": true
+  },
+  {
+    "name": "390 private account available",
+    "pass": true
+  },
+  {
+    "name": "390 logout hides private controls",
+    "pass": true
+  },
+  {
+    "name": "390 portal fits",
+    "pass": true
+  },
+  {
+    "name": "390 PF PJ signup retained",
+    "pass": true
+  },
+  {
+    "name": "390 admin fits",
+    "pass": true
+  },
+  {
+    "name": "390 no errors",
+    "pass": true
+  }
+]

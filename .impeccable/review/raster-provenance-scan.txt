@@ -1,0 +1,22 @@
+MISSING: web/public/games/ev-crazy-time.jpg
+MISSING: web/public/games/ev-lightning-roulette.jpg
+MISSING: web/public/games/hs-rip-city-dice.png
+MISSING: web/public/games/pg-fortune-tiger.png
+MISSING: web/public/games/pg-mahjong-ways.png
+MISSING: web/public/games/pgo-book-of-dead.webp
+MISSING: web/public/games/pp-baccarat.png
+MISSING: web/public/games/pp-big-bass-bonanza.png
+MISSING: web/public/games/pp-big-bass-splash.png
+MISSING: web/public/games/pp-blackjack.png
+MISSING: web/public/games/pp-cleocatra.png
+MISSING: web/public/games/pp-dog-house-megaways.png
+MISSING: web/public/games/pp-fruit-party.png
+MISSING: web/public/games/pp-gates-of-olympus.png
+MISSING: web/public/games/pp-roulette.png
+MISSING: web/public/games/pp-spaceman.png
+MISSING: web/public/games/pp-starlight-princess.png
+MISSING: web/public/games/pp-sugar-rush.png
+MISSING: web/public/games/pp-sweet-bonanza.png
+MISSING: web/public/games/pp-wild-west-gold.png
+MISSING: web/public/games/pp-wolf-gold.png
+SCAN: 21 rasters, 21 missing

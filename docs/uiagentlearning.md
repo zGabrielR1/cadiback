@@ -142,6 +142,8 @@ builder's combination policy and the ordinary slip. Good visual design must
 keep following the interaction and data model after the initial polish lands.
 # Follow-up: softer dark mode and transaction clarity (0077)
 
+Owner correction (0078): reducing harsh contrast does not mean raising the entire palette's luminance. Return to dark charcoal, keep adjacent surfaces close in tone, soften white text and lime highlights, and preserve accessibility. Radius is another source of tone: reducing major surfaces to 8px helped the sportsbook feel more precise. Research navigation must reflect the domain: start with sports, then events, then selected-event research; use per-sport statistics rather than recycling soccer labels.
+
 Dark mode does not need near-black surfaces. Raising graphite surface luminance and softening the accent keeps the established identity while making the page less stark. Preserve the difference between canvas, navigation, event rows and selected odds.
 
 Measure access to the first ordinary event, not only the hero. On phones, substitute a compact useful match highlight and disclose secondary filters. Dense markets work best with one comparable market per row; research details can carry the wider coverage.

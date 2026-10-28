@@ -1,0 +1,184 @@
+{
+  "results": [
+    {
+      "name": "1440 dark blue active",
+      "pass": true
+    },
+    {
+      "name": "1440 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "1440 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "desktop spanning rail",
+      "pass": true
+    },
+    {
+      "name": "blue sport selection",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "1440 light blue active",
+      "pass": true
+    },
+    {
+      "name": "1440 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "1440 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "768 dark blue active",
+      "pass": true
+    },
+    {
+      "name": "768 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "768 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "768 light blue active",
+      "pass": true
+    },
+    {
+      "name": "768 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "768 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "390 dark blue active",
+      "pass": true
+    },
+    {
+      "name": "390 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "390 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "390 light blue active",
+      "pass": true
+    },
+    {
+      "name": "390 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "390 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "320 dark blue active",
+      "pass": true
+    },
+    {
+      "name": "320 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "320 dark fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "320 light blue active",
+      "pass": true
+    },
+    {
+      "name": "320 paired highlights",
+      "pass": true
+    },
+    {
+      "name": "320 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "public match detail",
+      "pass": true
+    },
+    {
+      "name": "search finds fixtures",
+      "pass": true
+    },
+    {
+      "name": "search filters teams",
+      "pass": true
+    },
+    {
+      "name": "favorites working",
+      "pass": true
+    },
+    {
+      "name": "login dialog opens",
+      "pass": true
+    },
+    {
+      "name": "no browser errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "1440-dark-fold.png",
+    "1440-dark-full.png",
+    "1440-dark-detail.png",
+    "1440-light-fold.png",
+    "1440-light-detail.png",
+    "768-dark-fold.png",
+    "768-dark-full.png",
+    "768-dark-detail.png",
+    "768-light-fold.png",
+    "768-light-detail.png",
+    "390-dark-fold.png",
+    "390-dark-full.png",
+    "390-dark-detail.png",
+    "390-light-fold.png",
+    "390-light-detail.png",
+    "320-dark-fold.png",
+    "320-dark-full.png",
+    "320-dark-detail.png",
+    "320-light-fold.png",
+    "320-light-detail.png",
+    "desktop-login.png"
+  ]
+}

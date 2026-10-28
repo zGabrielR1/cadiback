@@ -24,6 +24,8 @@ web/.vercel/
 
 # Local screenshots, browser measurements and dealt design scratch.
 .taste-skill/
+design/auteur/moodboard/
+auteur-gf-metadata.json
 
 # the live ledger, profiles, rounds and admin sessions — a deployment starts
 # with its own (OPERATOR_DATA_DIR), and this is someone's play money history
@@ -47,3 +49,6 @@ Thumbs.db
 # a runtime snapshot the sports stats engine writes (per-match cards, corners,
 # fouls); a live cache, not a committed probe artifact like the fixtures feed
 probes/flashscore-stats-cache.json
+
+# Local Asaas webhook credentials; never publish with source.
+asaaswebhook.txt

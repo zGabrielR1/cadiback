@@ -17,6 +17,30 @@ export const BUILDER_STATS = [
   { key: 'possession', label: 'Posse de bola', unit: '%' },
 ];
 
+const RESULT = ['1x2', 'moneyline', 'dc', 'dnb', 'ah', 'total', 'total-h1', 'total-h2'];
+export const SPORT_LABELS = {soccer:'Futebol',futsal:'Futsal',football:'Futebol americano',basketball:'Basquete',tennis:'Tênis',volleyball:'Vôlei',ice_hockey:'Hóquei no gelo',hockey:'Hóquei',baseball:'Beisebol',american_football:'Futebol americano',rugby:'Rugby',handball:'Handebol',cricket:'Críquete',esports:'Esports',mma:'MMA',boxing:'Boxe',table_tennis:'Tênis de mesa'};
+export function sportProfile(sport = 'soccer') {
+  sport = ({football:'american_football',hockey:'ice_hockey',futsal:'soccer'})[sport] || sport;
+  if (sport === 'soccer') return {groups:BUILDER_GROUPS,stats:BUILDER_STATS,total:'Total de gols'};
+  const stats = {
+    basketball:[['points','Pontos'],['rebounds','Rebotes'],['assists','Assistências'],['fouls','Faltas pessoais'],['three_pointers','Cestas de três']],
+    tennis:[['aces','Aces'],['double_faults','Duplas faltas'],['break_points_won','Break points convertidos'],['games_won','Games vencidos']],
+    table_tennis:[['points','Pontos'],['sets_won','Sets vencidos']],
+    volleyball:[['aces','Aces'],['blocks','Bloqueios'],['attack_points','Pontos de ataque'],['sets_won','Sets vencidos']],
+    ice_hockey:[['shots_on_target','Chutes ao gol'],['penalty_minutes','Minutos de penalidade'],['saves','Defesas']],
+    baseball:[['hits','Rebatidas'],['runs','Corridas'],['errors','Erros'],['strikeouts','Strikeouts']],
+    american_football:[['total_yards','Jardas totais'],['passing_yards','Jardas de passe'],['rushing_yards','Jardas terrestres'],['touchdowns','Touchdowns']],
+    handball:[['goals','Gols'],['saves','Defesas'],['turnovers','Perdas de bola']],
+    cricket:[['runs','Corridas'],['wickets','Wickets'],['overs','Overs']],
+    esports:[['kills','Abates'],['deaths','Mortes'],['assists','Assistências']],
+  };
+  const total = ['tennis','table_tennis'].includes(sport)?'Total de games / pontos':sport==='baseball'?'Total de corridas':['hockey','ice_hockey','handball'].includes(sport)?'Total de gols':'Total de pontos';
+  const groups=[{id:'result',label:'Resultado e totais',kinds:RESULT}];
+  if(sport==='basketball')groups.push({id:'discipline',label:'Faltas',kinds:['fouls']});
+  if(sport==='rugby')groups.push({id:'discipline',label:'Disciplina',kinds:['cards','red-cards']});
+  return {groups,stats:(stats[sport]||[]).map(([key,label])=>({key,label})),total};
+}
+
 // Missing is never converted to zero, and current-match counts never become
 // historical team averages. Both sides must be valid to draw a comparison.
 export function statPair(fixture, key) {
@@ -27,7 +51,7 @@ export function statPair(fixture, key) {
 }
 
 export function builderMarkets(fixture, group = 'result') {
-  const kinds = BUILDER_GROUPS.find(item => item.id === group)?.kinds || [];
+  const kinds = sportProfile(fixture?.sport || 'soccer').groups.find(item => item.id === group)?.kinds || [];
   return validMarkets(fixture || {}).filter(market => kinds.includes(market.kind));
 }
 

@@ -7,10 +7,13 @@ import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
 import { useSportsFeed } from "../lib/useSportsFeed";
+import { matchKeyFromUrl, navigateMatch } from "../lib/match-link.mjs";
 import CasinoHome from "./components/CasinoHome";
 import SportsHome from "./components/SportsHome";
+import DataPortal from "./components/DataPortal";
+import { grantPortalAccess, hasPortalAccess, revokePortalAccess } from "../lib/access.mjs";
 import { betIdentity } from "../lib/sports.mjs";
-import { toggleSelection, toLegs, fromQuote, selectionAvailability } from "../lib/sports-slip.mjs";
+import { toggleSelection, toLegs, fromQuote, selectionAvailability, applyPriceChanges } from "../lib/sports-slip.mjs";
 import AdminPanel from "./components/AdminPanel";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -43,17 +46,34 @@ export default function Page() {
     refreshError, busy, setBusy, refresh,
   } = session;
 
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState(process.env.NEXT_PUBLIC_LOCAL_BLUE === "1" ? "dark" : "light");
+  const design = process.env.NEXT_PUBLIC_LOCAL_BLUE === "1" ? "blue" : "auteur";
   const [view, setView] = useState("sport");
+  // The full terminal is only reachable through the data portal (0080).
+  // The public shell behaves as a sports odds site until it is unlocked.
+  const [unlocked, setUnlocked] = useState(false);
   const authenticated = !!(player && profile?.player_id === player);
   const [pendingCasino, setPendingCasino] = useState(null);
   const [guestPromptDismissed, setGuestPromptDismissed] = useState(false);
-  const [guestPromptCompact, setGuestPromptCompact] = useState(false);
+  // The prompt is small at rest; hovering it (desktop) or toggling it
+  // (touch/keyboard) expands the full invitation. The explicit state lets a
+  // tap pin it open where hover does not exist.
+  const [guestPromptExpanded, setGuestPromptExpanded] = useState(false);
   const [admin, setAdmin] = useState(null);
   const [casinoCat, setCasinoCat] = useState("Todos");
   const [liveOnly, setLiveOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [builderRequest, setBuilderRequest] = useState(0);
   const [catalog, setCatalog] = useState(null);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
   const [query, setQuery] = useState("");
+  const [notice, setNotice] = useState(null);
+  useEffect(() => {
+    if (!notice) return undefined;
+    const id = setTimeout(() => setNotice(null), 7000);
+    return () => clearTimeout(id);
+  }, [notice]);
   const sportsFeed = useSportsFeed(view === "sport");
   const { sports } = sportsFeed;
   const [current, setCurrent] = useState(null);
@@ -67,11 +87,6 @@ export default function Page() {
   const betRequestId = useRef(null);
   const availability = selectionAvailability(selectedBets, sports);
   useEffect(() => { setSlipState({status:'idle'}); betRequestId.current=null; }, [player]);
-  useEffect(() => {
-    const compact = () => { if (window.scrollY > 160) setGuestPromptCompact(true); };
-    window.addEventListener('scroll', compact, {passive:true});
-    return () => window.removeEventListener('scroll', compact);
-  }, []);
   const [betAmount, setBetAmount] = useState("10");
   const [stake, setStake] = useState(500);
   const [reels, setReels] = useState(["—", "—", "—"]);
@@ -89,7 +104,7 @@ export default function Page() {
   const [favTick, setFavTick] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLog, setChatLog] = useState([
-    { who: "bot", text: "Olá! Pergunte sobre depósitos, saques, bônus, limites ou jogos." },
+    { who: "bot", text: "Olá! Pergunte sobre depósitos, saques, bônus, limites ou mercados." },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [win, setWin] = useState(false);
@@ -265,16 +280,45 @@ export default function Page() {
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem("casa-theme");
-      if (stored) setTheme(stored);
-    } catch (e) {}
+      if (stored === "light" || stored === "dark") setTheme(stored);
+    } catch {}
     setAdmin(getAdminSession());
     // a stored player session logs the visitor back in without the form;
     // /api/player derives the account from the token (decision 0069)
     const saved = getPlayerSession();
     // refresh() verifies the credential; a network outage must not erase it.
     if (saved) setPlayer(saved.player_id);
-    api("GET", "/api/catalog").then(setCatalog).catch(() => {});
+    setUnlocked(hasPortalAccess());
+    // "#dados" is the discreet door to the data portal. The hash is removed
+    // from the address bar before the view renders, like the auth hashes.
+    const raw = String(window.location.hash || "");
+    if (/^#\/?dados\/?$/.test(raw)) {
+      window.history.replaceState(
+        null, "", window.location.pathname + window.location.search);
+      setView("dados");
+      window.scrollTo(0, 0);
+    }
   }, []);
+
+  // A browser history entry for a public match returns to the sports view,
+  // including when the previous view was account or casino.
+  useEffect(() => {
+    const syncMatch = () => {
+      if (matchKeyFromUrl(window.location.href)) setView("sport");
+    };
+    window.addEventListener("popstate", syncMatch);
+    return () => window.removeEventListener("popstate", syncMatch);
+  }, []);
+
+  // Member access is sufficient; the optional data portal does not gate games.
+  useEffect(() => {
+    if (!authenticated) { setCatalog(null); setCatalogError(""); return; }
+    let active = true;
+    setCatalogError("");
+    api("GET", "/api/catalog").then(data => { if (active) setCatalog(data); })
+      .catch(() => { if (active) setCatalogError("O catálogo não respondeu. Tente carregar novamente."); });
+    return () => { active = false; };
+  }, [authenticated, catalogAttempt]);
 
   const applyAdminSession = useCallback((next) => {
     setAdminSession(next); // write first: later api() calls read it
@@ -371,6 +415,12 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    document.documentElement.dataset.design = design;
+    try { window.localStorage.setItem("casa-design", design); } catch {}
+  }, [design]);
+
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
       window.localStorage.setItem("casa-theme", theme);
@@ -400,7 +450,7 @@ export default function Page() {
       setOfficialToken(null);
       setDetailGame(null);
       setCurrent(null);
-      setView((value) => value === "casino" ? "sport" : value);
+      setView((value) => ["casino", "account", "promos"].includes(value) ? "sport" : value);
     }
   }, [authenticated, pendingCasino]);
 
@@ -412,6 +462,7 @@ export default function Page() {
   };
 
   const goSport = (live) => {
+    navigateMatch(null);
     setLiveOnly(!!live);
     go("sport");
   };
@@ -420,7 +471,7 @@ export default function Page() {
     if (!authenticated) {
       setPendingCasino(cat || "Todos");
       setAuthMode("login");
-      setAuthNotice("Entre na sua conta para acessar o cassino.");
+      setAuthNotice("Entre na sua conta para continuar.");
       setAcctOpen(true);
       return;
     }
@@ -428,12 +479,43 @@ export default function Page() {
     go("casino");
   };
 
-  const openCash = () => {
+  const unlockPortal = (code) => {
+    if (!grantPortalAccess(code)) return false;
+    setUnlocked(true);
+    return true;
+  };
+
+  const enterPortal = () => {
+    if (!authenticated) {
+      setPendingCasino("Todos");
+      setAuthMode("login");
+      setAuthNotice("Acesso liberado. Entre para continuar.");
+      setAcctOpen(true);
+      return;
+    }
+    setCasinoCat("Todos");
+    go("casino");
+  };
+
+  const lockPortal = () => {
+    revokePortalAccess();
+    setUnlocked(false);
+    setCurrent(null);
+    setDetailGame(null);
+    setActiveOfficialGame(null);
+    setOfficialToken(null);
+    setCasinoCat("Todos");
+    setPendingCasino(null);
+    go("sport");
+  };
+
+  const openCash = (tab = "dep") => {
     if (!player) {
       setAcctOpen(true);
       return;
     }
     setAcctOpen(false);
+    setCashTab(tab === "wd" ? "wd" : "dep");
     setCashOpen(true);
   };
 
@@ -446,6 +528,7 @@ export default function Page() {
     setPlayerSession(null);
     setPlayer(null);
     setProfile(null);
+    setSelectedBets([]);
     setHistory(null);
     setAuthErrors({});
     setAuthMode("login");
@@ -458,6 +541,7 @@ export default function Page() {
   };
 
   const onQuery = (value) => {
+    if (view === "sport" && value.trim()) navigateMatch(null);
     setQuery(value);
     // Search stays within the current public sports or signed-in casino view.
   };
@@ -944,18 +1028,20 @@ export default function Page() {
     setBusy(true);
     try {
       const r = await api("POST", "/api/bonus", { kind });
-      window.alert(
-        (kind === "welcome"
-          ? "✓ Bônus de Boas-Vindas creditado: "
-          : "✓ Cashback creditado: ") +
+      setNotice({
+        ok: true,
+        text:
+          (kind === "welcome"
+            ? "Bônus de Boas-Vindas creditado: "
+            : "Cashback creditado: ") +
           BRL(r.granted_minor) +
           " em bônus. Meta de giro: " +
           BRL(r.target_minor) +
-          " — ao atingir, o valor vira saldo retirável automaticamente."
-      );
+          " — ao atingir, o valor vira saldo retirável automaticamente.",
+      });
       await refresh();
     } catch (e) {
-      window.alert(e.message);
+      setNotice({ ok: false, text: e.message });
     } finally {
       setBusy(false);
     }
@@ -972,37 +1058,73 @@ export default function Page() {
     const replaced=selectedBets.some(x=>x.fixtureKey===b.fixtureKey && betIdentity(x)!==betIdentity(b));
     setSelectedBets(prev=>toggleSelection(prev,b));
     setSlipState({status:'idle',message:replaced?'Seleção da mesma partida substituída. Use uma seleção por partida.':''});
-    setGuestPromptCompact(true);
   };
 
   const currentGame = allGames.find((g) => g.game_id === current) || null;
 
+  const guestInvitation = !authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen && !chatOpen && selectedBets.length === 0 ? (
+        <aside
+          className={'guest-login-card' + (guestPromptExpanded ? ' is-expanded' : '')}
+          aria-label="Acesse sua conta"
+        >
+          <button className="guest-login-dismiss" aria-label="Fechar convite para entrar" onClick={() => setGuestPromptDismissed(true)}>×</button>
+          <button
+            type="button"
+            className="guest-login-toggle"
+            aria-expanded={guestPromptExpanded}
+            aria-controls="guest-login-body"
+            onClick={() => setGuestPromptExpanded((value) => !value)}
+          >
+            <span className="live-dot" /> Sua conta Candibet
+            <svg className="guest-login-chevron" viewBox="0 0 12 8" aria-hidden="true">
+              <path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="guest-login-body" id="guest-login-body">
+            <strong>Acompanhe os mercados.<br />Tudo na sua conta.</strong>
+            <p>Salve suas partidas favoritas e acompanhe as cotações em tempo real.</p>
+          </div>
+          <div className="guest-login-actions">
+            <button onClick={() => { setPendingCasino(null); setAuthMode("login"); setAcctOpen(true); }}>Entrar <span aria-hidden="true">↗</span></button>
+            <button className="ghost" onClick={() => { setPendingCasino(null); setAuthMode("register"); setAcctOpen(true); }}>Criar conta</button>
+          </div>
+        </aside>
+      ) : null;
+
   return (
     <>
+      {view === "sport" ? <a className="skip-link" href="#sports-board">Ir para as partidas</a> : null}
       <Header
+        design={design}
+        favoritesOnly={favoritesOnly}
+        onFavorites={() => { goSport(false); setFavoritesOnly(true); }}
         onHelp={() => setChatOpen(value => !value)}
         view={view}
         casinoCat={casinoCat}
+        unlocked={unlocked}
         liveOnly={liveOnly}
         query={query}
-        profile={profile}
+        profile={authenticated ? profile : null}
         player={authenticated}
         admin={admin}
         theme={theme}
         onCasino={goCasino}
-        onSport={goSport}
+        onSport={(live) => { setFavoritesOnly(false); goSport(live); }}
         onQuery={onQuery}
+        onCreateBet={() => { goSport(false); setBuilderRequest(Date.now()); }}
         onPromos={() => go("promos")}
         onAdmin={() => go("admin")}
         onTheme={() => setTheme(theme === "light" ? "dark" : "light")}
         onCash={openCash}
         onAccount={openAccount}
+        onPortal={() => go("dados")}
       />
 
       <div className="wrap">
+        {notice ? <div className={"app-notice " + (notice.ok ? "ok" : "err")} role="status">{notice.text}<button aria-label="Fechar aviso" onClick={() => setNotice(null)}>×</button></div> : null}
         {view === "casino" && authenticated ? (
           <>
-            <CasinoHome
+            {catalog ? <CasinoHome
               catalog={catalog}
               onPlay={play}
               onDetails={setDetailGame}
@@ -1013,7 +1135,9 @@ export default function Page() {
               query={query}
               onQuery={setQuery}
               initialCategory={casinoCat}
-            />
+              favTick={favTick}
+              onSport={(live) => { setFavoritesOnly(false); goSport(live); }}
+            /> : <section className="sports-feed-state casino-feed-state" role="status" aria-busy={!catalogError}><h1>{catalogError ? "Não foi possível carregar os jogos." : "Preparando seu catálogo."}</h1><p>{catalogError || "Buscando os jogos e os provedores disponíveis."}</p>{catalogError ? <button className="ghost" onClick={() => setCatalogAttempt(value => value + 1)}>Carregar jogos novamente</button> : null}</section>}
             {currentGame && !currentGame.demo_url ? (
               currentGame.game_id === "demo:roulette-europeia" ? (
                 <RoulettePanel
@@ -1135,18 +1259,36 @@ export default function Page() {
           </>
         ) : null}
 
+        {view === "dados" ? (
+          <DataPortal
+            unlocked={unlocked}
+            authenticated={authenticated}
+            onUnlock={unlockPortal}
+            onEnter={enterPortal}
+            onLock={lockPortal}
+            onBack={() => goSport(false)}
+          />
+        ) : null}
+
         {view === "sport" ? (
           <SportsHome
+            design={design}
+            builderRequest={builderRequest}
+            onBuilderHandled={() => setBuilderRequest(0)}
+            slowLoading={sportsFeed.slow}
+            guestInvitation={guestInvitation}
+            favoritesOnly={favoritesOnly}
+            onFavoritesOnly={setFavoritesOnly}
             query={query}
+            onQuery={onQuery}
             sports={sports}
             loading={sportsFeed.loading}
             error={sportsFeed.error}
             updatedAt={sportsFeed.updatedAt}
             onRetry={sportsFeed.retry}
             liveOnly={liveOnly}
-            onSelectBet={selectBet}
+            onSelectBet={authenticated ? selectBet : () => { setAuthMode("login"); setAcctOpen(true); }}
             onUseSingleBet={(bet) => { if (!slipRequest.current) { setSelectedBets([bet]); setSlipState({status:'idle'}); } }}
-            onExplore={() => setGuestPromptCompact(true)}
             selectedBets={selectedBets}
             onLive={setLiveOnly}
             authenticated={authenticated}
@@ -1162,28 +1304,31 @@ export default function Page() {
           <AdminPanel session={admin} onSession={applyAdminSession} />
         ) : null}
 
-        {view === "account" ? (
+        {view === "account" && authenticated ? (
           <AccountView
             profile={profile}
             player={player}
             health={health}
             history={history}
+            fullAccess={authenticated}
             refreshError={refreshError}
             onChanged={refresh}
             onLogout={logout}
+            onCash={openCash}
+            onHistory={() => setView("account")}
           />
         ) : null}
 
         <footer className="site-footer">
           <div className="footer-mark" aria-hidden="true">CANDIBET<span>.</span></div>
           <div className="footer-bottom">
-            <p>Candibet · Esportes e entretenimento em um só lugar. · 18+ · Jogue com responsabilidade.</p>
+            <p>Candibet · Cotações esportivas e análise de mercados.<span className="footer-age">{authenticated ? "18+ · Jogue com responsabilidade." : "Dados esportivos para acompanhamento."}</span></p>
             <nav aria-label="Navegação do rodapé">
               <button type="button" onClick={() => goSport(false)}>Esportes</button>
-              <button type="button" onClick={() => goCasino("Todos")}>Cassino</button>
-              <button type="button" onClick={() => go("promos")}>Promoções</button>
-              <button type="button" onClick={openCash}>Caixa</button>
+              {authenticated ? <button type="button" onClick={() => go("promos")}>Promoções</button> : null}
+              {authenticated ? <button type="button" onClick={openCash}>Caixa</button> : null}
               <button type="button" onClick={() => setChatOpen(true)}>Ajuda</button>
+              <button type="button" onClick={() => go("dados")}>Dados</button>
             </nav>
           </div>
         </footer>
@@ -1205,10 +1350,25 @@ export default function Page() {
         }}
       />
 
-      <BetslipTray
+      {authenticated && view === "sport" ? <BetslipTray
         state={slipState}
         availability={availability}
-        onAcceptQuote={() => { setSelectedBets(fromQuote(slipState.quote)); setSlipState({status:'idle',message:'Novas cotações aceitas. Confira o valor e confirme.'}); betRequestId.current=null; }}
+        feedLoading={sportsFeed.loading}
+        feedError={sportsFeed.error}
+        onRefresh={sportsFeed.retry}
+        onAcceptBoardPrices={() => {
+          if (slipRequest.current || sportsFeed.loading || sportsFeed.error || !availability.changed.length) return;
+          setSelectedBets(previous => applyPriceChanges(previous, availability.changed));
+          setSlipState({status:'idle',message:'Cotações atualizadas no boletim. Revise o retorno antes de confirmar.'});
+          betRequestId.current=null;
+        }}
+        onRemoveUnavailable={() => {
+          if (slipRequest.current) return;
+          setSelectedBets(previous => previous.filter(bet => !availability.unavailable.includes(betIdentity(bet))));
+          setSlipState({status:'idle',message:'Seleções indisponíveis removidas. Confira o boletim restante.'});
+          betRequestId.current=null;
+        }}
+        onAcceptQuote={() => { if (slipRequest.current || !slipState.quote?.legs) return; setSelectedBets(fromQuote(slipState.quote)); setSlipState({status:'idle',message:'Novas cotações aceitas. Confira o valor e confirme.'}); betRequestId.current=null; sportsFeed.retry(); }}
         onHistory={() => go('account')}
         bets={selectedBets}
         profile={profile}
@@ -1218,7 +1378,7 @@ export default function Page() {
         onRemove={removeBet}
         onClear={() => { if (!slipRequest.current) { setSelectedBets([]); setSlipState({status:'idle'}); } }}
         onPlace={placeBet}
-      />
+      /> : null}
 
       <DetailModal
         game={authenticated ? detailGame : null}
@@ -1229,7 +1389,7 @@ export default function Page() {
       />
 
       <CashierModal
-        open={cashOpen}
+        open={authenticated && cashOpen}
         tab={cashTab}
         onTab={setCashTab}
         method={method}
@@ -1238,6 +1398,8 @@ export default function Page() {
         onDepositAmount={(value) => { setDepositAmount(value); setCashError(""); }}
         withdrawAmount={withdrawAmount}
         onWithdrawAmount={setWithdrawAmount}
+        availableMinor={profile?.available_minor}
+        bonusMinor={profile?.bonus_minor}
         receipt={receipt}
         error={cashError}
         depositLimit={activeDepositLimit}
@@ -1307,30 +1469,22 @@ export default function Page() {
         }}
       />
 
-      <BottomNav
+      <BottomNav authenticated={authenticated}
         view={view}
         liveOnly={liveOnly}
+        unlocked={unlocked}
+        betCount={selectedBets.length}
         onCasino={goCasino}
-        onSport={goSport}
+        onSport={(live) => { setFavoritesOnly(false); goSport(live); }}
         onAccount={openAccount}
         onCash={openCash}
+        onPortal={() => go("dados")}
+        onCreateBet={() => { goSport(false); setBuilderRequest(Date.now()); }}
+        onFavorites={() => { setFavoritesOnly(true); goSport(false); }}
+        onPromos={() => setView("promos")}
       />
 
-      {!authenticated && view === "sport" && !guestPromptDismissed && !acctOpen && !cashOpen && !chatOpen && selectedBets.length === 0 ? (
-        <aside
-          className={'guest-login-card' + (guestPromptCompact ? ' is-compact' : '')}
-          aria-label="Acesse sua conta"
-        >
-          <button className="guest-login-dismiss" aria-label="Fechar convite para entrar" onClick={() => setGuestPromptDismissed(true)}>×</button>
-          <span className="guest-login-eyebrow"><span className="live-dot" /> Sua conta Candibet</span>
-          <strong>Entre no jogo.<br />Seu próximo lance começa aqui.</strong>
-          <p>Acompanhe seu saldo, prepare seu boletim e tenha seus jogos sempre à mão.</p>
-          <div className="guest-login-actions">
-            <button onClick={() => { setPendingCasino(null); setAuthMode("login"); setAcctOpen(true); }}>Entrar <span aria-hidden="true">↗</span></button>
-            <button className="ghost" onClick={() => { setPendingCasino(null); setAuthMode("register"); setAcctOpen(true); }}>Criar conta</button>
-          </div>
-        </aside>
-      ) : null}
+
 
       <ChatWidget
         open={chatOpen}

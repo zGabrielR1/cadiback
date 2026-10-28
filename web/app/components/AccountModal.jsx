@@ -136,7 +136,7 @@ export default function AccountModal({
       <div className={"sheet auth-sheet" + (isRegister ? " auth-register" : "")}>
         <aside className="auth-aside">
           <div className="auth-wordmark">candi<span>bet</span></div>
-          <div><h2>O próximo jogo.<br />A sua leitura.</h2><p>Esportes, mercados ao vivo e cassino. Tudo na sua conta.</p></div>
+          <div><h2>O próximo jogo.<br />A sua leitura.</h2><p>Esportes, mercados ao vivo e cotações em tempo real. Tudo na sua conta.</p></div>
           <p className="auth-responsibility">18+ · Jogue com responsabilidade.</p>
         </aside>
         <div className="auth-main">

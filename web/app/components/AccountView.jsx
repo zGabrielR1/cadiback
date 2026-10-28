@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, BRL } from "../../lib/api";
+import UIIcon from "./UIIcon";
 
 /** A registry instant (ISO, UTC) in the reader's own timezone. */
 function when(iso) {
@@ -46,10 +47,14 @@ function deviceName(userAgent) {
  * strip and round history (F1 extract from page.jsx). Exclusion and session
  * calls live here and report back through onChanged (the page refresh);
  * history rendering is untouched. */
-export default function AccountView({ profile, player, health, history, refreshError, onChanged, onLogout }) {
+export default function AccountView({ profile, player, health, history, fullAccess = false, refreshError, onChanged, onLogout, onCash, onHistory }) {
+  const [section, setSection] = useState("profile");
   const [sessions, setSessions] = useState(null);
   const [sessionError, setSessionError] = useState("");
   const [endingSession, setEndingSession] = useState(false);
+  // On the public sports surface the history shows sports bets only; casino
+  // rounds reappear once the data portal is unlocked (decision 0080).
+  const rounds = (history?.rounds || []).filter((r) => fullAccess || r.type === "sports");
 
   const loadSessions = () => {
     api("GET", "/api/player/sessions")
@@ -101,80 +106,127 @@ export default function AccountView({ profile, player, health, history, refreshE
     }
   };
 
+  const [excludeOpen, setExcludeOpen] = useState(false);
+  const [excludeDuration, setExcludeDuration] = useState("7");
+  const [excludeBusy, setExcludeBusy] = useState(false);
+  const [excludeNotice, setExcludeNotice] = useState("");
+  const [excludeError, setExcludeError] = useState("");
+  const [liftOpen, setLiftOpen] = useState(false);
+
+  const exclusionUntil = () => {
+    if (excludeDuration === "permanent") return "2099-12-31";
+    return new Date(Date.now() + Number(excludeDuration) * 86400000).toISOString().slice(0, 10);
+  };
+
   const selfExclude = async () => {
+    if (excludeBusy) return;
+    setExcludeBusy(true);
+    setExcludeError("");
+    setExcludeNotice("");
     try {
-      await api("POST", "/api/self-exclude", {
-        until: "2027-01-01",
-      });
-      window.alert("Autoexclusão ativada no ambiente de demonstração.");
+      const until = exclusionUntil();
+      await api("POST", "/api/self-exclude", { until });
+      setExcludeOpen(false);
+      setExcludeNotice(
+        excludeDuration === "permanent"
+          ? "Autoexclusão permanente ativada."
+          : "Autoexclusão ativada até " + new Date(until + "T12:00:00").toLocaleDateString("pt-BR") + "."
+      );
+      if (onChanged) onChanged();
     } catch (e) {
-      window.alert(e.message);
+      setExcludeError(e.message);
+    } finally {
+      setExcludeBusy(false);
     }
   };
   const liftBlock = async () => {
+    setExcludeError("");
+    setExcludeNotice("");
     try {
       await api("POST", "/api/self-exclude-lift");
-      window.alert("Bloqueio de autoexclusão removido.");
+      setExcludeNotice("Bloqueio de autoexclusão removido.");
     } catch (e) {
-      window.alert(e.message);
+      setExcludeError(e.message);
     }
     if (onChanged) onChanged();
   };
   return (
-    <>
-      <section className="panel">
-        <h2>Minha Conta</h2>
-        <div style={{ fontSize: 13.5 }}>
-          {profile ? (
-            <>
-              <b>{profile.name}</b> · {profile.player_id}
-              {profile.cnpj_masked || profile.cpf_masked ? (
-                <div className="sub">{profile.person_type === "PJ" ? "PJ · CNPJ " : "PF · CPF "}
-                  {profile.cnpj_masked || profile.cpf_masked}</div>
-              ) : null}
-              <br />
-              {profile.username ? (
-                <>
-                  Usuário: <b>{profile.username}</b> ·{" "}
-                </>
-              ) : null}
-              Chave Pix: {profile.pix_masked} · Saldo Disponível:{" "}
-              <b>{BRL(profile.available_minor)}</b>
-            </>
-          ) : (
-            "Nenhuma conta conectada. Clique em Entrar para iniciar sua sessão demo."
-          )}
-        </div>
-        <button
-          className="danger"
-          style={{ width: "auto", marginTop: 14 }}
-          disabled={!player}
-          onClick={selfExclude}
-        >
-          Autoexcluir-me (Jogo Responsável)
-        </button>
-        <button
-          className="ghost"
-          style={{ width: "auto", marginTop: 14, marginLeft: 8 }}
-          disabled={!player}
-          onClick={liftBlock}
-        >
-          Levantar Bloqueio
-        </button>
-        <button
-          className="ghost"
-          style={{ width: "auto", marginTop: 14, marginLeft: 8 }}
-          disabled={!player}
-          onClick={onLogout}
-        >
-          Sair da conta
-        </button>
+    <div className="account-view">
+      <header className="account-title account-identity"><div className="account-avatar" aria-hidden="true">{(profile?.name || "C").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()}</div><div><h1>{profile?.name || "Minha conta"}</h1>{profile?.username ? <p>@{profile.username}</p> : null}</div><button className="account-icon-action" onClick={onLogout} title="Sair da conta" aria-label="Sair da conta"><UIIcon name="logout" size={22}/></button></header>
+      <div className="account-workspace"><nav className="account-sections" role="tablist" aria-label="Seções da conta" onKeyDown={event => { const tabs = [...event.currentTarget.querySelectorAll("button")]; const index = tabs.indexOf(document.activeElement); const next = event.key === "ArrowRight" || event.key === "ArrowDown" ? (index + 1) % tabs.length : event.key === "ArrowLeft" || event.key === "ArrowUp" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null; if (next !== null) { event.preventDefault(); tabs[next].focus(); tabs[next].click(); } }}>{[{key:"profile",icon:"user",label:"Perfil"},{key:"sessions",icon:"monitor",label:"Dispositivos"},{key:"history",icon:"history",label:"Histórico"},{key:"limits",icon:"shield",label:"Pausas e proteção"}].map(item=><button key={item.key} type="button" role="tab" aria-selected={section===item.key} aria-controls={"account-"+item.key} aria-label={item.label} title={item.label} onClick={()=>setSection(item.key)}><UIIcon name={item.icon} size={23}/></button>)}</nav><div className="account-content">
+      {profile ? (
+        <section className="panel account-balance-card" id="account-overview" hidden={section !== "profile"}>
+          <div className="account-balance-total"><h2>Saldo disponível</h2><strong>{BRL(profile.available_minor)}</strong></div>
+          <div className="account-balance-legend">
+            <div><span className="legend-dot cash" />Saldo disponível <b>{BRL(profile.available_minor)}</b></div>
+            {profile.bonus_minor > 0 ? <div><span className="legend-dot bonus" />Bônus <b>{BRL(profile.bonus_minor)}</b></div> : null}
+            <div className="account-balance-actions">
+              <button className="betslip-submit" style={{ width: "auto", padding: "8px 14px" }} onClick={() => onCash?.("dep")} aria-label="Depositar" title="Depositar"><UIIcon name="incoming" size={22}/></button>
+              <button className="ghost" style={{ width: "auto", padding: "8px 14px" }} onClick={() => onCash?.("wd")} aria-label="Sacar" title="Sacar"><UIIcon name="outgoing" size={22}/></button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+      <section className="panel" id="account-profile" hidden={section !== "profile"} role="tabpanel" aria-label="Perfil">
+        <h2>Perfil</h2>
+        {profile ? <>
+
+          <dl className="club-account-facts">
+            {profile.username ? <div><dt>Usuário</dt><dd>{profile.username}</dd></div> : null}
+            <div><dt>{profile.person_type === "PJ" ? "CNPJ" : "CPF"}</dt><dd>{profile.cnpj_masked || profile.cpf_masked || "Não informado"}</dd></div>
+            <div><dt>Chave Pix</dt><dd>{profile.pix_masked || "Não cadastrada"}</dd></div>
+          </dl>
+        </> : <p className="sub">Nenhuma conta conectada. Entre para acessar seus dados.</p>}
+
       </section>
-      <section className="panel">
-        <h2>Sessões ativas</h2>
+      <section className="panel account-rg" id="account-limits" hidden={section !== "limits"} role="tabpanel" aria-label="Pausas e proteção"><h2>Pausas e proteção</h2>
+        {excludeOpen ? (
+          <div className="account-exclude" role="group" aria-label="Confirmar autoexclusão">
+            <p>Escolha por quanto tempo bloquear sua conta. Durante o bloqueio você não poderá apostar nem depositar.</p>
+            <label htmlFor="exclude-duration">Duração</label>
+            <select id="exclude-duration" value={excludeDuration} onChange={(e) => setExcludeDuration(e.target.value)}>
+              <option value="1">24 horas</option>
+              <option value="7">7 dias</option>
+              <option value="30">30 dias</option>
+              <option value="permanent">Permanente</option>
+            </select>
+            <div className="account-exclude-actions">
+              <button className="ghost" disabled={excludeBusy} onClick={() => setExcludeOpen(false)}>Cancelar</button>
+              <button className="danger" disabled={excludeBusy} onClick={selfExclude}>{excludeBusy ? "Ativando…" : "Confirmar autoexclusão"}</button>
+            </div>
+          </div>
+        ) : (
+          <button
+            className="danger"
+            style={{ width: "auto", marginTop: 14 }}
+            disabled={!player}
+            onClick={() => { setExcludeOpen(true); setLiftOpen(false); setExcludeNotice(""); setExcludeError(""); }}
+          >
+            Pausar acesso
+          </button>
+        )}
+        {liftOpen ? (
+          <span className="account-exclude-actions" style={{ marginTop: 14, marginLeft: 8 }}>
+            <button className="ghost" onClick={() => setLiftOpen(false)}>Cancelar</button>
+            <button onClick={() => { setLiftOpen(false); liftBlock(); }}>Confirmar levantamento</button>
+          </span>
+        ) : (
+          <button
+            className="ghost"
+            style={{ width: "auto", marginTop: 14, marginLeft: 8 }}
+            disabled={!player}
+            onClick={() => { setLiftOpen(true); setExcludeNotice(""); setExcludeError(""); }}
+          >
+            Reativar acesso
+          </button>
+        )}
+        {excludeNotice ? <p className="account-notice" role="status">{excludeNotice}</p> : null}
+        {excludeError ? <p className="account-notice err" role="alert">{excludeError}</p> : null}
+      </section>
+      <section className="panel" id="account-sessions" hidden={section !== "sessions"} role="tabpanel" aria-label="Dispositivos">
+        <h2>Dispositivos</h2>
         <div style={{ fontSize: 12.5, color: "var(--mut)" }}>
-          Cada login abre uma sessão. Encerrar uma aqui derruba aquela sessão no próximo pedido;
-          a senha e o saldo não mudam.
+          Gerencie seus acessos.
         </div>
         {sessionError ? (
           <div className="err" role="alert" style={{ fontSize: 12.5 }}>
@@ -242,8 +294,8 @@ export default function AccountView({ profile, player, health, history, refreshE
           Encerrar as outras sessões
         </button>
       </section>
-      <section className="panel">
-        <h2>Histórico de Rodadas</h2>
+      <section className="panel" id="account-history" hidden={section !== "history"} role="tabpanel" aria-label="Histórico">
+        <h2>Histórico</h2>
         <div style={{ fontSize: 12.5, color: "var(--mut)" }}>Status do sistema: {health || "online"}</div>
         {history && history.risk && history.risk.flagged ? (
           <div className="err" style={{ fontSize: 12.5 }}>
@@ -255,11 +307,11 @@ export default function AccountView({ profile, player, health, history, refreshE
             falha ao atualizar: {refreshError}
           </div>
         ) : null}
-        {history && history.rounds && history.rounds.length > 0
+        {rounds.length > 0
           ? (() => {
-              const total = history.rounds.reduce((n, r) => n + (r.stake_minor || 0), 0);
-              const back = history.rounds.reduce((n, r) => n + (r.payout_minor || 0), 0);
-              const pending = history.rounds.filter((r) => r.tier === "pendente").length;
+              const total = rounds.reduce((n, r) => n + (r.stake_minor || 0), 0);
+              const back = rounds.reduce((n, r) => n + (r.payout_minor || 0), 0);
+              const pending = rounds.filter((r) => r.tier === "pendente").length;
               const roi = total > 0 ? ((back - total) / total) * 100 : 0;
               const cards = [
                 ["Apostado", BRL(total)],
@@ -281,7 +333,7 @@ export default function AccountView({ profile, player, health, history, refreshE
                         minWidth: 86,
                       }}
                     >
-                      <div style={{ fontSize: 10.5, color: "var(--mut)", textTransform: "uppercase", letterSpacing: ".04em" }}>{k}</div>
+                      <div style={{ fontSize: 12, color: "var(--mut)" }}>{k}</div>
                       <b style={{ fontSize: 14 }}>{v}</b>
                     </div>
                   ))}
@@ -293,15 +345,15 @@ export default function AccountView({ profile, player, health, history, refreshE
           <thead>
             <tr>
               <th>ID</th>
-              <th>Jogo</th>
+              <th>Descrição</th>
               <th>Aposta</th>
               <th>Retorno</th>
               <th>Resultado</th>
             </tr>
           </thead>
           <tbody>
-            {history && history.rounds && history.rounds.length > 0 ? (
-              history.rounds
+            {rounds.length > 0 ? (
+              rounds
                 .slice()
                 .reverse()
                 .map((r) => (
@@ -337,13 +389,14 @@ export default function AccountView({ profile, player, health, history, refreshE
             ) : (
               <tr>
                 <td colSpan={5} style={{ color: "var(--mut)", textAlign: "center", padding: "16px" }}>
-                  Nenhuma rodada realizada ainda. Escolha um jogo no cassino para começar!
+                  Nenhuma aposta realizada ainda. Escolha um mercado no boletim para começar!
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </section>
-    </>
+      </div></div>
+    </div>
   );
 }

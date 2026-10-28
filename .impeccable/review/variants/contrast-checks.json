@@ -1,0 +1,43 @@
+{
+  "results": [
+    {
+      "name": "1440 Original utility contrast",
+      "pass": true
+    },
+    {
+      "name": "1440 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "768 Original utility contrast",
+      "pass": true
+    },
+    {
+      "name": "768 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "390 Original utility contrast",
+      "pass": true
+    },
+    {
+      "name": "390 light fits viewport",
+      "pass": true
+    },
+    {
+      "name": "320 Original utility contrast",
+      "pass": true
+    },
+    {
+      "name": "320 light fits viewport",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "classic-1440-light-fold.png",
+    "classic-768-light-fold.png",
+    "classic-390-light-fold.png",
+    "classic-320-light-fold.png"
+  ]
+}

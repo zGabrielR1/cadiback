@@ -1,0 +1,296 @@
+{
+  "routes": [
+    {
+      "url": "http://127.0.0.1:8765",
+      "states": {
+        "button": {
+          "current": 1
+        }
+      },
+      "colors": {
+        "lab(97.0939 -0.108689 -0.749958)": 2,
+        "lab(44.6614 62.7587 46.643)": 6,
+        "lab(100 0 0)": 7,
+        "lab(9.47247 -0.459656 -4.40383)": 12,
+        "lab(38.4664 -0.680119 -5.55185)": 15
+      },
+      "type": {
+        "13px/600/Source Sans 3": 6,
+        "27px/800/Archivo": 1,
+        "15px/600/Source Sans 3": 4,
+        "14px/650/Source Sans 3": 1,
+        "39px/750/Archivo": 1,
+        "14px/400/Source Sans 3": 1,
+        "11px/400/Source Sans 3": 2,
+        "20px/600/Source Sans 3": 1,
+        "13px/400/Source Sans 3": 3,
+        "17px/700/Archivo": 1,
+        "12px/400/Source Sans 3": 2,
+        "13px/700/Source Sans 3": 5,
+        "14px/600/Source Sans 3": 2,
+        "16px/700/Archivo": 1,
+        "20px/750/Archivo": 1
+      },
+      "radii": {
+        "8px": 1,
+        "4px": 14,
+        "50px": 1,
+        "5px": 2
+      },
+      "shadows": {},
+      "space": {
+        "10px": 4,
+        "14px": 2,
+        "16px": 4,
+        "32px": 2,
+        "12px": 7,
+        "9px": 1,
+        "11px": 1,
+        "20px": 4,
+        "30px": 3,
+        "5px": 1,
+        "24px": 2,
+        "28px": 1,
+        "22px": 2,
+        "8px": 1,
+        "18px": 2,
+        "6px": 2,
+        "13px": 3,
+        "50px": 1
+      },
+      "focusable": 15,
+      "hasDisabled": false,
+      "title": "Candibet — Cotações Esportivas",
+      "landmarks": "header,nav,main,footer,aside",
+      "h1": 1,
+      "focus": {
+        "probed": 17,
+        "noFocusRing": []
+      },
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (File not found)",
+        "Failed to load resource: the server responded with a status of 404 (File not found)",
+        "Failed to load resource: the server responded with a status of 404 (File not found)"
+      ],
+      "status": 200,
+      "empty": false
+    }
+  ],
+  "controls": {
+    "link": [
+      {
+        "sig": "lab(44.6614 62.7587 46.643) | lab(100 0 0) | lab(100 0 0) | 0b | 8r | 13/600 | 10x14 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "Ir para as partidas"
+      }
+    ],
+    "button": [
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 27/800 | 0x0 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "candi\nbet"
+      },
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 15/600 | 12x0 | noshadow",
+        "count": 4,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "Ao vivo"
+      },
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 13/600 | 9x12 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "submit"
+      },
+      {
+        "sig": "lab(44.6614 62.7587 46.643) | lab(100 0 0) | lab(100 0 0) | 0b | 4r | 14/650 | 11x20 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "Entrar"
+      },
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(38.4664 -0.680119 -5.55185) | lab(38.4664 -0.680119 -5.55185) | 0b | 4r | 20/600 | 0x0 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "‹"
+      },
+      {
+        "sig": "lab(100 0 0) | lab(9.47247 -0.459656 -4.40383) | lab(84.9011 -0.317544 -2.24477) | 1b | 4r | 14/600 | 10x16 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "Tentar novamente"
+      },
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 13/600 | 0x0 | noshadow",
+        "count": 3,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "Esportes"
+      }
+    ],
+    "input": [
+      {
+        "sig": "rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 0r | 14/400 | 0x0 | noshadow",
+        "count": 1,
+        "routes": [
+          "http://127.0.0.1:8765"
+        ],
+        "sample": "text"
+      }
+    ]
+  },
+  "colors": [
+    {
+      "k": "lab(38.4664 -0.680119 -5.55185)",
+      "total": 15,
+      "routes": 1
+    },
+    {
+      "k": "lab(9.47247 -0.459656 -4.40383)",
+      "total": 12,
+      "routes": 1
+    },
+    {
+      "k": "lab(100 0 0)",
+      "total": 7,
+      "routes": 1
+    },
+    {
+      "k": "lab(44.6614 62.7587 46.643)",
+      "total": 6,
+      "routes": 1
+    },
+    {
+      "k": "lab(97.0939 -0.108689 -0.749958)",
+      "total": 2,
+      "routes": 1
+    }
+  ],
+  "type": [
+    {
+      "k": "13px/600/Source Sans 3",
+      "total": 6,
+      "routes": 1
+    },
+    {
+      "k": "13px/700/Source Sans 3",
+      "total": 5,
+      "routes": 1
+    },
+    {
+      "k": "15px/600/Source Sans 3",
+      "total": 4,
+      "routes": 1
+    },
+    {
+      "k": "13px/400/Source Sans 3",
+      "total": 3,
+      "routes": 1
+    },
+    {
+      "k": "11px/400/Source Sans 3",
+      "total": 2,
+      "routes": 1
+    },
+    {
+      "k": "12px/400/Source Sans 3",
+      "total": 2,
+      "routes": 1
+    },
+    {
+      "k": "14px/600/Source Sans 3",
+      "total": 2,
+      "routes": 1
+    },
+    {
+      "k": "27px/800/Archivo",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "14px/650/Source Sans 3",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "39px/750/Archivo",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "14px/400/Source Sans 3",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "20px/600/Source Sans 3",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "17px/700/Archivo",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "16px/700/Archivo",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "20px/750/Archivo",
+      "total": 1,
+      "routes": 1
+    }
+  ],
+  "radii": [
+    {
+      "k": "4px",
+      "total": 14,
+      "routes": 1
+    },
+    {
+      "k": "5px",
+      "total": 2,
+      "routes": 1
+    },
+    {
+      "k": "8px",
+      "total": 1,
+      "routes": 1
+    },
+    {
+      "k": "50px",
+      "total": 1,
+      "routes": 1
+    }
+  ],
+  "shadows": [],
+  "fails": [],
+  "warns": [
+    "button variant used exactly once (\"candi\nbet\") — either promote it into the system or delete it: rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 27/800 | 0x0 | noshadow",
+    "button variant used exactly once (\"submit\") — either promote it into the system or delete it: rgba(0, 0, 0, 0) | lab(9.47247 -0.459656 -4.40383) | lab(9.47247 -0.459656 -4.40383) | 0b | 4r | 13/600 | 9x12 | noshadow",
+    "button variant used exactly once (\"Entrar\") — either promote it into the system or delete it: lab(44.6614 62.7587 46.643) | lab(100 0 0) | lab(100 0 0) | 0b | 4r | 14/650 | 11x20 | noshadow",
+    "button variant used exactly once (\"‹\") — either promote it into the system or delete it: rgba(0, 0, 0, 0) | lab(38.4664 -0.680119 -5.55185) | lab(38.4664 -0.680119 -5.55185) | 0b | 4r | 20/600 | 0x0 | noshadow",
+    "button variant used exactly once (\"Tentar novamente\") — either promote it into the system or delete it: lab(100 0 0) | lab(9.47247 -0.459656 -4.40383) | lab(84.9011 -0.317544 -2.24477) | 1b | 4r | 14/600 | 10x16 | noshadow",
+    "15 distinct type steps across the product — a scale nobody can hold in their head is not a scale",
+    "no disabled control appeared on any route — the disabled state is probably undesigned, not absent"
+  ]
+}

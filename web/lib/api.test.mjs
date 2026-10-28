@@ -68,3 +68,19 @@ test("HTML and malformed JSON refusals retain status without leaking server cont
     }
   }
 });
+
+test("leaving or retrying a feed cancels its pending request", async (t) => {
+  const original = { window: globalThis.window, fetch: globalThis.fetch };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.window = { localStorage: storage(), sessionStorage: storage() };
+  const controller = new AbortController();
+  let signal;
+  globalThis.fetch = (_, options) => new Promise((resolve, reject) => {
+    signal = options.signal;
+    signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+  });
+  const pending = api("GET", "/api/sports", undefined, { signal: controller.signal });
+  controller.abort();
+  await assert.rejects(pending, /tempo esgotado/);
+  assert.equal(signal.aborted, true);
+});

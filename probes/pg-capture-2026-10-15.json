@@ -1,0 +1,225 @@
+{
+  "captured_at": "2026-10-15T00:16:00.580Z",
+  "url": "http://127.0.0.1:8769/g/pg:fortune-tiger/pg/07bc3e6bf95c4b8d/?token=1d6ccfadf0384f02a0c807577b058d33",
+  "browser": "/tmp/opencode/chrome/chrome-headless-shell-linux64/chrome-headless-shell",
+  "total_requests": 7,
+  "hosts": {
+    "127.0.0.1:8769": 4,
+    "www.googletagmanager.com": 2,
+    "www.google-analytics.com": 1
+  },
+  "console": [
+    {
+      "level": "log",
+      "text": "Game/Boot/Engine 3.2.0.3/7.4.0/7.4.0-rc.5"
+    }
+  ],
+  "requests": [
+    {
+      "id": "F1C512C2CFA76882C2CCA29B6F729687",
+      "url": "http://127.0.0.1:8769/g/pg:fortune-tiger/pg/07bc3e6bf95c4b8d/?token=1d6ccfadf0384f02a0c807577b058d33",
+      "method": "GET",
+      "type": "Document",
+      "headers": {
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Linux\""
+      },
+      "ts": 3713.919419,
+      "status": 200,
+      "mime": "text/html",
+      "respHeaders": {
+        "Cache-Control": "no-cache",
+        "Content-Length": "1035847",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Thu, 15 Oct 2026 00:14:30 GMT",
+        "Server": "OperatorDemo/0.1 Python/3.14.8",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "bytes": 1036328,
+      "respBody": "<!DOCTYPE html><html><head><script>window.__WALLET__={\"token\": \"1d6ccfadf0384f02a0c807577b058d33\", \"game_id\": \"pg:fortune-tiger\", \"api\": \"/api\", \"balance_minor\": 10000, \"bonus_minor\": 0, \"min_stake_minor\": 200, \"can_play\": true};</script><script src=\"/g/bridge.js\"></script><link rel=\"shortcut icon\" href=\"/favicon/favicon.ico\"><link rel=\"icon\" href=\"/favicon/favicon.ico\"><link rel=\"icon\" sizes=\"48x48\" href=\"/favicon/favicon-48.png\"><link rel=\"icon\" sizes=\"96x96\" href=\"/favicon/favicon-96.png\"><link rel=\"icon\" sizes=\"192x192\" href=\"/favicon/favicon-192.png\"><link rel=\"apple-touch-icon\" sizes=\"120x120\" href=\"/favicon/favicon-120.png\"><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/favicon/favicon-180.png\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover\"><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"format-detection\" content=\"telephone=no,email=no\"><meta name=\"msapplication-tap-highlight\" content=\"no\"><meta name=\"renderer\" content=\"webkit\"><meta name=\"force-rendering\" content=\"webkit\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\"><meta name=\"full-screen\" content=\"yes\"><meta name=\"x5-fullscreen\" content=\"true\"><meta name=\"screen-orientation\" content=\"portrait\"><meta name=\"x5-orientation\" content=\"portrait\"><meta name=\"browsermode\" content=\"application\"><meta name=\"x5-page-mode\" content=\"app\"><title>Fortune Tiger</title><style id=\"initial-style\">body{height:100vh;margin:0;width:100vw}#game-shell{display:flex;height:100%;position:fixed;width:100%}#game-overlay{height:0;position:absolute;width:0}#background-img{background-size:cover;bottom:-10%;height:110%;left:0;position:absolute;right:0;top:0;width:100%}#block-page,#scroll-area{height:100%;position:absolute;width:100%}#block-page{left:0;margin:auto;top:0}</style></head><body><div id=\"game-shell\"><div id=\"background-img\"></div><canvas id=\"GameCanvas\" tabindex=\"0\"></canvas><div id=\"game-overlay\"></div></div><script id=\"main-script\" data-rev=\"bc7e0\">!(function(){'use strict';(function(stringArrayFunction,g0){function pb(g0,g1,g4,g5,g6){return g3(g1- -0xa0,g4);}function ps(g0,g1,g4,g5,g6){return g3(g4-0x142,g0);}function ph(g0,g1,g4,g5,g6){return g3(g1-0x165,g5);}function pR(g0,g1,g4,g5,g6){return g3(g6-0x80,g0);}var g1=stringArrayFunction();function pZ(g0,g1,g4,g5,g6){return g3(g0- -0xf4,g1);}while(!![]){try{var expression=-parseInt(pb(0x31bd,0x2797,'G7mv',0x1819,0x3e49))/(-0x1b39+-0x66a*0x6+-0x1a*-0x287)*(parseInt(pb(0x2094,0x83f,'siDV',0x2d1,-0x2ce))/(0x252e+0x78b+-0x2cb7))+-parseInt(pR('EJ8U',0x1819,0x1f8b,0x6af,0xc2e))/(-0x17ea+0x2547+0x2*-0x6ad)*(parseInt(ps('8wbf',0x187e,0x2c0b,0x37d2,0x1e9b))/(0x194+0x21c4*-0x1+-0x24*-0xe5))+parseInt(pR(')T*K',0x20ef,0x2342,-0x20,0x15b5))/(-0x1f*0xa9+-0x38*-0x38+0x83c)*(parseInt(pR('vn2f',0x1ec,0x26b7,0x202a,0x1368))/(0x1e18+0x1cbf+-0xef*0x3f))+-parseInt(ps('&)4H',0x1984,0x1a3f,0x3029,0x1fe2))/(0x3*-0xc9f+-0x3b3*0x1+0x7*0x5f1)+-parseInt(pZ(0xe25,'OKtz',0x2343,-0xa72,0x1951))/(0x25a9+0x7*0x46d+-0x449c)+parseInt(pR('#6*(',-0x3e,0x444,0x1695,0xd62))/(0x65c+-0x6e2+0x8f)+-parseInt(pb(-0x25b,0xdec,'Q!ZE',0x854,0xc13))/(-0x1680+0x1b1*0x10+0x3*-0x182);if(expression===g0)break;else g1['push'](g1['shift']());}catch(g4){g1['push'](g1['shift']());}}}(g2,-0xf1a2*-0x9+-0x8b913*0x1+0x43ed*0x21));;var e=window,OI={};OI[pV('JW]V',0x37a9,0x344c,0x3da7,0x261d)]=pV('GEIa',0x2b4e,0x1236,0x136b,0x1f33),OI[pV('7Om9',-0x18f,0x17db,-0x7ef,0xfb0)+'g']=pf(0x2fd1,'o@OL',0x3d96,0x2f34,0x1efd);var p0={};p0[pV('L$n7',0x22c6,-0x679,0x2d1,0xe76)]=pr(0x21fb,0x2a61,0x153a,0x2181,'vGIh'),p0[po('OKtz',0x282e,0x16e3,0x82d,0x2066)+'g']=pV('V*sC',0x3919,0x252a,0x3442,0x2e24);var p1={};p1[po('vGIh',0x1644,0x40c,-0x682,-0xbfc)+pi(0x26cd,0x2c53,'@Tcj',0x2041,0x37e0)]=OI,p1[pV('w@HK',0x1d0b,0x3e1,-0x2b8,0xfa1)]=p0;var p2={};p2[pf(0xf4e,'vGIh',0x3429,0x27ec,0x3312)+pf(-0xc1e,'#6*(',0x1d8f,0x9cf,0x494)]=pV('Q!ZE',0x2022,0x1a9f,0x2c64,0x2dd3)+po('X*dR',0x1dc5,0x1803,0x651,0x247b),p2[pf(0x2362,'V*sC',0x1c61,0x2003,0x855)+pi(0x2125,0x23ae,'%7&0',0x8e2,0x2bc9)]=[pf(0x30e1,'#6*(',0x2ede,0x2166,0x29db)+'lt'],p2[pr(0x32f0,0x28f1,0x1e24,0x316f,'siDV')+po('eKmu',0x1e0a,0x29f7,0x3ad2,0x3e19)+po('5Kwu',0x30a9,0x189f,0x296c,0xe55)]=[[!![]]],p2[pf(0x3a65,'vGIh',0x13eb,0x273b,0x31f8)+pi(0x1256,-0x4ac,'WVVu',0xba3,0x221)+pV('#6*(',0x1494,0xff8,0x3501,0x2231)+pf(0x193c,'w@HK',0x1216,0x2450,0x387f)]=!![],p2[po('&S[1',-0x5d8,0x4c6,-0xf4,0x34a)+pi(0x2b84,0x2ef3,'7Om9',0x2c4c,0x2343)+pi(0x1fb0,0x34a6,'OKtz',0x186a,0x1701)+pr(0x1ba6,0x496f,0x3236,0x420d,'*z8A')]=![],p2[pi(0x314e,0x237d,'6P8O',0x2c71,0x2af1)+pi(0x34ad,0x47d4,'EJ8U',0x302a,0x1db9)+pf(0x77f,'Y@vl',0x2a2f,0x1f4d,0x3404)]=[],p2[pf(-0x593,'vn2f',0x1983,0xc0b,0x1da2)+pV('vn2f',0x225b,0x2d73,0x1ba5,0x3016)+'s']=[],p2[po('@Tcj',0x32ed,0x3243,0x334a,0x43ab)+pr(0x1afc,0x1c2c,0x1a78,0x1a82,'1pQ$')+'e']=po('mkPY',-0x7f,0x95d,0x1cfc,0x1d13)+pi(0x2a62,0x3ff1,'w@HK',0x30f2,0x251c)+pi(0x2d0f,0x29c9,'@Tcj',0x185f,0x36fd)+pi(0xf08,0xd66,'9T^Z',0x1ca9,0x1b95)+pr(0x3d5e,0x24c8,0x2a7a,0x1fea,']kIw')+pr(0x2bb5,0xd7f,0x2092,0x2f0a,'6P8O')+pr(0x1fe9,0x3166,0x2008,0xecd,')T*K'),p2[pf(0x16ee,'vn2f',0x1137,0x1a81,0x263c)+pi(0x3600,0x3bea,'o@OL',0x2e45,0x2913)+'n']='',p2[pr(0x1ab6,0x1fb8,0x132b,-0x278,'vpxG')+'t']=[],p2[pf(0x3613,'9T^Z',0x1b5f,0x2292,0x18e5)+pf(0x456,'vn2f',0x1d1d,0x1c6b,0x2594)]=p1,(e[pf(-0x135d,'v!y6',0x10c5,0x392,0x1746)]=!(-0x1*-0x1f3c+0x1816*-0x1+-0x1*0x725),e[po('G7mv',-0xaca,0x2d9,0x814,-0xf49)+'EW']=!(-0x79a+0x95*0x43+-0x1f64),e[pr(0x1166,0x8a,0x7c8,0x1f79,'L$n7')+'R']=!(-0x1803*0x1+0x2b*0x73+0x4b3),e[pi(0xdac,0x1434,'8wbf',0xa6c,0x2320)]=po('etdQ',0x1278,0xb9f,-0x4dc,0x2002)+pV('8wbf',0x33d6,0x3ef5,0x3985,0x27da)+'2',e[pV('mk)r',-0x5ee,-0xa3c,0xf78,0x7f5)+pf(0xa17,'o@OL',-0x122,0xbb3,0x905)+'s']=p2);var p3={};p3[pi(0x3129,0x379e,'1pQ$',0x1cf1,0x1ff8)+po('7Om9',0x3609,0x30eb,0x1f92,0x314e)]=pV('EJ8U',0x1b25,-0xa8a,0x196a,0xe05)+pf(0x2090,'G7mv',0xd68,0x92d,-0x25b)+pV('Y@vl',0x1061,0x3492,0x330f,0x1f44),p3[pr(0x1a3a,0x92a,0x1bd1,0xb77,'%7&0')+pV(')T*K',0x2be5,0x17ce,0x36d9,0x238c)]=pf(-0xb6f,']kIw',0x15d9,-0x18,0xdf3)+pf(-0x1167,'%kwu',-0x231,0x160,0x1730)+pr(0x463f,0x3eb0,0x3271,0x38c2,'etdQ'),p3[pV('@Tcj',0x40dd,0x2d7f,0x3be7,0x2f97)+pr(0x1338,-0x113,0x829,0x929,'*z8A')]=pr(0x141f,0xfc2,0x1ad9,0xefa,']kIw')+pV(']kIw',0x34e3,0x4a4b,0x489f,0x32ad)+'.1',p3[pi(0x29ac,0x30a7,'RSly',0x1cc8,0x3ff2)+pV('RSly',0x7fd,0xb09,0x179f,0x50e)]=pf(0x29cc,'RSly',0x137e,0x1582,0x1c3b)+pi(0x810,0x1b1f,'%7&0',0xaf8,-0xe13)+pi(0x196f,0x121f,'kU1a',0x3ff,0x2769),p3[pr(0x145c,0xa4c,0x758,0xc3c,'V*sC')+pi(0x2969,0x418e,'WVVu',0x1b3e,0x398c)]=pV('5AH%',0x212d,0x17e3,0x2d7d,0x21bb)+pV(']kIw',0x22e4,0x4287,0x240d,0x32ad)+'.1',p3[po('o@OL',0x24f8,0x1b57,0x1e68,0x1086)+pr(0x182b,0xd38,0x255c,0x3d17,'5AH%')]=pr(0x2e0c,0x23ba,0x300a,0x3a4c,'5AH%')+pf(0x1cc5,'G7mv',0x19af,0x11f2,0x93d)+'.1',p3[po('vGIh',0x1d62,0x1425,0x1421,0x205f)+po('&)4H',0x2156,0x131b,0x1456,0xe2)]=pf(-0x1184,'t5k(',0xc65,0x9f,0x51c)+pV('&)4H',0x2e15,0x24a4,0x44b1,0x32c9)+'.1',p3[po('9f(J',0xc91,0x1a8e,0x33d,0x16e0)+pV('t5k(',0x1717,0x8ed,0x1f9a,0x141a)]=pi(0xbf2,0xeae,'%7&0',0x1054,0x1994)+po('EJ8U',0x2f98,0x1c38,0x2c8f,0x2331)+'.1';var t=pV('X*dR',0x46c0,0x2f77,0x2cbd,0x3240)+po('v!y6',0x17e0,0x23df,0x3780,0x291d)+pf(0x39fd,'#6*(',0x28f1,0x2f81,0x3fb2)+pi(0x1f77,0xeea,'&)4H',0x1ec8,0x2a6f)+'n',n=pV('7Om9',0x2a24,0x3e51,0x41a2,0x2da8)+pf(0x148e,'9T^Z',0x1c7d,0x165b,0x966)+'.1',i=pf(-0x405,'siDV',0xc3a,0xb5b,0xd5b)+pV('mkPY',0x15b4,0x303a,0x146c,0x1f69),o=t,a=po('5AH%',0x3d1,0x1860,0x7d7,0x280d)+pf(0x2259,'mk)r',0x203c,0xbeb,0x1275)+'/',r=pi(0x185f,0x18e7,'etdQ',0xaee,0x28ed)+po(']kIw',0x19ce,0x1b9f,0x2648,0x2ca0)+pi(0xec6,0x23aa,'X*dR',0x171b,0x775)+pr(-0xf27,0x17f3,0x557,0x56,'^9Gw')+po('&)4H',0x1020,0x314,0x11a9,0x1938)+po('%7&0',0x2beb,0x1730,0x26db,0xcee)+po('WVVu',0x226b,0x2f4a,0x43bd,0x2454)+po('EJ8U',0x1abc,0x29d3,0x18c8,0x242f)+pr(0x1102,-0x411,0x13ea,-0xd1,'Ixwv')+pf(-0x6de"
+    },
+    {
+      "id": "29488.2",
+      "url": "http://127.0.0.1:8769/g/bridge.js",
+      "method": "GET",
+      "type": "Script",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/g/pg:fortune-tiger/pg/07bc3e6bf95c4b8d/?token=1d6ccfadf0384f02a0c807577b058d33",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3714.681691,
+      "status": 200,
+      "mime": "text/javascript",
+      "respHeaders": {
+        "Cache-Control": "no-store",
+        "Content-Length": "24472",
+        "Date": "Thu, 15 Oct 2026 00:14:30 GMT",
+        "Content-Type": "text/javascript; charset=utf-8",
+        "Server": "OperatorDemo/0.1 Python/3.14.8",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "bytes": 24695,
+      "respBody": "\n'use strict';\n(function () {\n  var cfg = window.__WALLET__ || {token: '', api: '/api'};\n  var minStake = cfg.min_stake_minor || 200;\n  var balance = cfg.balance_minor || 0;\n  var bonus = cfg.bonus_minor || 0;\n  function total() { return balance + bonus; }\n\n  // The bridge is injected in <head>, so the document may have no body yet\n  // (and a game frame can hand it a detached document). HUD elements go on\n  // whatever root exists; a missing one must not take the money path down.\n  function root() {\n    return document.body || document.documentElement || null;\n  }\n\n  function hud() {\n    var host = root();\n    if (!host) return;\n    var el = document.getElementById('__wallet_hud');\n    if (!el) {\n      el = document.createElement('div');\n      el.id = '__wallet_hud';\n      el.style.cssText = 'position:fixed;right:12px;top:12px;z-index:2147483647;' +\n        'font:600 13px system-ui;padding:6px 12px;border-radius:9px;background:#0b1220;' +\n        'color:#fff;border:1px solid #2a3550;box-shadow:0 6px 20px rgba(0,0,0,.4)';\n      host.appendChild(el);\n    }\n    el.textContent = 'Saldo: R$ ' + (total() / 100).toFixed(2);\n    el.style.background = total() >= minStake ? '#0b1220' : '#5a1010';\n  }\n  function tell(msg) {\n    var host = root();\n    if (!host) return;\n    var el = document.getElementById('__wallet_msg');\n    if (!el) {\n      el = document.createElement('div');\n      el.id = '__wallet_msg';\n      el.style.cssText = 'position:fixed;left:50%;top:40%;transform:translateX(-50%);' +\n        'z-index:2147483647;font:700 16px system-ui;padding:14px 22px;border-radius:12px;' +\n        'background:#5a1010;color:#fff;display:none';\n      host.appendChild(el);\n    }\n    el.textContent = msg; el.style.display = 'block';\n    setTimeout(function () { el.style.display = 'none'; }, 3500);\n  }\n\n  function refresh() {\n    return fetch(cfg.api + '/wallet/status?token=' + encodeURIComponent(cfg.token))\n      .then(function (r) { return r.ok ? r.json() : null; })\n      .then(function (d) { if (d) { balance = d.balance_minor || 0; bonus = d.bonus_minor || 0; hud(); } });\n  }\n\n  // Rewrite the callee URL so the operator (not the game) decides money.\n  function watch(promise, url, opts) {\n    return promise;\n  }\n\n  var _fetch = window.fetch;\n  window.fetch = function (input, init) {\n    var url = typeof input === 'string' ? input : (input && input.url) || '';\n    var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();\n    if (cfg.bet_url && method === 'POST' && new RegExp(cfg.bet_url).test(url)) {\n      if (total() < minStake) {\n        tell('Saldo insuficiente — deposite para girar.');\n        return Promise.resolve(new Response('{}', { status: 402, headers: {'content-type':'application/json'} }));\n      }\n    }\n    return watch(_fetch.apply(this, arguments), url, init);\n  };\n\n  if (window.XMLHttpRequest) {\n    var _open = XMLHttpRequest.prototype.open;\n    XMLHttpRequest.prototype.open = function (method, url) {\n      this.__url = url; this.__method = (method || 'GET').toUpperCase();\n      return _open.apply(this, arguments);\n    };\n    var _send = XMLHttpRequest.prototype.send;\n    XMLHttpRequest.prototype.send = function (body) {\n      if (cfg.bet_url && this.__method === 'POST' && new RegExp(cfg.bet_url).test(this.__url || '')) {\n        if (total() < minStake) {\n          tell('Saldo insuficiente — deposite para girar.');\n          this.abort();\n          return;\n        }\n      }\n      return _send.apply(this, arguments);\n    };\n  }\n\n  // --- Pragmatic Play origin split (decision 0028/0030) --------------------\n  // The Unity client derives everything \"server\" from location.host, so off\n  // the publisher's origin it misresolves its own resources. Split the two\n  // roles: identity stays the publisher's host, calls go to us (same-origin,\n  // through the proxy). The bundle assigns GetDomain itself, so this polls\n  // until the client object exists and then holds the split every 100ms —\n  // the boot is async (dozens of resources), so the poll wins the race.\n  if (cfg.game_id && cfg.game_id.indexOf('pp:') === 0) {\n    var PP_HOST = 'demogamesfree.pragmaticplay.net';\n    setInterval(function () {\n      try {\n        if (window.ServerInterface) {\n          if (window.ServerInterface.GetDomain !== __ppDomain) {\n            window.ServerInterface.GetDomain = __ppDomain;\n          }\n          if (window.ServerOptions && window.ServerOptions.serverUrl &&\n              window.ServerOptions.serverUrl.indexOf(PP_HOST) >= 0) {\n            window.ServerOptions.serverUrl = window.ServerOptions.serverUrl\n              .replace(/^https?:\\/\\/[^/]+/, location.origin);\n          }\n        }\n      } catch (e) {}\n    }, 100);\n    // --- importer tree repair (decision 0036) -----------------------------\n    // Off-origin the import finishes with the scene graph only half linked:\n    // the LocalizationRoot carrier exists with intact parent links, but the\n    // parents' children arrays stay empty, so the client's fixed-index\n    // game-root lookup throws and the frame loop dies on the loading\n    // screen. Reattach bottom-up along the existing parent links every\n    // 250ms until the scene roots are adopted; parents created later get\n    // linked on a later tick. Harmless on a healthy tree (pushes nothing).\n    setInterval(function () {\n      try {\n        var imp = window.globalImporter;\n        if (!imp || !imp.allObjects || imp.allObjects.length < 1000) return;\n        if (window.globalRuntime && window.globalRuntime.sceneRoots &&\n            window.globalRuntime.sceneRoots.length >= 2) return;\n        var fixed = 0;\n        for (var i = 0; i < imp.allObjects.length; i++) {\n          var o = imp.allObjects[i];\n          if (!o || !o.transform) continue;\n          var t = o.transform, p = t.parent;\n          if (p && p.children && p.children.indexOf(t) < 0 && fixed < 500) {\n            p.children.push(t);\n            fixed++;\n          }\n        }\n      } catch (e) {}\n    }, 250);\n    // --- animator curve guard (decision 0036) ------------------------------    // The same half-linked import leaves some animator components with an\n    // empty/missing animationCurve, and their Start/Update read keys[0] —\n    // the next boot-killer after the game-root lookup (seen live in\n    // WidgetColorAnimator.Start via the operator logo bundle). Wrap every\n    // *Animator Start/Update to substitute a flat two-point curve when the\n    // data is missing: the widget simply does not animate instead of\n    // killing the boot. Wrapping is per-class, once, as each class shows\n    // up; instances that already started are unaffected.\n    var ANIMATORS = ['WidgetColorAnimator', 'V3Animator', 'ValueAnimator',\n      'PanelAlphaAnimator', 'CurveValueAnimator', 'CurveTwoValuesAnimator',\n      'SpriteFramesAnimator', 'SpriteSizeAnimator', 'ScrollableListAnimator',\n      'SpineCustomAnimator', 'AudioClipValueAnimator',\n      'ValueAnimatorWithBigWin'];\n    function __ppFixCurve(inst) {\n      try {\n        var ac = inst.animationCurve;\n        if (!ac) { inst.animationCurve = ac = {}; }\n        if (!ac.keys || !ac.keys.length) {\n          ac.keys = [{ time: 0, value: 0 }, { time: 1, value: 0 }];\n        }\n        if (typeof ac.Evaluate !== 'function') {\n          ac.Evaluate = function () { return 0; };\n        }\n      } catch (e) {}\n    }\n    setInterval(function () {\n      try {\n        for (var i = 0; i < ANIMATORS.length; i++) {\n          var C = window[ANIMATORS[i]];\n          if (!C || !C.prototype) continue;\n          var keys = [];\n          try { keys = Object.getOwnPropertyNames(C.prototype); } catch (e) {}\n          for (var k = 0; k < keys.length; k++) {\n            var m = keys[k];\n            if (m === 'constructor') continue;\n            if (typeof C.prototype[m] === 'function' && !C.prototype[m].__ppGuard) {\n              var orig = C.prototype[m];\n              var wrapped = function () {\n                __ppFixCurve(this);\n                return o"
+    },
+    {
+      "id": "29488.4",
+      "url": "https://www.googletagmanager.com/gtm.js?id=GTM-MDDV6Q2",
+      "method": "GET",
+      "type": "Script",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3714.91084,
+      "status": 200,
+      "mime": "application/javascript",
+      "respHeaders": {
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "cache-control": "private, max-age=900",
+        "content-encoding": "zstd",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-credentials": "true",
+        "expires": "Thu, 15 Oct 2026 00:14:30 GMT",
+        "access-control-allow-origin": "*",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "content-length": "134503",
+        "date": "Thu, 15 Oct 2026 00:14:30 GMT",
+        "x-xss-protection": "0",
+        "content-type": "application/javascript; charset=UTF-8",
+        "vary": "Accept-Encoding",
+        "server": "Google Tag Manager",
+        "access-control-allow-headers": "Cache-Control"
+      },
+      "bytes": 134925,
+      "respBody": "\n// Copyright 2012 Google Inc. All rights reserved.\n \n (function(w,g){w[g]=w[g]||{};\n w[g].e=function(s){return eval(s);};})(window,'google_tag_manager');\n \n(function(){\n\nvar data = {\n\n\"resource\": {\n  \"version\":\"112\",\n  \n  \"macros\":[{\"function\":\"__v\",\"vtp_name\":\"gtm.element\",\"vtp_dataLayerVersion\":1},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"gtm_var.isw\"},{\"function\":\"__e\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"gtm_var.leg\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"gtm_var.gaId\"},{\"function\":\"__jsm\",\"vtp_javascript\":[\"template\",\"(function(){for(var c,b,f=window.navigator.userAgent,g=[[\\\"OPR\\\",\\\"Opera\\\"],[\\\"Edg\\\",\\\"Edge\\\"],\\\"VivoBrowser\\\",\\\"OppoBrowser\\\",\\\"SamsungBrowser\\\",\\\"UCBrowser\\\",\\\"Quark\\\",[\\\"(?:baidu|bd)browser\\\",\\\"Baidu\\\"],[\\\"M?QQBrowser\\\",\\\"QQ\\\"]].concat([\\\"CriOS\\\",\\\"FxiOS\\\",\\\"Chrome\\\",[\\\"Version\\\",\\\"Safari\\\"],\\\"Safari\\\",\\\"Firefox\\\"]),d=0,k=g.length;d\\u003Ck;d++){var a=g[d],h=a,e=\\\"\\\";Array.isArray(a)\\u0026\\u0026(h=a[0],e=a[1]);if(a=null===(c=RegExp(\\\"\\\\\\\\b(?:\\\".concat(h,\\\")\\/(?:[\\\\\\\\d.]+)\\\\\\\\b\\\"),\\\"i\\\").exec(f))||void 0===c?void 0:c[0]){b=e?a.replace(\\/[^\\/]+\\/,e):a;break}}return null==\\nb\\u0026\\u0026(b=f.split(\\\" \\\").pop()),b})();\"]},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"gtm_var.cId\"},{\"function\":\"__v\",\"convert_case_to\":1,\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"app_name\"},{\"function\":\"__v\",\"convert_case_to\":1,\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"app_version\"},{\"function\":\"__jsm\",\"vtp_javascript\":[\"template\",\"(function(){var b=self.location,a=b.search;if(a){a=a.substring(1).split(\\\"\\\\x26\\\");var h=\\\"f t op ops __hv __sv\\\".split(\\\" \\\");a=\\\"?\\\"+a.map(function(c){var d,e,g,f=c.indexOf(\\\"\\\\x3d\\\");return f\\u003C0?d=c:(d=c.substring(0,f),e=c.substring(f+1)),d+(null==(g=e\\u0026\\u0026(h.indexOf(d)\\u003E=0||e.length\\u003E100)?\\\"(redacted)\\\":e)?\\\"\\\":\\\"\\\\x3d\\\"+g)}).join(\\\"\\\\x26\\\")}return b.protocol+\\\"\\/\\/\\\"+b.host+b.pathname+a+b.hash})();\"]},{\"function\":\"__jsm\",\"vtp_javascript\":[\"template\",\"(function(){var a=\",[\"escape\",[\"macro\",0],8,16],\",b=!!a.closest(\\\"#social-media-share-container\\\"),c=!!a.closest(\\\"#social-media-share-button\\\"),d=!!a.closest(\\\"#social-container\\\"),e=!!a.closest(\\\"#replay-buttons-container\\\");a=!!a.closest(\\\"#replay-recording-container-wrapper\\\");return b||c||d||e||a})();\"]},{\"function\":\"__uv\"},{\"function\":\"__v\",\"convert_case_to\":1,\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.event_category\"},{\"function\":\"__e\"},{\"function\":\"__smm\",\"vtp_setDefaultValue\":true,\"vtp_input\":[\"macro\",13],\"vtp_defaultValue\":\"0\",\"vtp_map\":[\"list\",[\"map\",\"key\",\"fps\",\"value\",\"1\"],[\"map\",\"key\",\"log\",\"value\",\"1\"],[\"map\",\"key\",\"authen\",\"value\",\"1\"]]},{\"function\":\"__v\",\"convert_case_to\":1,\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.event_label\"},{\"function\":\"__v\",\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description1\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description2\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description3\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description4\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description5\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description6\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description7\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description8\"},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.description9\"},{\"function\":\"__v\",\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.fatal\"},{\"function\":\"__r\"},{\"function\":\"__u\",\"vtp_component\":\"QUERY\",\"vtp_enableMultiQueryKeys\":false,\"vtp_enableIgnoreEmptyQueryParam\":false},{\"function\":\"__c\",\"vtp_value\":\"ewogICJnYUxpc3QiOiBbCiAgICAiUjhNQlI2UlQwQiIsCiAgICAiVlBOWkRRSzVYRCIsCiAgICAiMzQ4MjM0WVE0WiIsCiAgICAiU0NTTEtaODc3MSIsCiAgICAiMkhEQ0hSUEZRNCIsCiAgICAiTTVXTFNTUldOUyIsCiAgICAiVDBaVkw1OVlKTCIsCiAgICAiSE5UV0VCWUYzSiIsCiAgICAiRUpOOUY5RDBGQyIsCiAgICAiN1BZNkdGR0JYVyIKICBdLAogICJzciI6IDEwMCwKICAid2giOiBbIjgiLCAiOSIsICJhIiwgImIiXQp9Cg==\"},{\"function\":\"__cid\"},{\"function\":\"__v\",\"vtp_name\":\"gtm.triggers\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":true,\"vtp_defaultValue\":\"\"},{\"function\":\"__jsm\",\"vtp_javascript\":[\"template\",\"(function(){var a;return!(null===(a=self.System)||void 0===a||!a.get(\\\"user-profile\\\"))})();\"]},{\"function\":\"__t\"},{\"function\":\"__jsm\",\"vtp_javascript\":[\"template\",\"(function(){var a=\",[\"escape\",[\"macro\",0],8,16],\",b=!!a.closest(\\\"#user-profile-container\\\"),c=!!a.closest(\\\"#slot-menu-container\\\");a=!!a.closest(\\\"#wallet-list-container\\\");return b||c||a})();\"]},{\"function\":\"__v\",\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"gtm_var.isb\"},{\"function\":\"__v\",\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.value\"},{\"function\":\"__v\",\"convert_null_to\":[\"macro\",11],\"vtp_dataLayerVersion\":2,\"vtp_setDefaultValue\":false,\"vtp_name\":\"eventModel.name\"}],\n  \"tags\":[{\"function\":\"__paused\",\"vtp_originalTagType\":\"html\",\"tag_id\":265},{\"function\":\"__googtag\",\"metadata\":[\"map\"],\"once_per_load\":true,\"vtp_tagId\":[\"macro\",4],\"vtp_userProperties\":[\"list\",[\"map\",\"name\",\"user_agent\",\"value\",[\"macro\",5]]],\"vtp_configSettingsTable\":[\"list\",[\"map\",\"parameter\",\"client_id\",\"parameterValue\",[\"macro\",6]],[\"map\",\"parameter\",\"app_name\",\"parameterValue\",[\"macro\",7]],[\"map\",\"parameter\",\"app_version\",\"parameterValue\",[\"macro\",8]],[\"map\",\"parameter\",\"page_location\",\"parameterValue\",[\"macro\",9]]],\"tag_id\":268},{\"function\":\"__paused\",\"vtp_originalTagType\":\"html\",\"tag_id\":269},{\"function\":\"__paused\",\"vtp_originalTagType\":\"html\",\"tag_id\":273},{\"function\":\"__paused\",\"vtp_originalTagType\":\"html\",\"tag_id\":276},{\"function\":\"__gaawe\",\"metadata\":[\"map\"],\"once_per_event\":true,\"vtp_sendEcommerceData\":false,\"vtp_eventSettingsTable\":[\"list\",[\"map\",\"parameter\",\"event_category\",\"parameterValue\",[\"macro\",12]],[\"map\",\"parameter\",\"event_label\",\"parameterValue\",[\"macro\",15]]],\"vtp_eventName\":[\"macro\",13],\"vtp_measurementIdOverride\":[\"macro\",4],\"vtp_enableUserProperties\":true,\"vtp_enableEuid\":true,\"vtp_migratedToV2\":true,\"vtp_demoV2\":false,\"tag_id\":280},{\"function\":\"__gaawe\",\"metadata\":[\"map\"],\"setup_tags\":[\"list\",[\"tag\",21,1]],\"once_per_event\":true,\"vtp_sendEcommerceData\":false,\"vtp_eventSettingsTable\":[\"list\",[\"map\",\"parameter\",\"exception_description\",\"parameterValue\",[\"macro\",16]],[\"map\",\"parameter\",\"exception_desc_1\",\"parameterValue\",[\"macro\",17]],[\"map\",\"parameter\",\"exception_desc_2\",\"parameterValue\",[\"macro\",18]],[\"map\",\"parameter\",\"exception_desc_3\",\"parameterValue\",[\"macro\",19]],[\"map\",\"parameter\",\"exception_desc_4\",\"parameterValue\",[\"macro\",20]],[\"map\",\"parameter\",\"exception_desc_5\",\"parameterValue\",[\"macro\",21]],[\"map\",\"parameter\",\"exception_desc_6\",\"parameterValue\",[\"macro\",22]],[\"map\",\"parameter\",\"exception_desc_7\",\"parameterValue\",[\"macro\",23]],[\"map\",\"parameter\",\"exception_desc_8\",\"parameterValue\",[\"macro\",24]],[\"map\",\"parameter\",\"exception_desc_9\",\"parameterValue\",[\"macro\",25]],[\"map\",\"parameter\",\"exception_fatal\",\"parameterValue\",[\"macro\",26]]],\"vtp_enhancedUserId\":false,\"vtp_eventName\":\"exception\",\"vtp_measurementIdOverride\":[\"macro\",4],\"vtp_enableUserProperties\":true,\"vtp_enableEuid\":true,\"vtp_migratedToV2\":true,\"vtp_demoV2\":false,\"tag_id"
+    },
+    {
+      "id": "29488.5",
+      "url": "http://127.0.0.1:8769/shared/984721902a/index.json",
+      "method": "GET",
+      "type": "XHR",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/g/pg:fortune-tiger/pg/07bc3e6bf95c4b8d/?token=1d6ccfadf0384f02a0c807577b058d33",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3715.021235,
+      "status": 404,
+      "mime": "text/html",
+      "respHeaders": {
+        "Cache-Control": "no-cache",
+        "Content-Length": "548",
+        "Date": "Thu, 15 Oct 2026 00:14:32 GMT",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Server": "OperatorDemo/0.1 Python/3.14.8",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "bytes": 770
+    },
+    {
+      "id": "29488.6",
+      "url": "https://www.googletagmanager.com/gtag/js?id=G-HNTWEBYF3J&cx=c&gtm=4e6ad1",
+      "method": "GET",
+      "type": "Script",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3715.551474,
+      "status": 200,
+      "mime": "application/javascript",
+      "respHeaders": {
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "cache-control": "private, max-age=900",
+        "content-encoding": "zstd",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-credentials": "true",
+        "expires": "Thu, 15 Oct 2026 00:14:31 GMT",
+        "access-control-allow-origin": "*",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "content-length": "164412",
+        "date": "Thu, 15 Oct 2026 00:14:31 GMT",
+        "x-xss-protection": "0",
+        "content-type": "application/javascript; charset=UTF-8",
+        "vary": "Accept-Encoding",
+        "server": "Google Tag Manager",
+        "access-control-allow-headers": "Cache-Control"
+      },
+      "bytes": 164598,
+      "respBody": "\n// Copyright 2012 Google Inc. All rights reserved.\n \n(function(){\n\nvar data = {\n\n\"resource\": {\n  \"version\":\"1\",\n  \n  \"macros\":[{\"function\":\"__c\",\"vtp_value\":true},{\"function\":\"__e\"},{\"function\":\"__actids\"},{\"function\":\"__v\",\"vtp_name\":\"gtm.configContainerId\",\"vtp_dataLayerVersion\":1},{\"function\":\"__c\",\"vtp_value\":\"google.com.br\"},{\"function\":\"__c\",\"vtp_value\":0}],\n  \"tags\":[{\"function\":\"__ogt_auto_events\",\"priority\":17,\"vtp_enableOutboundClick\":true,\"vtp_enableScroll\":true,\"vtp_enableDownload\":true,\"vtp_enableHistoryEvents\":true,\"vtp_enableForm\":true,\"vtp_enableVideo\":true,\"vtp_enablePageView\":true,\"vtp_enableInPageEventsHidden\":false,\"tag_id\":9},{\"function\":\"__ogt_1p_data_v2\",\"priority\":7,\"vtp_isAutoEnabled\":true,\"vtp_isManualEnabled\":false,\"vtp_autoPhoneEnabled\":true,\"vtp_autoCollectExclusionSelectors\":[\"list\",[\"map\",\"exclusionSelector\",\"\"]],\"vtp_isEnabled\":true,\"vtp_autoAddressEnabled\":true,\"vtp_autoEmailEnabled\":true,\"vtp_isAutoCollectPiiEnabledFlag\":true,\"tag_id\":11},{\"function\":\"__ccd_ga_first\",\"priority\":6,\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":18},{\"function\":\"__set_product_settings\",\"priority\":5,\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"vtp_foreignTldMacroResult\":[\"macro\",4],\"vtp_isChinaVipRegionMacroResult\":[\"macro\",5],\"tag_id\":17},{\"function\":\"__ccd_ga_regscope\",\"priority\":4,\"vtp_settingsTable\":[\"list\",[\"map\",\"redactFieldGroup\",\"DEVICE_AND_GEO\",\"disallowAllRegions\",false,\"disallowedRegions\",\"\"],[\"map\",\"redactFieldGroup\",\"GOOGLE_SIGNALS\",\"disallowAllRegions\",true,\"disallowedRegions\",\"\"]],\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":16},{\"function\":\"__ccd_em_outbound_click\",\"priority\":3,\"vtp_includeParams\":true,\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":15},{\"function\":\"__ccd_conversion_marking\",\"priority\":2,\"vtp_conversionRules\":[\"list\",[\"map\",\"matchingRules\",\"{\\\"type\\\":5,\\\"args\\\":[{\\\"stringValue\\\":\\\"purchase\\\"},{\\\"contextValue\\\":{\\\"namespaceType\\\":1,\\\"keyParts\\\":[\\\"eventName\\\"]}}]}\"]],\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":14},{\"function\":\"__ccd_auto_redact\",\"priority\":1,\"vtp_redactEmail\":true,\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":13},{\"function\":\"__dest_ga\",\"vtp_ignoreDupeGtagConfigCalls\":true,\"vtp_destinationId\":\"G-HNTWEBYF3J\",\"vtp_enableVariablesInDestinationId\":false,\"tag_id\":4},{\"function\":\"__gct\",\"vtp_trackingId\":\"G-HNTWEBYF3J\",\"vtp_sessionDuration\":0,\"tag_id\":7},{\"function\":\"__ccd_ga_last\",\"priority\":0,\"vtp_instanceDestinationId\":\"G-HNTWEBYF3J\",\"tag_id\":12}],\n  \"predicates\":[{\"function\":\"_eq\",\"arg0\":[\"macro\",0],\"arg1\":false},{\"function\":\"_eq\",\"arg0\":[\"macro\",1],\"arg1\":\"gtm.init\"},{\"function\":\"_eq\",\"arg0\":[\"macro\",0],\"arg1\":true},{\"function\":\"_lc\",\"arg0\":[\"list\",[\"macro\",2]],\"arg1\":[\"macro\",3]},{\"function\":\"_eq\",\"arg0\":[\"macro\",1],\"arg1\":\"gtag.config\"},{\"function\":\"_eq\",\"arg0\":[\"macro\",1],\"arg1\":\"gtm.js\"}],\n  \"rules\":[[[\"if\",0,1],[\"add\",8]],[[\"if\",2,3,4],[\"add\",8]],[[\"if\",5],[\"add\",9]],[[\"if\",1],[\"add\",0,1,10,7,6,5,4,3,2]]]\n}\n\n\n\n,\"runtime\":[\n[50,\"__actids\",[46,\"a\"],[68,\"\",[53,[36,[13,[41,\"$0\"],[3,\"$0\",[\"require\",\"internal.getContainerIds\"]],[\"$0\"]]]],[46,[36,[7]]]]]\n,\n[50,\"__c\",[46,\"a\"],[36,[17,[15,\"a\"],\"value\"]]]\n,\n[50,\"__ccd_auto_redact\",[46,\"a\"],[50,\"v\",[46,\"aF\"],[36,[2,[15,\"aF\"],\"replace\",[7,[15,\"u\"],\"\\\\$1\"]]]],[50,\"w\",[46,\"aF\"],[52,\"aG\",[30,[\"c\",[15,\"aF\"]],[15,\"aF\"]]],[52,\"aH\",[7]],[65,\"aI\",[2,[15,\"aG\"],\"split\",[7,\"\"]],[46,[53,[52,\"aJ\",[7,[\"v\",[15,\"aI\"]]]],[52,\"aK\",[\"d\",[15,\"aI\"]]],[22,[12,[15,\"aK\"],[45]],[46,[53,[36,[\"d\",[\"v\",[15,\"aF\"]]]]]]],[22,[21,[15,\"aK\"],[15,\"aI\"]],[46,[53,[2,[15,\"aJ\"],\"push\",[7,[15,\"aK\"]]],[22,[21,[15,\"aI\"],[2,[15,\"aI\"],\"toLowerCase\",[7]]],[46,[53,[2,[15,\"aJ\"],\"push\",[7,[\"d\",[2,[15,\"aI\"],\"toLowerCase\",[7]]]]]]],[46,[22,[21,[15,\"aI\"],[2,[15,\"aI\"],\"toUpperCase\",[7]]],[46,[53,[2,[15,\"aJ\"],\"push\",[7,[\"d\",[2,[15,\"aI\"],\"toUpperCase\",[7]]]]]]]]]]]]],[22,[18,[17,[15,\"aJ\"],\"length\"],1],[46,[53,[2,[15,\"aH\"],\"push\",[7,[0,[0,\"(?:\",[2,[15,\"aJ\"],\"join\",[7,\"|\"]]],\")\"]]]]],[46,[53,[2,[15,\"aH\"],\"push\",[7,[16,[15,\"aJ\"],0]]]]]]]]],[36,[2,[15,\"aH\"],\"join\",[7,\"\"]]]],[50,\"x\",[46,\"aF\",\"aG\",\"aH\"],[52,\"aI\",[\"z\",[15,\"aF\"],[15,\"aH\"]]],[22,[28,[15,\"aI\"]],[46,[36,[15,\"aF\"]]]],[22,[28,[17,[15,\"aI\"],\"search\"]],[46,[36,[15,\"aF\"]]]],[41,\"aJ\"],[3,\"aJ\",[17,[15,\"aI\"],\"search\"]],[65,\"aK\",[15,\"aG\"],[46,[53,[52,\"aL\",[7,[\"v\",[15,\"aK\"]],[\"w\",[15,\"aK\"]]]],[65,\"aM\",[15,\"aL\"],[46,[53,[52,\"aN\",[30,[16,[15,\"t\"],[15,\"aM\"]],[43,[15,\"t\"],[15,\"aM\"],[\"b\",[0,[0,\"([?&]\",[15,\"aM\"]],\"=)([^&]*)\"],\"gi\"]]]],[3,\"aJ\",[2,[15,\"aJ\"],\"replace\",[7,[15,\"aN\"],[0,\"$1\",[15,\"r\"]]]]]]]]]]],[22,[20,[15,\"aJ\"],[17,[15,\"aI\"],\"search\"]],[46,[36,[15,\"aF\"]]]],[22,[20,[16,[15,\"aJ\"],0],\"&\"],[46,[3,\"aJ\",[2,[15,\"aJ\"],\"substring\",[7,1]]]]],[22,[21,[16,[15,\"aJ\"],0],\"?\"],[46,[3,\"aJ\",[0,\"?\",[15,\"aJ\"]]]]],[22,[20,[15,\"aJ\"],\"?\"],[46,[3,\"aJ\",\"\"]]],[43,[15,\"aI\"],\"search\",[15,\"aJ\"]],[36,[\"aA\",[15,\"aI\"],[15,\"aH\"]]]],[50,\"z\",[46,\"aF\",\"aG\"],[22,[20,[15,\"aG\"],[17,[15,\"s\"],\"PATH\"]],[46,[53,[3,\"aF\",[0,[15,\"y\"],[15,\"aF\"]]]]]],[36,[\"f\",[15,\"aF\"]]]],[50,\"aA\",[46,\"aF\",\"aG\"],[41,\"aH\"],[3,\"aH\",\"\"],[22,[20,[15,\"aG\"],[17,[15,\"s\"],\"URL\"]],[46,[53,[41,\"aI\"],[3,\"aI\",\"\"],[22,[30,[17,[15,\"aF\"],\"username\"],[17,[15,\"aF\"],\"password\"]],[46,[53,[3,\"aI\",[0,[15,\"aI\"],[0,[0,[0,[17,[15,\"aF\"],\"username\"],[39,[17,[15,\"aF\"],\"password\"],\":\",\"\"]],[17,[15,\"aF\"],\"password\"]],\"@\"]]]]]],[3,\"aH\",[0,[0,[0,[17,[15,\"aF\"],\"protocol\"],\"//\"],[15,\"aI\"]],[17,[15,\"aF\"],\"host\"]]]]]],[36,[0,[0,[0,[15,\"aH\"],[17,[15,\"aF\"],\"pathname\"]],[17,[15,\"aF\"],\"search\"]],[17,[15,\"aF\"],\"hash\"]]]],[50,\"aB\",[46,\"aF\",\"aG\"],[41,\"aH\"],[3,\"aH\",[2,[15,\"aF\"],\"replace\",[7,[15,\"n\"],[15,\"r\"]]]],[22,[30,[20,[15,\"aG\"],[17,[15,\"s\"],\"URL\"]],[20,[15,\"aG\"],[17,[15,\"s\"],\"PATH\"]]],[46,[53,[52,\"aI\",[\"z\",[15,\"aH\"],[15,\"aG\"]]],[22,[20,[15,\"aI\"],[44]],[46,[36,[15,\"aH\"]]]],[52,\"aJ\",[17,[15,\"aI\"],\"search\"]],[52,\"aK\",[2,[15,\"aJ\"],\"replace\",[7,[15,\"o\"],[15,\"r\"]]]],[22,[20,[15,\"aJ\"],[15,\"aK\"]],[46,[36,[15,\"aH\"]]]],[43,[15,\"aI\"],\"search\",[15,\"aK\"]],[3,\"aH\",[\"aA\",[15,\"aI\"],[15,\"aG\"]]]]]],[36,[15,\"aH\"]]],[50,\"aC\",[46,\"aF\"],[22,[20,[15,\"aF\"],[15,\"q\"]],[46,[53,[36,[17,[15,\"s\"],\"PATH\"]]]],[46,[22,[21,[2,[15,\"p\"],\"indexOf\",[7,[15,\"aF\"]]],[27,1]],[46,[53,[36,[17,[15,\"s\"],\"URL\"]]]],[46,[53,[36,[17,[15,\"s\"],\"TEXT\"]]]]]]]],[50,\"aD\",[46,\"aF\",\"aG\"],[41,\"aH\"],[3,\"aH\",false],[52,\"aI\",[\"e\",[15,\"aF\"]]],[38,[15,\"aI\"],[46,\"string\",\"array\",\"object\"],[46,[5,[46,[52,\"aJ\",[\"aB\",[15,\"aF\"],[15,\"aG\"]]],[22,[21,[15,\"aF\"],[15,\"aJ\"]],[46,[53,[36,[15,\"aJ\"]]]]],[4]]],[5,[46,[53,[41,\"aK\"],[3,\"aK\",0],[63,[7,\"aK\"],[23,[15,\"aK\"],[17,[15,\"aF\"],\"length\"]],[33,[15,\"aK\"],[3,\"aK\",[0,[15,\"aK\"],1]]],[46,[53,[52,\"aL\",[\"aD\",[16,[15,\"aF\"],[15,\"aK\"]],[17,[15,\"s\"],\"TEXT\"]]],[22,[21,[15,\"aL\"],[44]],[46,[53,[43,[15,\"aF\"],[15,\"aK\"],[15,\"aL\"]],[3,\"aH\",true]]]]]]]],[4]]],[5,[46,[54,\"aK\",[15,\"aF\"],[46,[53,[52,\"aL\",[\"aD\",[16,[15,\"aF\"],[15,\"aK\"]],[17,[15,\"s\"],\"TEXT\"]]],[22,[21,[15,\"aL\"],[44]],[46,[53,[43,[15,\"aF\"],[15,\"aK\"],[15,\"aL\"]],[3,\"aH\",true]]]]]]],[4]]]]],[36,[39,[15,\"aH\"],[15,\"aF\"],[44]]]],[50,\"aE\",[46,\"aF\",\"aG\"],[52,\"aH\",[30,[2,[15,\"aF\"],\"getMetadata\",[7,[17,[15,\"h\"],\"AG\"]]],[7]]],[22,[20,[2,[15,\"aH\"],\"indexOf\",[7,[15,\"aG\"]]],[27,1]],[46,[53,[2,[15,\"aH\"],\"push\",[7,[15,\"aG\"]]]]]],[2,[15,\"aF\"],\"setMetadata\",[7,[17,[15,\"h\"],\"AG\"],[15,\"aH\"]]]],[52,\"b\",[\"require\",\"internal.createRegex\"]],[52,\"c\",[\"require\",\"decodeUriComponent\"]],[52,\"d\",[\"require\",\"encodeUriComponent\"]],[52,\"e\",[\"require\",\"getType\"]],[52,\"f\",[\"require\",\"parseUrl\"]],[52,\"g\",[\"require\",\"internal.registerCcdCallback\"]],[52,\"h\",[15,\"__module_metadataSchema\"]],[52,\"i\",[15,\"__module_goldEventUsageId\"]],[52,\"j\",[17,[15,\"a\"],\"instanceDestinationId\"]],[52,\"k\",[17,[15,\"a\"],\"redactEmail\"]],[52,\"l\",[17,[15,\"a\"],\"redactQueryParams\"]],[52,\"m\",[39,[15,\"l\"],[2,[15,\"l\"],\"split\",[7,\",\"]],[7]]],[22,[1,[28,[17,[15,\"m\"],\"length\"]],[28,[15,\"k\"]]],[46,[53,[2,[15,\"a\"],\"gtmOnSuccess\",[7]],[36]]]],[52,\"n\",[\"b\",\"[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,}\",\"gi\"]],[52,\"o\",[\"b\",[0,\"([A-Z0-9._-]|%25|%2B)+%40[A-Z0-9.-]\",\"+\\\\.[A-Z]{2,}\"],\"gi\"]],[52,\"p\",[7,\"page_location\",\"page_referrer\",\"page_path\",\"link_url\",\"video_url\",\"form_destination\"]],[5"
+    },
+    {
+      "id": "29488.7",
+      "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-HNTWEBYF3J&gtm=45je6ad1v9180641456za20ozb863865246zd863865246xf1&_p=1792023270383&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=1005765934.1792023271&frm=0&ngs=1&pscdl=noapi&rcb=5&sr=1280x800&uaa=&uab=&uafvl=HeadlessChrome%3B%7CChromium%3B%7CNot_A%2520Brand%3B24.0.0.0&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=en-us&_s=1&tag_exp=115938465~115938469~118897920~118897930~120213116~120385422~120469145~120469153~121246026~121246034&dl=http%3A%2F%2F127.0.0.1%3A8769%2Fg%2Fpg%3Afortune-tiger%2Fpg%2F07bc3e6bf95c4b8d%2F%3Ftoken%3D1d6ccfadf0384f02a0c807577b058d33&sid=1792023271&sct=1&seg=0&dt=Fortune%20Tiger&en=page_view&_fv=1&_ss=1&ep.app_name=fortune%20tiger&ep.app_version=3.2.0.3%2F7.4.0%2F7.4.0-rc.5&up.user_agent=Chrome%2F131.0.0.0&tfd=2083",
+      "method": "POST",
+      "type": "Fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3716.063117,
+      "status": 204,
+      "mime": "text/plain",
+      "respHeaders": {
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-credentials": "true",
+        "content-security-policy-report-only": "script-src 'none'; form-action 'none'; frame-src 'none'; report-uri https://csp.withgoogle.com/csp/scaffolding/ascnsrsggc:141:0",
+        "report-to": "{\"group\":\"ascnsrsggc:141:0\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/scaffolding/ascnsrsggc:141:0\"}],}",
+        "expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+        "access-control-allow-origin": "http://127.0.0.1:8769",
+        "cross-origin-opener-policy-report-only": "same-origin; report-to=ascnsrsggc:141:0",
+        "content-length": "0",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "date": "Thu, 15 Oct 2026 00:14:31 GMT",
+        "content-type": "text/plain",
+        "server": "Golfe2"
+      },
+      "failed": "net::ERR_ABORTED"
+    },
+    {
+      "id": "29488.8",
+      "url": "http://127.0.0.1:8769/api/wallet/status?token=1d6ccfadf0384f02a0c807577b058d33",
+      "method": "GET",
+      "type": "Fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Linux\"",
+        "Referer": "http://127.0.0.1:8769/g/pg:fortune-tiger/pg/07bc3e6bf95c4b8d/?token=1d6ccfadf0384f02a0c807577b058d33",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0"
+      },
+      "ts": 3716.072202,
+      "status": 200,
+      "mime": "application/json",
+      "respHeaders": {
+        "Cache-Control": "no-store",
+        "Content-Length": "130",
+        "Date": "Thu, 15 Oct 2026 00:14:31 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Server": "OperatorDemo/0.1 Python/3.14.8",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "bytes": 352,
+      "respBody": "{\"game_id\": \"pg:fortune-tiger\", \"balance_minor\": 10000, \"bonus_minor\": 0, \"min_stake_minor\": 200, \"can_play\": true, \"message\": \"\"}"
+    }
+  ]
+}

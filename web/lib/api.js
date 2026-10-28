@@ -116,12 +116,15 @@ export function setAdminSession(session) {
   }
 }
 
-export async function api(method, path, body) {
+export async function api(method, path, body, options = {}) {
   const session = getAdminSession();
   const player = getPlayerSession();
   const controller = new AbortController();
   const timeout = /^\/api\/deposit\/(pix|crypto)$/.test(path) || ['/api/sports/quote','/api/bet'].includes(path) ? PAYMENT_TIMEOUT_MS : path === '/api/sports' ? 20000 : REQUEST_TIMEOUT_MS;
-  const timer = setTimeout(() => controller.abort(), timeout);
+  const abort = () => controller.abort();
+  if (options.signal?.aborted) abort();
+  else options.signal?.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(abort, timeout);
   try {
     const r = await fetch(path, {
       method,
@@ -166,5 +169,6 @@ export async function api(method, path, body) {
     throw e;
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener("abort", abort);
   }
 }

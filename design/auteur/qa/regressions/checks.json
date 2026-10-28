@@ -1,0 +1,310 @@
+[
+  {
+    "name": "1440 initial board bounded",
+    "pass": true
+  },
+  {
+    "name": "1440 main sports bounded",
+    "pass": true
+  },
+  {
+    "name": "1440 explorer collapses",
+    "pass": true
+  },
+  {
+    "name": "1440 casino needs no code",
+    "pass": true
+  },
+  {
+    "name": "1440 builder restored",
+    "pass": true
+  },
+  {
+    "name": "1440 logo reloads home",
+    "pass": true
+  },
+  {
+    "name": "1440 slip height adjustable",
+    "pass": true
+  },
+  {
+    "name": "1440 slip width adjustable",
+    "pass": true
+  },
+  {
+    "name": "1440 slip drag changes both axes",
+    "pass": true
+  },
+  {
+    "name": "1440 resized page fits",
+    "pass": true
+  },
+  {
+    "name": "1440 account icon tabs",
+    "pass": true
+  },
+  {
+    "name": "1440 slip absent over account",
+    "pass": true
+  },
+  {
+    "name": "1440 devices tab works",
+    "pass": true
+  },
+  {
+    "name": "1440 history tab works",
+    "pass": true
+  },
+  {
+    "name": "1440 protection retained",
+    "pass": true
+  },
+  {
+    "name": "1440 withdrawal action selects right tab",
+    "pass": true
+  },
+  {
+    "name": "1440 search enlarges on focus",
+    "pass": true
+  },
+  {
+    "name": "1440 search width adjustable",
+    "pass": true
+  },
+  {
+    "name": "1440 final viewport fit",
+    "pass": true
+  },
+  {
+    "name": "1440 no errors",
+    "pass": true
+  },
+  {
+    "name": "768 initial board bounded",
+    "pass": true
+  },
+  {
+    "name": "768 main sports bounded",
+    "pass": true
+  },
+  {
+    "name": "768 casino needs no code",
+    "pass": true
+  },
+  {
+    "name": "768 builder restored",
+    "pass": true
+  },
+  {
+    "name": "768 logo reloads home",
+    "pass": true
+  },
+  {
+    "name": "768 slip height adjustable",
+    "pass": true
+  },
+  {
+    "name": "768 resized page fits",
+    "pass": true
+  },
+  {
+    "name": "768 account icon tabs",
+    "pass": true
+  },
+  {
+    "name": "768 slip absent over account",
+    "pass": true
+  },
+  {
+    "name": "768 devices tab works",
+    "pass": true
+  },
+  {
+    "name": "768 history tab works",
+    "pass": true
+  },
+  {
+    "name": "768 protection retained",
+    "pass": true
+  },
+  {
+    "name": "768 withdrawal action selects right tab",
+    "pass": true
+  },
+  {
+    "name": "768 final viewport fit",
+    "pass": true
+  },
+  {
+    "name": "768 no errors",
+    "pass": true
+  },
+  {
+    "name": "390 initial board bounded",
+    "pass": true
+  },
+  {
+    "name": "390 main sports bounded",
+    "pass": true
+  },
+  {
+    "name": "390 casino needs no code",
+    "pass": true
+  },
+  {
+    "name": "390 builder restored",
+    "pass": true
+  },
+  {
+    "name": "390 logo reloads home",
+    "pass": true
+  },
+  {
+    "name": "390 slip height adjustable",
+    "pass": true
+  },
+  {
+    "name": "390 resized page fits",
+    "pass": true
+  },
+  {
+    "name": "390 account icon tabs",
+    "pass": true
+  },
+  {
+    "name": "390 slip absent over account",
+    "pass": true
+  },
+  {
+    "name": "390 devices tab works",
+    "pass": true
+  },
+  {
+    "name": "390 history tab works",
+    "pass": true
+  },
+  {
+    "name": "390 protection retained",
+    "pass": true
+  },
+  {
+    "name": "390 withdrawal action selects right tab",
+    "pass": true
+  },
+  {
+    "name": "390 final viewport fit",
+    "pass": true
+  },
+  {
+    "name": "390 no errors",
+    "pass": true
+  },
+  {
+    "name": "320 initial board bounded",
+    "pass": true
+  },
+  {
+    "name": "320 main sports bounded",
+    "pass": true
+  },
+  {
+    "name": "320 casino needs no code",
+    "pass": true
+  },
+  {
+    "name": "320 builder restored",
+    "pass": true
+  },
+  {
+    "name": "320 logo reloads home",
+    "pass": true
+  },
+  {
+    "name": "320 slip height adjustable",
+    "pass": true
+  },
+  {
+    "name": "320 resized page fits",
+    "pass": true
+  },
+  {
+    "name": "320 account icon tabs",
+    "pass": true
+  },
+  {
+    "name": "320 slip absent over account",
+    "pass": true
+  },
+  {
+    "name": "320 devices tab works",
+    "pass": true
+  },
+  {
+    "name": "320 history tab works",
+    "pass": true
+  },
+  {
+    "name": "320 protection retained",
+    "pass": true
+  },
+  {
+    "name": "320 withdrawal action selects right tab",
+    "pass": true
+  },
+  {
+    "name": "320 final viewport fit",
+    "pass": true
+  },
+  {
+    "name": "320 no errors",
+    "pass": true
+  },
+  {
+    "name": "casino failure offers recovery",
+    "pass": true
+  },
+  {
+    "name": "casino catalog retry recovers",
+    "pass": true
+  },
+  {
+    "name": "slow feed has recovery",
+    "pass": true
+  },
+  {
+    "name": "slow feed retry recovers",
+    "pass": true
+  },
+  {
+    "name": "slow no guest member controls",
+    "pass": true
+  },
+  {
+    "name": "slow feed fits",
+    "pass": true
+  },
+  {
+    "name": "failed feed retry recovers",
+    "pass": true
+  },
+  {
+    "name": "error no guest member controls",
+    "pass": true
+  },
+  {
+    "name": "error feed fits",
+    "pass": true
+  },
+  {
+    "name": "empty feed offers refresh",
+    "pass": true
+  },
+  {
+    "name": "empty no guest member controls",
+    "pass": true
+  },
+  {
+    "name": "empty feed fits",
+    "pass": true
+  }
+]

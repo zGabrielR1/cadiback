@@ -1,0 +1,438 @@
+/* Shared usability fixes on the original sportsbook; Tournament Blue is scoped.
+   Classic deliberately inherits globals.css, workspace.css and apex.css. */
+html{scroll-padding-top:120px;scrollbar-color:var(--mut) var(--paper)}
+::selection{background:var(--acc);color:var(--on-acc)}
+input,textarea{caret-color:var(--acc)}
+.variant-header .hwrap{max-width:1560px;gap:14px}
+.variant-header .logo{display:flex;align-items:center;padding:0;margin:0;background:transparent;color:var(--ink);font-size:28px;letter-spacing:-.03em;min-height:44px}
+.variant-header .logo span{color:var(--acc);text-shadow:none}
+.variant-header nav.main{gap:14px;align-items:stretch}
+.variant-header nav.main button{display:flex;align-items:center;gap:8px;padding-inline:0;font-size:13px}
+.header-search{display:flex;align-items:center;gap:9px;flex:0 1 220px;min-width:140px;margin:0;padding:0 12px;background:var(--field);border:1px solid var(--line);border-radius:8px;color:var(--mut)}
+.header-search #search{display:block;flex:1;min-width:0;width:100%;max-width:none;min-height:40px;margin:0;padding:0;border:0;border-radius:0;background:transparent;outline:none;font-size:13px}
+.header-search:focus-within{outline:2px solid var(--acc);outline-offset:2px}
+.header-search>svg{flex:0 0 auto}
+.header-search .search-clear{width:28px;height:36px;min-height:36px;margin:0;padding:0;background:transparent;color:var(--mut);flex-shrink:0}
+.appearance-picker{display:flex;align-items:center;gap:8px;margin:0;color:var(--mut);font-size:11px;white-space:nowrap}
+.appearance-picker select{width:100px;min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:var(--field);font-family:var(--body-font);font-size:12px;cursor:pointer}
+.variant-header .header-theme{display:grid;place-items:center;width:40px;min-height:40px;padding:0;flex:0 0 auto}
+.variant-header .header-account{display:inline-flex;gap:8px;align-items:center;justify-content:center;width:auto;min-height:40px;margin:0;white-space:nowrap}
+.header-account>svg{display:none}
+.header-more{position:relative;color:var(--mut);font-size:12px}
+.header-more summary{cursor:pointer;min-height:40px;display:flex;align-items:center;list-style:none}
+.header-more>div{position:absolute;top:100%;right:0;min-width:160px;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #0003;z-index:25}
+.header-more button{display:block;width:100%;margin:0;padding:10px;text-align:left;background:transparent;color:var(--ink);font-size:13px}
+.header-more button:hover{background:var(--chip)}
+.market-workspace{display:grid;grid-template-columns:176px minmax(0,1fr);grid-template-areas:"featured featured" "rail board";gap:24px 20px;margin-top:0;align-items:start}
+.market-workspace.rail-collapsed{grid-template-columns:52px minmax(0,1fr)}
+.market-workspace.no-highlights{grid-template-areas:"rail board"}
+.workspace-featured{grid-area:featured;min-width:0}
+[data-design="classic"] .no-highlights .workspace-featured{display:none}
+.market-workspace .sport-rail{grid-area:rail;top:110px}
+.market-workspace .ed-board{grid-area:board;min-width:0}
+.workspace-tabs{display:none;grid-area:tabs}
+.market-trends{margin:0}
+.market-trends-heading{align-items:center;margin-bottom:16px}
+.market-trends-heading h2{font-size:28px}
+.market-trends-heading p{margin:0;font-size:12px;color:var(--mut)}
+.feature-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;font-size:12px;color:var(--mut)}
+.market-trend .feature-provenance{font-size:11px;line-height:1.6;margin:12px 0}
+.market-trend-detail{font-family:var(--display-font);font-size:22px;line-height:1.25}
+.market-trend-odds button[aria-pressed="true"]{outline:1px solid var(--acc);background:var(--acc-soft)}
+.market-trend-odds button span{font-size:12px}
+.sporthead .sub{line-height:1.6}
+.sportfeed>span:not(.badge){font-size:11px;color:var(--mut);line-height:1.6}
+.club-team-initial{display:none}
+.sx-save{display:inline-flex;align-items:center;justify-content:center;min-width:36px;min-height:36px;padding:4px;margin:0;background:transparent;color:var(--mut)}
+.sx-save[aria-pressed="true"]{color:var(--gold)}
+.sx-build{display:inline-flex;align-items:center;gap:8px;min-height:36px}
+.sx-odd.on .sx-odd-tick,.sx-odd.on .sx-odd-price{color:var(--on-acc)}
+.sx-odd:disabled{opacity:1;background:var(--field);cursor:not-allowed}
+.sx-odd:disabled .sx-odd-tick,.sx-odd:disabled .sx-odd-price{color:var(--mut)}
+.sx-filter>svg{vertical-align:middle;margin-right:4px}
+.sx-nomarket,.sx-league-count,.rail-count,.sx-market-label,.betslip-competition,.betslip-market{font-size:11px}
+.source-note{font-size:12px;line-height:1.7;color:var(--mut)}
+.bottomnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:52px;font-size:11px}
+.account-title h1{font-size:28px;margin:0 0 8px}
+.account-title p{color:var(--mut);font-size:14px;margin:0 0 24px}
+.club-profile-name{font-size:20px;font-weight:700;margin:0 0 18px}
+.club-account-facts{display:flex;flex-wrap:wrap;gap:20px 36px;margin:0 0 20px}
+.club-account-facts>div{display:grid;gap:6px;min-width:120px}
+.club-account-facts dt{font-size:12px;color:var(--mut)}
+.club-account-facts dd{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.account-view section.panel{min-width:0}
+.account-view .hist{display:block;max-width:100%;overflow-x:auto}
+.sheet p.ferr{color:var(--bad)}
+.betslip-type{border-left:0;padding-left:0}
+.club-error{max-width:620px;margin:12vh auto;padding:32px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px}
+.club-error h1{font-size:28px;margin:0 0 16px}
+.club-error p{font-size:14px;line-height:1.7;color:var(--mut)}
+.club-error button{margin-top:16px}
+/* Retained truthful content and fallback repairs from the prior review. */
+.club-game-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px 10px;height:100%;background:var(--field);color:var(--ink);font:700 clamp(13px,1.3vw,20px)/1.35 var(--body-font);text-align:center;overflow-wrap:anywhere}
+.game-info{display:inline-grid;place-items:center;min-height:32px;width:32px;padding:0;background:transparent;color:var(--mut)}
+.play-circle{background:var(--card);color:var(--ink);box-shadow:none}
+.layout>.main.casino-content{align-items:start;gap:24px}
+.layout>.main.casino-content>section.panel{grid-column:auto;margin:0;align-self:start;min-height:0}
+.layout>.main.casino-content>section.casino-catalog{grid-column:1/-1;padding:24px}
+.layout>.main.casino-content>section.casino-section:not(.casino-catalog){padding:20px 0;background:transparent;border:0;border-top:1px solid var(--line);border-radius:0}
+.casino-content .jackpot,.casino-content .tournament{padding:0;border:0;border-radius:0;background:transparent}
+.casino-content .jackpot-label{font-size:12px;text-transform:none;letter-spacing:0}
+.casino-content .jackpot-ticker{color:var(--ink);font-size:28px}
+.casino-content .rowscroll:has(>.boost){grid-auto-columns:minmax(200px,1fr)}
+.casino-content .boost{min-width:0;overflow-wrap:anywhere;background:transparent;border:0;border-right:1px solid var(--line);padding:0 16px 0 0;border-radius:0}
+.casino-content .boost-odd{color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums;margin-top:6px}
+.casino-content .boost-kind{font-size:11px;font-weight:400;line-height:1.5}
+.casino-content .boost-name{margin:8px 0}
+.casino-content .rowscroll{padding-bottom:10px}
+/* Tournament Blue: distinct shell, fixtures, rows and state palette. */
+[data-design="blue"]{--display-font:'Barlow Condensed',sans-serif;--body-font:Geist,Arial,sans-serif;--number-font:Geist,Arial,sans-serif;--acc:#4263eb;--on-acc:#fff;--gold:#b5a36e;--glow:none}
+[data-design="blue"][data-theme="dark"]{--paper:#111214;--night:#111214;--card:#1e2023;--card2:#191b1e;--field:#16181b;--chip:#292d35;--ink:#f4f5f7;--mut:#adb2bd;--line:#34383f;--acc:#8198ff;--acc-soft:#29345b;--on-acc:#121b38;--data-accent:#bcc8ff;--bad:#f2a0ae;--bad-soft:#38232b;color-scheme:dark}
+[data-design="blue"][data-theme="light"]{--paper:#f1f3f7;--night:#e6eaf2;--card:#fff;--card2:#f9fafc;--field:#f1f3f8;--chip:#e5e9f2;--ink:#1a2130;--mut:#596478;--line:#d5dbe6;--acc:#3152d1;--acc-soft:#e5ebff;--on-acc:#fff;--data-accent:#3152d1;--bad:#a82945;--bad-soft:#fbe9ee;color-scheme:light}
+[data-design="blue"] .topbar{display:none}
+[data-design="blue"] .variant-header{background:var(--paper)}
+[data-design="blue"] .hwrap{min-height:80px;padding-block:12px;gap:24px}
+[data-design="blue"] .variant-header .logo{font-family:Geist,Arial,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.035em}
+[data-design="blue"] .variant-header nav.main button{font-family:var(--body-font);font-size:13px;padding:8px 0}
+[data-design="blue"] .hwrap nav.main button.on::after{background:#4263eb;inset-inline:0}
+[data-design="blue"] .header-account{background:#4263eb;color:#fff}
+[data-design="blue"] .wrap{padding-top:30px;max-width:1512px}
+[data-design="blue"] .market-workspace{grid-template-columns:208px minmax(0,1fr);grid-template-areas:"rail featured" "rail board";gap:28px 32px}
+[data-design="blue"] .market-workspace.rail-collapsed{grid-template-columns:52px minmax(0,1fr)}
+[data-design="blue"] .market-workspace .sport-rail{top:108px;padding-right:20px;max-height:calc(100dvh - 128px)}
+[data-design="blue"] .sport-rail-item{min-height:44px;font-size:13px;border-radius:6px}
+[data-design="blue"] .sport-rail-item[aria-pressed="true"]{background:var(--chip);border-left-color:transparent;color:var(--ink)}
+[data-design="blue"] .sporthead{margin-bottom:26px;align-items:center;gap:20px}
+[data-design="blue"] .sporthead h1{font:650 26px/1.2 Geist,Arial,sans-serif;letter-spacing:-.025em;text-transform:none;margin:0 0 8px}
+[data-design="blue"] .sporthead .sub{font-size:13px}
+[data-design="blue"] .sportfeed{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+[data-design="blue"] .sportfeed .badge{color:var(--ink);background:var(--chip);font-size:11px}
+[data-design="blue"] .market-trends-heading h2{font:600 16px/1.3 Geist,Arial,sans-serif;letter-spacing:0}
+[data-design="blue"] .market-trends-heading p{font-size:11px}
+[data-design="blue"] .market-trends-grid{display:grid;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+[data-design="blue"] .market-trend{padding:18px 20px 20px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+[data-design="blue"] .feature-meta{font-size:11px;line-height:1.5}
+[data-design="blue"] .feature-meta>span{overflow-wrap:anywhere}
+[data-design="blue"] .feature-meta .sx-save{flex:0 0 30px;min-width:30px;min-height:30px}
+[data-design="blue"] .market-trend h3{margin:18px 0;min-height:0}
+[data-design="blue"] .market-trend-detail{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;font-size:21px}
+[data-design="blue"] .feature-team{display:flex;align-items:center;gap:10px;grid-column:1;min-width:0;overflow-wrap:anywhere}
+[data-design="blue"] .feature-away{grid-row:2}
+[data-design="blue"] .feature-initial{display:inline-grid;place-items:center;width:30px;height:32px;flex:0 0 auto;background:var(--chip);color:var(--mut);font:600 11px Geist,Arial,sans-serif;border-radius:5px}
+[data-design="blue"] .feature-clock{grid-column:2;grid-row:1/3;display:grid;gap:6px;align-self:center;text-align:right;font-family:Geist,Arial,sans-serif;font-size:18px;font-variant-numeric:tabular-nums}
+[data-design="blue"] .feature-clock small{font-size:11px;font-weight:400;color:var(--mut)}
+[data-design="blue"] .market-trend .feature-provenance{font-size:11px;margin:14px 0 8px}
+[data-design="blue"] .market-trend-odds{display:flex;gap:6px}
+[data-design="blue"] .market-trend-odds button{display:flex;flex-direction:row;justify-content:space-between;align-items:center;min-height:42px;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:5px;background:var(--chip);color:var(--ink)}
+[data-design="blue"] .market-trend-odds button span{color:var(--mut);font-size:11px}
+[data-design="blue"] .market-trend-odds button b{color:var(--ink);font:600 14px Geist,Arial,sans-serif;font-variant-numeric:tabular-nums}
+[data-design="blue"] .market-trend-odds button[aria-pressed="true"]{outline:none;border-color:var(--acc);background:var(--acc-soft)}
+[data-design="blue"] .board-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px}
+[data-design="blue"] .board-section-heading h2{font:600 18px/1.3 Geist,Arial,sans-serif;margin:0}
+[data-design="blue"] .board-section-heading>span{font-size:12px;color:var(--mut)}
+[data-design="blue"] .sx-toolbar{padding:0;margin:0 0 18px;border:0;background:transparent;gap:10px}
+[data-design="blue"] .sx-toolbar label{font-size:11px}
+[data-design="blue"] .sx-toolbar select{min-height:40px;border-radius:5px;background:var(--card);font-size:12px}
+[data-design="blue"] .sx-toolbar .sx-filter{background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--ink);font-size:11px;min-height:40px}
+[data-design="blue"] .sx-country-head{font-size:12px;padding-inline:0;margin-top:14px}
+[data-design="blue"] .sx-flag{display:none}
+[data-design="blue"] .sx-league{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+[data-design="blue"] .sx-league-head{background:var(--card);padding:12px 16px;font-size:12px;min-height:44px}
+[data-design="blue"] .sx-league-body{display:grid;grid-template-columns:1fr;gap:0}
+[data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{display:grid;grid-template-columns:56px minmax(140px,1fr) minmax(250px,44%);gap:16px;align-items:center;padding:16px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
+[data-design="blue"] .sx-row:last-child{border-bottom:0}
+[data-design="blue"] .sx-state{display:flex;flex-direction:column;gap:4px;font-size:11px;justify-content:center;align-items:flex-start}
+[data-design="blue"] .sx-state .sx-save{order:2}
+[data-design="blue"] .sx-time{font-size:11px;color:var(--mut)}
+[data-design="blue"] .sx-teams{display:grid;grid-template-columns:1fr;gap:5px;margin:0;padding:0;min-height:40px;background:transparent;color:var(--ink)}
+[data-design="blue"] .sx-team{display:flex;gap:10px;align-items:center}
+[data-design="blue"] .sx-name{font:600 17px/1.35 'Barlow Condensed',sans-serif;overflow-wrap:anywhere}
+[data-design="blue"] .sx-score{font-family:Geist,Arial,sans-serif;font-size:14px;color:var(--ink)}
+[data-design="blue"] .sx-markets{display:grid;gap:8px;width:100%}
+[data-design="blue"] .sx-market-label{font-size:11px;margin-bottom:6px}
+[data-design="blue"] .sx-odds{display:flex;gap:6px;width:100%}
+[data-design="blue"] .sx-odd{display:inline-flex;flex-direction:row;align-items:center;justify-content:space-between;flex:1;gap:6px;width:auto;min-width:0;min-height:42px;margin:0;padding:10px;border:1px solid var(--line);border-radius:5px;background:var(--chip);color:var(--ink)}
+[data-design="blue"] .sx-odd-price{font-family:Geist,Arial,sans-serif;font-size:14px;color:var(--ink)}
+[data-design="blue"] .sx-odd-tick{font-size:11px;color:var(--mut)}
+[data-design="blue"] .sx-odd.on{background:var(--acc-soft);border-color:var(--acc)}
+[data-design="blue"] .sx-odd.on .sx-odd-tick,[data-design="blue"] .sx-odd.on .sx-odd-price{color:var(--acc)}
+[data-design="blue"] .sx-market-actions{display:flex;justify-content:space-between;gap:12px}
+[data-design="blue"] .sx-build{font-size:11px;border:0;padding:0;min-height:32px;color:var(--acc)}
+[data-design="blue"] .sx-more{font-size:11px;background:transparent;color:var(--mut);padding:0;min-height:32px}
+[data-design="blue"] .sx-extra{grid-column:1/-1;padding:18px 0 0}
+[data-design="blue"] .market-detail-header,[data-design="blue"] .market-detail-market,[data-design="blue"] .market-detail-stats>section{background:var(--card);border-radius:8px;border-color:var(--line)}
+[data-design="blue"] .market-detail-header h1{font-family:Geist,Arial,sans-serif;font-size:28px;text-transform:none}
+[data-design="blue"] .market-detail-price b{font-family:Geist,Arial,sans-serif}
+[data-design="blue"] .guest-login-card{border-color:var(--line);border-top-color:var(--acc);box-shadow:0 8px 24px #0003}
+[data-design="blue"] .auth-sheet,[data-design="blue"] .sheet{background:var(--card);border-color:var(--line)}
+@media(min-width:1101px){[data-design="blue"] .rail-collapsed .sx-row{grid-template-columns:56px minmax(140px,1fr) minmax(280px,44%)}}
+@media(max-width:1200px){.variant-header .hwrap{flex-wrap:wrap;gap:10px}.variant-header .header-search{order:20;flex:1 1 100%;max-width:none}.variant-header .header-cash{display:none}.variant-header .bal{font-size:12px;padding:8px}.variant-header .hwrap .spacer{flex:1}}
+@media(max-width:1100px){
+  .market-workspace,.market-workspace.rail-collapsed{grid-template-columns:1fr;grid-template-areas:"featured" "tabs" "board";gap:18px}
+  .market-workspace.no-highlights{grid-template-areas:"tabs" "board"}
+  .market-workspace .sport-rail{display:none}
+  .workspace-tabs{display:flex;gap:8px;overflow-x:auto;margin:0;padding-bottom:6px}
+  .workspace-tabs .sx-tab{display:flex;align-items:center;gap:8px;flex-direction:row;min-height:44px;width:auto;min-width:fit-content;padding:8px 14px;font-size:12px}
+  .workspace-tabs .sx-tab-count{font-size:11px}
+  [data-design="blue"] .market-workspace,[data-design="blue"] .market-workspace.rail-collapsed{grid-template-columns:1fr;grid-template-areas:"featured" "tabs" "board";gap:20px}
+  [data-design="blue"] .market-workspace .sport-rail{display:none}
+  [data-design="blue"] .sportfeed{align-items:flex-end}
+  [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{grid-template-columns:52px minmax(140px,1fr) minmax(240px,42%)}
+  [data-design="blue"] .sx-toolbar .mobile-filter-trigger,[data-design="blue"] .sx-toolbar .mobile-live-filter{border:1px solid var(--line);background:var(--card);min-height:44px;font-size:12px}
+  [data-design="blue"] .workspace-tabs .sx-tab.on{background:var(--chip);color:var(--ink)}
+}
+@media(max-width:760px){
+  .variant-header .hwrap{gap:8px;padding:10px 16px;min-height:64px}
+  .variant-header .logo{font-size:26px}
+  .variant-header nav.main,.variant-header .header-more,.variant-header .bal{display:none}
+  .variant-header .header-theme{display:grid;width:36px;min-height:44px}
+  .appearance-picker{gap:0}
+  .appearance-picker>span{display:none}
+  .appearance-picker select{width:90px;min-height:44px;font-size:12px;padding:8px;border-radius:6px}
+  .variant-header .header-account{padding:8px 12px;min-height:44px;font-size:12px}
+  .variant-header .header-account.is-member{width:40px;padding:0}
+  .header-account.is-member>svg{display:block}
+  .header-account.is-member>span{display:none}
+  .header-search #search{min-height:44px;font-size:14px}
+  .market-trends-heading h2{font-size:24px}
+  .market-trends-heading p{display:none}
+  .market-trend-detail{font-size:20px}
+  .market-trend-odds button b{font-size:18px}
+  .sx-toolbar .sx-market-view{font-size:11px}
+  .sx-toolbar.filters-open>label:not(.sx-market-view){flex-direction:column;align-items:stretch;flex-basis:100%}
+  .sx-build,.sx-more{min-height:44px}
+  .sx-save{min-width:44px;min-height:44px}
+  .bottomnav button{font-size:11px}
+  .club-error{margin:24px 12px;padding:24px}
+  .club-error h1{font-size:24px}
+  .casino-content .rowscroll:has(>.boost){grid-auto-flow:row;grid-auto-columns:auto;gap:20px;overflow:visible}
+  .casino-content .boost{border-right:0;border-bottom:1px solid var(--line);padding:0 0 16px}
+  .casino-content .boost:last-child{border-bottom:0}
+  [data-design="blue"] .hwrap{min-height:64px;padding:10px 16px;gap:8px}
+  [data-design="blue"] .variant-header .logo{font-size:22px}
+  [data-design="blue"] .wrap{padding-top:20px}
+  [data-design="blue"] .sporthead{margin:0 0 20px;gap:12px}
+  [data-design="blue"] .sporthead h1{font-size:23px}
+  [data-design="blue"] .sporthead .sub{display:none}
+  [data-design="blue"] .sportfeed{display:none}
+  [data-design="blue"] .market-trends-grid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(270px,88%);grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding-bottom:8px}
+  [data-design="blue"] .market-trend{padding:16px;scroll-snap-align:start}
+  [data-design="blue"] .feature-clock{font-size:16px}
+  [data-design="blue"] .feature-team{font-size:19px;gap:8px}
+  [data-design="blue"] .market-trend-odds button{min-height:44px;padding:10px 12px}
+  [data-design="blue"] .board-section-heading h2{font-size:18px}
+  [data-design="blue"] .board-section-heading>span{font-size:11px}
+  [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{grid-template-columns:1fr;gap:12px;padding:14px 16px}
+  [data-design="blue"] .sx-state{flex-direction:row;align-items:center;justify-content:space-between}
+  [data-design="blue"] .sx-state .sx-save{min-width:36px;min-height:36px}
+  [data-design="blue"] .sx-teams{gap:8px}
+  [data-design="blue"] .sx-name{font-size:18px}
+  [data-design="blue"] .sx-odd{min-height:44px;padding:10px 14px}
+  [data-design="blue"] .sx-odd-price{font-size:15px}
+  [data-design="blue"] .sx-market-actions .sx-build,[data-design="blue"] .sx-market-actions .sx-more{min-height:40px;font-size:12px}
+  [data-design="blue"] .sx-extra{grid-column:1}
+  [data-design="blue"] .market-detail-header h1{font-size:24px}
+}
+@media(max-width:360px){.variant-header .hwrap{gap:6px}.variant-header .logo{font-size:23px}.appearance-picker select{width:82px}.variant-header .header-account{padding-inline:10px}[data-design="blue"] .variant-header .logo{font-size:21px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.topbar{font-size:11px}
+.guest-login-toggle{font-size:12px}
+.guest-login-actions button{font-size:12px}
+.builder-market-name>span,.builder-market-choice>span,.builder-competition{font-size:11px}
+@media(max-width:760px){.variant-header .hwrap .logo{font-size:26px}.variant-header .hwrap .spacer{min-width:0}.variant-header .hwrap .header-account{flex-shrink:0}}
+@media(max-width:360px){.variant-header .hwrap .logo{font-size:23px}.variant-header .hwrap .header-account{padding-inline:10px}[data-design="blue"] .variant-header .hwrap .logo{font-size:21px}}
+/* The utility strip remains dark in Original's light theme. */
+.topbar b,.topbar .topbar-help{color:#d6d3d1}
+
+/* Local Tournament Blue follows the decision sketch's frame, not Classic's. */
+[data-design="blue"] body{background:var(--paper)}
+[data-design="blue"] .variant-header{border-bottom:1px solid var(--line)}
+[data-design="blue"] .variant-header .hwrap{max-width:none;padding:0 36px;min-height:80px;gap:36px;flex-wrap:nowrap}
+[data-design="blue"] .variant-header .logo{font-family:Geist,Arial,sans-serif;font-weight:800;font-size:27px;letter-spacing:-.045em}
+[data-design="blue"] .variant-header .logo span{color:#9eb0ff}
+[data-design="blue"] .variant-header nav.main{gap:28px;align-self:stretch}
+[data-design="blue"] .variant-header nav.main button{font-weight:550;font-size:14px}
+[data-design="blue"] .header-search{flex:0 1 238px;order:0;background:var(--card);border-radius:5px}
+[data-design="blue"] .header-account{border-radius:5px;min-width:90px;min-height:40px;font-weight:650}
+[data-design="blue"] .wrap:has(.market-workspace){max-width:none;padding:0 36px 40px 0}
+[data-design="blue"] .market-workspace{grid-template-columns:218px minmax(0,1fr);gap:28px 36px;margin:0;position:relative}
+[data-design="blue"] .market-workspace .sport-rail{padding:30px 17px 24px;top:80px;max-height:calc(100dvh - 80px);min-height:calc(100dvh - 80px);border-right:1px solid var(--line)}
+[data-design="blue"] .market-workspace .workspace-featured{padding-top:30px}
+[data-design="blue"] .sport-rail-head{margin:0 15px 12px;font-size:12px;color:var(--mut)}
+[data-design="blue"] .sport-rail-head button{background:transparent}
+[data-design="blue"] .sport-rail-item{padding:0 15px;height:47px;margin-bottom:5px;border-radius:5px;color:var(--mut)}
+[data-design="blue"] .sport-rail-item[aria-pressed="true"]{background:#4263eb;color:#fff}
+[data-design="blue"] .sport-rail-item[aria-pressed="true"] .rail-count{color:#fff}
+[data-design="blue"] .rail-section-label{margin:24px 15px 16px;font-size:12px}
+[data-design="blue"] .rail-league{font-size:12px;line-height:1.5;padding:12px 15px}
+[data-design="blue"] .sporthead{margin-bottom:28px}
+[data-design="blue"] .sporthead h1{font-size:29px;font-weight:650;line-height:1.2;letter-spacing:-.03em}
+[data-design="blue"] .sporthead .sub{font-size:13px;margin-top:7px}
+[data-design="blue"] .market-trends-heading{margin-bottom:14px}
+[data-design="blue"] .market-trends-heading h2{font:600 13px/1.4 Geist,Arial,sans-serif;text-transform:none}
+[data-design="blue"] .market-trends-heading p{display:none}
+[data-design="blue"] .market-trends-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+[data-design="blue"] .market-trend{background:var(--card);padding:18px 20px;border-radius:7px}
+[data-design="blue"] .market-trend h3{margin:22px 0 18px}
+[data-design="blue"] .feature-team{font-size:22px;line-height:1.3;min-height:34px}
+[data-design="blue"] .feature-clock{font-size:22px}
+[data-design="blue"] .feature-initial{width:34px;height:34px;border-radius:4px;font-size:11px;color:var(--ink)}
+[data-design="blue"] .market-trend .feature-provenance{margin:0 0 10px;font-size:11px}
+[data-design="blue"] .market-trend-odds button{height:40px;min-height:40px;background:var(--chip)}
+[data-design="blue"] .market-trend-odds button[aria-pressed="true"],[data-design="blue"] .sx-odd.on{background:#4263eb;color:#fff;border-color:#4263eb}
+[data-design="blue"] .market-trend-odds button[aria-pressed="true"] span,[data-design="blue"] .market-trend-odds button[aria-pressed="true"] b,[data-design="blue"] .sx-odd.on .sx-odd-price,[data-design="blue"] .sx-odd.on .sx-odd-tick{color:#fff}
+[data-design="blue"] .board-section-heading{margin:0;border-bottom:1px solid var(--line);padding:0 0 15px}
+[data-design="blue"] .board-section-heading h2{font-size:15px;font-weight:650}
+[data-design="blue"] .sx-toolbar{flex-wrap:wrap;gap:12px;margin:12px 0}
+[data-design="blue"] .sx-toolbar label{flex:0 1 auto;gap:7px;font-size:12px}
+[data-design="blue"] .sx-toolbar select{max-width:220px;min-height:36px;font-size:12px}
+[data-design="blue"] .sx-toolbar .sx-filter{min-height:36px;padding:6px 9px;font-size:12px}
+[data-design="blue"] .sx-controls{margin:0 0 12px}
+[data-design="blue"] .blue-board-columns{display:flex;justify-content:space-between;padding:12px 16px;font-size:11px;color:var(--mut);border-top:1px solid var(--line)}
+[data-design="blue"] .sx-country-head{font-size:12px;text-transform:none;margin:14px 0 8px}
+[data-design="blue"] .sx-league{border-inline:0;border-radius:0;margin-bottom:18px}
+[data-design="blue"] .sx-league-head{min-height:40px;padding:9px 16px;font-size:12px}
+[data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{grid-template-columns:58px minmax(130px,1fr) minmax(300px,36%);padding:14px 16px;gap:14px;min-height:104px;background:transparent}
+[data-design="blue"] .sx-teams{justify-items:stretch;text-align:left}
+[data-design="blue"] .sx-name{font-size:19px;font-weight:600;color:var(--ink)}
+[data-design="blue"] .sx-team{justify-content:flex-start}
+[data-design="blue"] .sx-team .sx-score{margin-left:auto}
+[data-design="blue"] .sx-state{gap:6px}
+[data-design="blue"] .sx-live{font-size:11px;color:var(--mut)}
+[data-design="blue"] .sx-live i{background:#8da3ff;box-shadow:none}
+[data-design="blue"] .sx-odd{height:40px;min-height:40px;background:var(--chip)}
+[data-design="blue"] .sx-odd:hover:not(:disabled){border-color:#8198ff;background:var(--acc-soft)}
+[data-design="blue"] .sx-market-label{font-size:11px;color:var(--mut)}
+[data-design="blue"] .site-footer{margin-left:254px}
+[data-design="blue"] .footer-mark{font-family:Geist,Arial,sans-serif;font-size:27px;letter-spacing:-.035em}
+[data-design="blue"] .market-workspace.rail-collapsed{grid-template-columns:64px minmax(0,1fr)}
+[data-design="blue"] .market-workspace.rail-collapsed .sport-rail{padding-inline:10px}
+@media(max-width:1200px){
+ [data-design="blue"] .variant-header .hwrap{gap:20px;padding-inline:24px}
+ [data-design="blue"] .variant-header nav.main{gap:16px}
+ [data-design="blue"] .variant-header nav.main button{font-size:13px}
+ [data-design="blue"] .header-search{flex-basis:180px;min-width:120px}
+ [data-design="blue"] .market-workspace{grid-template-columns:190px minmax(0,1fr);gap:24px}
+ [data-design="blue"] .wrap:has(.market-workspace){padding-right:24px}
+ [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{grid-template-columns:48px minmax(110px,1fr) minmax(240px,42%)}
+}
+@media(max-width:1000px){
+ [data-design="blue"] .variant-header .hwrap{flex-wrap:wrap;gap:12px;padding:12px 24px}
+ [data-design="blue"] .header-search{order:10;flex:1 1 100%}
+ [data-design="blue"] .wrap:has(.market-workspace){padding:0 24px 32px}
+ [data-design="blue"] .market-workspace,[data-design="blue"] .market-workspace.rail-collapsed{grid-template-columns:1fr;grid-template-areas:"featured" "tabs" "board";gap:20px}
+ [data-design="blue"] .market-workspace .sport-rail{display:none}
+ [data-design="blue"] .workspace-tabs{display:flex}
+ [data-design="blue"] .workspace-tabs .sx-tab.on{background:#4263eb;color:#fff}
+ [data-design="blue"] .workspace-tabs .sx-tab.on .sx-tab-count{color:#fff}
+ [data-design="blue"] .site-footer{margin-left:0}
+}
+@media(min-width:1001px){[data-design="blue"] .workspace-tabs{display:none}[data-design="blue"] .market-workspace .sport-rail{display:block}}
+@media(max-width:760px){
+ [data-design="blue"] .variant-header .hwrap{padding:12px 16px;gap:10px}
+ [data-design="blue"] .variant-header .hwrap .logo{font-size:25px}
+ [data-design="blue"] .wrap:has(.market-workspace){padding:0 16px 32px}
+ [data-design="blue"] .market-workspace .workspace-featured{padding-top:24px}
+ [data-design="blue"] .sporthead h1{font-size:26px;max-width:310px;line-height:1.15}
+ [data-design="blue"] .market-trends-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:90%;gap:12px;overflow-x:auto}
+ [data-design="blue"] .feature-team{font-size:21px}
+ [data-design="blue"] .feature-clock{font-size:18px}
+ [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{grid-template-columns:1fr;gap:12px;padding:14px 12px}
+ [data-design="blue"] .sx-state{flex-direction:row;justify-content:space-between}
+ [data-design="blue"] .sx-state .sx-save{order:2}
+ [data-design="blue"] .blue-board-columns{display:none}
+ [data-design="blue"] .sx-toolbar select{max-width:100%;min-height:44px}
+ [data-design="blue"] .sx-name{font-size:20px}
+ [data-design="blue"] .sx-odd{height:44px}
+}
+/* Keep the decision sketch's compact first-screen fixture density. */
+[data-design="blue"] .market-trend .feature-meta .sx-save{min-height:24px;height:24px}
+[data-design="blue"] .market-trend h3{margin:14px 0 12px}
+[data-design="blue"] .feature-team{min-height:30px;font-size:21px}
+[data-design="blue"] .feature-initial{height:30px;width:30px}
+[data-design="blue"] .feature-clock b{font-weight:650}
+[data-design="blue"] .market-trend .feature-provenance{margin:0 0 8px}
+[data-design="blue"] .sport-rail-head{margin-bottom:17px}
+[data-design="blue"] .board-section-heading{padding-bottom:12px}
+[data-design="blue"] .sx-toolbar label{display:flex;align-items:center;flex-direction:row}
+[data-design="blue"] .sx-toolbar select{max-width:190px}
+[data-design="blue"] .sx-controls{margin-bottom:6px}
+[data-design="blue"] .sx-country-head{margin:8px 0}
+[data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{min-height:100px}
+@media(max-width:760px){[data-design="blue"] .sx-toolbar label{flex-direction:column;align-items:stretch}[data-design="blue"] .feature-team{font-size:20px}[data-design="blue"] .sx-toolbar select{max-width:100%}}
+/* Review correction: the compact control band gives fixtures the viewport. */
+[data-design="blue"] .variant-header .logo{letter-spacing:-.04em}
+[data-design="blue"] .blue-toolbar{display:flex;align-items:center;gap:12px;min-height:52px;flex-wrap:wrap;padding:8px 0}
+[data-design="blue"] .blue-toolbar>label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin:0}
+[data-design="blue"] .blue-toolbar select{min-height:36px;padding:6px 10px;max-width:185px;margin:0;font-size:12px;border-radius:5px}
+[data-design="blue"] .blue-live-toggle{min-height:36px;background:var(--chip);color:var(--ink);padding:6px 12px;font-size:12px;margin:0;border-radius:5px}
+[data-design="blue"] .blue-live-toggle.on{background:#4263eb;color:#fff}
+[data-design="blue"] .blue-extra-filters{position:relative;margin-left:auto;font-size:12px}
+[data-design="blue"] .blue-extra-filters summary{cursor:pointer;min-height:36px;display:flex;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:5px;color:var(--ink)}
+[data-design="blue"] .blue-extra-filters>div{position:absolute;right:0;top:calc(100% + 8px);z-index:10;width:280px;max-width:calc(100vw - 32px);padding:16px;background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px #0003;display:grid;gap:10px}
+[data-design="blue"] .blue-extra-filters label{display:grid;gap:8px;color:var(--mut);font-size:12px}
+[data-design="blue"] .blue-extra-filters select{max-width:100%;width:100%}
+[data-design="blue"] .blue-extra-filters button{margin:0;min-height:40px;text-align:left;font-size:12px}
+[data-design="blue"] .blue-legacy-controls,[data-design="blue"] .sx-country-head{display:none}
+[data-design="blue"] .blue-board-columns{padding:10px 16px}
+[data-design="blue"] .sx-league{margin-bottom:12px}
+[data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{min-height:88px;padding:10px 16px}
+[data-design="blue"] .sx-state .sx-save{min-height:28px;height:28px}
+[data-design="blue"] .sx-market-actions{align-items:center}
+[data-design="blue"] .sx-market-actions button{min-height:24px}
+[data-design="blue"] .market-trend{padding:16px 20px}
+[data-design="blue"] .market-trend h3{margin:12px 0}
+[data-design="blue"] .sporthead{margin-bottom:20px}
+[data-design="blue"] .market-workspace{row-gap:20px}
+@media(max-width:1000px){[data-design="blue"] .blue-toolbar{gap:8px}[data-design="blue"] .blue-toolbar>label{gap:5px}[data-design="blue"] .blue-toolbar select{max-width:155px}}
+@media(max-width:760px){
+ [data-design="blue"] .blue-toolbar>label{display:grid;gap:5px;flex:1;min-width:100px}
+ [data-design="blue"] .blue-toolbar select{max-width:100%;width:100%;min-height:44px}
+ [data-design="blue"] .blue-live-toggle{min-height:44px;align-self:end}
+ [data-design="blue"] .blue-extra-filters{margin-left:0;align-self:end}
+ [data-design="blue"] .blue-extra-filters summary{min-height:44px}
+ [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{padding:14px 12px}
+ [data-design="blue"] .sx-state .sx-save{min-height:44px;height:44px}
+ [data-design="blue"] .sx-market-actions button{min-height:44px}
+}
+@media(max-width:760px){
+  [data-design="blue"] .blue-extra-filters{margin-left:auto}
+  [data-design="blue"] .blue-extra-filters>div{left:auto;right:0;top:auto;bottom:calc(100% + 8px);max-height:calc(100dvh - 180px);overflow-y:auto}
+}
+/* Fidelity pass: the decision sketch's quiet labels and single-line row rhythm. */
+[data-design="blue"] .variant-header .logo{font-weight:850;letter-spacing:-.048em}
+[data-design="blue"] .sport-rail-head span{font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase}
+[data-design="blue"] .rail-section-label{font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase}
+[data-design="blue"] .sport-rail-item{font-size:14px}
+[data-design="blue"] .rail-league{font-weight:500;color:var(--mut)}
+[data-design="blue"] .sporthead .sub{font-size:12px}
+[data-design="blue"] .market-trends-heading h2{font-size:11px;font-weight:700;letter-spacing:1.7px;text-transform:uppercase}
+[data-design="blue"] .blue-board-columns{min-height:42px;padding:0 16px;align-items:center;letter-spacing:1.1px;text-transform:uppercase}
+[data-design="blue"] .sx-time{font-size:12px}
+@media(min-width:1001px){
+  [data-design="blue"] .variant-header .hwrap{gap:65px}
+  [data-design="blue"] .variant-header nav.main{gap:31px}
+  [data-design="blue"] .variant-header .header-account{border-radius:5px;padding:12px 25px;min-height:42px;font-size:14px;font-weight:700}
+  [data-design="blue"] .sx-name{font-size:17px}
+  [data-design="blue"] .sx-markets{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"odds odds" "label actions";align-items:center;gap:4px 12px}
+  [data-design="blue"] .sx-markets>.sx-market-block{display:contents}
+  [data-design="blue"] .sx-markets>.sx-market-block>.sx-odds{grid-area:odds}
+  [data-design="blue"] .sx-markets>.sx-market-block>.sx-market-label{grid-area:label;margin:0}
+  [data-design="blue"] .sx-market-actions{grid-area:actions}
+  [data-design="blue"] .sx-market-actions button{min-height:20px}
+  [data-design="blue"] .sx-row,[data-design="blue"] .sx-row.live{min-height:84px;padding:8px 16px}
+}
+/* Touch widths: the row's discovery controls need a 44px target. */
+[data-design="blue"] .blue-active-filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 0 12px;min-width:0}
+[data-design="blue"] .sporthead>div,[data-design="blue"] .ed-board>.panel{min-width:0}
+[data-design="blue"] .sporthead .sub,[data-design="blue"] .ed-board>.panel .sub{overflow-wrap:anywhere}
+[data-design="blue"] .blue-active-filters button{display:inline-flex;align-items:center;gap:8px;max-width:100%;min-height:36px;margin:0;padding:6px 10px;background:var(--acc-soft);color:var(--acc);border:1px solid var(--line);border-radius:5px;font-size:12px;text-align:left}
+[data-design="blue"] .blue-active-filters button span{overflow-wrap:anywhere;min-width:0}
+[data-design="blue"] .blue-active-filters button svg{flex-shrink:0}
+[data-design="blue"] .blue-active-filters .blue-reset-filters{background:transparent;color:var(--mut);border-color:transparent;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:760px){[data-design="blue"] .blue-active-filters button{min-height:44px}}
+@media(max-width:1100px){
+  .sx-build,.sx-more{min-height:44px}
+  .sx-save{min-width:44px;min-height:44px}
+}

@@ -1,0 +1,250 @@
+[
+  {
+    "name": "1440 Auteur active",
+    "pass": true
+  },
+  {
+    "name": "1440 guest no financial/account text",
+    "pass": true
+  },
+  {
+    "name": "1440 no guest slip or wallet",
+    "pass": true
+  },
+  {
+    "name": "1440 guest fits",
+    "pass": true
+  },
+  {
+    "name": "1440 context focus changes",
+    "pass": true
+  },
+  {
+    "name": "1440 expands markets",
+    "pass": true
+  },
+  {
+    "name": "1440 public detail neutral",
+    "pass": true
+  },
+  {
+    "name": "1440 long query wraps",
+    "pass": true
+  },
+  {
+    "name": "1440 dark theme",
+    "pass": true
+  },
+  {
+    "name": "1440 login opens",
+    "pass": true
+  },
+  {
+    "name": "1440 authenticated funds controls",
+    "pass": true
+  },
+  {
+    "name": "1440 authenticated slip",
+    "pass": true
+  },
+  {
+    "name": "1440 wallet opens",
+    "pass": true
+  },
+  {
+    "name": "1440 account fits",
+    "pass": true
+  },
+  {
+    "name": "1440 no page errors",
+    "pass": true
+  },
+  {
+    "name": "768 Auteur active",
+    "pass": true
+  },
+  {
+    "name": "768 guest no financial/account text",
+    "pass": true
+  },
+  {
+    "name": "768 no guest slip or wallet",
+    "pass": true
+  },
+  {
+    "name": "768 guest fits",
+    "pass": true
+  },
+  {
+    "name": "768 context focus changes",
+    "pass": true
+  },
+  {
+    "name": "768 expands markets",
+    "pass": true
+  },
+  {
+    "name": "768 public detail neutral",
+    "pass": true
+  },
+  {
+    "name": "768 long query wraps",
+    "pass": true
+  },
+  {
+    "name": "768 dark theme",
+    "pass": true
+  },
+  {
+    "name": "768 login opens",
+    "pass": true
+  },
+  {
+    "name": "768 authenticated funds controls",
+    "pass": true
+  },
+  {
+    "name": "768 authenticated slip",
+    "pass": true
+  },
+  {
+    "name": "768 wallet opens",
+    "pass": true
+  },
+  {
+    "name": "768 account fits",
+    "pass": true
+  },
+  {
+    "name": "768 no page errors",
+    "pass": true
+  },
+  {
+    "name": "390 Auteur active",
+    "pass": true
+  },
+  {
+    "name": "390 guest no financial/account text",
+    "pass": true
+  },
+  {
+    "name": "390 no guest slip or wallet",
+    "pass": true
+  },
+  {
+    "name": "390 guest fits",
+    "pass": true
+  },
+  {
+    "name": "390 context focus changes",
+    "pass": true
+  },
+  {
+    "name": "390 expands markets",
+    "pass": true
+  },
+  {
+    "name": "390 public detail neutral",
+    "pass": true
+  },
+  {
+    "name": "390 long query wraps",
+    "pass": true
+  },
+  {
+    "name": "390 guest mobile menu neutral",
+    "pass": true
+  },
+  {
+    "name": "390 dark theme",
+    "pass": true
+  },
+  {
+    "name": "390 login opens",
+    "pass": true
+  },
+  {
+    "name": "390 authenticated funds controls",
+    "pass": true
+  },
+  {
+    "name": "390 authenticated slip",
+    "pass": true
+  },
+  {
+    "name": "390 wallet opens",
+    "pass": true
+  },
+  {
+    "name": "390 account fits",
+    "pass": true
+  },
+  {
+    "name": "390 no page errors",
+    "pass": true
+  },
+  {
+    "name": "320 Auteur active",
+    "pass": true
+  },
+  {
+    "name": "320 guest no financial/account text",
+    "pass": true
+  },
+  {
+    "name": "320 no guest slip or wallet",
+    "pass": true
+  },
+  {
+    "name": "320 guest fits",
+    "pass": true
+  },
+  {
+    "name": "320 context focus changes",
+    "pass": true
+  },
+  {
+    "name": "320 expands markets",
+    "pass": true
+  },
+  {
+    "name": "320 public detail neutral",
+    "pass": true
+  },
+  {
+    "name": "320 long query wraps",
+    "pass": true
+  },
+  {
+    "name": "320 guest mobile menu neutral",
+    "pass": true
+  },
+  {
+    "name": "320 dark theme",
+    "pass": true
+  },
+  {
+    "name": "320 login opens",
+    "pass": true
+  },
+  {
+    "name": "320 authenticated funds controls",
+    "pass": true
+  },
+  {
+    "name": "320 authenticated slip",
+    "pass": true
+  },
+  {
+    "name": "320 wallet opens",
+    "pass": true
+  },
+  {
+    "name": "320 account fits",
+    "pass": true
+  },
+  {
+    "name": "320 no page errors",
+    "pass": true
+  }
+]

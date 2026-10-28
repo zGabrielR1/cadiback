@@ -1,4 +1,4 @@
-import { betIdentity, validMarkets } from './sports.mjs';
+import { betIdentity, validMarkets, matchState } from './sports.mjs';
 
 export function toggleSelection(previous, bet) {
   if (previous.some(item => betIdentity(item) === betIdentity(bet))) return previous.filter(item => betIdentity(item) !== betIdentity(bet));
@@ -20,8 +20,19 @@ export function selectionAvailability(bets, sports) {
     const fixture=sports.fixtures.find(f=>f.key===bet.fixtureKey);
     const market=fixture && validMarkets(fixture).find(m=>m.kind===bet.marketKind && String(m.line??'')===String(bet.line??''));
     const index=market?.selections.indexOf(bet.selection) ?? -1;
-    if (!fixture || /FINAL|AET|\bFT\b|CANCEL|POSTPON|SUSPEND|ABANDON/i.test(fixture.status||'') || index<0) unavailable.push(betIdentity(bet));
+    if (!matchState(fixture).selectable || index<0) unavailable.push(betIdentity(bet));
     else if (market.prices[index]!==bet.price) changed.push({id:betIdentity(bet),price:market.prices[index]});
   }
   return {changed,unavailable};
+}
+
+/** Explicit acceptance updates only prices for existing selection identities. */
+export function applyPriceChanges(bets, changes) {
+  const prices = new Map(changes
+    .filter(change => typeof change.id === 'string' && Number.isFinite(change.price) && change.price > 1)
+    .map(change => [change.id, change.price]));
+  return bets.map(bet => {
+    const price = prices.get(betIdentity(bet));
+    return price === undefined || price === bet.price ? bet : { ...bet, price };
+  });
 }

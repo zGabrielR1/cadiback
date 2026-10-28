@@ -1,3 +1,125 @@
+## VERIFIED 2026-10-27 — consistent match availability (0100)
+
+- Unified match availability with sports.mjs matchState across the board, details, advanced builder, discovery and slip. Postponed/cancelled/suspended/abandoned matches show clear Portuguese labels; unavailable status takes precedence over live/final hints. Board and featured controls also pause during loading and failed feed refreshes.
+- Unavailable matches stay consultable and favoritable, but no longer appear in upcoming filters/highlights. Existing slips/drafts remain intact; draft removal works while paused and successful resumed feeds restore controls. Status labels sit above team names to fit narrow clock columns.
+- Production build, verifier0, nine Node test files, core50/50, backend426/426 pass. Controlled browser availability376 plus market-finder regression408 cover guests/members at1440/768/390/320: changing statuses, details/favorites, board/feed recovery, builder draft preservation/removal/resume and both themes. Desktop/phone status-label placement and tablet/member layouts reviewed. All APIs mocked, including existing settlement polling. No deployment or live account/payment mutations. See decision0100, scripts/check_match_availability.mjs and /tmp/operator-availability-qa/.
+
+## VERIFIED 2026-10-27 — public match calendar export (0099)
+
+- Added public “Adicionar ao calendário” for upcoming scheduled match details, with visible full local kickoff/timezone. Downloads a one-time .ics event with UTC kickoff, stable fixture UID, teams/competition and public-only match URL. No invented duration, reminders or automatic schedule synchronization; the download explains its one-time nature.
+- Eligibility rejects missing/invalid/timezone-free/past dates and live/final/postponed/cancelled/suspended/abandoned/unknown statuses. Failed refresh disables export; retry uses the updated kickoff. Text escaping and UTF-8 folding preserve long Unicode feed labels safely. Filters and member slip selections remain intact.
+- Production build, structure verifier (zero problems), nine Node test files, core 50/50 and backend 426/426 pass. Controlled browser: calendar248 + market-finder regression408 across guest/member at1440/768/390/320, both themes, keyboard/downloads/current kickoff/failure recovery/selection preservation; phone and tablet captures reviewed. All API responses stubbed, including existing settlement polling. No live mutations or deployment. See decision0099 and scripts/check_match_calendar.mjs; screenshots/downloads /tmp/operator-calendar-qa/.
+
+## VERIFIED 2026-10-27 — filtered public match links (0098)
+
+- Copied match links preserve public market category/search and restore them on fresh navigation. Defaults remain match-only; private selected-only mode and slip contents are excluded. Searches are bounded to 200 characters, categories allowlisted, and old filters removed when navigating between matches or returning to the board.
+- Verified production static build, structure verifier (zero problems), eight Node test files, core 50/50 and backend 426/426. Controlled browser checks 408/408 cover guests/members at 1440/768/390/320, including copying and reopening filtered views, existing refresh/recovery/selection behavior and zero transaction writes. Restored frontend dependencies and an isolated /tmp Python environment; backend HTTP checks required outside-sandbox execution. No deployment.
+
+## VERIFIED 2026-10-26 — match market finder (0097)
+
+- Public match detail now has categories/counts, localized market search with accents and decimal commas, and sport-aware labels. Signed-in players can isolate selected markets; filters/recovery preserve the slip. Unknown market kinds remain visible. Refreshes preserve filtering and expose an active category at zero if it disappears.
+- Unavailable match states pause selections. Authenticated tablet overflow resolved by placing supporting panels below a full-width market column at 761–900px.
+- Static build, verify.py, eight Node test files, core 50/50 and backend 426/426 pass. Controlled browser checks410 (finder344 + match links66), across four widths and guest/member states; phone/tablet light/dark screenshots reviewed. No live transactions, archive creation or deployment.
+
+## VERIFIED 2026-10-26 — live odds review (0096)
+
+- Feed-driven changes now have old/new price and return review with explicit acceptance. Acceptance updates the slip only; placement still uses server preflight, server-price review and a separate confirmation. Unavailable selections have focused review and batch removal, preserving the remaining slip/stake. Feed failures offer retry and disable price acceptance.
+- Price-update helper preserves selection identities/metadata and rejects invalid/foreign updates. Static export, structure verifier, seven Node test files, core 50/50 and backend 426/426 pass. Controlled browser checks: odds review104 plus match-link regressions66 across four viewport widths. Screenshots reviewed in both themes. No live transactions or deployment.
+
+## VERIFIED 2026-10-26 — cross-sport discovery and Favorites (0095)
+
+- Added all-sports browsing, global entry into Favorites/search, explicit removable sport filters, Portuguese sport-name search, and detail-to-search recovery. Clear-all removes live/sport restrictions. Favorites now shows collection availability, syncs across tabs, preserves unavailable saved keys, and offers distinct empty/missing/filtered states with collection-preserving recovery.
+- Competitions in different sports have separate grouping/collapse identities and visible sport labels. Available/live counts reflect the Favorites collection when active.
+- Build, verify.py, seven Node test files, core 50/50 and backend 426/426 pass. Controlled browser checks: discovery144 and match-link regressions66 at four widths; reviewed light/dark screenshots. No deployment or live transactions.
+
+## VERIFIED 2026-10-26 — shareable match pages (0094)
+
+- Public fixture details now have shareable `?match=` links, clipboard/manual-copy support, reload and browser Back/Forward behavior. Direct entry distinguishes loading, failed requests, and a fixture missing from a successful feed. Match links carry no unrelated query/hash state.
+- Reused current public detail and authenticated selection rules; board focus/scroll restoration and advanced-research navigation covered. Build, structure, core 50/50, backend 426/426 and seven Node test files pass. Controlled browser fixtures exercise four responsive widths and authenticated dark-mode navigation; no live transactions or deployment.
+
+## VERIFIED 2026-10-26 — source recovery export (0093)
+
+- Added a local source exporter and recovery instructions. Current Git-visible files are hashed and archived, including uncommitted source; common private/generated files and symlinks are omitted. ZIP contents are read back and checked. Existing outputs cannot be overwritten.
+- Export fixture checks and core 50/50 pass. Full application verification remains limited by absent frontend build/dependencies, missing SQLAlchemy, and sandbox HTTP binding in the initial backend run. Outside-sandbox backend rerun: 420 pass, six errors from missing SQLAlchemy. No deployment or live account/payment actions.
+
+## 2026-10-25 — Member navigation, account and interaction repairs live (0092)
+
+Published Vercel dpl_7T1ZBhYx8GX6EYTCoAZknALviSxe READY at https://cadiback-web.vercel.app. Signed-in casino/catalog no longer require the optional data-portal code; Criar Aposta is restored in header/mobile navigation. Logo reloads the root document. Guest private controls stay hidden.
+
+Discovery defaults to5 primary sports and8 fixtures with explicit expansion; Explore collapse works and its list is bounded. Loading/slow/error/empty feed states offer honest recovery; retry/unmount cancels pending requests, while failed refresh retains successful data. Catalog failure also has retry. Slip width/height and desktop search width use pointer/keyboard handles and saved viewport-bound sizes; search expands and slip respects measured header height. Slip does not overlay account/casino.
+
+Account now uses compact identity and icon tabs (profile/devices/history/protection), with accessible names/tooltips and essential labels. Deposit/withdraw icons select their actual cashier tab. Consequential confirmations/session/history controls remain. Shared portal-code configuration is explained in docs/data-portal.md; no new code was invented or configured.
+
+Static and Vercel builds, verify0, core50/backend426 and six Node test files pass. Local and published controlled-API browser77/77 at1440/768/390/320 cover the reported regressions, including drag/keyboard resize and data failure/retry. New CSS slopscan0FAIL/0WARN. No real financial actions or live-account mutations; backend/environment unchanged. Evidence design/auteur/qa/regressions/.
+
+## 2026-10-25 — Auteur Sports desk live; guest privacy (0091)
+
+Owner-approved Sports desk now runs in the working React frontend and is live on Vercel: dpl_2GvN6watgvdMaqX7p9ZyDtRDmPDG READY, https://cadiback-web.vercel.app. New local Archivo/Source Sans3 fonts, silver/vermilion light theme and coherent dark theme, score strip, aligned fixture rows/context research, account section navigation and contextual cashier presentation reuse existing functionality. Backend unchanged.
+
+Signed-out visitors see sports/research/favorites and neutral Entrar. Wallet/account/promotions/casino navigation, balances and betslips remain absent until authentication; detail no longer advertises an account. Logout clears selections and private account views; cashier rendering is authenticated. No sample data or prototype controls ship.
+
+Validation: both frontend builds (local static and Vercel production), verifier0, core50/backend426 and six Node files pass; local and published controlled-API browser62/62 across1440/768/390/320, plus logout/signup/portal/admin12/12. Production real HTTP: page/fonts/health/sports200,320Flashscorefixtures, player401. New CSS slopscan0FAIL/0WARN; public feed-error systemscan passes budget/focus with documented singleton warnings. Dormant unimported SpotlightCard source finding retained. No live account or financial QA. Evidence design/auteur/qa/integration/; details in decision0091.
+
+## 2026-10-25 — Auteur frontend direction preview (0090, integration pending)
+
+Installed the requested agiwhitelist/auteur skill and followed its system workflow. A new daylight Sports desk direction has a complete existing-screen inventory, proposed component/state contract, commit sheet and responsive interactive mockup under design/auteur/. It covers representative sports/research, account, wallet, terminal, detail, portal, help, original-game frame and login. Local fonts: Archivo/Source Sans3. All preview data is illustrative; no financial operations or credentials are sent.
+
+Prototype checks: slopscan0FAIL/0WARN, systemscan8screenURLs within8button/4link/3input/2select budgets with no focus failures (five documented singleton warnings), browser60/60 at1440/768/390/320. Captures and component sheet reviewed. Review at http://localhost:8770/mockup.html. Auteur requires mockup approval before full integration; that approval and the entire React rollout remain pending. No deployment or replacement of Original/Blue.
+
+## 2026-10-25 — Local Blue filter recovery (0089)
+
+Local Tournament Blue exposes removable active live/date/competition/favorites/search filters beneath its toolbar. Clear-all and empty-state recovery disable live-only as well as the other discovery filters, preserving sport, market view, saved favorites and selected bets. Long query text wraps safely in heading, empty state and controls. Original behavior and production remain unchanged.
+
+Both exports, structure verifier, core 50/50, backend 426/426 and six Node test files pass. Controlled-fixture browser checks 72/72 across 1440/768/390/320 and both themes cover filter recovery, keyboard, expanded markets, public detail, guest login and authenticated selection persistence; no page errors or overflow. Normal export remains Original despite stale Blue query/storage. Detector zero findings; inspector zero FAIL/two inherited micro-label/density warnings on loading captures. Evidence: .impeccable/review/blue-refinement/. Local review at http://localhost:8766; not deployed.
+
+## 2026-10-24 — Improved Original deployed; local Blue completed (0088)
+
+Approved Original is live at https://cadiback-web.vercel.app (Vercel dpl_H9E1yRXUJEV2BFboZBujR19hhNdP). Deployed from a frozen snapshot before Blue changes; backend unchanged. Published 1440/390/320 browser checks confirm Classic, no switch and no page overflow despite old Blue query/storage. Health200; sports200 with320fixtures after one transienttimeout.
+
+Local Tournament Blue follows the pinned sketch: full-width header,218px spanning sidebar, paired highlights, compact filterband and aligned result rows. Build-time flag only, no production toggle. scripts/local_blue.py builds independently and serves http://localhost:8766 with isolated local data. Both export builds, verify, core50/backend426/Node19 pass. Blue guest39/39 and finalauth/popup19/19, no errors/overflow; real localfeed320fixtures. Inspector0FAIL/1WARN for secondarylabeldensity with scoped edge-text exception; all captures viewed. Independent reviewer disposition ship at the scope of3resolvedmaterialfixes plus correctedintroducedmobilepopup. DESIGN/JSON/PRODUCT/surface records updated. No new shipping raster;21inheritedcovermetadata gaps retained.
+
+## 2026-10-24 — Original identity retained
+
+Owner rejected the implemented Blue alternate as insufficiently faithful to the concept and prefers the original identity. Original green/near-black is now the sole active appearance. Removed the Visual selector; saved or linked Blue preferences cannot override Original. Experimental Blue source remains inactive for reference. Theme and existing workflows remain available. No deployment.
+
+## 2026-10-24 — Clubhouse UI rework (0086)
+
+Owner-selected warm consumer identity replaces the green sportsbook look across sports discovery, research, navigation/search, authentication, account, wallet, betslip, data portal and casino. Self-hosted Nunito Sans, warm light/dark surfaces, complete fixture cards, upcoming rail, SVG icons and inline guest entry preserve the existing workflows. Casino price display now shows the supplied prices rather than an unsupported promotional multiplier; empty content and cover fallbacks are simplified.
+
+Production build, structure verifier, core 50, backend 426 and frontend Node suites pass. Responsive browser pass 117/117 at 1440/768/390/320 plus final targeted casino checks 8/8; no page errors/overflow. Design inspector 0 FAIL / 0 WARN with the selected warm palette allowed. Independent reviewer scored all six material fixes and the introduced mobile overlap resolved, disposition ship at that scope. PRODUCT.md, DESIGN.md and .impeccable/design.json capture the system. Existing raster metadata drift is recorded without modifying prior cover assets. No deployment for this redesign. See decision 0086.
+
+## 2026-10-23 - Public market details (0085)
+
+Visitors can open featured or board matches without login, inspect all valid odds and supplied sport-specific stats, see feed source/model labels and last successful update, and save favorites. Authenticated prices retain selection and advanced research. Feed errors, missing data, ended/removed fixtures, keyboard focus restoration and narrow layouts are covered. Existing near-black/green design retained; eight light/dark screenshots reviewed. Build, verify, core 50/50, demo 426/426, Node 19/19 and local browser 81/81 pass. LIVE dpl_6Bqa8pJww6RRU5sFeBR96FwW7aou on cadiback-web.vercel.app. Published frontend browser checks: 81/81 using controlled feed/session responses across 1440/768/390/320; zero page errors. Real production health/sports endpoints return 200 with 320 fixtures. No live account or transaction used.
+
+## 2026-10-23 - Neutral near-black dark theme (0084)
+
+Replaced tinted grounds with neutral near-black/charcoal, gray text and muted sage secondary accents while retaining primary green. Mamyat supplied the layered dark-surface reference. Build, verify, core 50/50, demo 426/426 and 31 responsive browser checks pass; six screenshots reviewed, contrast pairs >=6.54:1. LIVE: Vercel dpl_rzyb581JLPyDTgGHUt4RkPkJ85ex READY at https://cadiback-web.vercel.app. Production page 200; served CSS confirms near-black ground, charcoal panels, neutral ink and retained green accent.
+
+## 2026-10-23 - Responsive market grid (0083)
+
+Replaced stretched table rows with responsive market cards, narrowed desktop navigation, tightened filters, and turned featured markets into a horizontal strip on narrow screens. Green themes and guest login gate retained. Build, verify, core 50/50, demo 426/426, Node 19/19 and 28 local responsive browser checks pass. All six light/dark screenshots reviewed. LIVE Vercel dpl_DfvpJ1TQQ4bzxemr5Ag7rLDU9UHJ on cadiback-web.vercel.app.
+
+## 2026-10-23 - Public market discovery (0082)
+
+Removed public Criar Aposta and duplicate hero; guests see market identity/odds and must log in before selections. Added feed-driven Em alta, green brand in charcoal dark mode, and mobile theme toggle. Build, core 50, demo 426, frontend 19, structure/preflight and 25 local responsive browser checks pass. Six screenshots reviewed. Vercel production dpl_6cecf94ZP3dh6DVMf74eXVqHMg6p READY on cadiback-web.vercel.app. Live browser 25/25 across desktop/tablet/phone, zero page errors; health/sports 200, 320 fixtures. No backend change.
+
+## 2026-10-23 — Compact expanding guest invitation (0081)
+
+The lower-left login invitation is now 240px at rest (account line, chevron, actions) and grows to 340px with the headline and copy on hover for fine pointers; leaving returns it to the compact size. Touch and keyboard use a new `aria-expanded` toggle that pins it open or closed, hover is gated on `(hover: hover) and (pointer: fine)`, the full card is clamped to the viewport on phones, and reduced motion keeps every state without transitions. Removed the old scroll-based compaction. Build, Node 19/19, verify 0, frame 50/50, demo 426/426, 18 local Playwright checks and 11 live checks pass with no page errors. LIVE on Vercel (https://cadiback-gwx84mb1w-memy2.vercel.app → https://cadiback-web.vercel.app). See decision 0081.
+
+## 2026-10-23 — Sports-only public surface and data portal (0080)
+
+The public site now presents as a sports odds site only. Header, mobile nav, footer and metadata no longer name or link the casino; the promos FAQ and account history are sports-only; the casino catalog is fetched only after the neutral "Central de dados" gate is unlocked. The gate is reachable from the top bar, footer, mobile nav or `/#dados`, accepts an operational code (`feed-seguro` by default, `NEXT_PUBLIC_DATA_ACCESS_CODE` at build time) and unlocks the terminal for the browser session. Signed-in casino access and its login gate are unchanged. UI-only boundary; backend rules untouched. Build, Node 19/19, verify 0, frame 50/50, demo 426/426 and a 26-check Playwright pass at 1440/390 all pass with no page errors. LIVE on Vercel deployment https://cadiback-oh6j1r5ac-memy2.vercel.app, aliased to https://cadiback-web.vercel.app: public 200 with the sportsbook title and zero casino mentions in HTML, proxied health ok, 320 Flashscore fixtures, both social providers listed and the protected player route 401; backend unchanged. See decision 0080.
+
+## 2026-10-23 — Richer dark palette and fuller betslip (0079)
+
+Live on Vercel dpl_6sLeU1iH3RpcfUGqXRXYCUZ6R5sg. Deep navy/teal/amber replaces gray-green dark mode. Expanded betslip stake controls, total odds, potential profit, estimated remaining funds, bonus disclosure, rules and receipt selections. Build and focused transaction regression pass; verification scope limited at owner's request. Frontend only; server acceptance rules unchanged.
+
+## 2026-10-23 — Sport-first builder and quieter dark mode (0078)
+
+Published to https://cadiback-web.vercel.app, Vercel dpl_7c4QgEQSXR7yznS8iXAVjqedgz1e. Render server dep-dbdmuj2vcj2c738att10 is live with canonical quote enforcement. Builder now lists all feed sports before events, keeps selected-event detail context, and adapts research/market terminology per sport. Dark mode is darker with softer adjacent contrast and reduced rounding. Build, structure, Node 16, core 50, demo 431, 49 responsive builder assertions and transaction regression pass. Production read-only quote check succeeds with real feed prices. See decision 0078 and CURRENTTASK.
+
 ## 2026-10-23 — Softer dark mode and approved redesign (0077)
 
 Implemented the approved discovery and transaction improvements, retaining Candibet identity. Dark mode uses lighter graphite surfaces and softer accents; compact event highlights and disclosed filters prioritize markets on smaller screens. The board uses one selection per fixture, matching server current-quote validation. Inline errors, explicit changed-price acceptance, server receipts and stable retry identity are covered by tests. Build, structure/preflight, Node 15/15, core 50/50, demo 431/431, responsive 90-check browser pass and transaction browser checks pass. Vercel preview dpl_DHHr1QeE2RgpdHazAa7Y799Jbgcg is READY; production/backend deployment awaits GitHub device authentication. See CURRENTTASK for the publication boundary.

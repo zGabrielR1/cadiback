@@ -1,6 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { statPair, builderMarkets, builderBet, refreshDraft, toggleDraft } from './bet-builder.mjs';
+import { statPair, builderMarkets, builderBet, refreshDraft, toggleDraft, sportProfile } from './bet-builder.mjs';
+
+test('sports use compatible statistics, market groups and feed aliases',()=>{
+  for(const sport of ['basketball','tennis','hockey','football','volleyball','baseball','esports']){
+    const profile=sportProfile(sport);
+    assert(!profile.stats.some(stat=>['yellow_cards','red_cards','corners'].includes(stat.key)));
+    assert(!profile.groups.some(group=>group.kinds.includes('corners')));
+    assert(!profile.total.includes('gols') || sport==='hockey');
+    assert.deepEqual(builderMarkets({sport,markets:[market]},'discipline'),[]);
+  }
+  assert(sportProfile('football').stats.some(stat=>stat.key==='passing_yards'));
+  assert(sportProfile('hockey').stats.some(stat=>stat.key==='saves'));
+  assert(sportProfile('futsal').groups.some(group=>group.id==='discipline'));
+  assert.deepEqual(sportProfile('unknown-sport').stats,[]);
+});
 
 const market = { kind: 'cards', line: 4.5, selections: ['Mais', 'Menos'], prices: [1.8, 2.1] };
 const fixture = { key: 'match-a', home: 'Casa', away: 'Visitante', markets: [market], stats: { yellow_cards: [0, 2] } };
