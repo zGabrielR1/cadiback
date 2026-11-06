@@ -10,6 +10,21 @@ export default function Header({ view, casinoCat, unlocked, liveOnly, query, pro
   const [searchExpanded, setSearchExpanded] = useState(false);
   const header = useRef(null);
   useEffect(() => {
+    const onKey = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k" ||
+          event.altKey || document.querySelector('.modal.open')) return;
+      event.preventDefault();
+      const input = document.getElementById("search");
+      if (input?.getClientRects().length) input.focus();
+      else {
+        setMobileSearch(true);
+        requestAnimationFrame(() => document.getElementById("mobile-search")?.focus());
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => {
     const node = header.current;
     if (!node) return;
     const update = () => document.body.style.setProperty("--header-height", node.getBoundingClientRect().height + "px");
@@ -34,7 +49,7 @@ export default function Header({ view, casinoCat, unlocked, liveOnly, query, pro
         </nav>
         <button className="header-search-toggle" aria-label="Buscar" aria-expanded={mobileSearch} onClick={() => { setMobileSearch((v) => !v); if (!mobileSearch) requestAnimationFrame(() => document.getElementById("mobile-search")?.focus()); }}><UIIcon name="search" size={18} /></button>
         <div className="spacer" />
-        <label className={"header-search" + (searchExpanded ? " search-expanded" : "")} style={{"--search-width": searchResize.size.width + "px"}}><UIIcon name="search" size={17} /><input id="search" onFocus={() => setSearchExpanded(true)} aria-label={view === "casino" ? "Buscar jogos ou provedores" : "Buscar times, ligas ou países"} placeholder={view === "casino" ? "Jogos, provedores…" : "Times, ligas, países…"} value={query} onChange={e => onQuery(e.target.value)} />{query ? <button className="search-clear" aria-label="Limpar busca" onClick={() => { onQuery(""); requestAnimationFrame(() => document.getElementById("search")?.focus()); }}><UIIcon name="close" size={15} /></button> : null}<button type="button" className="search-expand" aria-label={searchExpanded ? "Recolher busca" : "Ampliar busca"} aria-expanded={searchExpanded} onClick={() => setSearchExpanded(value => !value)}><UIIcon name="expand" size={16}/></button><button type="button" className="search-resize" aria-label="Redimensionar busca" title="Arraste ou use as setas para ajustar a largura" {...searchResize.handle} onPointerDown={event => { setSearchExpanded(false); searchResize.handle.onPointerDown(event); }}><UIIcon name="grip" size={14}/></button></label>
+        <label className={"header-search" + (searchExpanded ? " search-expanded" : "")} style={{"--search-width": searchResize.size.width + "px"}}><UIIcon name="search" size={17} /><kbd className="search-shortcut" aria-hidden="true">Ctrl K</kbd><input id="search" aria-keyshortcuts="Control+k Meta+k" onFocus={() => setSearchExpanded(true)} aria-label={view === "casino" ? "Buscar jogos ou provedores" : "Buscar times, ligas ou países"} placeholder={view === "casino" ? "Jogos, provedores…" : "Times, ligas, países…"} value={query} onChange={e => onQuery(e.target.value)} />{query ? <button className="search-clear" aria-label="Limpar busca" onClick={() => { onQuery(""); requestAnimationFrame(() => document.getElementById("search")?.focus()); }}><UIIcon name="close" size={15} /></button> : null}<button type="button" className="search-expand" aria-label={searchExpanded ? "Recolher busca" : "Ampliar busca"} aria-expanded={searchExpanded} onClick={() => setSearchExpanded(value => !value)}><UIIcon name="expand" size={16}/></button><button type="button" className="search-resize" aria-label="Redimensionar busca" title="Arraste ou use as setas para ajustar a largura" {...searchResize.handle} onPointerDown={event => { setSearchExpanded(false); searchResize.handle.onPointerDown(event); }}><UIIcon name="grip" size={14}/></button></label>
         {profile ? <span className="bal">{BRL(profile.available_minor)}{profile.bonus_minor > 0 ? " + " + BRL(profile.bonus_minor) + " bônus" : ""}</span> : null}
         <button className="ghost header-theme" aria-label={theme === "light" ? "Ativar tema escuro" : "Ativar tema claro"} title={theme === "light" ? "Tema escuro" : "Tema claro"} onClick={onTheme}><UIIcon name={theme === "light" ? "moon" : "sun"} size={18} /></button>
         {player ? <button className="ghost header-cash" onClick={onCash}>Depositar</button> : null}

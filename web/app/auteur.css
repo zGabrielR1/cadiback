@@ -1,4 +1,4 @@
-/* Auteur Sports desk — approved 2026-10-25; tokens shared by every authenticated surface. */
+/* Auteur Sports desk — shared tokens; workspace refinement in decision 0107. */
 @font-face{font-family:Archivo;src:url('/fonts/Archivo.woff2') format('woff2');font-weight:100 900;font-display:swap}
 @font-face{font-family:'Source Sans 3';src:url('/fonts/SourceSans3.woff2') format('woff2');font-weight:200 900;font-display:swap}
 html[data-design="auteur"]{--display-font:Archivo,sans-serif;--body-font:'Source Sans 3',sans-serif;--number-font:'Source Sans 3',sans-serif;--paper:oklch(.975 .002 260);--card:oklch(1 0 0);--card2:oklch(.965 .003 260);--field:oklch(1 0 0);--ink:oklch(.22 .012 260);--mut:oklch(.47 .015 260);--line:oklch(.87 .006 260);--acc:oklch(.54 .20 28);--acc-soft:oklch(.965 .015 28);--on-acc:oklch(1 0 0);--chip:oklch(.945 .004 260);--night:oklch(.22 .012 260);--gold:var(--acc);--data-accent:var(--acc);--bad:oklch(.49 .18 28);--bad-soft:oklch(.965 .015 28);--glow:none;accent-color:var(--acc);color-scheme:light}
@@ -21,7 +21,7 @@ html[data-design="auteur"] .topbar{display:none}
 html[data-design="auteur"] .variant-header{position:relative;top:auto;background:var(--card);border-bottom:1px solid var(--line);backdrop-filter:none}
 html[data-design="auteur"] .variant-header .hwrap{max-width:1680px;min-height:88px;padding:16px 32px;gap:28px;flex-wrap:nowrap}
 html[data-design="auteur"] .variant-header .logo{font:800 27px/1 var(--display-font);letter-spacing:-.04em;gap:0;min-width:150px}
-html[data-design="auteur"] .variant-header .logo:before{content:'';width:22px;height:16px;margin-right:12px;background:linear-gradient(var(--acc),var(--acc)) 0 0/22px 5px no-repeat,linear-gradient(var(--acc),var(--acc)) 0 11px/14px 5px no-repeat}
+html[data-design="auteur"] .variant-header .logo:before{content:'';width:22px;height:16px;margin-right:12px;border-top:5px solid var(--acc);border-bottom:5px solid var(--acc);clip-path:polygon(0 0,100% 0,100% 32%,64% 32%,64% 100%,0 100%)}
 html[data-design="auteur"] .variant-header nav.main{gap:24px;align-items:stretch}
 html[data-design="auteur"] .variant-header nav.main button{font:600 15px/1.5 var(--body-font);padding:12px 0;min-height:44px;color:var(--ink);border:0;background:transparent;white-space:nowrap}
 html[data-design="auteur"] .variant-header nav.main button.on{color:var(--acc)}
@@ -530,4 +530,100 @@ html[data-design="auteur"] .casino-feed-state{max-width:760px;margin:32px auto}
 @media(min-width:761px) and (max-width:900px){
 html[data-design="auteur"] .market-detail-grid{grid-template-columns:minmax(0,1fr)}
 html[data-design="auteur"] .market-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* 0107: one framed workspace. At 1440: 196 rail + 24 gutter + flexible
+   board + 24 gutter + 260 research; the remaining 64px are outer gutters. */
+html[data-design="auteur"] .variant-header{background:var(--paper);border-bottom:0}
+html[data-design="auteur"] .variant-header .hwrap{min-height:76px}
+html[data-design="auteur"] .variant-header .header-search{flex:0 1 320px;background:var(--card);min-height:44px}
+html[data-design="auteur"] .search-shortcut{order:2;flex:none;font:12px var(--body-font);color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:2px 5px;white-space:nowrap}
+html[data-design="auteur"] .header-search:focus-within .search-shortcut{display:none}
+html[data-design="auteur"] .header-search .search-expand,
+html[data-design="auteur"] .header-search .search-resize{display:none}
+html[data-design="auteur"] .market-workspace,
+html[data-design="auteur"] .market-workspace.no-highlights{grid-template-columns:172px minmax(0,1fr) 260px;column-gap:24px}
+html[data-design="auteur"] .market-workspace.rail-collapsed{grid-template-columns:52px minmax(0,1fr) 260px}
+html[data-design="auteur"] .sport-rail{background:var(--paper);border:0}
+html[data-design="auteur"] .sport-rail-item[aria-pressed=true]{background:var(--chip);color:var(--ink)}
+html[data-design="auteur"] .workspace-featured{padding:24px 24px 0;background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0}
+html[data-design="auteur"] .ed-board{padding:0 24px 24px;background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px}
+html[data-design="auteur"] .sporthead{align-items:flex-start;gap:16px;margin-bottom:20px}
+html[data-design="auteur"] .sporthead h1{font-size:28px;margin-bottom:6px}
+html[data-design="auteur"] .sporthead .sub{margin:0;font-size:14px;max-width:48ch}
+html[data-design="auteur"] .sportfeed{display:grid;justify-items:end;gap:6px;max-width:160px}
+html[data-design="auteur"] .sportfeed .badge{white-space:nowrap;font-weight:600}
+html[data-design="auteur"] .auteur-scores{gap:16px;padding:12px 0;margin:0 0 24px}
+html[data-design="auteur"] .auteur-scores button{padding:8px;border-radius:6px;border:1px solid transparent;gap:5px}
+html[data-design="auteur"] .auteur-scores button+button:before{display:none}
+html[data-design="auteur"] .auteur-scores button[aria-pressed=true]{border-color:var(--line);background:var(--card2)}
+html[data-design="auteur"] .auteur-scores button:hover{border-color:var(--line)}
+html[data-design="auteur"] .board-section-heading{margin-bottom:16px}
+html[data-design="auteur"] .blue-toolbar{display:grid;grid-template-columns:auto minmax(100px,1fr) minmax(130px,1fr) auto;gap:12px;padding:14px;background:var(--card2);border:1px solid var(--line);border-radius:8px;margin-bottom:20px;align-items:end}
+html[data-design="auteur"] .blue-toolbar>label{font-size:12px;gap:6px}
+html[data-design="auteur"] .blue-toolbar select{width:100%;max-width:none;min-height:42px}
+html[data-design="auteur"] .blue-live-toggle,
+html[data-design="auteur"] .blue-extra-filters summary{min-height:42px;gap:8px}
+html[data-design="auteur"] .blue-extra-filters{margin:0}
+html[data-design="auteur"] .blue-extra-filters[open] summary{background:var(--ink);color:var(--card);border-color:var(--ink)}
+html[data-design="auteur"] .sx-league-head{border-bottom-color:var(--line)}
+html[data-design="auteur"] .sx-odd:not(:disabled):not(.on):hover{border-color:var(--ink);background:var(--card)}
+.auth-brand{display:none}
+html[data-design="auteur"] .auth-brand{display:block;font:750 22px var(--display-font);letter-spacing:-.04em;margin:0 0 24px}
+html[data-design="auteur"] .auth-brand span{color:var(--acc)}
+html[data-design="auteur"] .auth-sheet{max-width:500px;padding:32px;border-radius:12px}
+html[data-design="auteur"] .auth-heading{padding-right:30px;margin-bottom:20px}
+html[data-design="auteur"] .auth-heading h3{font-size:26px;margin:0 0 8px}
+html[data-design="auteur"] .auth-heading .sub{margin:0;font-size:14px}
+html[data-design="auteur"] .auth-mode-nav{margin:0 0 20px;gap:24px}
+html[data-design="auteur"] .auth-mode-nav button{padding:10px 0;border-radius:0;border-bottom:2px solid transparent;font-weight:600;color:var(--mut)}
+html[data-design="auteur"] .auth-mode-nav button[aria-pressed=true]{background:transparent;color:var(--ink);border-color:var(--acc);border-radius:0}
+html[data-design="auteur"] .auth-main .oauth-row{display:grid;grid-template-columns:1fr;gap:8px;margin:0}
+html[data-design="auteur"] .auth-main .oauth-btn{font-size:14px;gap:12px;min-height:46px;position:relative;background:var(--card);color:var(--ink);border-radius:6px}
+html[data-design="auteur"] .auth-main .oauth-btn svg{position:absolute;left:16px}
+html[data-design="auteur"] .auth-main .oauth-btn:hover{background:var(--card2);border-color:var(--mut)}
+html[data-design="auteur"] .auth-divider{display:flex;align-items:center;gap:12px;margin:22px 0;font-size:12px;color:var(--mut)}
+html[data-design="auteur"] .auth-divider:before,
+html[data-design="auteur"] .auth-divider:after{content:'';height:1px;background:var(--line);flex:1}
+html[data-design="auteur"] .auth-field{margin-bottom:16px}
+html[data-design="auteur"] .auth-field input{font-size:16px;border-radius:6px}
+html[data-design="auteur"] .auth-main .remember{margin-bottom:16px}
+html[data-design="auteur"] .auth-main .auth-forgot{margin-bottom:16px}
+html[data-design="auteur"][data-theme=dark]{--paper:#141414;--card:#1b1b1b;--card2:#222;--field:#1b1b1b;--chip:#2b2b2b;--line:#3b3b3b;--ink:#f5f5f5;--mut:#b8b8b8}
+@media(min-width:1001px) and (max-width:1280px){
+  html[data-design="auteur"] .market-workspace,
+  html[data-design="auteur"] .market-workspace.no-highlights{grid-template-columns:132px minmax(0,1fr) 225px;column-gap:20px}
+  html[data-design="auteur"] .market-workspace.rail-collapsed{grid-template-columns:52px minmax(0,1fr) 225px}
+  html[data-design="auteur"] .sporthead{flex-wrap:wrap}
+  html[data-design="auteur"] .sportfeed{display:flex;max-width:none;align-items:center;gap:12px}
+  html[data-design="auteur"] .blue-toolbar{grid-template-columns:auto minmax(90px,1fr) minmax(100px,1fr) auto;gap:8px;padding:12px}
+}
+@media(min-width:761px) and (max-width:1000px){
+  html[data-design="auteur"] .market-workspace,
+  html[data-design="auteur"] .market-workspace.no-highlights,
+  html[data-design="auteur"] .market-workspace.rail-collapsed{grid-template-columns:minmax(0,1fr);grid-template-areas:'tabs' 'featured' 'board' 'research';gap:0}
+  html[data-design="auteur"] .workspace-featured{margin-top:16px}
+  html[data-design="auteur"] .auteur-research{margin-top:24px;width:100%}
+}
+@media(max-width:760px){
+  html[data-design="auteur"] .variant-header .hwrap{min-height:64px}
+  html[data-design="auteur"] .search-shortcut{display:none}
+  html[data-design="auteur"] .workspace-featured{padding:20px 16px 0;margin-top:12px;border-radius:10px 10px 0 0}
+  html[data-design="auteur"] .ed-board{padding:0 16px 20px;border-radius:0 0 10px 10px}
+  html[data-design="auteur"] .sporthead{display:flex;align-items:center;margin-bottom:16px}
+  html[data-design="auteur"] .sporthead h1{font-size:26px}
+  html[data-design="auteur"] .sporthead .sub{display:none}
+  html[data-design="auteur"] .sporthead .sportfeed{display:flex;align-items:center;justify-content:flex-start;gap:10px;max-width:none;margin:0}
+  html[data-design="auteur"] .sporthead .sportfeed>span:not(.badge){display:none}
+  html[data-design="auteur"] .auteur-scores{display:none}
+  html[data-design="auteur"] .auteur-scores button{padding:8px 4px}
+  html[data-design="auteur"] .blue-toolbar{grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+  html[data-design="auteur"] .blue-toolbar>label{grid-row:1;min-width:0}
+  html[data-design="auteur"] .blue-live-toggle{grid-row:2;width:100%}
+  html[data-design="auteur"] .blue-extra-filters{grid-row:2;width:100%}
+  html[data-design="auteur"] .blue-extra-filters summary{justify-content:center}
+  html[data-design="auteur"] .blue-extra-filters>div{bottom:auto;top:calc(100% + 8px)}
+  html[data-design="auteur"] .auth-sheet{width:100%;padding:24px 20px;max-height:calc(100dvh - 24px)}
+  html[data-design="auteur"] .auth-brand{font-size:20px;margin-bottom:20px}
+  html[data-design="auteur"] .auth-heading h3{font-size:24px}
 }

@@ -106,8 +106,8 @@ export default function AccountModal({
     </div>
   );
   const socialRow = (isLogin || isRegister) && oauthProviders.length > 0 ? (
+    <div className="auth-social-section" role="group" aria-label="Acesso com uma conta social">
     <div className="oauth-row">
-      <span className="oauth-note">ou continue com</span>
       {oauthProviders.map((p) => (
         <button
           key={p.id}
@@ -120,6 +120,8 @@ export default function AccountModal({
           <span>Continuar com {p.label}</span>
         </button>
       ))}
+    </div>
+    <div className="auth-divider"><span>{isLogin ? "ou entre com seus dados" : "ou preencha seus dados"}</span></div>
     </div>
   ) : null;
   return (
@@ -141,9 +143,11 @@ export default function AccountModal({
         </aside>
         <div className="auth-main">
         <button type="button" className="auth-close" aria-label="Fechar acesso à conta" onClick={onClose}>×</button>
-        <div className="auth-heading"><h3>{isLogin ? 'Bom ter você de volta.' : title}</h3><p className="sub">{subtitle}</p></div>
+        <div className="auth-brand" aria-hidden="true">candi<span>bet</span></div>
+        <div className="auth-heading"><h3>{isLogin ? 'Entre na sua conta.' : title}</h3><p className="sub">{subtitle}</p></div>
         {(isLogin || isRegister) ? <div className="auth-mode-nav" aria-label="Tipo de acesso"><button type="button" aria-pressed={isLogin} onClick={() => onMode('login')}>Entrar</button><button type="button" aria-pressed={isRegister} onClick={() => onMode('register')}>Criar conta</button></div> : null}
-        <form onSubmit={event => { event.preventDefault(); onSubmit(); }}>
+        {socialRow}
+        <form aria-busy={!!busy} onSubmit={event => { event.preventDefault(); onSubmit(); }}>
         {isLogin ? (
           <>
             {field("identifier", "Usuário, email, CPF ou CNPJ", {
@@ -350,7 +354,6 @@ export default function AccountModal({
                     ? "Enviar link"
                     : "Redefinir senha"}
         </button>
-        {socialRow}
         {secretFilled ? (
           <p className="fhint" style={{ marginTop: 8 }} role="status">
             {isLogin

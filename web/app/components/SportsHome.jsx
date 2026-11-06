@@ -436,6 +436,15 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
     };
   }, []);
   const [focusedKey, setFocusedKey] = useState(null);
+  const extraFilters = useRef(null);
+  useEffect(() => {
+    const closeOutside = (event) => {
+      const panel = extraFilters.current;
+      if (panel?.open && !panel.contains(event.target)) panel.open = false;
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, []);
   const detailOrigin = useRef(null);
   const detailScroll = useRef(0);
   const openDetail = key => { detailOrigin.current = document.activeElement; detailScroll.current = window.scrollY; navigateMatch(key); setDetailKey(key); window.scrollTo({top:0,behavior:'instant'}); };
@@ -601,7 +610,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
     {builderOpen ? <BetBuilder key={builderKey} fixtures={fixtures} initialKey={builderKey} query={query} source={sports?.source} loading={loading} error={error} updatedAt={updatedAt} onRetry={onRetry} onUseSingleBet={onUseSingleBet} onBack={closeBuilder} /> : <div className={"sports-board-layout market-workspace" + (railCollapsed ? " rail-collapsed" : "") + (showFeatured ? "" : " no-highlights")} data-feed-state={!sports || !fixtures.length ? "empty" : "ready"} onClick={onExplore}>
       <section className="workspace-featured" aria-label="Partidas em destaque">
         {design === "blue" || design === "auteur" ? boardHeading : null}
-        {design === "auteur" && shown.length > 0 && !query && !favoritesOnly ? <div className="auteur-scores" aria-label="Placares em destaque">{shown.filter(f => matchState(f).selectable).slice(0,3).map(f => <button key={f.key} onClick={() => setFocusedKey(f.key)}><span><b>{isLive(f) ? liveLabel(f, nowMs) || "Ao vivo" : kickLabel(f.kickoff)}</b> {f.competition}</span><strong>{f.home}<b>{isLive(f) ? f.home_score ?? "—" : "—"}</b></strong><strong>{f.away}<b>{isLive(f) ? f.away_score ?? "—" : "—"}</b></strong></button>)}</div> : null}
+        {design === "auteur" && shown.length > 0 && !query && !favoritesOnly ? <div className="auteur-scores" aria-label="Placares em destaque">{shown.filter(f => matchState(f).selectable).slice(0,3).map(f => <button key={f.key} aria-pressed={focus?.key === f.key} aria-label={`Destacar ${f.home} e ${f.away}`} onClick={() => setFocusedKey(f.key)}><span><b>{isLive(f) ? liveLabel(f, nowMs) || "Ao vivo" : kickLabel(f.kickoff)}</b> {f.competition}</span><strong>{f.home}<b>{isLive(f) ? f.home_score ?? "—" : "—"}</b></strong><strong>{f.away}<b>{isLive(f) ? f.away_score ?? "—" : "—"}</b></strong></button>)}</div> : null}
         {showFeatured ? <div className="market-trends"><div className="market-trends-heading"><h2>{design === "blue" ? "Em campo hoje" : "Próximos jogos"}</h2><p>Ao vivo e próximos jogos com cotações disponíveis.</p></div><div className="market-trends-grid">{featured.map(f => {
           const market = pricedMarkets(f).find(m => PRIMARY_KINDS.has(m.kind)) || pricedMarkets(f)[0];
           const live = isLive(f);
@@ -645,7 +654,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
               <button className={"blue-live-toggle" + (liveOnly ? " on" : "")} aria-pressed={!!liveOnly} onClick={() => onLive?.(!liveOnly)}>Ao vivo</button>
               <label>Mercado<select value={marketView} onChange={e=>setMarketView(e.target.value)}><option value="result">Resultado</option><option value="total">Total</option><option value="btts">Ambas marcam</option><option value="corners">Escanteios</option><option value="cards">Cartões</option></select></label>
               <label>Quando<select value={date} onChange={e=>setDate(e.target.value)}><option value="all">Todas as datas</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="upcoming">Próximas partidas</option><option value="results">Resultados</option></select></label>
-              <details className="blue-extra-filters"><summary>Filtros{league || favoritesOnly ? " · ativos" : ""}</summary><div>
+              <details ref={extraFilters} className="blue-extra-filters" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary><UIIcon name="filter" size={16} />Filtros{league || favoritesOnly ? " · ativos" : ""}</summary><div>
                 <label>Competição<select value={league} onChange={e=>setLeague(e.target.value)}><option value="">Todas as competições</option>{leagues.map(l=><option key={l}>{l}</option>)}</select></label>
                 <button className="ghost" aria-pressed={favoritesOnly} onClick={()=>setFavoritesOnly(v=>!v)}>Favoritos ({favorites.length})</button>
                 <button className="ghost" onClick={resetFilters}>Limpar filtros</button>
