@@ -2,6 +2,8 @@
 
 A high-fidelity 1:1 hobby simulation of a modern sports betting and online casino platform created for personal usage and testing.
 
+**Live interface:** https://cadiback-web.vercel.app
+
 ## What this is
 
 A complete, self-contained personal hobby platform:
