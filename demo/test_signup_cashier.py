@@ -64,7 +64,7 @@ class SignupCashierTest(unittest.TestCase):
             self.manual(person_type="invalid")
 
     def test_both_social_providers_skip_document_username_password_and_pix_forms(self):
-        for provider in ("google", "facebook"):
+        for provider in ("google", "facebook", "twitter"):
             row = self.social(provider, email=f"{provider}@example.com")
             self.assertFalse(row["needs_profile"])
             self.assertEqual(row["document_validation"], "not_requested")

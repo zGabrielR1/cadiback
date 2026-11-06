@@ -26,6 +26,7 @@ export const PROVIDERS = [
   { id: "google", label: "Google" },
   { id: "facebook", label: "Facebook" },
   { id: "apple", label: "Apple" },
+  { id: "twitter", label: "X" },
 ];
 
 const LABELS = Object.fromEntries(PROVIDERS.map((p) => [p.id, p.label]));
@@ -46,6 +47,9 @@ export function enabledProviders(env = process.env) {
   if (present(env.APPLE_CLIENT_ID) && present(env.APPLE_TEAM_ID) &&
       present(env.APPLE_KEY_ID) && present(env.APPLE_PRIVATE_KEY)) {
     ids.push("apple");
+  }
+  if (present(env.TWITTER_CLIENT_ID) && present(env.TWITTER_CLIENT_SECRET)) {
+    ids.push("twitter");
   }
   return ids;
 }
@@ -104,8 +108,10 @@ function mapProfile(provider) {
       profile?.sub || profile?.id || profile?.user_id || "",
     );
     // Apple only sends `email` on the first consent; Facebook may omit it.
-    // A reserved `.invalid` placeholder keeps Better Auth's optional email
-    // requirement satisfied without pretending it is a real inbox.
+    // X OAuth 2.0 also omits email (no `user.email` in the v2 user object by
+    // default). A reserved `.invalid` placeholder keeps Better Auth's
+    // optional email requirement satisfied without pretending it is a real
+    // inbox; the stable numeric id still links the wallet.
     const email = profile?.email ||
       (subject ? `${subject}@${provider}.placeholder.invalid` : "");
     return {
@@ -152,6 +158,17 @@ export async function createAuth(env = process.env) {
         : {}),
       mapProfileToUser: mapProfile("apple"),
     }),
+    twitter: {
+      clientId: env.TWITTER_CLIENT_ID,
+      clientSecret: env.TWITTER_CLIENT_SECRET,
+      // X login only needs identity: stable user id (+ name) for linking.
+      // Ask for nothing beyond what login requires (tweet/users read is
+      // what X requires to identify the user, offline.access keeps the
+      // OAuth session honest) so we never request like/write/follow scope.
+      disableDefaultScope: true,
+      scope: ["tweet.read", "users.read", "offline.access"],
+      mapProfileToUser: (profile) => mapProfile("twitter")(profile?.data),
+    },
   };
   for (const id of Object.keys(socialProviders)) {
     if (!ids.includes(id)) delete socialProviders[id];

@@ -1006,7 +1006,7 @@ class Demo:
 
     # ---- social login (Better Auth, decision 0066) ----
     PROVIDER_LABELS = {"google": "Google", "facebook": "Facebook",
-                       "apple": "Apple"}
+                       "apple": "Apple", "twitter": "X"}
 
     def oauth_enabled(self) -> bool:
         """True when the signed bridge is configured.

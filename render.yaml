@@ -92,7 +92,7 @@ services:
       # .env.supabase. Never put the URL in this file.
       - key: DATABASE_URL
         sync: false
-      # Better Auth social login — Google/Facebook/Apple + CPF (decision 0066,
+      # Better Auth social login — Google/Facebook/Apple/X + CPF (decision 0066,
       # docs/oauth.md). A small Node sidecar runs beside the Python server and
       # owns the provider credentials; the backend only verifies the signed
       # identity bridge. Optional: with no provider credentials the sidecar
@@ -108,7 +108,7 @@ services:
       - key: BETTER_AUTH_INTERNAL_PORT
         value: "3100"
       - key: BETTER_AUTH_PROVIDERS
-        value: google,facebook,apple
+        value: google,facebook,apple,twitter
       - key: BETTER_AUTH_SECRET
         sync: false
       - key: BETTER_AUTH_BRIDGE_SECRET
@@ -130,6 +130,10 @@ services:
       - key: APPLE_KEY_ID
         sync: false
       - key: APPLE_PRIVATE_KEY
+        sync: false
+      - key: TWITTER_CLIENT_ID
+        sync: false
+      - key: TWITTER_CLIENT_SECRET
         sync: false
       # Player-session signing key (decision 0069, docs/sessions.md). Optional:
       # when absent the key is derived from BETTER_AUTH_SECRET, so the live

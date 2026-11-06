@@ -7,7 +7,7 @@
     "foundry/auth/session.py": "55122fcb7e77aa889a0bc06f5105edf77ffa38d66a452a1413625322839ec440",
     "foundry/betterauth/__init__.py": "75c13879212785c0e550473be8768b140f1e92f4b22a7f48fd1855ba5429aea8",
     "foundry/betterauth/bridge.py": "ff573956b4863951e57cf6b044a4d75b9fdd094889c9d142df335cb9ef96d94c",
-    "foundry/betterauth/config.py": "6be8c5aa9c76c046c6ce3e19f01868a5763a19243633745fb7413105a9f32472",
+    "foundry/betterauth/config.py": "cb10a1f4ca44bee53ec54c6b030df693ef10c5b53125af726e3e6d9e6c15d033",
     "foundry/envfile.py": "9a2d8c96090c97035e5e31ca0b726b41b9a30060bf8a3dfecaf0f03fe9179d3d",
     "foundry/mail/__init__.py": "89bb8bee62468c08411893afd4030439dddcd6f13d82284f7d28869456888f23",
     "foundry/mail/mailer.py": "f9d4235a5a989eeb7cecf69e214fe342c8cfd0fd2a25d579a28b31ad6a161d12",
@@ -21,13 +21,14 @@
     "templates/auth/README.md": "5e95ca00aaff3ed71cb64923b63d7148e21e13bfca232e61e19fc1e750453271",
     "templates/auth/env.example": "75660ed1bf430a48c8aba18d11092106da73ead50aa8691513ea4e2b42a9d6c9",
     "templates/auth/session.js": "2d70e44a83b5b9f64fee3ee10f776d65ec5095950523c8ca64134ff47748c43f",
-    "templates/betterauth/README.md": "cc2dd51e3a94ec11c721457d6812668bc6c832ca54dad8665cec66731d65135b",
+    "templates/betterauth/README.md": "f7fa58dc75a84d097ba2cf904b456c9fd764395fcf4f59fab6ece14d1631653d",
     "templates/betterauth/apple.test.mjs": "b53af782b10f8a46ad714ba513116c1c0d1cce7848bdaccbd216e6f8ca87a5e1",
-    "templates/betterauth/auth.mjs": "984b8b1756ad5bacf4339bc5801afb30188c0b0e11d136b18993cd429259c4a8",
+    "templates/betterauth/auth.mjs": "fc1070816cd06e44a5837e2f6f437bc2a77db5f123683e420b710c6ac13e3acc",
     "templates/betterauth/client.js": "15937b630ea7cde71bfa3ec6c35d0b3c4da85d4f42b029f24151f10bcb270bd3",
-    "templates/betterauth/env.example": "d7c8b987f9ee7665c0c11c6138869c0350d50e97eed5407efef5336f7948719c",
+    "templates/betterauth/env.example": "81b34a847f209904907ef761339eaad226bb367c631ff8fa858afc971f6467af",
     "templates/betterauth/package.json": "bb46cee9d56568e46257daa957e776cb70d7b104de8fa9dce8f9fffe677a5df7",
-    "templates/betterauth/server.mjs": "c479f42d5843fe5f4a9033bf65d8a49e16207cd13622395e5465896f298351ad"
+    "templates/betterauth/server.mjs": "c479f42d5843fe5f4a9033bf65d8a49e16207cd13622395e5465896f298351ad",
+    "templates/betterauth/twitter.test.mjs": "75be0990d1044bb725c9ba555bedfededc41cc9b29cdaca901807119d3d09dec"
   },
   "kit": "foundry",
   "modules": [

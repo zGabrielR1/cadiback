@@ -3980,6 +3980,22 @@ class BetterAuthTest(unittest.TestCase):
         again = demo.social_bridge(body, signature)
         self.assertEqual(demo.oauth_session(again["token"])["player_id"], profile["player_id"])
 
+    def test_x_withheld_email_links_by_subject_alone(self):
+        demo = self._demo(providers=("google", "facebook", "apple", "twitter"))
+        placeholder = "12345@twitter.placeholder.invalid"
+        body, signature = _signed(_social(provider="twitter", subject="12345", email=placeholder, name="X User"))
+        result = demo.social_bridge(body, signature)
+        profile = demo.oauth_session(result["token"])
+        self.assertEqual(profile["email"], placeholder)
+        self.assertFalse(profile["pix_registered"])
+        self.assertEqual(demo.oauth_links.read_all()["twitter:12345"], profile["player_id"])
+        again = demo.social_bridge(body, signature)
+        self.assertEqual(demo.oauth_session(again["token"])["player_id"], profile["player_id"])
+        status = demo.oauth_status("https://app.example")
+        self.assertIn({"id": "twitter", "label": "X"}, status["providers"])
+        self.assertEqual(status["callback_urls"]["twitter"],
+                         "https://app.example/api/betterauth/callback/twitter")
+
     def test_a_forged_or_stale_claim_is_refused_before_any_link(self):
         demo = self._demo()
         body, signature = _signed(_social())

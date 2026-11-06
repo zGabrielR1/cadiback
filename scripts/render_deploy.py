@@ -236,6 +236,7 @@ BETTERAUTH_KEYS = (
     "FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET",
     "APPLE_CLIENT_ID", "APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY",
     "APPLE_APP_BUNDLE_IDENTIFIER",
+    "TWITTER_CLIENT_ID", "TWITTER_CLIENT_SECRET",
 )
 
 
@@ -244,18 +245,19 @@ def _first_line(path: str) -> str:
         return handle.read().strip().splitlines()[0].strip()
 
 
-def _from_env_file(*, want_key: bool) -> str:
+def _from_env_file(*, want_key: bool, path: str | None = None) -> str:
     """The key or the repo out of the repository's own `.env.render`.
 
     Holds either a bare line or a `NAME=value` pair; the last matching pair
     wins so the file can carry both credentials and neither can shadow the
     other by position.
     """
-    if not os.path.isfile(ENV_FILE):
+    path = path or ENV_FILE
+    if not os.path.isfile(path):
         return ""
     names = ("RENDER_API_KEY",) if want_key else ("RENDER_REPO",)
     found = ""
-    for line in open(ENV_FILE, encoding="utf-8"):
+    for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -264,7 +266,7 @@ def _from_env_file(*, want_key: bool) -> str:
             found = value.strip()
     if not found and want_key:
         # a bare line: the key on its own, which is how this file started
-        line = _first_line(ENV_FILE)
+        line = _first_line(path)
         found = line if line.startswith("rnd_") else ""
     return found
 
@@ -273,7 +275,9 @@ def read_key() -> str:
     """The Render key: environment, .env.local, legacy file, then home file."""
     for value in (os.environ.get("RENDER_API_KEY", "").strip(),
                   _env_pairs(LOCAL_ENV_FILE).get("RENDER_API_KEY", ""),
+                  _env_pairs(os.path.join(ROOT, "envs", ".env.local")).get("RENDER_API_KEY", ""),
                   _from_env_file(want_key=True),
+                  _from_env_file(want_key=True, path=os.path.join(ROOT, "envs", ".env.render")),
                   _first_line(KEY_FILE) if os.path.isfile(KEY_FILE) else ""):
         if value:
             return value

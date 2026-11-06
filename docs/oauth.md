@@ -1,6 +1,6 @@
 # Social login (Better Auth) — runbook
 
-Google, Facebook and Apple sign-in for players. New social accounts sign in
+Google, Facebook, Apple and X sign-in for players. New social accounts sign in
 directly, with no CPF/username/password form; the first withdrawal collects a
 Pix key (decision 0072). Better Auth (a TypeScript library we run ourselves)
 owns the OAuth dance; the Python backend owns the wallet. Nothing is sent to
@@ -64,6 +64,7 @@ them.
 | `APPLE_TEAM_ID` / `APPLE_KEY_ID` | no | Apple developer team and key identifiers |
 | `APPLE_PRIVATE_KEY` | **yes** | the `.p8` contents, newlines as `\n` |
 | `APPLE_APP_BUNDLE_IDENTIFIER` | no | optional, only for native iOS ID-token sign-in |
+| `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET` | secret | X (Better Auth provider id `twitter`) OAuth 2.0 Client ID / Client Secret, confidential client |
 
 A provider with incomplete credentials is simply not offered. An unconfigured
 rail is a normal state, not an error.
@@ -74,8 +75,10 @@ Register **every** public host with each provider, exactly:
 
 - `https://cadiback.onrender.com/api/betterauth/callback/google`
 - `https://cadiback-web.vercel.app/api/betterauth/callback/google`
-- the same for `facebook` and `apple`
-- local (Google/Facebook only): `http://127.0.0.1:8765/api/betterauth/callback/google`
+- the same for `facebook`, `apple` and `twitter` (X — the Better Auth
+  provider id is `twitter`, the storefront label is `X`). X wants
+  `127.0.0.1` for local, not `localhost`.
+- local (Google/Facebook/X): `http://127.0.0.1:8765/api/betterauth/callback/google`
 
 `GET /api/health` reports `betterauth.callback_urls` computed from the host you
 called, so there is no guessing. A mismatch is a provider-side
@@ -116,6 +119,25 @@ Apple requires a paid developer account and HTTPS — it does **not** accept
 
 Apple sends the email only on the first consent. The stable `sub` is what
 links the wallet afterwards.
+
+### X (Twitter)
+
+The app must be a Web App **confidential client**
+with OAuth 2.0 enabled and Read permission.
+
+1. developer.x.com → Projects & Apps → Create App → Web App, confidential
+   client, OAuth 2.0 enabled, Read. Website URL:
+   `https://cadiback-web.vercel.app`.
+2. Scopes: `tweet.read users.read offline.access` (login needs nothing
+   more — no like/write/follow scope).
+3. Callback URLs (exact match, max 10): add both production hosts from
+   **Register the callbacks** above plus the local `127.0.0.1` one.
+4. Keys and tokens → OAuth 2.0 Client ID / Client Secret. Save
+   `TWITTER_CLIENT_ID` and `TWITTER_CLIENT_SECRET` in `.env.local`.
+   (Public clients have no secret — pick confidential.)
+5. This integration does not request email access. The template writes a reserved `.invalid`
+   placeholder and links on the stable numeric user id, like
+   Facebook/Apple.
 
 ## How the flow behaves
 

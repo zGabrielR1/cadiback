@@ -80,17 +80,22 @@ the steps below and set `PG_PUBLIC_HOST=pg.<your-domain>`
 
 </details>
 
-## 4. Better Auth — paste the three provider credentials
+## 4. Better Auth — paste the provider credentials
 
 Social login now runs on **Better Auth**, self-hosted in the container; the
 Authgear dependency is gone. The wiring, the sidecar, the signed bridge and
-the CPF flow are done and verified locally. What is still needed is the three
+the CPF flow are done and verified locally. What is still needed is the
 providers' own credentials, which only your accounts can issue:
 
 - **Google**: configured and live. Both production callbacks are registered; credentials are saved in `.env.local`. Real sign-in reached the CPF-completion step.
 - **Facebook**: credentials are saved in `.env.local` and configured in Render; both production callbacks are registered. Approve adding the existing app's `email` permission to resolve Meta's `Invalid Scopes: email` error. This is the only additional permission requested. The app remains in development mode, so access is limited to its app roles/testers until publication.
 - **Apple**: Services ID, Team ID, Key ID, and the `.p8` private key (a paid
   Apple Developer account is required; Apple does not accept `localhost`).
+- **X (Twitter)**: Basic project + Web App confidential client is live
+  (`TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET` in `.env.local` and
+  Render). Register both production callbacks as `.../callback/twitter`
+  (Better Auth provider id; label `X`) plus
+  `http://127.0.0.1:8765/api/betterauth/callback/twitter` for local.
 
 Put them in the gitignored root `.env.local` (existing auth and bridge secrets
 are retained there), then run `python scripts/render_deploy.py --yes`.

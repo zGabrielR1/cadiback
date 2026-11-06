@@ -1,11 +1,29 @@
 """A deploy must never truncate dashboard-only credentials."""
 import unittest
+import os
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts import render_deploy as deploy
 
 
 class EnvironmentPaginationTest(unittest.TestCase):
+    def test_render_key_in_envs_directory_and_export_override(self):
+        with tempfile.TemporaryDirectory() as root:
+            envs = Path(root, "envs")
+            envs.mkdir()
+            for content in ("rnd_example", "RENDER_API_KEY=rnd_example\n"):
+                (envs / ".env.render").write_text(content)
+                with patch.object(deploy, "ROOT", root), \
+                        patch.object(deploy, "LOCAL_ENV_FILE", str(Path(root, ".env.local"))), \
+                        patch.object(deploy, "ENV_FILE", str(Path(root, ".env.render"))), \
+                        patch.object(deploy, "KEY_FILE", str(Path(root, "missing"))), \
+                        patch.dict(os.environ, {}, clear=True):
+                    self.assertEqual(deploy.read_key(), "rnd_example")
+                    with patch.dict(os.environ, {"RENDER_API_KEY": "rnd_exported"}):
+                        self.assertEqual(deploy.read_key(), "rnd_exported")
+
     def test_all_pages_survive_merge(self):
         first = [{"envVar": {"key": f"K{i}", "value": str(i)},
                   "cursor": f"c{i}"} for i in range(100)]

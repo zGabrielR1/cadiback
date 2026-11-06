@@ -17,6 +17,7 @@ export const PROVIDERS = [
   { id: "google", label: "Google" },
   { id: "facebook", label: "Facebook" },
   { id: "apple", label: "Apple" },
+  { id: "twitter", label: "X" },
 ];
 
 const LABELS = Object.fromEntries(PROVIDERS.map((p) => [p.id, p.label]));
@@ -36,6 +37,9 @@ export function enabledProviders(env = process.env) {
   if (present(env.APPLE_CLIENT_ID) && present(env.APPLE_TEAM_ID) &&
       present(env.APPLE_KEY_ID) && present(env.APPLE_PRIVATE_KEY)) {
     ids.push("apple");
+  }
+  if (present(env.TWITTER_CLIENT_ID) && present(env.TWITTER_CLIENT_SECRET)) {
+    ids.push("twitter");
   }
   return ids;
 }
@@ -123,6 +127,13 @@ export async function createAuth(env = process.env) {
         : {}),
       mapProfileToUser: mapProfile("apple"),
     }),
+    twitter: {
+      clientId: env.TWITTER_CLIENT_ID,
+      clientSecret: env.TWITTER_CLIENT_SECRET,
+      disableDefaultScope: true,
+      scope: ["tweet.read", "users.read", "offline.access"],
+      mapProfileToUser: (profile) => mapProfile("twitter")(profile?.data),
+    },
   };
   for (const id of Object.keys(socialProviders)) {
     if (!ids.includes(id)) delete socialProviders[id];

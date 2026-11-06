@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from ..envfile import first, load_env
 
 DEFAULT_ENV_FILE = ".env.betterauth"
-DEFAULT_PROVIDERS = ("google", "facebook", "apple")
+DEFAULT_PROVIDERS = ("google", "facebook", "apple", "twitter")
 DEFAULT_INTERNAL_URL = "http://127.0.0.1:3100"
 
 

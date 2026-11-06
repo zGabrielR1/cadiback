@@ -24,10 +24,11 @@ Provider credentials never reach the Python process.
 
 | File | What it is |
 |---|---|
-| `auth.mjs` | `createAuth(env)`: stateless Better Auth, dynamic base URL, Google/Facebook/Apple, optional infrastructure dashboard |
+| `auth.mjs` | `createAuth(env)`: stateless Better Auth, dynamic base URL, Google/Facebook/Apple/X, optional infrastructure dashboard |
 | `server.mjs` | the Node HTTP adapter, `GET /providers`, `GET /health`, `GET /bridge` |
 | `client.js` | a dependency-free `socialSignIn(provider)` helper |
 | `apple.test.mjs` | Apple's client-secret JWT (claims, key parsing) with a throwaway P-256 key |
+| `twitter.test.mjs` | X enablement (both values present → offered as `X`) |
 | `env.example` | every key, with the console steps |
 | `package.json` | the three dependencies (`better-auth`, `jose`, `@better-auth/infra`) plus `npm test` |
 
@@ -41,7 +42,9 @@ Provider credentials never reach the Python process.
 4. Register **every public host** with each provider, at the exact callback:
    - `https://<render-host>/api/betterauth/callback/google`
    - `https://<vercel-host>/api/betterauth/callback/google`
-   - the same for `facebook` and `apple`
+   - the same for `facebook`, `apple` and `twitter` (X)
+   - X local: `http://127.0.0.1:8765/api/betterauth/callback/twitter`
+     (X wants `127.0.0.1`, not `localhost`)
 5. Run the server on a loopback port and have the host's web server proxy
    `/api/betterauth/*` to it. `basePath` is `/api/betterauth`; the proxy must
    preserve the browser's cookies and answer with every `Set-Cookie`.
@@ -78,6 +81,14 @@ those paths back, move the provider subject behind a database hook instead.
   under Apple's six-month limit). Apple sends `email` only on the first
   consent; the stable `sub` is what links an account afterwards. Apple does
   not accept `localhost` or plain HTTP for return URLs.
+- **X (Twitter)**: `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET`, a Web App
+  confidential client with OAuth 2.0 enabled (Basic tier or higher; Free
+  cannot do user login). Redirect is `.../callback/twitter` (Better Auth's
+  provider id; the storefront label is `X`). Scopes are
+  `tweet.read users.read offline.access`. X OAuth 2.0 omits email; the
+  template writes a reserved `.invalid` placeholder and links on the
+  stable numeric user id. X wants `127.0.0.1` (not `localhost`) for the
+  local callback.
 - **Infrastructure dashboard** (optional): set `BETTER_AUTH_API_KEY`
   (`ba_…`). `@better-auth/infra` is loaded dynamically; a missing package or
   a bad key logs a warning and never breaks sign-in.
