@@ -1,6 +1,6 @@
 # 0107 — Sports workspace and account refinement
 
-Date: 2026-11-06. Status: verified locally; deployment in progress.
+Date: 2026-11-06. Status: deployed and verified on Render.
 
 ## Scope
 
@@ -54,5 +54,23 @@ Local evidence is in ignored `.taste-skill/`.
 
 ## Deployment
 
-Pending publication and live smoke checks. No schema or backend behavior
-change; existing X/Google/Facebook configuration is preserved.
+Published commits `45436e1` and `075a8a6` to origin/main. Final Render
+deployment `dep-dbmt95bncjis73afh2p0` is live at
+<https://cadiback.onrender.com> with commit `075a8a6`.
+
+An additional breakpoint sweep caught legacy sidebar visibility fighting
+the grid at 1100px. The fix explicitly pairs desktop rail visibility with
+the desktop grid. All eight widths (1440/1280/1100/1001/1000/768/390/320)
+now retain useful matching board/header widths with no horizontal overflow;
+rail collapse expands the board wherever that control is visible. Signup
+and password-recovery mode layouts also checked in the controlled browser.
+
+Live Playwright confirms the new account heading, provider-first layout,
+Google/Facebook/X buttons and search shortcut. Both public hosts still pass
+root/health/providers, guest-player 401 and X authorization-start checks.
+No schema or backend behavior change; existing auth configuration is preserved.
+
+The separate Vercel frontend was not republished: the saved token cannot
+access the recorded project, its dashboard session is signed out and the
+Windows native pipe is unavailable. These visual changes are live on Render;
+Vercel continues using its prior frontend and the updated shared auth backend.
