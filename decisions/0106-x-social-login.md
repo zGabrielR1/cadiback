@@ -1,7 +1,7 @@
 # 0106 — X (Twitter) social login
 
-Date: 2026-11-05. Status: **implemented; locally verified, not deployed** (provider callbacks to
-register in the X portal; live sign-in pending).
+Date: 2026-11-05. Status: **deployed 2026-11-06; live authorization start verified**
+(full account consent/callback completion pending).
 
 Follows 0066 (Better Auth sidecar) and 0072 (direct social signup).
 Requested X login; owner has an X Developer Basic account.
@@ -90,3 +90,30 @@ handoff and `ps1.…` session are untouched.
   stopped before any remote mutation because no Render API key is available
   on this machine. X client credentials are present in ignored `.env.local`.
 - Live consent and provider callback registration remain unverified.
+
+## Production release 2026-11-06
+
+- Located the saved Render API key in ignored `envs/.env.render`; added
+  that location and `envs/.env.local` to key discovery, with a regression
+  for both bare and named keys and exported-key precedence (4 deploy tests).
+- Published scoped commit `e793262` to `origin/main`; unrelated sports,
+  recent-cache, tooling deletions and feed-cache changes remain local.
+- Render deployment `dep-dbms3pk7j7js73bgtlm0` is **live** with X credentials
+  and `BETTER_AUTH_PROVIDERS=google,facebook,twitter`. Existing dashboard
+  settings were merged; existing auth signing/provider secrets matched local
+  values before deployment. The earlier automatic code deployment used the
+  old env; verification waited for the follow-up env deployment.
+- Both `https://cadiback.onrender.com` and
+  `https://cadiback-web.vercel.app` return 200 for root, health and provider
+  discovery, offer X alongside Google/Facebook, and return 401 for guest
+  `/api/player`. OAuth start returns 200 with `x.com`, each host's exact
+  `/api/betterauth/callback/twitter`, the three configured scopes and S256.
+- Playwright clicked the actual X login button on both storefronts and
+  reached X authorization; Vercel flow displayed “Entrar no X para continuar.”
+  No real account consent, account creation or wallet mutation was performed.
+- Render serves the rebuilt frontend including the X icon. No separate
+  Vercel frontend publication was possible: the saved Vercel token cannot
+  access the recorded project, Playwright dashboard is signed out and the
+  Windows computer-use native pipe is unavailable. The existing Vercel
+  frontend dynamically exposes X and its live redirect was verified.
+- Repeat HTTP checks with `python scripts/check_x_deployment.py`.
