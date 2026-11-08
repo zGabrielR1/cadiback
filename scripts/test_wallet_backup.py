@@ -43,11 +43,25 @@ class BackupValidationTest(unittest.TestCase):
                          {'runtime:books': {'postings': []}})
 
     def test_partial_cutover_is_never_replaced_with_empty_books(self):
-        for name in ('runtime:rounds', 'promos', 'crash_pending', 'crypto_charges', 'publisher_state'):
+        for name in ('runtime:rounds', 'promos', 'crash_pending', 'crypto_charges', 'asaas_charges', 'publisher_state'):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 make_backup({name: self.payload.get(name, {})}, allow_empty=True)
 
-    def test_crypto_and_publisher_state_are_preserved_in_private_backup_files(self):
+    def test_asaas_charges_validate_and_reject_partial_cutovers(self):
+        payload = deepcopy(self.payload)
+        payload['asaas_charges'] = {'pix-9': {'deposit_id': 'pix-9', 'player': 'p',
+                                               'amount_minor': 200, 'provider_ref': 'pay_9',
+                                               'provider_status': 'PENDING', 'posted': False}}
+        backup = make_backup(payload)
+        self.assertEqual(validate(json.loads(json.dumps(backup)))['asaas_charges']['pix-9']['provider_ref'], 'pay_9')
+        with self.assertRaises(ValueError):
+            make_backup({'asaas_charges': payload['asaas_charges']}, allow_empty=True)
+        broken = deepcopy(payload)
+        broken['asaas_charges']['pix-9']['amount_minor'] = -1
+        with self.assertRaises(ValueError):
+            make_backup(broken)
+
+    def test_crypto_publisher_and_asaas_state_are_preserved_in_private_backup_files(self):
         payload = deepcopy(self.payload)
         payload['crypto_charges'] = {'invoice': {'deposit_id': 'invoice', 'player': 'p',
                                                 'amount_minor': 200, 'provider_ref': 'ref', 'posted': False}}
@@ -105,6 +119,18 @@ class BackupValidationTest(unittest.TestCase):
             for name in ('promos', 'crash_pending'):
                 (root / (name + '.json')).write_text(json.dumps(self.payload[name]))
             self.assertEqual(validate(load_files(root)), self.payload)
+
+    def test_legacy_file_import_preserves_asaas_charges(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'books.jsonl').write_text('\n'.join(
+                json.dumps(row) for row in self.payload['runtime:books']['postings']))
+            (root / 'rounds.jsonl').write_text(json.dumps(self.payload['runtime:rounds']['rows'][0]))
+            (root / 'asaas_charges.json').write_text(json.dumps(
+                {'pix-9': {'deposit_id': 'pix-9', 'player': 'p', 'amount_minor': 200,
+                           'provider_ref': 'pay_9', 'posted': False}}))
+            loaded = validate(load_files(root))
+            self.assertEqual(loaded['asaas_charges']['pix-9']['provider_ref'], 'pay_9')
 
     def test_check_command_validates_offline_without_loading_database_libraries(self):
         with tempfile.TemporaryDirectory() as directory:

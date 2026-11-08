@@ -7,6 +7,7 @@ Uses DATABASE_URL via the same local/env discovery as the server. No DSN is prin
 """
 import argparse
 from copy import deepcopy
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -15,7 +16,8 @@ from pathlib import Path
 from demo.wallet_snapshot import validate_postings
 from demo.publisher_state import decode_state
 
-NAMES = ("runtime:books", "runtime:rounds", "promos", "crash_pending", "crypto_charges", "publisher_state")
+NAMES = ("runtime:books", "runtime:rounds", "promos", "crash_pending",
+         "crypto_charges", "asaas_charges", "publisher_state")
 
 
 def digest(payload):
@@ -55,6 +57,18 @@ def validate(backup):
                     or row['amount_minor'] <= 0 or type(row.get('posted')) is not bool \
                     or not isinstance(row.get('provider_ref'), str):
                 raise ValueError('invalid crypto invoice')
+    if 'asaas_charges' in payload:
+        charges = payload['asaas_charges']
+        if not isinstance(charges, dict):
+            raise ValueError('invalid Asaas invoices')
+        for reference, row in charges.items():
+            if not isinstance(reference, str) or not reference or not isinstance(row, dict) \
+                    or row.get('deposit_id') != reference or not isinstance(row.get('player'), str) \
+                    or not row['player'] or type(row.get('amount_minor')) is not int \
+                    or row['amount_minor'] <= 0 or type(row.get('posted')) is not bool \
+                    or not isinstance(row.get('provider_ref'), str) \
+                    or not isinstance(row.get('provider_status', 'PENDING'), str):
+                raise ValueError('invalid Asaas invoice')
     return payload
 
 
@@ -70,11 +84,30 @@ def make_backup(payload, *, allow_empty=False):
 
 
 def export_wallet(factory, *, allow_empty=False):
-    from sqlalchemy import select
-    from demo.models import IdentityDocument
+    from sqlalchemy import inspect, select
+    from demo.models import AsaasCharge, IdentityDocument
     with factory() as db:
         payload = {row.name: deepcopy(row.data) for row in db.scalars(
             select(IdentityDocument).where(IdentityDocument.name.in_(NAMES)))}
+        asaas_rows = db.scalars(select(AsaasCharge).order_by(AsaasCharge.deposit_id)).all() \
+            if inspect(db.bind).has_table('asaas_charges') else []
+    if asaas_rows:
+        payload['asaas_charges'] = {
+            row.deposit_id: {
+                'deposit_id': row.deposit_id,
+                'player': row.player,
+                'amount_minor': int(row.amount_minor),
+                'provider_ref': row.provider_ref or '',
+                'provider_status': row.provider_status or '',
+                'qr_text': str((row.qr_payload or {}).get('qr_text') or ''),
+                'copy_paste': str((row.qr_payload or {}).get('copy_paste') or ''),
+                'qr_base64': str((row.qr_payload or {}).get('qr_base64') or ''),
+                'created_at': str((row.qr_payload or {}).get('created_at') or ''),
+                'posted': bool(row.posted),
+                'paid_at': (row.paid_at.isoformat(timespec='seconds')
+                            if getattr(row, 'paid_at', None) else ''),
+            } for row in asaas_rows
+        }
     return make_backup(payload, allow_empty=allow_empty)
 
 
@@ -86,7 +119,8 @@ def load_files(directory):
     payload = {"runtime:books": {"postings": rows('books.jsonl')},
                "runtime:rounds": {"rows": rows('rounds.jsonl')}}
     for name, filename in (("promos", "promos.json"), ("crash_pending", "crash_pending.json"),
-                           ("crypto_charges", "crypto_charges.json")):
+                           ("crypto_charges", "crypto_charges.json"),
+                           ("asaas_charges", "asaas_charges.json")):
         path = directory / filename
         if path.exists():
             payload[name] = json.loads(path.read_text(encoding='utf-8'))
@@ -96,14 +130,40 @@ def load_files(directory):
 
 
 def restore_wallet(factory, backup):
-    from sqlalchemy import select
-    from demo.models import IdentityDocument
+    from sqlalchemy import inspect, select
+    from demo.models import AsaasCharge, IdentityDocument
     payload = validate(backup)
     with factory.begin() as db:
         if db.scalar(select(IdentityDocument.name).where(IdentityDocument.name.in_(NAMES)).limit(1)):
             raise ValueError("destination already has wallet documents; restore refused")
+        has_asaas_table = inspect(db.bind).has_table('asaas_charges')
+        if has_asaas_table and db.scalar(select(AsaasCharge.deposit_id).limit(1)):
+            raise ValueError('destination already has Asaas charges; restore refused')
+        documents = {name: data for name, data in payload.items() if name != 'asaas_charges'}
         db.add_all(IdentityDocument(name=name, data=deepcopy(data), revision=0)
-                   for name, data in payload.items())
+                   for name, data in documents.items())
+        if not has_asaas_table:
+            if payload.get('asaas_charges'):
+                raise ValueError('destination has no asaas_charges table; restore refused')
+            return
+        for reference, row in (payload.get('asaas_charges') or {}).items():
+            paid_at = str(row.get('paid_at') or '')
+            db.add(AsaasCharge(
+                deposit_id=reference,
+                player=str(row.get('player') or ''),
+                amount_minor=int(row.get('amount_minor') or 0),
+                provider_ref=str(row.get('provider_ref') or ''),
+                provider_status=str(row.get('provider_status') or ''),
+                qr_payload={
+                    'qr_text': str(row.get('qr_text') or ''),
+                    'copy_paste': str(row.get('copy_paste') or ''),
+                    'qr_base64': str(row.get('qr_base64') or ''),
+                    'created_at': str(row.get('created_at') or ''),
+                },
+                posted=bool(row.get('posted')),
+                paid_at=(datetime.fromisoformat(paid_at)
+                         if paid_at else None),
+            ))
 
 
 def write_backup(target, backup):

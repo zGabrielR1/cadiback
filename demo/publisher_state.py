@@ -1,9 +1,73 @@
 """Portable publisher state and wallet-transaction orchestration."""
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 from functools import wraps
+import time
 
 FIELDS = ('wallet_tokens', 'rgs_sessions', 'rgs_rounds', 'pragmatic_books')
+
+# Publisher bearer tokens are bearer sessions for adjacent wallet movement.
+# Wallet launch must explicitly refresh in-game; unresolved rows are evicted
+# after this horizon instead of replaying for weeks.
+PUBLISHER_TOKEN_TTL_SECONDS = 24 * 60 * 60
+
+
+def _parse_instant(value):
+    try:
+        instant = datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+    return instant if instant.tzinfo is not None else instant.replace(tzinfo=timezone.utc)
+
+
+def token_expired(row, *, now=None, ttl_seconds=PUBLISHER_TOKEN_TTL_SECONDS):
+    issued_at = _parse_instant(row.get('issued_at') if isinstance(row, dict) else None)
+    if issued_at is None:
+        return True
+    instant = now if now is not None else datetime.now(timezone.utc)
+    if isinstance(instant, (int, float)):
+        instant = datetime.fromtimestamp(instant, tz=timezone.utc)
+    return instant - issued_at >= timedelta(seconds=ttl_seconds)
+
+
+def cleanup_state(tokens, sessions, rounds, pragmatic, *, now=None, ttl_seconds=PUBLISHER_TOKEN_TTL_SECONDS):
+    """Drop expired tokens and orphaned sessions/rounds; returns the pruned copy."""
+    preserved = []
+    for token, row in (tokens or {}).items():
+        if isinstance(row, dict) and not token_expired(row, now=now, ttl_seconds=ttl_seconds):
+            preserved.append(token)
+    live = set(preserved)
+    live_sessions = {key: value for key, value in (sessions or {}).items() if value in live}
+    live_rounds = {key: deepcopy(value) for key, value in (rounds or {}).items() if key in live_sessions}
+    return {
+        'tokens': {token: deepcopy(tokens[token]) for token in preserved},
+        'sessions': live_sessions,
+        'rounds': live_rounds,
+        'pragmatic': deepcopy(pragmatic or {}),
+    }
+
+
+def prune_expired(demo, *, now=None, ttl_seconds=PUBLISHER_TOKEN_TTL_SECONDS):
+    """Evict expired tokens and their bindings/rounds in place.
+
+    Only top-level keys are popped: inner records keep their identity, so a
+    caller holding e.g. the Pragmatic baseline dict across nested publisher
+    calls cannot lose in-flight updates such as the sequence counter.
+    Returns the counts evicted.
+    """
+    expired = {token for token, row in (demo.wallet_tokens or {}).items()
+               if not isinstance(row, dict) or token_expired(row, now=now, ttl_seconds=ttl_seconds)}
+    for token in expired:
+        demo.wallet_tokens.pop(token, None)
+        demo.pragmatic_books.pop(token, None)
+    for key in list(demo.rgs_sessions):
+        if demo.rgs_sessions[key] in expired:
+            demo.rgs_sessions.pop(key, None)
+    for key in list(demo.rgs_rounds):
+        if key not in demo.rgs_sessions:
+            demo.rgs_rounds.pop(key, None)
+    return len(expired)
 
 
 def decode_state(data):

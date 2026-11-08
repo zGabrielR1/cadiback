@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { filterFixtures, betIdentity, validMarkets, matchState } from "../../lib/sports.mjs";
+import { alertKey, biggestMovers, driftAlerts, snapshotPrices } from "../../lib/odds-drift.mjs";
 import BetBuilder from "./BetBuilder";
 import MarketDetail from "./MarketDetail";
 import OddsButton from "./OddsButton";
@@ -492,6 +493,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
       } catch {}
     };
     const sync = event => { if (event.key === "candi-sport-favorites" || event.key === null) read(); };
+
     read();
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
@@ -534,6 +536,22 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
   }, [sports]);
 
   const savedInFeed = useMemo(() => fixtures.filter(f => favorites.includes(f.key)), [fixtures, favorites]);
+  // Odds drift on favorites (real-time strip inside the app, no push) + live ticker
+  const prevPrices = useRef(null);
+  const [driftBanner, setDriftBanner] = useState([]);
+  const [movers, setMovers] = useState([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState([]);
+  useEffect(() => {
+    if (!fixtures?.length) return;
+    const snap = snapshotPrices(fixtures);
+    if (prevPrices.current) {
+      const favSet = new Set(favorites);
+      const all = driftAlerts(prevPrices.current, snap, { fixtures });
+      setMovers(biggestMovers(prevPrices.current, snap, { fixtures }));
+      setDriftBanner(all.filter(a => favSet.has(JSON.parse(a.id)[0])));
+    }
+    prevPrices.current = snap;
+  }, [fixtures]); // favorites read at render time for the banner
   const discoveryPool = favoritesOnly ? savedInFeed : fixtures;
   const liveCount = discoveryPool.filter(isLive).length;
   const sportPool = liveOnly ? discoveryPool.filter(isLive) : discoveryPool;
@@ -603,6 +621,12 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
   const focus = shown.find(f => f.key === focusedKey) || shown[0];
   const focusMarket = focus ? pricedMarkets(focus)[0] : null;
   const showFeatured = design !== "auteur" && !liveOnly && !query && !favoritesOnly && featured.length > 0;
+  const driftStrip = (
+    <>
+      {movers.length ? <div className="odds-ticker" aria-label="Maiores movimentações de cotação"><strong>Ao vivo</strong>{movers.map(m => <span key={m.id} className="odds-ticker-item">{m.home} × {m.away} <b className={m.direction === "up" ? "up" : "down"}>{m.direction === "up" ? "▲" : "▼"} {Math.abs(m.deltaPct)}%</b> @{m.after.toFixed(2)}</span>)}</div> : null}
+      {driftBanner.filter(a => !dismissedAlerts.includes(alertKey(a))).length ? <div className="drift-banner" role="status"><strong>Movimentos nos seus favoritos</strong>{driftBanner.filter(a => !dismissedAlerts.includes(alertKey(a))).slice(0, 5).map(a => <span key={alertKey(a)}>{a.home} × {a.away}: {a.before.toFixed(2)} → {a.after.toFixed(2)} <button aria-label="Dispensar alerta" onClick={() => setDismissedAlerts(prev => [...prev, alertKey(a)])}>×</button></span>)}</div> : null}
+    </>
+  );
   const boardHeading = <div className="sporthead"><div><h1>{favoritesOnly ? "Suas partidas favoritas" : liveOnly ? "Mercados ao vivo" : query ? "Resultados da busca" : design === "auteur" ? (activeSport ? meta(activeSport).label : "Esportes") : design === "blue" ? "O jogo começa nos números." : "Mercados esportivos"}</h1><p className="sub">{favoritesOnly ? `Favoritos neste calendário: ${savedInFeed.length} de ${favorites.length} salvos neste navegador.` : liveOnly ? "Partidas em andamento, placares e cotações." : query ? `Resultados para “${query}” · ${activeSport ? meta(activeSport).label : "todos os esportes"}.` : "Escolha o esporte, encontre a partida e consulte suas cotações."}</p></div><div className="sportfeed">{sports ? <><span className="badge b-ok">{liveCount} ao vivo</span><span>{loading ? "Atualizando… · " : ""}Fonte: {sports.source}{updatedAt ? " · " + new Date(updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span><button type="button" className="feed-refresh" aria-label="Atualizar partidas" disabled={loading} onClick={onRetry}>{loading ? "Atualizando…" : "Atualizar"}</button></> : <span>{error ? "Fonte temporariamente indisponível" : "Carregando partidas…"}</span>}</div></div>;
 
   return <>
@@ -610,6 +634,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
     {builderOpen ? <BetBuilder key={builderKey} fixtures={fixtures} initialKey={builderKey} query={query} source={sports?.source} loading={loading} error={error} updatedAt={updatedAt} onRetry={onRetry} onUseSingleBet={onUseSingleBet} onBack={closeBuilder} /> : <div className={"sports-board-layout market-workspace" + (railCollapsed ? " rail-collapsed" : "") + (showFeatured ? "" : " no-highlights")} data-feed-state={!sports || !fixtures.length ? "empty" : "ready"} onClick={onExplore}>
       <section className="workspace-featured" aria-label="Partidas em destaque">
         {design === "blue" || design === "auteur" ? boardHeading : null}
+        {driftStrip}
         {design === "auteur" && shown.length > 0 && !query && !favoritesOnly ? <div className="auteur-scores" aria-label="Placares em destaque">{shown.filter(f => matchState(f).selectable).slice(0,3).map(f => <button key={f.key} aria-pressed={focus?.key === f.key} aria-label={`Destacar ${f.home} e ${f.away}`} onClick={() => setFocusedKey(f.key)}><span><b>{isLive(f) ? liveLabel(f, nowMs) || "Ao vivo" : kickLabel(f.kickoff)}</b> {f.competition}</span><strong>{f.home}<b>{isLive(f) ? f.home_score ?? "—" : "—"}</b></strong><strong>{f.away}<b>{isLive(f) ? f.away_score ?? "—" : "—"}</b></strong></button>)}</div> : null}
         {showFeatured ? <div className="market-trends"><div className="market-trends-heading"><h2>{design === "blue" ? "Em campo hoje" : "Próximos jogos"}</h2><p>Ao vivo e próximos jogos com cotações disponíveis.</p></div><div className="market-trends-grid">{featured.map(f => {
           const market = pricedMarkets(f).find(m => PRIMARY_KINDS.has(m.kind)) || pricedMarkets(f)[0];
@@ -645,6 +670,7 @@ export default function SportsHome({ sports, liveOnly, onSelectBet, onUseSingleB
       <div className="workspace-tabs sx-sports" aria-label="Escolher esporte"><button className={"sx-tab" + (!activeSport ? " on" : "")} aria-pressed={!activeSport} aria-label="Todos os esportes" onClick={() => chooseSport("all")}><UIIcon name="data" size={19}/><span>Todos</span><span className="sx-tab-count">{sportPool.length}</span></button>{navSports.map(item => <button className={"sx-tab" + (item === activeSport ? " on" : "")} aria-pressed={item === activeSport} key={item} onClick={() => chooseSport(item)}><SportIcon sport={item} size={19} /><span>{meta(item).label}</span><span className="sx-tab-count">{sportPool.filter(f => (f.sport || "soccer") === item).length}</span></button>)}
       {sportsShown.length > 5 ? <button className="mobile-sport-more" aria-expanded={moreSports} onClick={() => setMoreSports(value => !value)}>{moreSports ? "Menos esportes" : "Outros esportes"}</button> : null}</div>
       <main id="sports-board" className="ed-board" tabIndex={-1}>
+        {driftStrip}
         {design === "classic" ? boardHeading : sports ? <div className="board-section-heading"><h2>{liveOnly ? "Partidas ao vivo" : "Todas as partidas"}</h2><span>{shown.length} partidas</span></div> : null}
         <p className="sr-only" role="status">{shown.length} partidas encontradas.</p>
         {design === "classic" ? guestInvitation : null}

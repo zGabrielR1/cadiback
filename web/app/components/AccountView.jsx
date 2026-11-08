@@ -145,6 +145,25 @@ export default function AccountView({ profile, player, health, history, fullAcce
   const [excludeNotice, setExcludeNotice] = useState("");
   const [excludeError, setExcludeError] = useState("");
   const [liftOpen, setLiftOpen] = useState(false);
+  const [limitDraft, setLimitDraft] = useState({ deposit_daily_minor: "", bet_daily_minor: "", session_minutes: "" });
+  const [limitBusy, setLimitBusy] = useState(false);
+  const [limitNotice, setLimitNotice] = useState("");
+  const responsible = profile?.responsible;
+  const saveLimits = async () => {
+    if (limitBusy) return;
+    setLimitBusy(true); setLimitNotice("");
+    try {
+      const payload = {};
+      for (const [key, value] of Object.entries(limitDraft)) {
+        payload[key] = value === "" ? null : Number(value) * 100;
+        if (key === "session_minutes" && value !== "") payload[key] = Number(value);
+        if (payload[key] !== null && (!Number.isFinite(payload[key]) || payload[key] <= 0)) throw new Error("Valores devem ser positivos.");
+      }
+      const res = await api("POST", "/api/player/limits", payload);
+      setLimitNotice("Limites salvos: " + (res.limits ? "depósito " + (res.limits.deposit_daily_minor ? BRL(res.limits.deposit_daily_minor) : "sem limite") + ", apostas " + (res.limits.bet_daily_minor ? BRL(res.limits.bet_daily_minor) : "sem limite") : ""));
+      if (onChanged) onChanged();
+    } catch (e) { setLimitNotice(e.message); } finally { setLimitBusy(false); }
+  };
 
   const exclusionUntil = () => {
     if (excludeDuration === "permanent") return "2099-12-31";
@@ -253,6 +272,17 @@ export default function AccountView({ profile, player, health, history, fullAcce
             Reativar acesso
           </button>
         )}
+        {responsible && responsible.in_cooldown ? <p className="account-notice" role="status">Período de resfriamento após autoexclusão até {when(responsible.cooldown_until)} — transações bloqueadas.</p> : null}
+        <div className="account-limits">
+          <h3>Limites diários</h3>
+          <p className="sub">Heute: depositado {BRL(responsible?.today?.deposited_minor || 0)} · apostado {BRL(responsible?.today?.staked_minor || 0)} · saldo líquido {BRL(Math.abs(responsible?.today?.net_minor || 0))}.</p>
+          <label>Limite de depósito (R$)<input inputMode="decimal" value={limitDraft.deposit_daily_minor} onChange={e => setLimitDraft(v => ({ ...v, deposit_daily_minor: e.target.value }))} placeholder={responsible?.limits?.deposit_daily_minor ? BRL(responsible.limits.deposit_daily_minor) : "sem limite"} /></label>
+          <label>Limite de apostas (R$)<input inputMode="decimal" value={limitDraft.bet_daily_minor} onChange={e => setLimitDraft(v => ({ ...v, bet_daily_minor: e.target.value }))} placeholder={responsible?.limits?.bet_daily_minor ? BRL(responsible.limits.bet_daily_minor) : "sem limite"} /></label>
+          <label>Tempo máximo de sessão (minutos)<input inputMode="numeric" value={limitDraft.session_minutes} onChange={e => setLimitDraft(v => ({ ...v, session_minutes: e.target.value }))} placeholder={responsible?.limits?.session_minutes || "sem limite"} /></label>
+          <button className="ghost" disabled={limitBusy || !player} onClick={saveLimits}>{limitBusy ? "Salvando…" : "Salvar limites"}</button>
+          {limitNotice ? <p className="account-notice" role="status">{limitNotice}</p> : null}
+        </div>
+        {profile?.player_token_expires_at ? <p className="sub">Esta sessão expira em {when(profile.player_token_expires_at)}.</p> : null}
         {excludeNotice ? <p className="account-notice" role="status">{excludeNotice}</p> : null}
         {excludeError ? <p className="account-notice err" role="alert">{excludeError}</p> : null}
       </section>

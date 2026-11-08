@@ -20,7 +20,12 @@ Wallet backup/export/restore now includes optional `crypto_charges` and `publish
 
 New backup files use exclusive creation and mode 0600 on POSIX because publisher tokens are bearer credentials. Both manual and pre-deploy backups validate the written file. Existing files are not overwritten.
 
-This remains a wallet/runtime backup, not a complete identity/provider database backup: the separate `asaas_charges` SQL table is not exported by this utility. Existing publisher token lifetime/cleanup rules are unchanged. Provider request deduplication beyond journal settlement keys still needs review.
+This remains a wallet/runtime backup, not a complete identity/provider database backup: the separate `asaas_charges` SQL table is exported by this utility now (full metadata: provider reference/status/QR payload, proof of posting, paid timestamp), restores refuse a destination with existing wallet documents or Asaas charges, and a backup carrying Asaas rows requires the `asaas_charges` table on restore. Existing publisher token lifetime is 24 h (see below); provider request deduplication covers explicit `idempotency_key` on Pix/crypto creates plus deposit-id idempotency and provider `Idempotency-Key: dep:{txid}` headers.
+
+## Publisher session expiry and provider deduplication
+
+- Bearer wallet tokens older than `PUBLISHER_TOKEN_TTL_SECONDS` (24 h) are refused by `_wallet_session`/`wallet_owner`, and `prune_expired` evicts them together with their RGS bindings/rounds and Pragmatic baselines. Pruning only pops expired top-level keys in place, so nested publisher operations keep their in-flight state objects (notably the Pragmatic sequence counter).
+- `create_pix_deposit`/`create_crypto_deposit` accept `idempotency_key`: a retry with the same key returns the existing invoice; reuse with different player/amount is refused. The key is stored on the charge row (file rows and the `asaas_charges.qr_payload`) so dedup survives restarts and backups. Providers also receive `Idempotency-Key: dep:{txid}`; confirm/webhook settlement stays idempotent through journal keys.
 
 ## Verification
 

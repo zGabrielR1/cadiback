@@ -1053,6 +1053,16 @@ export default function Page() {
     }
   };
 
+  const promoOptOut = async (optOut) => {
+    if (!player) { setAcctOpen(true); return; }
+    setBusy(true);
+    try {
+      await api("POST", "/api/player/promo-optout", { opt_out: optOut });
+      setNotice({ ok: true, text: optOut ? "Promoções desativadas." : "Promoções reativadas." });
+      await refresh();
+    } catch (e) { setNotice({ ok: false, text: e.message }); } finally { setBusy(false); }
+  };
+
   const removeBet = (b) => {
     if (slipRequest.current) return;
     setSelectedBets(prev=>prev.filter(x=>betIdentity(x)!==betIdentity(b)));
@@ -1303,7 +1313,7 @@ export default function Page() {
         ) : null}
 
         {view === "promos" ? (
-          <PromosView profile={profile} player={player} busy={busy} onClaim={claim} />
+          <PromosView profile={profile} player={player} busy={busy} onClaim={claim} onOptOut={promoOptOut} />
         ) : null}
 
         {view === "admin" ? (

@@ -80,7 +80,8 @@ from . import behaviour
 from .crash_state import crash_operation
 from .wallet_operation import durable_wallet_operation
 from .db_context import session_scope
-from .publisher_state import publisher_method, publisher_operation
+from .publisher_state import (PUBLISHER_TOKEN_TTL_SECONDS, publisher_method,
+                              publisher_operation, prune_expired, token_expired)
 from .sports_quotes import SportsQuoteError, quote_legs, require_same_prices
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
@@ -1193,6 +1194,85 @@ class Demo:
         return {"player": player_id, "lifted": lifted,
                 "active": self.exclusions.active(player_id)}
 
+    # -- responsible play (decision 0110): per-player daily limits --------
+    def _player_limits(self, player_id: str) -> dict:
+        row = (self.players.read_all().get(player_id) or {})
+        limits = row.get("limits") if isinstance(row, dict) else None
+        return dict(limits) if isinstance(limits, dict) else {}
+
+    def _staked_today(self, player_id: str) -> int:
+        day = datetime.now(timezone.utc).date().isoformat()
+        total = 0
+        for row in self.history(player_id, limit=10000):
+            if str(row.get("ts", "")).startswith(day):
+                total += int(row.get("stake_minor") or 0)
+        return total
+
+    def responsible_view(self, player_id: str) -> dict:
+        limits = self._player_limits(player_id)
+        day = datetime.now(timezone.utc).date().isoformat()
+        staked = self._staked_today(player_id)
+        payouts = 0
+        for row in self.history(player_id, limit=10000):
+            if str(row.get("ts", "")).startswith(day):
+                payouts += int(row.get("payout_minor") or 0)
+        cooldown = self.exclusions.cooldown_until(player_id)
+        return {
+            "limits": {
+                "deposit_daily_minor": limits.get("deposit_daily_minor"),
+                "bet_daily_minor": limits.get("bet_daily_minor"),
+                "session_minutes": limits.get("session_minutes"),
+            },
+            "today": {
+                "deposited_minor": self._deposited_today(player_id),
+                "staked_minor": staked,
+                "net_minor": payouts - staked,
+            },
+            "excluded": self.exclusions.active(player_id),
+            "excluded_until": self.exclusions.self_declared.get(player_id),
+            "cooldown_until": cooldown.isoformat(timespec="seconds") if cooldown else None,
+            "in_cooldown": self.exclusions.in_cooldown(player_id),
+        }
+
+    def set_limits(self, player_id: str, payload: dict) -> dict:
+        """Set (or clear with null) the player's own daily limits."""
+        data = self.players.read_all()
+        row = data.get(player_id)
+        if not isinstance(row, dict):
+            raise KeyError(f"unknown player: {player_id}")
+
+        def clean(name):
+            value = payload.get(name)
+            if value in (None, ""):
+                return None
+            amount = int(value)
+            if amount <= 0:
+                raise ValueError(f"{name} must be positive")
+            return amount
+
+        row["limits"] = {
+            "deposit_daily_minor": clean("deposit_daily_minor"),
+            "bet_daily_minor": clean("bet_daily_minor"),
+            "session_minutes": clean("session_minutes"),
+        }
+        data[player_id] = row
+        self.players.write_all(data)
+        view = self.responsible_view(player_id)
+        view["player"] = player_id
+        return view
+
+    def _assert_player_limits(self, player_id: str, *, deposit_amount: int | None = None,
+                              stake_amount: int | None = None) -> None:
+        limits = self._player_limits(player_id)
+        if deposit_amount is not None:
+            cap = limits.get("deposit_daily_minor")
+            if cap is not None and self._deposited_today(player_id) + deposit_amount > int(cap):
+                raise ValueError("limite diário de depósito atingido")
+        if stake_amount is not None:
+            cap = limits.get("bet_daily_minor")
+            if cap is not None and self._staked_today(player_id) + stake_amount > int(cap):
+                raise ValueError("limite diário de apostas atingido")
+
     # -- players ------------------------------------------------------
     # Credential material never leaves the store: profile() strips every
     # secret field, so a new secret only needs to be added to
@@ -1607,6 +1687,7 @@ class Demo:
         profile["available_minor"] = self.books.available(player_id)
         profile["bonus_minor"] = self.books.bonus_available(player_id)
         profile["bonus"] = self._bonus_view(player_id)
+        profile["responsible"] = self.responsible_view(player_id)
         return profile
 
     # -- signed player sessions (decisions 0069, 0070) ------------------
@@ -1672,6 +1753,12 @@ class Demo:
         if not self.player_devices.touch(session):
             # the row is gone: this device was logged out (0070)
             raise AuthError(PLAYER_SESSION_REFUSED)
+        limits = self._player_limits(session.player_id)
+        minutes = limits.get("session_minutes")
+        if minutes:
+            age = time.time() - max(0, int(getattr(session, "issued_at", 0) or 0))
+            if age > int(minutes) * 60:
+                raise AuthError(PLAYER_SESSION_REFUSED)
         return session
 
     def player_from_token(self, token: str) -> str:
@@ -1873,6 +1960,16 @@ class Demo:
                         "win_rate_percent": rate}
 
 
+    def set_promo_optout(self, player_id: str, opt_out: bool) -> dict:
+        """Opt in/out of promotions (decision 0110). State rides the promo
+        store, so it survives restarts and restores."""
+        state = self._promo_state(player_id)
+        state["promo_optout"] = bool(opt_out)
+        if player_id not in self.players.read_all():
+            raise KeyError(f"unknown player: {player_id}")
+        self._save_promo_state(player_id, state)
+        return {"player": player_id, "opt_out": bool(opt_out)}
+
     def claim_bonus(self, payload: dict) -> dict:
         player_id = payload["player"]
         kind = payload.get("kind")
@@ -1883,6 +1980,8 @@ class Demo:
         self.exclusions.assert_playable(player_id)
         with self.books.lock:
             state = self._promo_state(player_id)
+            if state.get("promo_optout"):
+                raise ValueError("promoções desativadas para esta conta")
             bonus = self.books.bonus_available(player_id)
             active = self._active_event(state)
             if active is not None and bonus > 0:
@@ -1975,6 +2074,7 @@ class Demo:
                 cashback >= CASHBACK_MIN_MINOR and day not in cashback_days
                 and not blocked),
             "active": active,
+            "opt_out": bool(state.get("promo_optout")),
             "event": None,
         }
         if event is not None:
@@ -1986,6 +2086,7 @@ class Demo:
                 "wagered_minor": wagered,
                 "target_minor": target,
                 "percent": min(100, wagered * 100 // target) if target else 100,
+                "remaining_minor": max(0, target - wagered),
                 "converted": bool(event.get("converted")),
             }
         return view
@@ -2037,6 +2138,7 @@ class Demo:
                 return {"seq": None, "replayed": True,
                         "available_minor": self.books.available(player_id)}
             today = self._deposited_today(player_id)
+            self._assert_player_limits(player_id, deposit_amount=amount)
             breached = self.limits.breached(deposit_today=today + amount)
             if breached:
                 raise ValueError(f"limit breached: {', '.join(breached)}")
@@ -2154,6 +2256,7 @@ class Demo:
             "copy_paste": str(qr.get("copy_paste") or ""),
             "qr_base64": str(qr.get("qr_base64") or ""),
             "created_at": str(qr.get("created_at") or ""),
+            "idempotency_key": str(qr.get("idempotency_key") or ""),
             "posted": bool(record.posted),
             "paid_at": (record.paid_at.isoformat(timespec="seconds")
                         if record.paid_at else ""),
@@ -2195,6 +2298,7 @@ class Demo:
                         "copy_paste": str(row.get("copy_paste") or ""),
                         "qr_base64": str(row.get("qr_base64") or ""),
                         "created_at": str(row.get("created_at") or ""),
+                        "idempotency_key": str(row.get("idempotency_key") or ""),
                     },
                     posted=bool(row.get("posted")),
                     paid_at=(datetime.fromisoformat(paid_at)
@@ -2234,7 +2338,32 @@ class Demo:
         if method != "pix":
             raise ValueError("o depósito Asaas é Pix — escolha o método Pix")
         deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
+        # An explicit client idempotency key wins over the deposit id and
+        # survives retries/restore: row metadata carries key+payload hash.
+        client_key = str(payload.get("idempotency_key") or "").strip()
         with self._asaas_lock:
+            # key lookup: find by stored idempotency key first
+            if client_key:
+                found = None
+                if self._pg is None:
+                    for _did, _row in self.asaas_charges.items():
+                        if _row.get("idempotency_key") == client_key:
+                            found = (_did, _row)
+                            break
+                else:
+                    from sqlalchemy import select as _select
+                    from .models import AsaasCharge
+                    with session_scope(self._pg) as _session:
+                        for _rec in _session.scalars(_select(AsaasCharge)):
+                            _r = self._charge_to_row(_rec)
+                            if _r.get("idempotency_key") == client_key:
+                                found = (_r["deposit_id"], _r)
+                                break
+                if found:
+                    _did, _row = found
+                    if _row.get("player") != player_id or int(_row.get("amount_minor", 0)) != amount:
+                        raise ValueError("idempotency key already used with different request data")
+                    return self._charge_view(_did, _row)
             existing = self._get_charge(deposit_id)
             if existing:
                 if existing.get("player") != player_id or int(existing.get("amount_minor", 0)) != amount:
@@ -2253,6 +2382,8 @@ class Demo:
                 "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "posted": False,
             }
+            if client_key:
+                row["idempotency_key"] = client_key
             self._put_charge(row)
             return self._charge_view(deposit_id, row)
 
@@ -2437,7 +2568,16 @@ class Demo:
         if coin not in codes:
             raise ValueError(f"moeda não suportada: {coin or 'vazio'}")
         deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
+        client_key = str(payload.get("idempotency_key") or "").strip()
         with self._crypto_lock:
+            if client_key:
+                _iter = (self.crypto_charges.items() if self.crypto_store is None
+                         else self.crypto_store.read_all().items())
+                for _did, _row in _iter:
+                    if _row.get("idempotency_key") == client_key:
+                        if _row.get("player") != player_id or int(_row.get("amount_minor", 0)) != amount:
+                            raise ValueError("idempotency key already used with different request data")
+                        return self._crypto_view(_did, _row)
             existing = self._get_crypto_charge(deposit_id)
             if existing:
                 if existing.get("player") != player_id or int(existing.get("amount_minor", 0)) != amount:
@@ -2458,6 +2598,8 @@ class Demo:
                 "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "posted": False,
             }
+            if client_key:
+                row["idempotency_key"] = client_key
             self._put_crypto_charge(row)
             return self._crypto_view(deposit_id, row)
 
@@ -2550,6 +2692,7 @@ class Demo:
             raise ValueError(f"stake must be one of {STAKE_STEPS} centavos")
         cert = self.registry.assert_launchable(game_id)  # BR cert gate
         self.exclusions.assert_playable(player_id)
+        self._assert_player_limits(player_id, stake_amount=stake)
         round_id = payload.get("round_id") or uuid.uuid4().hex[:12]
         round_id, bias = self._biased_round_id(
             player_id, game_id, round_id, payload.get("selection"), stake)
@@ -2933,6 +3076,7 @@ class Demo:
                 raise ValueError("price out of range (1.01..1000)")
         stake = self._minor(int(payload["stake_minor"]))
         self.exclusions.assert_playable(player_id)
+        self._assert_player_limits(player_id, stake_amount=stake)
         bet_id = payload.get("bet_id") or uuid.uuid4().hex[:12]
         wallet_key = f"demo:spbet:{player_id}:{bet_id}"
         with self.books.lock:
@@ -4163,8 +4307,9 @@ class Demo:
 
     @publisher_method
     def _wallet_session(self, token: str) -> dict:
+        prune_expired(self)
         session = self.wallet_tokens.get(str(token or ""))
-        if not session:
+        if not session or token_expired(session):
             raise KeyError("invalid or expired session token")
         return session
 
@@ -4248,8 +4393,9 @@ class Demo:
         The interposition needs the player, which the client-facing
         view deliberately does not carry.
         """
+        prune_expired(self)
         session = self.wallet_tokens.get(str(token or ""))
-        return dict(session) if session else None
+        return dict(session) if session and not token_expired(session) else None
 
     def wallet_balance(self, player_id: str) -> int:
         """What the player can spend, in centavos, stake plus bonus."""
@@ -5616,6 +5762,11 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/player/pix-key":
                 body = self._player_body()
                 self._send(200, DEMO.register_pix_key(body["player"], body.get("pix_key") or ""))
+            elif path == "/api/player/limits":
+                self._send(200, DEMO.set_limits(self._player_id(), self._body()))
+            elif path == "/api/player/promo-optout":
+                body = self._body()
+                self._send(200, DEMO.set_promo_optout(self._player_id(), bool(body.get("opt_out"))))
             elif path == "/api/player/logout":
                 # decision 0070: end this device only; the other rows stay
                 self._send(200, DEMO.logout_player(self._player_session()))

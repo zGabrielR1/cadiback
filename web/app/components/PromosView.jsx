@@ -53,6 +53,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               <span>
                 Giro: {BRL(profile.bonus.event.wagered_minor)} de{" "}
                 {BRL(profile.bonus.event.target_minor)}
+                {profile.bonus.event.remaining_minor > 0 ? ` · faltam ${BRL(profile.bonus.event.remaining_minor)}` : " · meta atingida"}
               </span>
               <span style={{ color: "var(--acc)" }}>
                 {profile.bonus.event.percent}%
@@ -126,6 +127,17 @@ export default function PromosView({ profile, player, busy, onClaim }) {
                 Carregando…
               </span>
             )}
+          </div>
+          <div className="promo">
+            <b>Promoções para esta conta</b>
+            <span>
+              {profile?.bonus?.opt_out
+                ? "Você desativou promoções. Bônus ativos continuam valendo até vencerem, mas nada novo será oferecido."
+                : "Ative ou desative promoções quando quiser. Desativar não apaga o saldo de bônus atual."}
+            </span>
+            <button className="ghost" style={{ marginTop: 8 }} disabled={busy || !profile} onClick={() => onOptOut?.(!profile.bonus.opt_out)}>
+              {profile?.bonus?.opt_out ? "Reativar promoções" : "Desativar promoções"}
+            </button>
           </div>
           <div className="promo">
             <b>Super Odds em Destaque</b>

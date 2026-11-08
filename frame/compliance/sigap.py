@@ -111,6 +111,10 @@ class ExclusionRegistry:
 
     governmental: set[str] = field(default_factory=set)
     self_declared: dict[str, str] = field(default_factory=dict)
+    # After a player lifts a self-exclusion, a 24h cooldown still blocks
+    # transactions (decision 0110, responsible play). Keyed by player with
+    # the ISO instant of the lift.
+    cooldowns: dict[str, str] = field(default_factory=dict)
 
     def block(self, player_id: str) -> None:
         self.governmental.add(player_id)
@@ -118,8 +122,33 @@ class ExclusionRegistry:
     def self_exclude(self, player_id: str, until: str) -> None:
         self.self_declared[player_id] = str(until)[:10]
 
-    def lift(self, player_id: str) -> bool:
-        return self.self_declared.pop(player_id, None) is not None
+    def lift(self, player_id: str, *, now: datetime | None = None) -> bool:
+        lifted = self.self_declared.pop(player_id, None) is not None
+        if lifted:
+            instant = now or datetime.now(timezone.utc)
+            self.cooldowns[player_id] = instant.astimezone(timezone.utc).isoformat(timespec="seconds")
+        return lifted
+
+    def cooldown_until(self, player_id: str) -> datetime | None:
+        stamp = self.cooldowns.get(player_id)
+        if not stamp:
+            return None
+        try:
+            lifted = datetime.fromisoformat(stamp)
+        except ValueError:
+            return None  # unparseable: no cooldown data, save the player a lockout
+        if lifted.tzinfo is None:
+            lifted = lifted.replace(tzinfo=timezone.utc)
+        return lifted + timedelta(hours=24)
+
+    def in_cooldown(self, player_id: str, *, now: datetime | None = None) -> bool:
+        until = self.cooldown_until(player_id)
+        if until is None:
+            return False
+        instant = now or datetime.now(timezone.utc)
+        if instant.tzinfo is None:
+            instant = instant.replace(tzinfo=timezone.utc)
+        return instant < until
 
     def active(self, player_id: str, today: date | None = None) -> bool:
         until = self.self_declared.get(player_id)
@@ -150,18 +179,23 @@ class ExclusionRegistry:
     def assert_playable(self, player_id: str, today: date | None = None) -> None:
         blocking = [r for r in self.reasons(player_id, today)
                     if not r.startswith("self-exclusion expired")]
+        if self.in_cooldown(player_id):
+            until = self.cooldown_until(player_id)
+            blocking.append(f"post-exclusion cooldown until {until.isoformat(timespec='seconds') if until else 'soon'}")
         if blocking:
             raise ExclusionError(
                 f"player {player_id} may not transact: {'; '.join(blocking)}")
 
     def as_dict(self) -> dict:
         return {"governmental": sorted(self.governmental),
-                "self_declared": dict(sorted(self.self_declared.items()))}
+                "self_declared": dict(sorted(self.self_declared.items())),
+                "cooldowns": dict(sorted(self.cooldowns.items()))}
 
     @classmethod
     def from_dict(cls, data: dict) -> "ExclusionRegistry":
         return cls(governmental=set(data.get("governmental", [])),
-                   self_declared=dict(data.get("self_declared", {})))
+                   self_declared=dict(data.get("self_declared", {})),
+                   cooldowns=dict(data.get("cooldowns", {})))
 
 
 @dataclass

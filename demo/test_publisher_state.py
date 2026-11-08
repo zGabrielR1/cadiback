@@ -6,7 +6,8 @@ from types import SimpleNamespace
 import threading
 import unittest
 
-from demo.publisher_state import FIELDS, decode_state, encode_state, publisher_operation
+from demo.publisher_state import (FIELDS, cleanup_state, decode_state, encode_state,
+                                 prune_expired, token_expired, publisher_operation)
 
 
 class PublisherStateTest(unittest.TestCase):
@@ -71,6 +72,23 @@ class PublisherStateTest(unittest.TestCase):
                             raise RuntimeError('operation failed')
                 self.assertEqual(demo.rgs_rounds, {('vendor', 's'): {'stake': 200, 'win': 0}})
                 self.assertEqual(demo._publisher_depth, 0)
+
+    def test_expired_tokens_and_orphans_are_cleaned(self):
+        demo, _ = self.demo()
+        now = None
+        fresh = {'player': 'p', 'game_id': 'g', 'issued_at': '2099-01-01T00:00:00+00:00'}
+        old = {'player': 'p', 'game_id': 'g', 'issued_at': '2020-01-01T00:00:00+00:00'}
+        demo.wallet_tokens = {'fresh': dict(fresh), 'old': dict(old)}
+        demo.rgs_sessions = {('v', 's1'): 'fresh', ('v', 's2'): 'old'}
+        demo.rgs_rounds = {('v', 's1'): {'stake': 1, 'win': 0}, ('v', 's2'): {'stake': 1, 'win': 0}}
+        self.assertTrue(token_expired(demo.wallet_tokens['old']))
+        self.assertFalse(token_expired(demo.wallet_tokens['fresh']))
+        pruned = prune_expired(demo)
+        self.assertEqual(pruned, 1)
+        self.assertEqual(set(demo.wallet_tokens), {'fresh'})
+        self.assertEqual(set(demo.rgs_sessions), {('v', 's1')})
+        self.assertEqual(set(demo.rgs_rounds), {('v', 's1')})
+        self.assertEqual(demo.wallet_tokens['fresh']['game_id'], 'g')
 
     def test_duplicate_or_malformed_session_rows_are_rejected(self):
         row = {'provider': 'vendor', 'session': 's', 'stake': 200, 'win': 0}
