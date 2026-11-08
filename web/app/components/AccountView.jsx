@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, BRL } from "../../lib/api";
 import UIIcon from "./UIIcon";
+import { filterHistory, historyCSV, transactionLabel, historySummary } from "../../lib/account-history.mjs";
 
 /** A registry instant (ISO, UTC) in the reader's own timezone. */
 function when(iso) {
@@ -54,7 +55,39 @@ export default function AccountView({ profile, player, health, history, fullAcce
   const [endingSession, setEndingSession] = useState(false);
   // On the public sports surface the history shows sports bets only; casino
   // rounds reappear once the data portal is unlocked (decision 0080).
-  const rounds = (history?.rounds || []).filter((r) => fullAccess || r.type === "sports");
+  const [retryingHistory, setRetryingHistory] = useState(false);
+  const retryHistory = async () => {
+    if (retryingHistory || !onChanged) return;
+    setRetryingHistory(true);
+    try { await onChanged(); } finally { setRetryingHistory(false); }
+  };
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [historyStatus, setHistoryStatus] = useState("all");
+  const loadedRounds = (history?.rounds || []).filter((r) => fullAccess || r.type === "sports");
+  const rounds = filterHistory(loadedRounds, { query: historyQuery, status: historyStatus });
+  const [exportNotice, setExportNotice] = useState("");
+  const [exportError, setExportError] = useState("");
+  const downloadHistory = () => {
+    setExportNotice("");
+    setExportError("");
+    if (!rounds.length) return;
+    let url;
+    let link;
+    try {
+      url = URL.createObjectURL(new Blob([historyCSV(rounds)], { type: "text/csv;charset=utf-8" }));
+      link = document.createElement("a");
+      link.href = url;
+      link.download = "candibet-historico.csv";
+      document.body.appendChild(link);
+      link.click();
+      setExportNotice(`Download solicitado: ${rounds.length} ${rounds.length === 1 ? "registro" : "registros"} com os filtros atuais.`);
+    } catch {
+      setExportError("Não foi possível preparar o CSV. Tente novamente neste navegador.");
+    } finally {
+      link?.remove();
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  };
 
   const loadSessions = () => {
     api("GET", "/api/player/sessions")
@@ -153,7 +186,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
   return (
     <div className="account-view">
       <header className="account-title account-identity"><div className="account-avatar" aria-hidden="true">{(profile?.name || "C").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()}</div><div><h1>{profile?.name || "Minha conta"}</h1>{profile?.username ? <p>@{profile.username}</p> : null}</div><button className="account-icon-action" onClick={onLogout} title="Sair da conta" aria-label="Sair da conta"><UIIcon name="logout" size={22}/></button></header>
-      <div className="account-workspace"><nav className="account-sections" role="tablist" aria-label="Seções da conta" onKeyDown={event => { const tabs = [...event.currentTarget.querySelectorAll("button")]; const index = tabs.indexOf(document.activeElement); const next = event.key === "ArrowRight" || event.key === "ArrowDown" ? (index + 1) % tabs.length : event.key === "ArrowLeft" || event.key === "ArrowUp" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null; if (next !== null) { event.preventDefault(); tabs[next].focus(); tabs[next].click(); } }}>{[{key:"profile",icon:"user",label:"Perfil"},{key:"sessions",icon:"monitor",label:"Dispositivos"},{key:"history",icon:"history",label:"Histórico"},{key:"limits",icon:"shield",label:"Pausas e proteção"}].map(item=><button key={item.key} type="button" role="tab" aria-selected={section===item.key} aria-controls={"account-"+item.key} aria-label={item.label} title={item.label} onClick={()=>setSection(item.key)}><UIIcon name={item.icon} size={23}/></button>)}</nav><div className="account-content">
+      <div className="account-workspace"><nav className="account-sections" role="tablist" aria-label="Seções da conta" onKeyDown={event => { const tabs = [...event.currentTarget.querySelectorAll("button")]; const index = tabs.indexOf(document.activeElement); const next = event.key === "ArrowRight" || event.key === "ArrowDown" ? (index + 1) % tabs.length : event.key === "ArrowLeft" || event.key === "ArrowUp" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null; if (next !== null) { event.preventDefault(); tabs[next].focus(); tabs[next].click(); } }}>{[{key:"profile",icon:"user",label:"Perfil"},{key:"sessions",icon:"monitor",label:"Dispositivos"},{key:"history",icon:"history",label:"Histórico"},{key:"limits",icon:"shield",label:"Pausas e proteção"}].map(item=><button key={item.key} type="button" role="tab" id={"account-tab-"+item.key} tabIndex={section===item.key ? 0 : -1} aria-selected={section===item.key} aria-controls={"account-"+item.key} aria-label={item.label} title={item.label} onClick={()=>setSection(item.key)}><UIIcon name={item.icon} size={23}/></button>)}</nav><div className="account-content">
       {profile ? (
         <section className="panel account-balance-card" id="account-overview" hidden={section !== "profile"}>
           <div className="account-balance-total"><h2>Saldo disponível</h2><strong>{BRL(profile.available_minor)}</strong></div>
@@ -167,7 +200,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
           </div>
         </section>
       ) : null}
-      <section className="panel" id="account-profile" hidden={section !== "profile"} role="tabpanel" aria-label="Perfil">
+      <section className="panel" id="account-profile" aria-labelledby="account-tab-profile" tabIndex={0} hidden={section !== "profile"} role="tabpanel" aria-label="Perfil">
         <h2>Perfil</h2>
         {profile ? <>
 
@@ -179,7 +212,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
         </> : <p className="sub">Nenhuma conta conectada. Entre para acessar seus dados.</p>}
 
       </section>
-      <section className="panel account-rg" id="account-limits" hidden={section !== "limits"} role="tabpanel" aria-label="Pausas e proteção"><h2>Pausas e proteção</h2>
+      <section className="panel account-rg" id="account-limits" aria-labelledby="account-tab-limits" tabIndex={0} hidden={section !== "limits"} role="tabpanel" aria-label="Pausas e proteção"><h2>Pausas e proteção</h2>
         {excludeOpen ? (
           <div className="account-exclude" role="group" aria-label="Confirmar autoexclusão">
             <p>Escolha por quanto tempo bloquear sua conta. Durante o bloqueio você não poderá apostar nem depositar.</p>
@@ -223,7 +256,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
         {excludeNotice ? <p className="account-notice" role="status">{excludeNotice}</p> : null}
         {excludeError ? <p className="account-notice err" role="alert">{excludeError}</p> : null}
       </section>
-      <section className="panel" id="account-sessions" hidden={section !== "sessions"} role="tabpanel" aria-label="Dispositivos">
+      <section className="panel" id="account-sessions" aria-labelledby="account-tab-sessions" tabIndex={0} hidden={section !== "sessions"} role="tabpanel" aria-label="Dispositivos">
         <h2>Dispositivos</h2>
         <div style={{ fontSize: 12.5, color: "var(--mut)" }}>
           Gerencie seus acessos.
@@ -294,31 +327,39 @@ export default function AccountView({ profile, player, health, history, fullAcce
           Encerrar as outras sessões
         </button>
       </section>
-      <section className="panel" id="account-history" hidden={section !== "history"} role="tabpanel" aria-label="Histórico">
+      <section className="panel" id="account-history" aria-labelledby="account-tab-history" tabIndex={0} hidden={section !== "history"} role="tabpanel" aria-label="Histórico">
         <h2>Histórico</h2>
-        <div style={{ fontSize: 12.5, color: "var(--mut)" }}>Status do sistema: {health || "online"}</div>
+        <div className="account-history-tools">
+          <label>Buscar no histórico<input id="account-history-search" value={historyQuery} onChange={e => setHistoryQuery(e.target.value)} placeholder="Partida, jogo ou ID" type="search" /></label>
+          <label htmlFor="history-status">Resultado<select id="history-status" aria-label="Resultado" value={historyStatus} onChange={e => setHistoryStatus(e.target.value)}><option value="all">Todos</option><option value="pending">Em aberto</option><option value="settled">Concluídos</option></select></label>
+          {historyQuery || historyStatus !== "all" ? <button type="button" className="ghost" onClick={() => { setHistoryQuery(""); setHistoryStatus("all"); document.getElementById("account-history-search")?.focus(); }}>Limpar filtros</button> : null}
+          <button className="ghost" onClick={downloadHistory} disabled={!rounds.length}>Baixar CSV</button>
+        </div>
+        <p className="sub" role="status">{history ? `${rounds.length} de ${loadedRounds.length} registros carregados. Até 100 atividades recentes.` : refreshError ? "Histórico indisponível." : "Carregando histórico…"}</p>
+        {exportNotice ? <p className="sub" role="status">{exportNotice}</p> : null}
+        {exportError ? <p className="err" role="alert">{exportError}</p> : null}
+        <div style={{ fontSize: 12.5, color: "var(--mut)" }}>Status do sistema: {health || "Não verificado"}</div>
         {history && history.risk && history.risk.flagged ? (
           <div className="err" style={{ fontSize: 12.5 }}>
             Monitor de risco: {history.risk.flags.join(", ")}
           </div>
         ) : null}
         {refreshError ? (
-          <div className="err" style={{ fontSize: 12.5 }}>
-            falha ao atualizar: {refreshError}
+          <div className="err" role="alert" style={{ fontSize: 12.5 }}>
+            <p>{history ? "Não foi possível atualizar. Os dados exibidos são da última consulta." : "Não foi possível carregar o histórico."}</p>
+            {onChanged ? <button type="button" className="ghost" disabled={retryingHistory} onClick={retryHistory}>{retryingHistory ? "Atualizando…" : "Tentar novamente"}</button> : null}
           </div>
         ) : null}
         {rounds.length > 0
           ? (() => {
-              const total = rounds.reduce((n, r) => n + (r.stake_minor || 0), 0);
-              const back = rounds.reduce((n, r) => n + (r.payout_minor || 0), 0);
-              const pending = rounds.filter((r) => r.tier === "pendente").length;
-              const roi = total > 0 ? ((back - total) / total) * 100 : 0;
+              const summary = historySummary(rounds);
               const cards = [
-                ["Apostado", BRL(total)],
-                ["Retornado", BRL(back)],
-                ["Líquido", (back - total >= 0 ? "+" : "-") + BRL(Math.abs(back - total))],
-                ["ROI", (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%"],
-                ["Em aberto", String(pending)],
+                ["Apostado", BRL(summary.total)],
+                ["Retornado", BRL(summary.returned)],
+                ["Líquido concluído", summary.roi === null && !summary.returned ? "—" : (summary.net >= 0 ? "+" : "-") + BRL(Math.abs(summary.net))],
+                ["ROI concluído", summary.roi === null ? "—" : (summary.roi >= 0 ? "+" : "") + summary.roi.toFixed(1) + "%"],
+                ["Em aberto", String(summary.pending)],
+                ["Valor em aberto", BRL(summary.pendingStake)],
               ];
               return (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
@@ -341,10 +382,11 @@ export default function AccountView({ profile, player, health, history, fullAcce
               );
             })()
           : null}
-        <table className="hist">
+        <div className="account-table-scroll"><table className="hist">
           <thead>
             <tr>
               <th>ID</th>
+              <th>Data</th>
               <th>Descrição</th>
               <th>Aposta</th>
               <th>Retorno</th>
@@ -359,6 +401,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
                 .map((r) => (
                   <tr key={r.round_id}>
                     <td>{r.round_id.slice(0, 8)}</td>
+                    <td>{when(r.ts)}</td>
                     <td>{r.title || r.game_id}</td>
                     <td>{BRL(r.stake_minor)}</td>
                     <td>{BRL(r.payout_minor)}</td>
@@ -388,13 +431,21 @@ export default function AccountView({ profile, player, health, history, fullAcce
                 ))
             ) : (
               <tr>
-                <td colSpan={5} style={{ color: "var(--mut)", textAlign: "center", padding: "16px" }}>
-                  Nenhuma aposta realizada ainda. Escolha um mercado no boletim para começar!
+                <td colSpan={6} style={{ color: "var(--mut)", textAlign: "center", padding: "16px" }}>
+                  {!history ? (refreshError ? "Histórico indisponível. Tente novamente." : "Carregando histórico…") : loadedRounds.length ? "Nenhum registro corresponde aos filtros." : "Nenhuma aposta realizada ainda. Escolha um mercado no boletim para começar!"}
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
+        <section className="account-transactions" aria-label="Movimentações de saldo">
+          <h3>Movimentações de saldo</h3>
+          <p className="sub">Créditos e débitos registrados na carteira, incluindo depósitos e retiradas.</p>
+          <div className="account-table-scroll"><table className="hist"><thead><tr><th>Data</th><th>Operação</th><th>Saldo</th><th>Bônus</th></tr></thead><tbody>
+            {(history?.transactions || []).slice().reverse().map(row => <tr key={row.id}><td>{when(row.ts)}</td><td>{transactionLabel(row.kind)}</td><td>{row.cash_minor > 0 ? "+" : ""}{BRL(row.cash_minor)}</td><td>{row.bonus_minor > 0 ? "+" : ""}{BRL(row.bonus_minor)}</td></tr>)}
+            {!history?.transactions?.length ? <tr><td colSpan={4}>{!history ? (refreshError ? "Movimentações indisponíveis." : "Carregando movimentações…") : "Nenhuma movimentação registrada."}</td></tr> : null}
+          </tbody></table></div>
+        </section>
       </section>
       </div></div>
     </div>

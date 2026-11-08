@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 import urllib.error
 import urllib.request
 
@@ -913,9 +914,13 @@ class DemoE2ETest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.demo.deposit({"player": player, "amount_minor": 1,
                                "method": "pix", "deposit_id": "c"})
-        self.demo.deposit_days[player] = {"day": "2020-01-01", "total": 999}
-        self.demo.deposit({"player": player, "amount_minor": 10000,
-                           "method": "pix", "deposit_id": "d"})
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        with patch("demo.server.datetime", wraps=datetime) as clock, \
+                patch.object(self.demo.books, "_clock", return_value=tomorrow.isoformat()):
+            clock.now.return_value = tomorrow
+            self.demo.deposit({"player": player, "amount_minor": 10000,
+                               "method": "pix", "deposit_id": "d"})
+            self.assertEqual(self.demo._deposited_today(player), 10000)
 
     def test_one_wallet_per_cpf(self):
         first = self._register(name="Ana Souza")

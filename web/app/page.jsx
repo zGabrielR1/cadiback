@@ -6,6 +6,7 @@ import { validateCPF, validateCNPJ, validateEmail, validateName, validatePasswor
 import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.mjs";
 import { rememberGame } from "../lib/localCache";
 import { useSession } from "../lib/useSession";
+import { socialErrorMessage } from "../lib/auth-errors.mjs";
 import { useSportsFeed } from "../lib/useSportsFeed";
 import { matchKeyFromUrl, navigateMatch } from "../lib/match-link.mjs";
 import CasinoHome from "./components/CasinoHome";
@@ -339,7 +340,9 @@ export default function Page() {
     window.history.replaceState(
       null, "", window.location.pathname + window.location.search);
     if (err) {
-      setMessage("Login social: " + err);
+      setAuthErrors({ _: socialErrorMessage(err) });
+      setAuthMode("login");
+      setAcctOpen(true);
       return;
     }
     if (!token) return;
@@ -351,7 +354,7 @@ export default function Page() {
         setPlayer(row.player_id);
         setAcctOpen(false);
       })
-      .catch((e) => setMessage("Login social: " + e.message))
+      .catch((e) => { setAuthErrors({ _: socialErrorMessage(e.message) }); setAuthMode("login"); setAcctOpen(true); })
       .finally(() => setBusy(false));
   }, [setPlayer]);
 
@@ -380,6 +383,7 @@ export default function Page() {
     // provider URL, then navigate. The call must be same-origin so the OAuth
     // state cookie lands on this host; the bridge route finishes the flow.
     setBusy(true);
+    setAuthErrors({});
     try {
       const callbackURL = "/api/betterauth/bridge?return=" +
         encodeURIComponent(window.location.origin);
@@ -395,7 +399,9 @@ export default function Page() {
       }
       window.location.href = data.url;
     } catch (e) {
-      setMessage("Login social: " + e.message);
+      setAuthErrors({ _: socialErrorMessage(e.message) });
+      setAuthMode("login");
+      setAcctOpen(true);
       setBusy(false);
     }
   }, [setBusy]);

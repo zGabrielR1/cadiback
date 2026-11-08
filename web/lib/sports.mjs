@@ -24,8 +24,11 @@ export function betIdentity(bet) {
 }
 
 export function validMarkets(fixture) {
-  return (fixture.markets || []).filter(m =>
+  const markets = Array.isArray(fixture?.markets) ? fixture.markets : [];
+  return markets.filter(m =>
+    m != null &&
     Array.isArray(m.selections) && m.selections.length > 0 &&
+    m.selections.every(selection => typeof selection === 'string' && selection.trim().length > 0) &&
     Array.isArray(m.prices) && m.prices.length === m.selections.length &&
     m.prices.every(p => typeof p === "number" && Number.isFinite(p) && p > 1)
   );

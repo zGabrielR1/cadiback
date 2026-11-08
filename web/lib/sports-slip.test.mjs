@@ -55,3 +55,31 @@ test('status transitions pause saved selections without changing their price or 
   fixture.status = 'IN_PROGRESS';
   assert.deepEqual(selectionAvailability([bet], { fixtures: [fixture] }), { changed: [{ id: betIdentity(bet), price: 2.4 }], unavailable: [] });
 });
+
+test('malformed markets pause only affected selections and recover through price review', () => {
+  const healthy = { ...bet, fixtureKey: 'two', price: 3 };
+  const bets = Object.freeze([Object.freeze({ ...bet }), Object.freeze(healthy)]);
+  const fixture = { key: 'one', status: 'LIVE' };
+  const market = { kind: '1x2', selections: ['Casa'], prices: [2.4] };
+  const sports = { fixtures: [fixture, { key: 'two', status: 'LIVE', markets: [
+    null, { kind: '1x2', selections: ['Casa'], prices: [3] },
+  ] }] };
+  for (const markets of [undefined, null, {}, 'invalid', [null, undefined, {}],
+    [{ ...market, selections: [{}] }], [{ ...market, selections: [' '] }]]) {
+    fixture.markets = markets;
+    assert.deepEqual(selectionAvailability(bets, sports), {
+      changed: [], unavailable: [betIdentity(bet)],
+    });
+    assert.equal(bets[0].price, 2);
+    assert.equal(bets[1], healthy);
+  }
+  fixture.markets = [null, market];
+  const recovered = selectionAvailability(bets, sports);
+  assert.deepEqual(recovered, { changed: [{ id: betIdentity(bet), price: 2.4 }], unavailable: [] });
+  assert.equal(bets[0].price, 2);
+  const accepted = applyPriceChanges(bets, recovered.changed);
+  assert.equal(accepted[0].price, 2.4);
+  assert.equal(betIdentity(accepted[0]), betIdentity(bet));
+  assert.equal(accepted[1], healthy);
+  assert.deepEqual(selectionAvailability(accepted, sports), { changed: [], unavailable: [] });
+});

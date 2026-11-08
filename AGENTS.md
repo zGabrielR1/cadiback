@@ -26,7 +26,10 @@ No real money moves; no commercial legal or regulatory obligations.
 | `scripts/import_identity.py`, `demo/test_persistence.py` | Explicit one-time identity cutover and deployment/concurrency regressions |
 | `demo/test_signup_cashier.py`, `web/lib/signup-cashier.test.mjs` | PF/PJ signup, direct social login, withdrawal Pix and deposit minimum regressions (0072) |
 | `web/` | Next.js 16 + React 19 storefront with embedded official games |
-| `web/lib/useSportsFeed.js` | Sequential sports refresh, retry/error state and last-successful board retention |
+| `web/lib/localCache.js`, `web/lib/localCache.test.mjs` | Best-effort recent-game snapshots: validated identities/metadata, safe timestamp ordering, quota fallback |
+| `web/lib/useSportsFeed.js`, `web/lib/sports-feed.mjs` | Validated sports refresh, retry/error state and last-successful board retention; controlled hook regressions in `web/lib/useSportsFeed.test.mjs` |
+| `scripts/check_market_render.cjs` | Static React renders for sports board/detail/builder and casino feed states; retry/navigation callbacks, no live APIs |
+| `web/app/components/CasinoSports.jsx` | Read-only casino sports recommendations, loading/error/retry and last-successful timestamp; CasinoHome uses the shared feed hook |
 | `scripts/test_render_deploy.py` | Environment pagination and fail-closed credential-preservation regressions |
 | `Dockerfile`, `render.yaml` | The deploy: one container, two processes (Python + the Node auth server), built and run by the host |
 | `docs/gap-assessment.md` | Scoreboard: 1:1 simulation fidelity |

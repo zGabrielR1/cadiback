@@ -1,5 +1,9 @@
 # python
 __pycache__/
+.backups/
+.release/
+web/test-results/
+web/playwright-report/
 *.py[cod]
 *.egg-info/
 .venv/
@@ -52,3 +56,6 @@ probes/flashscore-stats-cache.json
 
 # Local Asaas webhook credentials; never publish with source.
 asaaswebhook.txt
+
+# Alternate local Python environment name
+.ven/

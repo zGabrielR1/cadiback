@@ -106,7 +106,7 @@ export default function AccountModal({
     </div>
   );
   const socialRow = (isLogin || isRegister) && oauthProviders.length > 0 ? (
-    <div className="auth-social-section" role="group" aria-label="Acesso com uma conta social">
+    <div className="auth-social-section" role="group" aria-label="Acesso com uma conta social" aria-busy={!!busy}>
     <div className="oauth-row">
       {oauthProviders.map((p) => (
         <button

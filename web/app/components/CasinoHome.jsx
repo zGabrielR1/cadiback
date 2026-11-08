@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import UIIcon from "./UIIcon";
-import { validMarkets } from "../../lib/sports.mjs";
+import { useSportsFeed } from "../../lib/useSportsFeed";
+import CasinoSports from "./CasinoSports";
 import { api, BRL } from "../../lib/api";
 import { readRecent } from "../../lib/localCache";
 
@@ -132,7 +133,7 @@ export default function CasinoHome({
   const [category, setCategory] = useState("Todos");
   const [provider, setProvider] = useState("Todos");
   const [banner, setBanner] = useState(0);
-  const [sports, setSports] = useState(null);
+  const sportsFeed = useSportsFeed(true);
   const [jackpot, setJackpot] = useState(null);
   const touch = useRef(null);
 
@@ -185,13 +186,6 @@ export default function CasinoHome({
     const id = setInterval(() => setBanner((b) => (b + 1) % banners.length), 6000);
     return () => clearInterval(id);
   }, [banners.length, bannerPaused]);
-
-  useEffect(() => {
-    const load = () => api("GET", "/api/sports").then(setSports).catch(() => {});
-    load();
-    const id = setInterval(load, 15000);
-    return () => clearInterval(id);
-  }, []);
 
   const [trending, setTrending] = useState(null);
 
@@ -394,10 +388,6 @@ export default function CasinoHome({
       .slice(0, 6);
     return fallback.length ? fallback : all.slice(0, 6);
   })();
-
-  const priced = sports
-    ? (sports.fixtures || []).map(f => ({ ...f, markets: validMarkets(f) })).filter(f => f.markets.length > 0).slice(0, 3)
-    : [];
 
   const act = (target) => {
     if (target === "cash") onCash();
@@ -687,28 +677,7 @@ export default function CasinoHome({
             title="Cotações esportivas"
             note="Preços recebidos nos mercados disponíveis, sem ajustes promocionais."
           >
-            {sports === null ? (
-              <Empty>Carregando partidas…</Empty>
-            ) : priced.length === 0 ? (
-              <Empty>Nenhuma partida com preço disponível no momento.</Empty>
-            ) : (
-              <div className="rowscroll">
-                {priced.map((f) => (
-                  <button className="boost boost-link" key={f.key} onClick={() => onSport?.(false)} aria-label={`Ver ${f.home} × ${f.away} no quadro esportivo`}>
-                    <div className="boost-kind">{f.competition}</div>
-                    <div className="boost-name">
-                      {f.home} × {f.away}
-                    </div>
-                    <div className="boost-kind">{f.markets[0].kind}{f.markets[0].line != null ? " · " + f.markets[0].line : ""} · {f.markets[0].pricing === "market" ? "Provedor" : "Modelo"}</div>
-                    {f.markets[0].selections.map((sel, i) => (
-                      <div className="boost-odd" key={sel}>
-                        {sel} {f.markets[0].prices[i].toFixed(2)}
-                      </div>
-                    ))}
-                  </button>
-                ))}
-              </div>
-            )}
+            <CasinoSports {...sportsFeed} onSport={onSport} />
           </Section>
 
           <Section title="Torneios em Andamento" note={torneios ? torneios.note : "Calculado das rodadas reais de hoje."}>

@@ -40,6 +40,7 @@ const KEEP = [
   "demo_url",
   "notes",
 ];
+const validId = value => typeof value === "string" && value.trim().length > 0;
 
 function storage() {
   try {
@@ -57,13 +58,17 @@ function storage() {
 const hasWindow = () => typeof window !== "undefined";
 
 /** The cached game row, trimmed to the fields above. A game with no id is
- * not a game; a game with only an id is a legacy entry and is kept as a
- * bare id so it still orders correctly against the live catalog. */
+ * not a game. Incomplete or malformed snapshots stay id-only in readRecent
+ * so a later live catalog can still resolve their place in the list. */
 function trim(game) {
-  if (!game || typeof game !== "object" || !game.game_id) return null;
+  if (!game || typeof game !== "object" || Array.isArray(game) ||
+      !validId(game.game_id) || !validId(game.title)) return null;
   const out = {};
   for (const field of KEEP) {
-    if (game[field] !== undefined && game[field] !== null) out[field] = game[field];
+    const value = game[field];
+    if (value == null) continue;
+    if (typeof value !== "string" && (field !== "rtp" || !Number.isFinite(value))) return null;
+    out[field] = value;
   }
   return out.game_id ? out : null;
 }
@@ -96,15 +101,18 @@ export function readRecent() {
   const seen = new Set();
   const out = [];
   for (const entry of parsed) {
-    if (!entry || typeof entry !== "object") continue;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
     const id = entry.game_id || (entry.game && entry.game.game_id);
-    if (!id || seen.has(id)) continue;
+    if (!validId(id) || seen.has(id)) continue;
     seen.add(id);
     // only a real `game` counts as a cached game: trimming the entry itself
     // would turn an id-only v1 record into a "game" with nothing but an id,
     // which then renders as a blank card instead of being recognised as
     // "ordered, but we do not have it"
-    out.push({ game_id: id, ts: Number(entry.ts) || 0, game: trim(entry.game) });
+    const ts = typeof entry.ts === "number" || typeof entry.ts === "string" ? Number(entry.ts) : 0;
+    const game = trim(entry.game);
+    out.push({ game_id: id, ts: Number.isFinite(ts) ? ts : 0,
+      game: game?.game_id === id ? game : null });
   }
   out.sort((a, b) => b.ts - a.ts);
   return out.slice(0, RECENT_LIMIT);

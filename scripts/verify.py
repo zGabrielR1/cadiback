@@ -76,7 +76,8 @@ for path in required:
 py_sources = []
 for base, dirs, files in os.walk("."):
     dirs[:] = [d for d in dirs if d not in {"node_modules", "__pycache__",
-                                             ".next", "out", ".git"}]
+                                             ".next", "out", ".git", ".venv", ".ven", "venv", "env"}
+               and not os.path.isfile(os.path.join(base, d, "pyvenv.cfg"))]
     py_sources += [os.path.join(base, f) for f in files if f.endswith(".py")]
 for src in py_sources:
     # compile in memory: writing .pyc beside every source dirtied the tree
@@ -115,7 +116,8 @@ link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 broken = []
 for base, dirs, files in os.walk("."):
     dirs[:] = [d for d in dirs if d not in {"node_modules", "__pycache__",
-                                             ".next", "out", ".git"}]
+                                             ".next", "out", ".git", ".venv", ".ven", "venv", "env"}
+               and not os.path.isfile(os.path.join(base, d, "pyvenv.cfg"))]
     for name in files:
         if not name.endswith(".md"):
             continue
@@ -139,7 +141,8 @@ markers = []
 # every shipping module, not just frame/: demo/ and scripts/ ship too
 for base, dirs, files in os.walk("."):
     dirs[:] = [d for d in dirs if d not in {"node_modules", "__pycache__",
-                                             ".next", "out", ".git"}]
+                                             ".next", "out", ".git", ".venv", ".ven", "venv", "env"}
+               and not os.path.isfile(os.path.join(base, d, "pyvenv.cfg"))]
     for name in files:
         if not name.endswith(".py") or name.startswith("test_"):
             continue

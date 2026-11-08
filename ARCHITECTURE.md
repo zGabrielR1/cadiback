@@ -1,5 +1,17 @@
 # ARCHITECTURE — operator
 
+Database crypto invoices use the `crypto_charges` IdentityDocument and join wallet confirmation transactions. `demo/publisher_state.py` persists publisher tokens, session bindings, pending stakes/wins and Pragmatic baselines/sequences under a shared wallet operation. The RGS tap settles and removes pending state in that operation. Publisher locks precede wallet locks; wallet_credit's publisher decorator stays outermost. Wallet backups include both documents and are created privately. SQL integration verification remains pending; see docs/durable-payment-and-publisher-state.md.
+
+
+Daily deposit limits derive from UTC-dated deposit postings, so restarts share the journal's totals. Asaas charge stores use `demo/db_context.py` to join the wallet transaction; acknowledgements flush with the credit and expose success after commit. File-backed payment acknowledgements update memory only after their file save succeeds. Database rollback/concurrency verification for these changes remains pending (2026-11-08).
+
+
+Database round methods use `demo/wallet_operation.py` to keep spins, sports placement and publisher settlements with their history and promo writes in the outer wallet transaction. Sports settlement appends its receipt under the wallet lock and rechecks settlement keys against stale snapshots. Sports completed identities include the player and round ID. Database integration verification remains pending (2026-11-08).
+
+
+Database crash operations use `demo/crash_state.py` to acquire the wallet transaction before refreshing durable pending rounds. Stake/settlement postings, promotions, history and pending changes share that transaction. New workers preserve active rounds; the sweep settles expired rounds from their original clock/draw. File-backed mode keeps its legacy refund recovery. Database integration verification for this continuation is pending (2026-11-08).
+
+
 Sports availability is shared by `matchState` in `web/lib/sports.mjs`: board, detail, builder, discovery and slip use the same unavailable/live/final precedence and labels. Board/featured controls also pause during refresh errors; draft/slip contents remain reviewable (decision 0100).
 
 Public upcoming match calendar downloads use `web/lib/match-calendar.mjs` for scheduled-match eligibility and one-time UTF-8 iCalendar serialization. MarketDetail displays local kickoff/timezone, pauses export on feed failures, and downloads a public-only event with a stable fixture UID (decision 0099).
@@ -186,3 +198,15 @@ Normal builds now select data-design=auteur. The scoped auteur.css layer and sel
 
 ## Interaction and member-access repair (0092)
 Casino/catalog use validated authenticated state independently of the optional portal. Header/mobile builder intent invokes the existing SportsHome/BetBuilder workflow; the logo performs root document navigation. useSportsFeed exposes slow/error/empty recovery and passes a cancellation signal to api.js so retry/unmount aborts the current request. usePanelResize.js shares viewport-bound pointer/keyboard sizing between search and betslip. AccountView renders only the selected icon tab; cashier and session/ledger APIs are unchanged. Portal configuration is documented in docs/data-portal.md.
+
+## Sports feed boundary (0103)
+
+web/lib/sports-feed.mjs validates fixture identities and rendered header/score fields, plus source/note metadata, before useSportsFeed replaces its successful board. Invalid refreshes throw into the existing error/retry path: the board and timestamp remain intact and existing feed-error controls pause sports selection. Valid empty feeds remain successful. The validator returns the original payload without identity/label/price coercion; validMarkets separately isolates malformed market collections and outcomes (0102). CasinoHome applies the same reader before storing its independently fetched sports recommendations and retains its previous data on rejection. This is a display/header boundary, not a validator for every optional nested field.
+
+## Casino sports feed recovery (0104)
+
+CasinoHome now consumes its own useSportsFeed(true) instance instead of the former setInterval/empty-catch sports poll. CasinoSports presents its feed state: first-load/slow/error/retry, retained-data notice and successful timestamp, refreshing state and valid-empty calendar. Cards remain read-only navigation to the sports board through onSport(false), including during feed failures. The existing price validator and three-card limit remain. Reusing the hook provides sequential refreshes, abort-on-retry/unmount and last-successful retention without modifying other casino feeds. The superseded independent poll documented in0103 is removed.
+
+## Recent-game cache isolation (0105)
+
+localCache.js treats persisted recent-game entries as untrusted display data. Valid IDs remain available for the live catalog to resolve; only a complete typed snapshot with a matching ID is eligible for cached rendering. Numeric/string timestamps are converted safely and nonfinite/malformed values sort as unknown time (zero). Invalid rememberGame input leaves existing stored bytes intact. Valid labels and metadata are preserved exactly; existing ordering, limit, format decoding and quota id-only fallback remain. No server or catalog contract changes.

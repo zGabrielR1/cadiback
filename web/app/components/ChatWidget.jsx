@@ -7,6 +7,14 @@ export default function ChatWidget({ open, log, input, onInput, onSend, onToggle
     <>
       {open ? (
         <div
+          role="region"
+          aria-labelledby="help-chat-title"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !event.nativeEvent.isComposing) {
+              event.stopPropagation();
+              onToggle();
+            }
+          }}
           style={{
             position: "fixed",
             right: 16,
@@ -23,10 +31,10 @@ export default function ChatWidget({ open, log, input, onInput, onSend, onToggle
             overflow: "hidden",
           }}
         >
-          <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)", fontWeight: 600 }}>
+          <div id="help-chat-title" style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)", fontWeight: 600 }}>
             Central de Ajuda (simulada)
           </div>
-          <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8, maxHeight: 280, overflowY: "auto" }}>
+          <div role="log" aria-label="Mensagens da central de ajuda" aria-live="polite" aria-relevant="additions text" style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8, maxHeight: 280, overflowY: "auto" }}>
             {log.map((m, i) => (
               <div
                 key={i}
@@ -37,6 +45,8 @@ export default function ChatWidget({ open, log, input, onInput, onSend, onToggle
                   padding: "8px 11px",
                   borderRadius: 10,
                   maxWidth: "80%",
+                  overflowWrap: "anywhere",
+                  whiteSpace: "pre-wrap",
                   fontSize: 13,
                 }}
               >
@@ -44,20 +54,22 @@ export default function ChatWidget({ open, log, input, onInput, onSend, onToggle
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 8, padding: 10, borderTop: "1px solid var(--line)" }}>
+          <form onSubmit={(event) => { event.preventDefault(); if (String(input || "").trim()) onSend(); }} style={{ display: "flex", gap: 8, padding: 10, borderTop: "1px solid var(--line)" }}>
             <input
+              type="text"
+              aria-label="Mensagem para a central de ajuda"
               value={input}
               onChange={(e) => onInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") onSend();
+                if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
               }}
               placeholder="Escreva sua dúvida…"
-              style={{ flex: 1, background: "var(--field)", color: "var(--ink)", border: "1px solid var(--line)", borderRadius: 8, padding: "8px 10px" }}
+              style={{ flex: 1, minWidth: 0, background: "var(--field)", color: "var(--ink)", border: "1px solid var(--line)", borderRadius: 8, padding: "8px 10px" }}
             />
-            <button onClick={onSend} style={{ width: "auto", padding: "8px 14px" }}>
+            <button type="submit" disabled={!String(input || "").trim()} style={{ width: "auto", padding: "8px 14px" }}>
               Enviar
             </button>
-          </div>
+          </form>
         </div>
       ) : null}
       {open ? <button

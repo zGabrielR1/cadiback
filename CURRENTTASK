@@ -1,3 +1,159 @@
+LOCAL CSV EXPORT UX 2026-11-08 — BUILD/BROWSER QA PENDING
+
+- CSV action now reports requested record count with current filters and shows an accessible preparation error if browser download APIs fail. Temporary links are attached/removed and object URLs cleaned up even on errors; no browser-download completion claim.
+- CSV escaping additionally neutralizes formula prefixes behind whitespace/newlines. Regression preserves accented text, embedded line breaks, BOM and amount formatting. All 14 frontend Node files pass after correcting a test quoting typo; scoped diff clean.
+- No build/browser verification or deployment; dependency/environment blockers remain. Evidence: /tmp/operator-export-ui-tests.log. Newer UI changes invalidate prior release fingerprint.
+
+ACCOUNT HISTORY RECOVERY UI 2026-11-08 — LOCAL ONLY
+
+- History and wallet activity now distinguish initial loading, failed initial load, actual empty results and filtered-empty results. Failed refresh with existing history explicitly identifies retained data as the last successful query.
+- Added Tentar novamente through existing onChanged refresh callback with an in-progress label and disabled repeat action. Error is announced through role=alert; existing rows/filter state remain intact.
+- All 14 frontend Node files pass; scoped diff clean. No JSX build/browser QA claimed because locked frontend dependencies remain absent. No publication. Latest log: /tmp/operator-history-recovery-tests.log. Earlier release report does not approve these newer UI changes.
+
+LOCAL ACCOUNT UI CONTINUATION 2026-11-08 — BUILD/BROWSER QA PENDING
+
+- Added account history filter reset with search focus restoration; account tabs use a single tab stop and link panels to tab labels. Wallet activity labels now recognize actual journal posting kinds.
+- History search accepts multiple accent-insensitive words in any order across title/game/reference. Chat wraps long unbroken strings and preserves message line breaks.
+- Corrected history net/ROI: open stakes no longer count as settled losses. Summary separately shows pending stake value, settled net/ROI and a dash when no settled stake exists. Missing health data displays Não verificado instead of fabricated online status.
+- Added helper regressions for search, ledger labels and pending/settled/refunded summaries. All 14 frontend Node files pass; scoped diff clean. No fresh build/browser verification because locked dependencies remain unavailable; no deployment. Latest test log /tmp/operator-history-summary-tests.log. Changes since the last full gate invalidate that older source fingerprint; do not claim it approves this UI.
+
+UI QUICK WINS / DEPLOYMENT ATTEMPT 2026-11-08 — NOT DEPLOYED
+
+- Owner explicitly authorized UI improvements and deployment. Improved history search to match accentless Portuguese names without changing labels/IDs; added a regression for São Paulo/Grêmio, mixed case, ID search and status filtering. All 14 frontend Node test files pass.
+- Chat now has a labelled region/input and live message log, native form submission, disabled blank sends, composition-safe Enter handling, Escape dismissal and a shrinkable input for narrow screens. Manual source review complete; JSX build/browser verification remains blocked by absent locked Next/Playwright dependencies. Consulted cached Next 16.3.8 client-component guide because the locked 16.4.1 installation is unavailable; no Next-specific API change.
+- Attempted production build: failed because `next` is missing. Invoked scripts/vercel_deploy.py: it correctly refused publication without a successful full release receipt. No production mutation occurred. Full gate rerun: 14 attempted, 6 pass, source unchanged, no approval receipt; existing dependency/registry/Postgres/socket/export blockers remain.
+- Latest evidence: .release/report.json; /tmp/operator-ui-{tests,build,deploy}.log; /tmp/operator-release-ui.log. Existing unrelated edits preserved; no commit/push/deployment.
+- NEXT SESSION: restore exact locked dependencies and SQL test dependencies with registry/socket access, execute the full gate with isolated Postgres, inspect chat at mobile/desktop widths and keyboard/screen-reader behavior, then publish the verified committed frontend using existing authorization. Do not bypass the release gate or substitute older cached packages. Broader durable-wallet implementation and SQL regressions are in docs/durable-payment-and-publisher-state.md; release blockers in docs/release-verification-2026-11-08.md.
+
+CRYPTO / PUBLISHER DURABILITY 2026-11-08 — IMPLEMENTED, SQL VERIFICATION PENDING
+
+- Crypto invoices now use a shared IdentityDocument store in database mode; all create/status/IPN reads refresh the store. Credit + acknowledgement share the wallet transaction. Stale pending writes cannot downgrade paid state, and immutable invoice references cannot be reassigned. Pix writes now have equivalent monotonic/identity guards. Conflicting create references fail before calling a provider.
+- Added publisher_state serialization/orchestration for tokens, provider session bindings, pending stake/win accumulation and Pragmatic balance baselines/sequences. Publisher entry points refresh/save under the wallet transaction; the RGS tap closes pending state and settles atomically. Durable failures propagate and restore refreshed caches. Cross-wallet session rebinding is refused. Wallet-credit decorator order preserves publisher-lock-before-wallet-lock order.
+- Extended wallet backup validation/export/restore and explicit legacy import for crypto invoices; publisher state is included as an optional durable document. Backups containing bearer tokens use exclusive private creation (0600 on POSIX). Older backups remain accepted. Asaas SQL-table backup is still outside this wallet-only utility.
+- Four new publisher-state unit tests and an invoice-conflict regression pass; backup private-file/schema regression passes. Added eight SQL integration methods across persistence/wallet-store suites (including inherited Postgres coverage), not executed because SQLAlchemy remains unavailable.
+- Full release sweep rerun against unchanged source: 14 attempted, 6 pass, 8 blocked; no approval receipt. Backend discovery 468: 433 pass, 35 environment errors (8 SQLAlchemy/import, 27 sockets). Release-tools36, core50, frontend14 files/auth3 files, Render preflight and Docker static context pass. Existing registry/dependency/Postgres/export blockers remain. No live database/provider writes, deployment, commit or push.
+- Details: docs/durable-payment-and-publisher-state.md and updated docs/release-verification-2026-11-08.md. Next: restore dependencies and execute all SQLite/isolated-Postgres regressions before cutover. Other review work: full Asaas metadata backup, provider request deduplication and publisher session expiry/cleanup. Default file-mode publisher sessions remain process-local by design; database mode is required for shared durability.
+
+DEPOSIT DURABILITY CONTINUATION 2026-11-08 — RELEASE STILL BLOCKED
+
+- Removed process-local daily deposit counters; limits now derive from posted deposits for the player's current UTC day. Restarted workers preserve totals; replay/withdrawal/bonus/other-player records do not alter them, timezone offsets normalize to UTC, and malformed/naive deposit timestamps fail closed. Existing rollover test now advances server + posting clocks.
+- Asaas charge persistence joins the current wallet session and flushes instead of independently committing. Credit and acknowledgement now share the database transaction. Caller state is updated only after successful commit. File Asaas/crypto stores only publish new in-memory acknowledgement state after the atomic file save succeeds; failures retry without duplicating existing wallet credit.
+- Five new offline deposit regressions pass; focused deposit/round/crash suites 14/14. Added two database regressions for concurrent-worker limits and rollback after acknowledgement flush, unexecuted because SQLAlchemy remains unavailable.
+- Reran all 14 release stages against unchanged source: 6 pass, 8 blocked/failed, no approval receipt. Backend discovery 463 tests: 428 pass, 35 environment errors (8 SQLAlchemy/import, 27 socket restrictions). Core50, release-tools35, frontend14 files, auth3 files, preflight/context pass. Registry/dependency/Postgres/export blockers unchanged. Updated docs/release-verification-2026-11-08.md and .release/report.json.
+- Review confirms crypto invoices and publisher tokens/round accumulation are still not durable across fresh data directories/workers. Wallet-only backup also does not include all payment-provider metadata. Address these next, with real database integration verification still required. No live provider/database writes, deployment, commit or push.
+
+FULL RELEASE VERIFICATION 2026-11-08 — NOT APPROVED
+
+- Attempted all 14 release stages against unchanged source: 6 pass, 8 failed/blocked. Core 50, release tooling 35, frontend 14 files, auth 3 files, Render preflight and Docker static context pass. Backend discovery reports 458 tests with 35 environment errors (8 missing SQLAlchemy/imports, 27 socket restrictions); 423 reported tests pass. SQL integration modules could not import, so their contained regressions remain unexecuted.
+- Audits blocked by registry DNS, build/component/browser stages blocked by absent locked dependencies, Postgres stage blocked by absent isolated URL, export verifier blocked by missing web/out. No successful release receipt exists. Full evidence and rerun steps: docs/release-verification-2026-11-08.md and .release/report.json.
+- Hardened release runner: all-stage reporting/logs/timeouts, stale-approval revocation, source stability, complete Python discovery, Docker/Render checks, both dependency audits, broader source fingerprint. CI now provisions isolated Postgres and retains verification artifacts; remote CI execution remains unverified.
+- Hardened deploys: database URL changes/removal rejected before mutation; backup uses planned initial cutover database; Render pins verified committed SHA and returned deployment ID, rejects mismatched commits and no longer confuses an older deploy with a rejected trigger. Both publishers reject ignored source omitted by Git.
+- Python install and offline npm restore attempts failed; no locked dependency downgrade/substitution. No live mutations, deployment, commits or push. Next: restore exact dependencies in a socket-enabled environment with isolated Postgres and rerun the entire gate. Other durability review areas remain payment acknowledgements/counters and publisher process-local sessions.
+
+CONTINUED 2026-11-08 — remaining round receipt transaction boundaries
+
+- Added durable_wallet_operation around spin, sports placement (bet), publisher wallet_credit and settle_rgs_round. Database-backed methods now keep postings, promotions and history inside the same outer wallet transaction; file mode retains its existing behavior. Sports settlement now writes the final row before releasing its wallet lock and skips a pending snapshot already settled by another worker.
+- Fixed sports settled-identity collisions: completed bets are indexed by (player, round_id), matching scoped sports posting keys. Two players using the same bet ID no longer hide each other's settlements. Both new regressions fail when run with the prior identity logic and pass with the fix.
+- Added five runnable real-method tests for scoped bet IDs, stale pending snapshots and history-under-lock boundaries (all three spin branches, sports placement/settlement, publisher credit and RGS settlement). These use an observed local lock, not SQL transaction simulation. Added three database integration tests for posting/history rollback and retry across these methods; those remain unexecuted because SQLAlchemy is missing.
+- Verification: focused suites 29/29, core 50/50, compile and scoped diff checks pass. Full backend 427: 394 pass, 33 environment errors (6 missing SQLAlchemy, 27 socket PermissionErrors). SQLAlchemy import rechecked and still unavailable. Verifier reports only the two missing frontend export issues. Logs: /tmp/operator-{backend,core,verify}-rounds-20261108.log. No deployment, commits, live database or payment mutations.
+- Next: install/restore SQLAlchemy+driver in an environment with local sockets, run all SQLite persistence/wallet integration regressions and isolated Postgres concurrency coverage, then full release gate. Durable cutover is still pending integration verification. Payment-provider acknowledgement/counter persistence and process-local publisher session state still require review before claiming full deployment durability.
+
+CONTINUED 2026-11-08 — durable crash-round transaction implementation
+
+- Added demo/crash_state.py: database crash operations acquire the shared wallet transaction before refreshing pending state; stake/settlement, promo turnover/conversion, history and pending changes now participate in that transaction. Failed operations, pending saves and commits restore the refreshed in-memory snapshot. Read-only status checks avoid pending-document rewrites.
+- Database worker initialization preserves pending rounds instead of refunding another worker's active flight. Original clock/draw remain authoritative; existing sweep settles expired flights normally. File mode retains legacy boot refunds and best-effort persistence.
+- Added four orchestration unit tests covering lock/save order, read-only checks, file mode and operation/save/commit failures. Added five real database integration regressions for start/settlement rollback, worker handoff/duplicate-start rejection, concurrent starts and expired-round settlement across workers. These inherit isolated Postgres coverage, but have NOT executed: SQLAlchemy is absent.
+- Verification: 24 orchestration/backup/deployment tests pass, core 50/50, compile and scoped diff checks pass. Full backend still has 33 environment errors among 427 tests (6 missing SQLAlchemy, 27 prohibited sockets); 394 pass. Persistence/wallet suites cannot import without SQLAlchemy. Structure gate remains blocked by missing frontend export. No live database, deployment or commits.
+- Next required gate: restore dependencies, execute demo.test_persistence + demo.test_wallet_store (SQLite and isolated Postgres), then the full release gate. Database crash changes are implemented but not integration-verified or ready for cutover. Inspect remaining non-crash wallet/history transaction boundaries before durable-wallet publication.
+
+CONTINUED 2026-11-08 — portable backup validation and partial-cutover protection
+
+- Pre-deployment backup now reads all wallet documents in one query. Empty initialization is permitted only when that query returns no documents; rounds/promos/crash state without books now fail validation instead of being silently replaced by an empty backup.
+- Backup envelopes and nested books/round documents reject malformed shapes with ValueError. Extracted portable posting validation to demo/wallet_snapshot.py, retained its wallet_store import compatibility, and made database imports lazy in wallet_backup. Offline --check and --help now work without SQLAlchemy or database credentials.
+- Added regressions for complete document preservation, detached snapshots, explicit empty initialization, partial state rejection, envelope/document/checksum/posting corruption, legacy file import, backup file validation/engine cleanup, and CLI checking with Python -S (no installed site packages).
+- Verification: 20 backup/deployment tooling tests pass; core 50/50; compile/scoped diff checks pass. Backend 427 run: 394 pass, 33 errors from missing SQLAlchemy and prohibited sockets. Verifier: 2 issues, both missing web/out/index.html. No frontend changes, live database access, publishing, commits or deployment.
+- Wallet cutover remains unfinished. Review found crash start, settlement and startup recovery still commit wallet postings separately from pending state/history, and pending crash state is process-local. Resolve these transaction/recovery/multi-process semantics and run database integration tests with dependencies restored before deployment. Logs: /tmp/operator-{core,backend,verify}-20261108.log.
+
+CONTINUED 2026-11-08 — unfinished durable-wallet / release tooling
+
+- Resumed the newer uncommitted wallet, backup, account-history and release-gate work after completed release 0107. This continuation does not claim the durable-wallet work is ready to deploy.
+- Vercel publication now refuses untracked frontend source as well as tracked/staged/deleted changes, preventing verified local components from being omitted by git archive HEAD. Four real temporary-repository regressions cover these states and allow ignored build output/unrelated work.
+- Render reads the current environment and completes the live wallet backup before configuring the existing service or changing its environment. Explicit environment replacement now follows the same backup requirement. Regression covers backup failure in both modes and proves no configuration/environment writes occur.
+- Verification: deployment tooling 10/10; core 50/50; frontend 14 test files pass; auth-server 3 test files pass; scoped diff/compile checks pass. Backend 427 run, 33 errors (missing SQLAlchemy and sandbox socket permissions), 394 pass. Dependency installation failed because PyPI DNS is unavailable. Structure verifier reports two problems caused by missing web/out/index.html; frontend dependencies/export are absent. No browser QA, publication, commits or live mutations performed.
+- Next: restore dependencies and run the full release gate; review database crash-round recovery/atomicity and backup/restore validation before wallet cutover. Existing unrelated working-tree edits/deletions preserved.
+
+VISUAL REFINEMENT 0107 - RELEASED 2026-11-06: commits 45436e1 + 075a8a6 pushed; Render dep-dbmt95bncjis73afh2p0 LIVE. Framed sports board, compact aligned filters, selected-score feedback, provider-first account access, Ctrl/Cmd+K search, Escape/outside filter dismissal, neutral dark surfaces. Core50/backend427/frontend58/component73 pass; isolated release build and main build pass; verifier0; 51 controlled browser checks plus eight-width grid/collapse sweep and signup/recovery review. Live account layout, shortcut and X smoke pass. Separate Vercel frontend not republished (saved token lacks project access); visuals live at https://cadiback.onrender.com. See decisions/0107-sports-workspace-and-account-refinement.md.
+
+X AUTH 0106 - RELEASED 2026-11-06: commit e793262 pushed; Render deploy dep-dbms3pk7j7js73bgtlm0 LIVE. Key found in envs/.env.render and discovery fixed. X offered on Render and Vercel; actual browser buttons reach X sign-in with correct callbacks/scopes/S256; root/health/providers 200, guest player 401 on both hosts. All prior gates pass plus 4 deploy-tool tests. Full X account consent/callback completion remains unverified. Render frontend rebuilt; existing Vercel frontend dynamically offers X (no separate Vercel publish, saved token lacks project access). See decisions/0106-x-social-login.md.
+
+NEXT SESSION: release 0106 is prepared and locally verified but not deployed.
+See docs/handover-2026-10-28-release-0106.md for the continuation checklist.
+
+CURRENTTASK: Recent-game cache isolation (0105); implementation verified locally.
+
+## VERIFIED LOCALLY 2026-10-28 — recent-game cache isolation (0105)
+
+- Reproduced readRecent throwing on a JSON timestamp object with null valueOf/toString. Cache identities and nested game metadata could also reach card string operations/React rendering with invalid types.
+- Timestamps now convert only number/string primitives and become zero when nonfinite or malformed. Invalid identities are skipped. Cached snapshots require an ID/title and supported primitive metadata; bad or mismatched snapshots retain the top-level valid ID as an id-only recent for live-catalog resolution. Valid labels, numeric-string timestamps/RTP, ordering, deduplication, 30-entry limit and existing quota fallback remain.
+- Seven cache tests cover malformed reads/metadata/identity, valid round trips, invalid writes preserving stored bytes, limit/deduplication, quota fallback, clearing and inaccessible storage. Four fail against original HEAD in an isolated copy; patched suite passes. All 272 historical provider-demo snapshots pass a memory-storage round trip (not a live provider check).
+- Verification: all 58 JavaScript tests in 12 files, existing 73 static component renders, core 50/50, fresh production export and structure verifier (zero problems) pass. Backend 426 run: 399 pass, 27 errors, all sandbox HTTP-binding PermissionErrors. No UI layout, API or schema change; no new browser attempt, deployment or live account/payment mutations. Prior patches and unrelated edits preserved.
+- Next release gates remain real backend HTTP execution and browser/viewport validation for the casino panel from0104; do not claim those passed from this cache-only run.
+
+---
+
+CURRENTTASK: Casino sports feed recovery (0104).
+
+## VERIFIED LOCALLY 2026-10-28 — casino sports feed recovery (0104)
+
+- Found a separate casino sports poll whose catch discarded all errors: initial failure stayed on “Carregando partidas…” and later failures left retained prices without notice or retry. Cards only navigate to the sports board; they do not submit selections.
+- CasinoHome now reuses useSportsFeed(true), removing its interval poll. Added CasinoSports presentation with loading/slow/error/retry, retained-data notice and last-successful timestamp, updating status and valid-empty state. Existing three-card cap, market validation and onSport(false) navigation remain; no betting/quote action added. Read-only links remain usable during refresh/failure.
+- Shared hook regression proves slow requests do not overlap polls, retry aborts the older request, and late responses cannot replace recovered data. 51 JavaScript tests across 11 files pass. Component checks: 73 static renders, including ten casino states plus retry/navigation callback checks. Fresh production export passes; core 50/50 passes.
+- Firefox headless screenshot attempt crashed with exit139 before producing a screenshot. Preview HTML under /tmp/operator-0104-preview/ is static component output with existing CSS, not a mounted/browser-tested app. No visual/viewport or hydrated-interaction QA claimed. No new CSS or dependencies.
+- Structure verifier: zero problems; scoped diff check clean. Backend: 426 tests, 399 pass, 27 errors, all sandbox HTTP-binding PermissionErrors. Full backend HTTP and browser/viewport QA remain publication gates. No deployment or live account/payment mutations; existing changes preserved.
+
+---
+
+CURRENTTASK: Malformed fixture feed recovery (0103).
+
+## VERIFIED LOCALLY 2026-10-28 — malformed fixture feed recovery (0103)
+
+- Reproduced a sports-board crash with fixtures:[null]: the old hook only checked that fixtures was an array. Added shared readSportsFeed header validation before sports-hook state or casino recommendations are replaced.
+- Invalid fixture records/identities, duplicate keys, wrong display-field/score types and invalid source/note metadata reject the entire response. Empty calendars, optional/missing values and valid unknown sport/status strings remain accepted. Valid payloads and nested market objects are returned unchanged; existing validMarkets handles markets separately.
+- Sports refresh rejection keeps the previous board and successful timestamp, uses existing error/retry and disables sports selections; a valid retry clears the error. Casino rejects invalid sports responses through its existing catch path and retains prior recommendations. No new polling mechanism, API contract or financial action.
+- Validation: all 50 JavaScript tests in 11 files pass; 63 static component renders pass (including guest/member failed-refresh controls and recovery), core 50/50 and fresh production export pass. The two malformed-feed hook regressions fail against original HEAD in an isolated copy. Historical local cache: all 320 fixture headers accepted (not a live-feed check). Hook lifecycle tests use controlled state/effect/request/timer adapters; component rendering is static, without hydration, browser interaction or responsive visual review.
+- Backend: 426 tests, 399 pass, 27 HTTP-binding PermissionErrors in this sandbox. Structure verifier: zero problems; scoped diff check clean. Full backend verification remains a publication gate. No deployment or live account/payment mutations. Existing unrelated local deletions/cache edits and 0102 patch preserved.
+
+---
+
+CURRENTTASK: Malformed market and outcome isolation (0102); HTTP verification remains restricted.
+
+## COMPONENT VERIFIED 2026-10-28 — malformed outcome labels (0102)
+
+- Continued the same isolation task into real React component rendering. An object-valued outcome label passed the existing market validator and caused React to throw “Objects are not valid as a React child.” The sports Market contract specifies string selections.
+- validMarkets now rejects the entire market if an outcome is not a nonblank string. It preserves accepted labels exactly, including whitespace/accents and numeric strings, keeping outcome identities and price alignment intact. Invalid markets do not partially shift prices. Betslip regression covers malformed-label disappearance/recovery as well as malformed collections.
+- Added scripts/check_market_render.cjs: 55 actual static React renders exercise malformed/healthy market collections and object/null/blank outcomes, public/member detail and sports board, preserved sibling fixtures, and member builder empty/healthy states. This uses installed Next SWC, Node 22.12+ and React server rendering; it does not execute effects, hydration, browser interactions or layout. Casino sports recommendations are not rendered by this check because their feed loads in an effect.
+- JavaScript: 43 individual tests across nine files pass. Fresh production export passes. Core 50/50. Structure verifier reports zero problems and scoped diff check is clean. Backend rerun: 426 tests, 399 pass, 27 HTTP-binding PermissionErrors; the full backend gate remains unsatisfied. No deployment or live account/payment mutations.
+
+---
+
+## CONTINUED VERIFICATION 2026-10-28 — malformed market isolation (0102)
+
+- Located an existing cached Python 3.12 environment with SQLAlchemy 2.1.6 and psycopg 3.3.6, avoiding network dependency installation. Backend rerun: 426 tests, 399 pass, 27 errors, all local HTTP binding PermissionErrors. The six prior missing-dependency errors are resolved. No sandbox permission changes or substitute HTTP mocks were used to claim those tests pass.
+- Additional persistence/signup/deploy-tooling suites: 41 run, 28 pass, 13 skipped (Postgres cases require OPERATOR_TEST_DATABASE_URL); persistence coverage uses temporary SQLite, not live Postgres.
+- Added a betslip recovery regression: malformed markets mark only the affected selection unavailable, preserve healthy selections and saved prices, then restore explicit price review when the market returns. Confirmed this regression fails against the original helper in an isolated temporary copy and passes with the patch. All nine JavaScript files now pass, 42 individual tests; core 50/50 pass. Fresh production export passes; structure verifier zero problems; scoped diff check clean.
+- Remaining publication gate: run the 27 HTTP tests with local socket binding allowed. No browser QA or deployment performed. Cached environment: /home/pwdmcl/.cache/uv/archive-v0/7JRctxnJXeuaNP7w/bin/python; availability must be rechecked in future sessions.
+
+---
+
+## VERIFIED LOCALLY 2026-10-28 — malformed market isolation (0102)
+
+- Reproduced TypeErrors in validMarkets for markets:[null] and markets:{}. This helper is reached by sports discovery, public match detail and casino sports recommendations; the feed hook only validates the fixtures array.
+- Guarded missing fixtures/non-array market collections and null entries. Valid sibling market objects retain identity/order; existing selection/price validation is unchanged. Added mixed valid/malformed and missing-input regression coverage.
+- Current checks: production static build passes, scripts/verify.py reports zero problems, all nine JavaScript test files pass (41 individual tests, also executed directly), frame.selftest 50/50 pass, scoped diff check clean. Backend demo.test_demo: 426 run, 393 pass, 33 errors (six missing SQLAlchemy, 27 sandbox HTTP-bind PermissionErrors). Dependency restoration from PyPI failed DNS resolution. No browser interaction/visual QA performed for this helper-only change, no deployment, and no live account/payment mutations.
+- Next: rerun backend checks in an environment with installed requirements and HTTP binding permitted before publishing. Existing tooling deletions and runtime feed cache edits preserved.
+
+---
+
 CURRENTTASK: Deploy and upstream verified Operator release (0101).
 
 ## STATUS (2026-10-27)

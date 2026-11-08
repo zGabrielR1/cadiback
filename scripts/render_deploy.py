@@ -46,6 +46,8 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 API = "https://api.render.com/v1"
 
 # The service contract, mirroring render.yaml. Kept in one place so the
@@ -257,7 +259,9 @@ def _from_env_file(*, want_key: bool, path: str | None = None) -> str:
         return ""
     names = ("RENDER_API_KEY",) if want_key else ("RENDER_REPO",)
     found = ""
-    for line in open(path, encoding="utf-8"):
+    with open(path, encoding="utf-8") as handle:
+        lines = handle.readlines()
+    for line in lines:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -609,6 +613,7 @@ def configure(service_id: str, key: str) -> dict:
     `set_env_vars()` instead.
     """
     body = {
+        "autoDeploy": "no",
         "serviceDetails": {
             **DOCKER_BUILD,
             "runtime": SERVICE["runtime"],
@@ -731,33 +736,28 @@ def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def deploy(service_id: str, key: str) -> str:
+def deploy(service_id: str, key: str, commit_id: str) -> str:
     """Kick a deploy and watch it to a terminal state."""
-    try:
-        _call(f"/services/{service_id}/deploys", key,
-              {"clearCache": "do_not_clear"}, "POST")
-    except RenderError:
-        pass  # the deploy still started; the answer was just unreadable
-    # The POST's body is not reliable (observed: empty), and the newest deploy
-    # in the list is the one it started — so the id comes from there.
-    page = _call(f"/services/{service_id}/deploys?limit=1", key)
-    started = entities(page, "deploy")
-    if not started:
-        raise RenderError("Render accepted the deploy but reported none")
-    trigger = started[0]
+    answer = _call(f"/services/{service_id}/deploys", key,
+                   {"clearCache": "do_not_clear", "commitId": commit_id}, "POST")
+    trigger = entity(answer, "deploy")
     deploy_id = trigger.get("id", "")
+    if not deploy_id:
+        raise RenderError("deploy response has no ID; inspect Render before retrying")
     print(f"deploy {deploy_id}: building…")
     seen = ""
     for _ in range(180):           # ~30 min at 10s
         time.sleep(10)
         status = entity(_call(f"/services/{service_id}/deploys/{deploy_id}", key),
                         "deploy")
+        if (status.get('commit') or {}).get('id') != commit_id:
+            raise RenderError('Render deployment commit does not match verified source')
         state = f"{status.get('status')} {(status.get('commit') or {}).get('shortHash', '')}"
         if state != seen:
             print(" ", state)
             seen = state
         if status.get("status") in ("live", "build_failed", "update_failed",
-                                    "canceled", "pre_deploy_in_progress"):
+                                    "canceled", "pre_deploy_failed", "deactivated"):
             if status.get("status") != "live":
                 print_build_failure(service_id, key, trigger.get("createdAt", ""))
             return status["status"]
@@ -776,6 +776,40 @@ def print_build_failure(service_id: str, key: str, since: str) -> None:
         print("   ", line.encode("ascii", "replace").decode()[:200])
 
 
+def backup_wallet(service, environment):
+    from scripts.deploy_backup import before_deploy
+    before_deploy(ROOT, service['serviceDetails']['url'],
+                  {row['key']: row['value'] for row in environment})
+
+
+def planned_environment(current, desired, replace=False):
+    planned = desired if replace else merge_env_vars(current, desired)
+    old = {row['key']: row['value'] for row in current}.get('DATABASE_URL')
+    new = {row['key']: row['value'] for row in planned}.get('DATABASE_URL')
+    if old and new != old:
+        raise RenderError('DATABASE_URL change requires an explicit validated database migration')
+    if not new:
+        raise RenderError('durable wallet deployment requires DATABASE_URL')
+    return planned
+
+
+def committed_release():
+    from pathlib import Path
+    from scripts.release_gate import SOURCE_DIRECTORIES, SOURCE_FILES, source_files
+    scopes = [*SOURCE_DIRECTORIES, *SOURCE_FILES, ':(exclude)probes/*cache*']
+    dirty = subprocess.check_output(
+        ['git', 'status', '--porcelain', '--untracked-files=all', '--', *scopes],
+        cwd=ROOT, text=True).strip()
+    if dirty:
+        raise RenderError('Commit the verified release source before deploying')
+    tracked = set(subprocess.check_output(
+        ['git', 'ls-tree', '-r', '--name-only', '-z', 'HEAD'], cwd=ROOT).decode().split('\0'))
+    if any(path.is_file() and path.relative_to(Path(ROOT)).as_posix() not in tracked
+           for path in source_files(ROOT)):
+        raise RenderError('Verified source includes ignored or uncommitted files; publication refused')
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+
+
 def run(key: str, repo: str, force: bool,
         replace_env: bool = False) -> int:
     """Find or create the service, make it ours, deploy it, watch it go live."""
@@ -789,6 +823,21 @@ def run(key: str, repo: str, force: bool,
     if check_tree():
         print("refusing to deploy a tree that fails preflight")
         return 1
+    from scripts.release_gate import verified
+    if not verified():
+        print("refusing unverified source: run python scripts/release_gate.py first")
+        return 1
+    commit_id = committed_release()
+    env_list = runtime_env()
+    current = []
+    if existing:
+        # Read and back up the live wallet before any service or environment
+        # mutation, including explicit environment replacement.
+        current = get_env_vars(existing['id'], key)
+    merged = planned_environment(current, env_list, replace_env)
+    if existing:
+        if existing.get('serviceDetails', {}).get('url'):
+            backup_wallet(existing, merged)
     if existing:
         service = configure(existing["id"], key)
         print(f"reconfigured {existing.get('name')} -> "
@@ -798,14 +847,14 @@ def run(key: str, repo: str, force: bool,
         print(f"owner:  {owner.get('name')} [{owner.get('id')}]")
         service = create_service(key, repo, owner)
     service_id = service["id"]
-    env_list = runtime_env()
     if replace_env:
-        set_env_vars(service_id, key, env_list)
-        print(f"env:     replaced with {len(env_list)} variable(s)")
+        set_env_vars(service_id, key, merged)
+        print(f"env:     replaced with {len(merged)} variable(s)")
     else:
         # A failed read cannot safely become a full environment replacement.
-        current = get_env_vars(service_id, key)
-        merged = merge_env_vars(current, env_list)
+        if not existing:
+            current = get_env_vars(service_id, key)
+            merged = planned_environment(current, env_list)
         set_env_vars(service_id, key, merged)
         print(f"env:     {len(merged)} variable(s), "
               f"{max(0, len(merged) - len(env_list))} kept from the dashboard")
@@ -847,7 +896,7 @@ def run(key: str, repo: str, force: bool,
         print("no Better Auth credentials found: the social buttons stay hidden")
     print(f"service: {service.get('name')} [{service_id}]")
     print(f"url:     {service.get('serviceDetails', {}).get('url')}")
-    outcome = deploy(service_id, key)
+    outcome = deploy(service_id, key, commit_id)
     print("deploy:", outcome)
     if outcome != "live":
         print("not live — read the build log in the dashboard, or "

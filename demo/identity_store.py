@@ -12,6 +12,7 @@ from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
 from demo.models import IdentityDocument
+from demo.db_context import session_scope
 
 
 class IdentityConflict(ValueError):
@@ -37,7 +38,7 @@ class IdentityStore:
         self.factory, self.name, self.path = factory, name, path
 
     def read_all(self):
-        with self.factory() as db:
+        with session_scope(self.factory) as db:
             row = db.get(IdentityDocument, self.name)
             return Snapshot(row.data if row else {}, row.revision if row else None)
 
@@ -46,9 +47,10 @@ class IdentityStore:
             raise ValueError("identity writes require a freshly read snapshot")
         revision = data.revision
         try:
-            with self.factory.begin() as db:
+            with session_scope(self.factory, write=True) as db:
                 if revision is None:
                     db.add(IdentityDocument(name=self.name, data=dict(data), revision=0))
+                    db.flush()
                 else:
                     changed = db.execute(update(IdentityDocument).where(
                         IdentityDocument.name == self.name,

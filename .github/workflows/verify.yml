@@ -1,0 +1,54 @@
+name: Verify release
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: operator_test
+          POSTGRES_PASSWORD: operator_test
+          POSTGRES_DB: operator_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U operator_test -d operator_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      OPERATOR_TEST_DATABASE_URL: postgresql+psycopg://operator_test:operator_test@127.0.0.1:5432/operator_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: python -m pip install -r requirements.txt
+      - run: npm ci --prefix web
+      - run: npm ci --prefix auth-server
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: python scripts/release_gate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-verification
+          include-hidden-files: true
+          path: |
+            .release/report.json
+            .release/*.log
+            web/test-results/
+            web/playwright-report/

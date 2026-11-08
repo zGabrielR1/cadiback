@@ -70,3 +70,27 @@ test('upcoming and live discovery exclude unavailable matches without hiding the
   assert.deepEqual(filterFixtures(fixtures, { date: 'results', nowMs }), [fixtures[5]]);
   assert.deepEqual(filterFixtures(fixtures, { nowMs }), fixtures);
 });
+
+
+test('malformed provider markets cannot crash discovery or discard healthy siblings', () => {
+  const market = { kind: 'winner', selections: ['home', 'away'], prices: [1.5, 2.5] };
+  for (const fixture of [null, undefined, {}, { markets: {} }, { markets: 'invalid' }]) {
+    assert.deepEqual(validMarkets(fixture), []);
+  }
+  const markets = [null, undefined, false, 0, 'invalid', {}, market];
+  assert.deepEqual(validMarkets({ markets }), [market]);
+  assert.equal(markets.length, 7);
+  assert.equal(validMarkets({ markets })[0], market);
+});
+
+test('invalid outcome labels discard the whole market without changing healthy labels or price alignment', () => {
+  const healthy = Object.freeze({ selections: Object.freeze([' Casa ', 'Éder', '1']), prices: Object.freeze([2, 3, 4]) });
+  const malformed = [null, undefined, {}, [], 0, false, '', ' \t\n'].map(selection => ({
+    selections: ['Casa', selection, 'Fora'], prices: [2, 3, 4],
+  }));
+  const markets = Object.freeze([...malformed, healthy]);
+  assert.deepEqual(validMarkets({ markets }), [healthy]);
+  assert.equal(validMarkets({ markets })[0], healthy);
+  assert.deepEqual(healthy.selections, [' Casa ', 'Éder', '1']);
+  assert.deepEqual(healthy.prices, [2, 3, 4]);
+});

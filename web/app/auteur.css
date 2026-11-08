@@ -569,6 +569,13 @@ html[data-design="auteur"] .blue-extra-filters[open] summary{background:var(--in
 html[data-design="auteur"] .sx-league-head{border-bottom-color:var(--line)}
 html[data-design="auteur"] .sx-odd:not(:disabled):not(.on):hover{border-color:var(--ink);background:var(--card)}
 .auth-brand{display:none}
+html[data-design="auteur"] .account-history-tools{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:20px 0 12px}
+html[data-design="auteur"] .account-history-tools label{display:grid;gap:6px;font-size:13px;flex:1 1 180px;min-width:0}
+html[data-design="auteur"] .account-history-tools button{margin:0;min-height:46px}
+html[data-design="auteur"] .account-table-scroll{overflow-x:auto;max-width:100%}
+html[data-design="auteur"] .account-transactions{margin-top:28px;border-top:1px solid var(--line);padding-top:20px}
+html[data-design="auteur"] .account-transactions h3{font-size:18px}
+html[data-design="auteur"] .feed-refresh{font-size:12px;min-height:32px;padding:4px 8px;background:var(--card);color:var(--ink);border:1px solid var(--line);margin:0}
 html[data-design="auteur"] .auth-brand{display:block;font:750 22px var(--display-font);letter-spacing:-.04em;margin:0 0 24px}
 html[data-design="auteur"] .auth-brand span{color:var(--acc)}
 html[data-design="auteur"] .auth-sheet{max-width:500px;padding:32px;border-radius:12px}

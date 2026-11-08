@@ -5,6 +5,8 @@ import "./variants.css";
 import "./auteur.css";
 
 export const metadata = {
+  metadataBase: new URL("https://cadiback-web.vercel.app"),
+  alternates: { canonical: "/" },
   title: "Candibet — Cotações Esportivas",
   description: "Cotações esportivas ao vivo, mercados e análise de partidas. Candibet, 18+.",
 };

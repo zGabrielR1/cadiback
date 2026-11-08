@@ -77,6 +77,10 @@ from .arcade import (ARCADE_GAME_IDS, CRASH_GAME_ID, CRASH_GROWTH_PER_SEC,
                      crash_multiplier_at, theoretical_rtp as
                      arcade_theoretical_rtp)
 from . import behaviour
+from .crash_state import crash_operation
+from .wallet_operation import durable_wallet_operation
+from .db_context import session_scope
+from .publisher_state import publisher_method, publisher_operation
 from .sports_quotes import SportsQuoteError, quote_legs, require_same_prices
 from . import odds_engine, provider_demos, sports_data
 from . import game_proxy
@@ -680,7 +684,14 @@ class Demo:
                  db=None, betterauth=None, password_hasher=None,
                  player_secret: str | None = None) -> None:
         os.makedirs(data_dir, exist_ok=True)
-        self.books = Books(os.path.join(data_dir, "books.jsonl"))
+        books_path = os.path.join(data_dir, "books.jsonl")
+        if db is not None:
+            from demo.wallet_store import DatabaseBooks, DatabaseLog
+            self.books = DatabaseBooks(db, books_path)
+            self.round_log = DatabaseLog(db, "rounds")
+        else:
+            self.books = Books(books_path)
+            self.round_log = None
         self.players = Store(os.path.join(data_dir, "players.json"))
         if db is not None:
             from demo.identity_store import IdentityStore
@@ -700,8 +711,6 @@ class Demo:
         self.limits = Limits(deposit_daily=5000000)  # R$50.000/day demo cap
         self.reporter = SigapReporter()
         self.scheduler = Scheduler(os.path.join(data_dir, "sched"))
-        self.deposits_today: dict[str, int] = {}
-        self.deposit_days: dict[str, dict[str, object]] = {}
         self.pix_keys: dict[str, str] = {}
         self._pix_registration_lock = threading.Lock()
         self.store = self.players
@@ -709,6 +718,8 @@ class Demo:
         self.rounds_path = os.path.join(data_dir, "rounds.jsonl")
         self.ledger_path = os.path.join(data_dir, "ledger.jsonl")
         self.promos = Store(os.path.join(data_dir, "promos.json"))
+        if db is not None:
+            self.promos = IdentityStore(db, "promos", self.promos.path)
         # painel-flippable operator settings (require_bank_at_signup,
         # test_accounts_enabled) — see SETTINGS_DEFAULTS
         self.settings = Store(os.path.join(data_dir, "settings.json"))
@@ -723,6 +734,9 @@ class Demo:
         # movement (decision 0063)
         self.pragmatic_books: dict[str, dict] = {}
         self.pragmatic_tap: list[dict] = []
+        self.publisher_store = IdentityStore(db, "publisher_state", "") if db is not None else None
+        self._publisher_lock = threading.RLock()
+        self._publisher_depth = 0
         self.orphan_rounds: list[dict] = []
         # the anytime-scorer market's settlement feed: the per-match incidents
         # are read lazily, and only for a final fixture whose scorer leg is
@@ -732,6 +746,7 @@ class Demo:
         # secret draw seed (round_id) and the secret bust are held server
         # side and only revealed when the round settles
         self.crash_path = os.path.join(data_dir, "crash_pending.json")
+        self.crash_store = IdentityStore(db, "crash_pending", self.crash_path) if db is not None else None
         self._crash_lock = threading.Lock()
         self.crash_pending: dict[str, dict] = {}
         self._load_crash_pending()
@@ -764,13 +779,13 @@ class Demo:
                        if self.crypto_config.configured else None)
         self.crypto_path = os.path.join(data_dir, "crypto_charges.json")
         self._crypto_lock = threading.RLock()
+        self.crypto_store = IdentityStore(db, "crypto_charges", self.crypto_path) if db is not None else None
         self.crypto_charges: dict[str, dict] = self._load_crypto_charges()
         # Postgres (decision 0049): an explicit session factory, or None for
         # files. Never ambiently selected — run() wires it from the real
         # environment, tests inject SQLite or nothing — so importing this
-        # module can never touch Supabase. The in-process `_asaas_lock` still
-        # serializes confirms on the single instance; a second instance would
-        # need SELECT ... FOR UPDATE instead.
+        # module can never touch Supabase. Charge acknowledgements join the
+        # shared wallet transaction; provider network calls stay outside it.
         self._pg = db
         # Resend email (foundry.mail, decision 0047). Unconfigured is a normal
         # state: with no key the console mailer logs instead of sending, and
@@ -806,6 +821,8 @@ class Demo:
         # their own lock because a reset races a login, not the OAuth rail.
         self.password_resets = Store(
             os.path.join(data_dir, "password_resets.json"))
+        if db is not None:
+            self.password_resets = IdentityStore(db, "password_resets", self.password_resets.path)
         self._reset_lock = threading.RLock()
         self._reset_ip: dict[str, list[float]] = {}
         # Signed player sessions (decision 0069). The token is the credential:
@@ -1425,9 +1442,10 @@ class Demo:
                 allowed = not remote_ip or len(recent) < PASSWORD_RESET_IP_MAX
                 rows = self.password_resets.read_all()
                 # expired links are dead weight; drop them on every request
-                rows = {key: row for key, row in rows.items()
-                        if isinstance(row, dict)
-                        and float(row.get("expires_at", 0)) > now}
+                expired = [key for key, row in rows.items() if not isinstance(row, dict)
+                           or float(row.get("expires_at", 0)) <= now]
+                for key in expired:
+                    rows.pop(key, None)
                 last = max((float(row.get("created_at", 0))
                             for row in rows.values()
                             if row.get("player_id") == player_id), default=0.0)
@@ -1436,8 +1454,9 @@ class Demo:
                     digest = self._reset_digest(token)
                     # one live link per account: a newer request invalidates
                     # every older one, so a lost email cannot be replayed later
-                    rows = {key: row for key, row in rows.items()
-                            if row.get("player_id") != player_id}
+                    for key in list(rows):
+                        if rows[key].get("player_id") == player_id:
+                            rows.pop(key)
                     rows[digest] = {
                         "player_id": player_id,
                         "created_at": now,
@@ -1522,8 +1541,9 @@ class Demo:
                     self.password_resets.write_all(rows)
                 raise ValueError("link de redefinição inválido ou expirado")
             player_id = str(row.get("player_id") or "")
-            rows = {key: value for key, value in rows.items()
-                    if value.get("player_id") != player_id}
+            for key in list(rows):
+                if rows[key].get("player_id") == player_id:
+                    rows.pop(key)
             self.password_resets.write_all(rows)
         data = self.players.read_all()
         record = data.get(player_id)
@@ -1972,19 +1992,22 @@ class Demo:
 
     # -- cashier ------------------------------------------------------
     def _deposited_today(self, player_id: str) -> int:
-        today = datetime.now(timezone.utc).date().isoformat()
-        row = self.deposit_days.get(player_id, {})
-        if row.get("day") != today:
-            return 0
-        return int(row.get("total", 0))
+        """Daily limits follow durable credits, never process-local counters.
 
-    def _record_deposit(self, player_id: str, amount: int) -> None:
-        today = datetime.now(timezone.utc).date().isoformat()
-        row = self.deposit_days.setdefault(player_id, {"day": today, "total": 0})
-        if row.get("day") != today:
-            row["day"] = today
-            row["total"] = 0
-        row["total"] = int(row.get("total", 0)) + amount
+        Callers hold books.lock across this read and the prospective credit.
+        Invalid deposit timestamps fail closed rather than reset the limit.
+        """
+        today = datetime.now(timezone.utc).date()
+        total = 0
+        for posting in self.books.postings:
+            if posting.kind != "deposit" or posting.metadata.get("player") != player_id:
+                continue
+            stamp = datetime.fromisoformat(posting.ts.replace("Z", "+00:00"))
+            if stamp.tzinfo is None:
+                raise ValueError("deposit posting requires a timezone-aware timestamp")
+            if stamp.astimezone(timezone.utc).date() == today:
+                total += sum(amount for account, amount in posting.legs if account == PLAYER_BALANCE)
+        return total
 
     @staticmethod
     def _minor(amount: int) -> int:
@@ -2023,7 +2046,6 @@ class Demo:
                 deposit_today_minor=today, deposit_id=deposit_id,
                 metadata=metadata,
             )
-            self._record_deposit(player_id, amount)
         return {"seq": posting.seq, "replayed": False, "test": is_test,
                 "available_minor": self.books.available(player_id)}
 
@@ -2111,10 +2133,10 @@ class Demo:
         except (ValueError, OSError):
             return {}  # unreadable pending charges: start empty, never crash
 
-    def _save_asaas_charges(self) -> None:
+    def _save_asaas_charges(self, rows=None) -> None:
         tmp = self.asaas_path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(self.asaas_charges, handle, ensure_ascii=False, indent=2)
+            json.dump(self.asaas_charges if rows is None else rows, handle, ensure_ascii=False, indent=2)
         os.replace(tmp, self.asaas_path)
 
     # -- Postgres port (decision 0049): charges live in `asaas_charges` when
@@ -2141,35 +2163,44 @@ class Demo:
         if self._pg is None:
             return self.asaas_charges.get(deposit_id)
         from .models import AsaasCharge
-        with self._pg() as session:
+        with session_scope(self._pg) as session:
             record = session.get(AsaasCharge, deposit_id)
             return self._charge_to_row(record) if record is not None else None
 
     def _put_charge(self, row: dict) -> None:
         if self._pg is None:
-            self.asaas_charges[row["deposit_id"]] = row
-            self._save_asaas_charges()
+            rows = {**self.asaas_charges, row["deposit_id"]: dict(row)}
+            self._save_asaas_charges(rows)
+            self.asaas_charges = rows
             return
         from .models import AsaasCharge
         paid_at = row.get("paid_at") or ""
-        with self._pg() as session:
-            session.merge(AsaasCharge(
-                deposit_id=row["deposit_id"],
-                player=str(row.get("player") or ""),
-                amount_minor=int(row.get("amount_minor") or 0),
-                provider_ref=str(row.get("provider_ref") or ""),
-                provider_status=str(row.get("provider_status") or ""),
-                qr_payload={
-                    "qr_text": str(row.get("qr_text") or ""),
-                    "copy_paste": str(row.get("copy_paste") or ""),
-                    "qr_base64": str(row.get("qr_base64") or ""),
-                    "created_at": str(row.get("created_at") or ""),
-                },
-                posted=bool(row.get("posted")),
-                paid_at=(datetime.fromisoformat(paid_at)
-                         if paid_at else None),
-            ))
-            session.commit()
+        with self.books.lock:
+            with session_scope(self._pg, write=True) as session:
+                existing = session.get(AsaasCharge, row["deposit_id"])
+                if existing and (existing.player != row.get("player")
+                                 or int(existing.amount_minor) != int(row.get("amount_minor", 0))
+                                 or existing.provider_ref != row.get("provider_ref")):
+                    raise ValueError("Pix deposit reference already belongs to another invoice")
+                if existing and existing.posted and not row.get("posted"):
+                    return  # a stale poll must not erase a paid acknowledgement
+                session.merge(AsaasCharge(
+                    deposit_id=row["deposit_id"],
+                    player=str(row.get("player") or ""),
+                    amount_minor=int(row.get("amount_minor") or 0),
+                    provider_ref=str(row.get("provider_ref") or ""),
+                    provider_status=str(row.get("provider_status") or ""),
+                    qr_payload={
+                        "qr_text": str(row.get("qr_text") or ""),
+                        "copy_paste": str(row.get("copy_paste") or ""),
+                        "qr_base64": str(row.get("qr_base64") or ""),
+                        "created_at": str(row.get("created_at") or ""),
+                    },
+                    posted=bool(row.get("posted")),
+                    paid_at=(datetime.fromisoformat(paid_at)
+                             if paid_at else None),
+                ))
+                session.flush()
 
     def _charge_view(self, deposit_id: str, row: dict) -> dict:
         player_id = str(row.get("player") or "")
@@ -2205,7 +2236,9 @@ class Demo:
         deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
         with self._asaas_lock:
             existing = self._get_charge(deposit_id)
-            if existing and existing.get("player") == player_id:
+            if existing:
+                if existing.get("player") != player_id or int(existing.get("amount_minor", 0)) != amount:
+                    raise ValueError("deposit reference already belongs to another invoice")
                 return self._charge_view(deposit_id, existing)
             charge = self.asaas.create_pix_charge(txid=deposit_id, amount_cents=amount)
             row = {
@@ -2239,11 +2272,10 @@ class Demo:
                         deposit_today_minor=self._deposited_today(player_id),
                         deposit_id=deposit_id,
                     )
-                    self._record_deposit(player_id, amount)
-            row["posted"] = True
-            row["provider_status"] = "PAID"
-            row["paid_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-            self._put_charge(row)
+                updated = {**row, "posted": True, "provider_status": "PAID",
+                           "paid_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                self._put_charge(updated)
+            row.update(updated)  # only expose success after the transaction commits
 
     def pix_deposit_status(self, payload: dict) -> dict:
         """Poll one charge; confirm it if the provider now says it is paid.
@@ -2325,6 +2357,8 @@ class Demo:
                 for code, label in SUPPORTED_COINS]
 
     def _load_crypto_charges(self) -> dict[str, dict]:
+        if getattr(self, "crypto_store", None) is not None:
+            return {}  # legacy files require explicit import, never implicit replay
         path = getattr(self, "crypto_path", "")
         if not path or not os.path.isfile(path):
             return {}
@@ -2335,15 +2369,33 @@ class Demo:
         except (ValueError, OSError):
             return {}
 
-    def _save_crypto_charges(self) -> None:
+    def _save_crypto_charges(self, rows=None) -> None:
         tmp = self.crypto_path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(self.crypto_charges, handle, ensure_ascii=False, indent=2)
+            json.dump(self.crypto_charges if rows is None else rows, handle, ensure_ascii=False, indent=2)
         os.replace(tmp, self.crypto_path)
 
+    def _get_crypto_charge(self, deposit_id: str) -> dict | None:
+        if self.crypto_store is not None:
+            return self.crypto_store.read_all().get(deposit_id)
+        return self.crypto_charges.get(deposit_id)
+
     def _put_crypto_charge(self, row: dict) -> None:
-        self.crypto_charges[row["deposit_id"]] = row
-        self._save_crypto_charges()
+        if self.crypto_store is not None:
+            with self.books.lock:
+                rows = self.crypto_store.read_all()
+                existing = rows.get(row["deposit_id"])
+                if existing and any(existing.get(key) != row.get(key)
+                                    for key in ("player", "amount_minor", "provider_ref")):
+                    raise ValueError("crypto deposit reference already belongs to another invoice")
+                if existing and existing.get("posted") and not row.get("posted"):
+                    return  # a stale pending poll must not erase a paid acknowledgement
+                rows[row["deposit_id"]] = dict(row)
+                self.crypto_store.write_all(rows)
+            return
+        rows = {**self.crypto_charges, row["deposit_id"]: dict(row)}
+        self._save_crypto_charges(rows)
+        self.crypto_charges = rows
 
     def _crypto_view(self, deposit_id: str, row: dict) -> dict:
         player_id = str(row.get("player") or "")
@@ -2386,8 +2438,10 @@ class Demo:
             raise ValueError(f"moeda não suportada: {coin or 'vazio'}")
         deposit_id = str(payload.get("deposit_id") or uuid.uuid4().hex)
         with self._crypto_lock:
-            existing = self.crypto_charges.get(deposit_id)
-            if existing and existing.get("player") == player_id:
+            existing = self._get_crypto_charge(deposit_id)
+            if existing:
+                if existing.get("player") != player_id or int(existing.get("amount_minor", 0)) != amount:
+                    raise ValueError("deposit reference already belongs to another invoice")
                 return self._crypto_view(deposit_id, existing)
             charge = self.crypto.create_payment(
                 txid=deposit_id, amount_cents=amount, pay_currency=coin,
@@ -2408,13 +2462,17 @@ class Demo:
             return self._crypto_view(deposit_id, row)
 
     def _confirm_crypto_charge(self, deposit_id: str, row: dict) -> None:
-        """Post the deposit once, whatever wakes it (IPN or poll)."""
+        """Credit and acknowledge a durable invoice in one wallet transaction."""
         with self._crypto_lock:
-            if row.get("posted"):
-                return
-            player_id = str(row["player"])
-            amount = int(row["amount_minor"])
             with self.books.lock:
+                current = self._get_crypto_charge(deposit_id)
+                if current is None:
+                    raise ValueError("crypto invoice not found")
+                if current.get("posted"):
+                    row.update(current)
+                    return
+                player_id = str(current["player"])
+                amount = int(current["amount_minor"])
                 key = f"demo:deposit:{player_id}:{deposit_id}"
                 if not any(p.key == key for p in self.books.postings):
                     process_deposit(
@@ -2423,18 +2481,20 @@ class Demo:
                         deposit_today_minor=self._deposited_today(player_id),
                         deposit_id=deposit_id,
                     )
-                    self._record_deposit(player_id, amount)
-            row["posted"] = True
-            row["provider_status"] = "PAID"
-            row["paid_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-            self._put_crypto_charge(row)
+                updated = {**current, "posted": True, "provider_status": "PAID",
+                           "paid_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                if self.crypto_store is not None:
+                    self._put_crypto_charge(updated)
+            if self.crypto_store is None:
+                self._put_crypto_charge(updated)
+            row.update(updated)
 
     def crypto_deposit_status(self, payload: dict) -> dict:
         """Poll one invoice; confirm it if the provider now says it is paid."""
         player_id = payload["player"]
         deposit_id = str(payload["deposit_id"])
         with self._crypto_lock:
-            row = self.crypto_charges.get(deposit_id)
+            row = self._get_crypto_charge(deposit_id)
             if not row or row.get("player") != player_id:
                 raise ValueError("cobrança cripto não encontrada")
             if not row.get("posted") and self.crypto is not None \
@@ -2459,7 +2519,7 @@ class Demo:
             return {"received": True, "event": event["event"], "applied": False}
         deposit_id = event["deposit_id"]
         with self._crypto_lock:
-            row = self.crypto_charges.get(deposit_id)
+            row = self._get_crypto_charge(deposit_id)
             if not row:
                 return {"received": True, "event": event["event"],
                         "applied": False, "reason": "unknown deposit"}
@@ -2481,6 +2541,7 @@ class Demo:
                     "available_minor": self.books.available(str(row["player"]))}
 
     # -- slot ---------------------------------------------------------
+    @durable_wallet_operation
     def spin(self, payload: dict) -> dict:
         player_id = payload["player"]
         game_id = payload["game_id"]
@@ -2575,19 +2636,30 @@ class Demo:
     # -- crash: live (manual cash-out) ---------------------------------
 
     def _load_crash_pending(self) -> None:
-        """Reload live crash rounds after a restart — and void them.
+        """Reload durable rounds; void interrupted file-backed rounds.
 
-        A round left pending at boot was debited (its stake sits in
+        Database rounds retain their original clock and draw across workers;
+        the regular sweep settles expired flights. File-backed rounds have no
+        shared transaction and use the legacy refund recovery below.
+
+        A file-backed round left pending at boot was debited (its stake sits in
         `bet:staked`) but never settled, and we cannot know whether the
         player had cashed out before the process died. The only honest
         outcome is to return the stake: a cancelled round, recorded in
         the ledger, so no money is left stranded.
         """
-        try:
-            with open(self.crash_path, "r", encoding="utf-8") as handle:
-                data = json.load(handle)
-        except (OSError, ValueError):
-            data = {}
+        if self.crash_store is not None:
+            # Shared durable rounds survive process replacement. Another worker
+            # starting must not refund a round that is still flying elsewhere.
+            with self.books.lock:
+                self.crash_pending = dict(self.crash_store.read_all())
+            return
+        else:
+            try:
+                with open(self.crash_path, "r", encoding="utf-8") as handle:
+                    data = json.load(handle)
+            except (OSError, ValueError):
+                data = {}
         if not isinstance(data, dict):
             data = {}
         for token, row in data.items():
@@ -2601,8 +2673,16 @@ class Demo:
         self._save_crash_pending()
 
     def _save_crash_pending(self) -> None:
-        """Persist the in-flight rounds atomically. Best-effort: the
-        in-memory dict still drives the sweep if the write fails."""
+        """Persist pending rounds in the wallet transaction when database-backed.
+
+        File writes remain best-effort; the in-memory sweep drives that mode.
+        """
+        if self.crash_store is not None:
+            snapshot = self.crash_store.read_all()
+            snapshot.clear()
+            snapshot.update(self.crash_pending)
+            self.crash_store.write_all(snapshot)
+            return
         try:
             tmp = self.crash_path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as handle:
@@ -2641,7 +2721,7 @@ class Demo:
         the request never came back). Past the bust point the round is a
         loss. Called from the periodic settle paths (POST /api/settle,
         /api/sports, /api/bet) and the heartbeat thread."""
-        with self._crash_lock:
+        with crash_operation(self):
             return self._sweep_crash_locked()
 
     def _sweep_crash_locked(self) -> int:
@@ -2664,7 +2744,7 @@ class Demo:
             raise ValueError(f"stake must be one of {STAKE_STEPS} centavos")
         cert = self.registry.assert_launchable(CRASH_GAME_ID)  # BR cert gate
         self.exclusions.assert_playable(player_id)
-        with self._crash_lock:
+        with crash_operation(self):
             self._sweep_crash_locked()
             if any(r.get("player") == player_id
                    for r in self.crash_pending.values()):
@@ -2688,12 +2768,14 @@ class Demo:
                 self.crash_pending.pop(token, None)
                 raise
             row["bonus_part"] = bonus_part
-            self._save_crash_pending()
-        try:
-            with self.books.lock:
+            if self.crash_store is not None:
                 self._record_wager(player_id, stake, f"crash:{token}")
-        except Exception:
-            pass  # turnover accounting is best-effort; the round stands
+        if self.crash_store is None:
+            try:
+                with self.books.lock:
+                    self._record_wager(player_id, stake, f"crash:{token}")
+            except Exception:
+                pass  # file-backed turnover accounting remains best-effort
         return {
             "token": token, "started_at": row["started_at"],
             "server_now": time.time(), "growth": CRASH_GROWTH_PER_SEC,
@@ -2707,7 +2789,7 @@ class Demo:
         secret bust is finally revealed. A round belongs to the player who
         opened it: someone else's handle reads as unknown (decision 0069)."""
         token = str(payload.get("token") or "")
-        with self._crash_lock:
+        with crash_operation(self):
             row = self.crash_pending.get(token)
             if row is None or (player_id and row.get("player") != player_id):
                 return {"status": "unknown"}
@@ -2725,7 +2807,7 @@ class Demo:
         server's clock shows at this instant, or a loss if the curve had
         already busted. Only the round's owner may cash it out (0069)."""
         token = str(payload.get("token") or "")
-        with self._crash_lock:
+        with crash_operation(self):
             row = self.crash_pending.get(token)
             if row is None or (player_id and row.get("player") != player_id):
                 raise ValueError("voo não encontrado (já finalizado?)")
@@ -2756,7 +2838,6 @@ class Demo:
         }
         self._append_round(final)
         self.crash_pending.pop(token, None)
-        self._save_crash_pending()
         bust = crash_bust_multiplier(CRASH_GAME_ID, str(row["round_id"]))
         return {
             "status": "cashed" if result.is_win else "busted",
@@ -2797,6 +2878,7 @@ class Demo:
         require_same_prices(legs, quote)
         return self.bet({**payload, "legs": quote["legs"]})
 
+    @durable_wallet_operation
     def bet(self, payload: dict) -> dict:
         player_id = payload["player"]
         legs = payload.get("legs")
@@ -2986,14 +3068,9 @@ class Demo:
         POST /api/settle. Also drains any abandoned live crash round.
         """
         self.sweep_crash()
-        rows = []
-        try:
-            with open(self.rounds_path, "r", encoding="utf-8") as handle:
-                rows = [json.loads(l) for l in handle if l.strip()]
-        except FileNotFoundError:
-            return []
+        rows = self._all_rounds()
         settled_ids = {
-            r["round_id"] for r in rows
+            (r["player"], r["round_id"]) for r in rows
             if r.get("type") == "sports" and r.get("tier") != "pendente"
         }
         out = []
@@ -3002,7 +3079,7 @@ class Demo:
         for r in rows:
             if r.get("type") != "sports" or r.get("tier") != "pendente":
                 continue
-            if r["round_id"] in settled_ids:
+            if (r["player"], r["round_id"]) in settled_ids:
                 continue
             try:
                 ts = datetime.fromisoformat(str(r["ts"]).replace("Z", "+00:00"))
@@ -3035,6 +3112,8 @@ class Demo:
                 # at placement: a restart must not forget it
                 bonus_part = self._books_bonus_part(player_id, r["round_id"])
                 settle_key = f"demo:spstl:{player_id}:{r['round_id']}"
+                if any(p.key == settle_key for p in self.books.postings):
+                    continue  # another worker settled this pending snapshot
                 if verdict == "won":
                     self.books.settle_bet_win(settle_key, player_id,
                                               stake, f"{price:.2f}",
@@ -3072,24 +3151,27 @@ class Demo:
                 # a bonus-staked win pays part of its payout back into
                 # player:bonus; release it only if no requirement owns it
                 self._maybe_convert(player_id, f"stl:{r['round_id']}")
-            final = dict(r)
-            final.update(
-                tier=tier, payout_minor=payout,
-                available_minor=self.books.available(player_id),
-                ts=now.isoformat(timespec="seconds"),
-                settled_by="result" if legs and verdict else "simulado",
-            )
-            if note:
-                final["note"] = note
-            if self._append_round(final):
-                out.append(final)
-                settled_ids.add(r["round_id"])
+                final = dict(r)
+                final.update(
+                    tier=tier, payout_minor=payout,
+                    available_minor=self.books.available(player_id),
+                    ts=now.isoformat(timespec="seconds"),
+                    settled_by="result" if legs and verdict else "simulado",
+                )
+                if note:
+                    final["note"] = note
+                if self._append_round(final):
+                    out.append(final)
+                    settled_ids.add((player_id, r["round_id"]))
         return out
 
     def _append_round(self, row: dict) -> bool:
         """Append the round record. Failure is reported, never swallowed:
         a settled bet whose record was lost can never be retried, because the
         wallet already refuses the duplicate posting."""
+        if self.round_log is not None:
+            self.round_log.append(row)
+            return True
         try:
             with open(self.rounds_path, "a", encoding="utf-8") as handle:
                 handle.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -3166,6 +3248,8 @@ class Demo:
         One truncated write used to raise JSONDecodeError out of both history
         and risk, killing the account page for every player with no repair.
         """
+        if self.round_log is not None:
+            return self.round_log.read()
         if not os.path.exists(self.rounds_path):
             return []
         rows: list[dict] = []
@@ -3193,6 +3277,12 @@ class Demo:
                 order.append(key)
             latest[key] = r
         return [latest[k] for k in order][-limit:]
+
+    def wallet_activity(self, player_id: str, limit: int = 100) -> list[dict]:
+        return [{"id": p.key, "kind": p.kind, "ts": p.ts,
+                 "cash_minor": sum(amount for account, amount in p.legs if account == PLAYER_BALANCE),
+                 "bonus_minor": sum(amount for account, amount in p.legs if account == PLAYER_BONUS)}
+                for p in self.books.postings if p.metadata.get("player") == player_id][-limit:]
 
     def record_play(self, body: dict) -> dict:
         """One open of a game. Presentation activity, never money:
@@ -3686,7 +3776,6 @@ class Demo:
                 metadata={"test": True, "reason": "admin test deposit",
                           "by": admin["username"]})
             self.books.assert_balanced()
-            self._record_deposit(player_id, amount)
         return {"deposited": player_id, "deposit_id": dep_id,
                 "amount_minor": amount,
                 "available_minor": self.books.available(player_id),
@@ -4072,6 +4161,7 @@ class Demo:
     # over when the feed has been silent about it for half a day
     STALE_BET_SECONDS = 12 * 3600
 
+    @publisher_method
     def _wallet_session(self, token: str) -> dict:
         session = self.wallet_tokens.get(str(token or ""))
         if not session:
@@ -4089,6 +4179,7 @@ class Demo:
                        "Saldo insuficiente — deposite para girar.",
         }
 
+    @publisher_method
     def wallet_launch(self, payload: dict) -> dict:
         """Open a wallet session for one publisher game and report whether the
         player can afford the smallest stake."""
@@ -4108,6 +4199,7 @@ class Demo:
                 "issued_at": self.wallet_tokens[token]["issued_at"],
                 **self._wallet_view(player_id)}
 
+    @publisher_method
     def rgs_bind(self, provider: str, session_uuid: str, token: str) -> None:
         """Follow a session by the id the RGS handed back.
 
@@ -4116,12 +4208,17 @@ class Demo:
         the right wallet.
         """
         if provider and session_uuid and token:
+            existing = self.rgs_sessions.get((provider, session_uuid))
+            if existing and existing != token:
+                raise ValueError("publisher session already belongs to another wallet")
             self.rgs_sessions[(provider, session_uuid)] = token
 
+    @publisher_method
     def rgs_token(self, provider: str, session_uuid: str) -> str:
         """The wallet token behind an RGS session id, or ""."""
         return self.rgs_sessions.get((provider, session_uuid), "")
 
+    @publisher_method
     def rgs_open_round(self, provider: str, session_uuid: str,
                        stake: int) -> dict:
         """Open the round a session is staking on, or add to it."""
@@ -4130,6 +4227,7 @@ class Demo:
         entry["stake"] += stake
         return entry
 
+    @publisher_method
     def rgs_note_win(self, provider: str, session_uuid: str, win: int) -> dict:
         """Remember the win a round has accumulated so far."""
         entry = self.rgs_rounds.setdefault(
@@ -4138,10 +4236,12 @@ class Demo:
             entry["win"] = win
         return entry
 
+    @publisher_method
     def rgs_close_round(self, provider: str, session_uuid: str) -> dict | None:
         """Take the finished round off the books of the running ones."""
         return self.rgs_rounds.pop((provider, session_uuid), None)
 
+    @publisher_method
     def wallet_owner(self, token: str) -> dict | None:
         """The session behind a wallet token: player and game, or None.
 
@@ -4270,6 +4370,7 @@ class Demo:
         return {"game_id": session["game_id"],
                 **self._wallet_view(session["player"])}
 
+    @publisher_method
     def wallet_view_for(self, token: str) -> dict | None:
         """The bridge's config: the player's real saldo for one token, or None."""
         session = self.wallet_tokens.get(str(token or ""))
@@ -4299,6 +4400,8 @@ class Demo:
         return {"accepted": True, "round_id": round_id,
                 **self._wallet_view(player_id)}
 
+    @publisher_method
+    @durable_wallet_operation
     def wallet_credit(self, payload: dict) -> dict:
         """Settle a publisher round with the payout it reports. The stake is
         read back from the matching debit, so a restart or a replay cannot
@@ -4372,6 +4475,7 @@ class Demo:
     # rather than posted. The cap is the wallet's own per-round bound.
     PRAGMATIC_MOVEMENT_CAP = 10000000
 
+    @publisher_method
     def pragmatic_note_balance(self, token: str, game_id: str,
                                publisher_minor: int,
                                split: tuple[int, int] | None = None
@@ -4472,8 +4576,9 @@ class Demo:
                                            entry["round_id"], stake, payout)
         except (DuplicatePosting, WalletError, ValueError, KeyError,
                 ExclusionError) as exc:
-            # the wallet refused it (an empty saldo, a closed account): the
-            # saldo stands and the log says why
+            if self.publisher_store is not None:
+                raise  # roll back the baseline/sequence together with the wallet
+            # File-backed mode records the refusal in its local diagnostic log.
             entry["note"] = f"refused: {type(exc).__name__}"
             self._log_pragmatic(entry)
             return None
@@ -4491,6 +4596,7 @@ class Demo:
         self._require_admin(token)
         return {"tap": list(reversed(self.pragmatic_tap))}
 
+    @durable_wallet_operation
     def settle_rgs_round(self, player_id: str, game_id: str, round_id: str,
                          stake: int, win: int) -> dict:
         """Settle one round an interposed RGS reported.
@@ -4558,9 +4664,19 @@ class Demo:
         checked its freshness, so the main liveness check could never fail
         and every GET dirtied the scheduler state."""
         report = health(self.scheduler, self.ledger_path, self.books.path)
+        if self._pg is not None:
+            from dataclasses import replace
+            snapshot = self.books.snapshot()
+            checks = tuple((name, True, f"{len(snapshot['postings'])} durable postings balance to zero")
+                                  if name == "books" else (name, ok, detail)
+                                  for name, ok, detail in report.checks)
+            failed = sum(not ok for _, ok, _ in checks)
+            report = replace(report, checks=checks,
+                             status="ok" if not failed else "degraded" if failed == 1 else "down")
         return {"status": report.status, "checks": report.as_dict()["checks"],
                 "storage": {"identity": "database" if self._pg is not None else "files",
-                            "wallet": "files"}}
+                            "wallet": "database" if self._pg is not None else "files",
+                            "rounds": "database" if self._pg is not None else "files"}}
 
 
 DEMO = Demo()
@@ -5044,22 +5160,23 @@ class Handler(BaseHTTPRequestHandler):
         the RGS finishes it, so the money the player sees is the
         money the operator holds — in both directions.
         """
-        session = (rgs_proxy.session_uuid(request)
-                   or rgs_proxy.session_uuid(data))
-        stake = rgs_proxy.bet_total(request)
-        if session and stake:
-            DEMO.rgs_open_round(provider, session, stake)
-        state = rgs_proxy.round_state(data)
-        if session and state:
-            DEMO.rgs_note_win(provider, session, state.get("win") or 0)
-            if state.get("done"):
-                closed = DEMO.rgs_close_round(provider, session)
-                if closed and closed["stake"]:
-                    self._settle_rgs(provider, owner,
-                                     state.get("id") or session,
-                                     closed["stake"], closed["win"])
-        balance = DEMO.wallet_balance(owner["player"])
-        return rgs_proxy.replace_balance(data, balance)
+        with publisher_operation(DEMO):
+            session = (rgs_proxy.session_uuid(request)
+                       or rgs_proxy.session_uuid(data))
+            stake = rgs_proxy.bet_total(request)
+            if session and stake:
+                DEMO.rgs_open_round(provider, session, stake)
+            state = rgs_proxy.round_state(data)
+            if session and state:
+                DEMO.rgs_note_win(provider, session, state.get("win") or 0)
+                if state.get("done"):
+                    closed = DEMO.rgs_close_round(provider, session)
+                    if closed and closed["stake"]:
+                        self._settle_rgs(provider, owner,
+                                         state.get("id") or session,
+                                         closed["stake"], closed["win"])
+            balance = DEMO.wallet_balance(owner["player"])
+            return rgs_proxy.replace_balance(data, balance)
 
     def _settle_rgs(self, provider: str, owner: dict, round_id: str,
                     stake: int, win: int) -> None:
@@ -5069,7 +5186,9 @@ class Handler(BaseHTTPRequestHandler):
                                   f"{provider}:{round_id}", stake, win)
         except (DuplicatePosting, WalletError, ValueError, KeyError,
                 ExclusionError):
-            # an already-settled round; the saldo stands
+            if DEMO.publisher_store is not None:
+                raise  # durable pending state must survive a refused settlement
+            # File-backed mode keeps its legacy refusal behavior.
             pass
 
     def _serve_asaas_webhook(self) -> None:
@@ -5340,7 +5459,8 @@ class Handler(BaseHTTPRequestHandler):
                     self._player_session()))
             elif parsed.path == "/api/history":
                 player = self._player_id()
-                self._send(200, {"rounds": DEMO.history(player),
+                self._send(200, {"rounds": DEMO.history(player, limit=100),
+                                 "transactions": DEMO.wallet_activity(player),
                                  "risk": DEMO.risk(player)})
             elif parsed.path == "/api/sports":
                 payload = DEMO.sports_showcase()

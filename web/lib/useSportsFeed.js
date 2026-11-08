@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { readSportsFeed } from "./sports-feed.mjs";
 
 /** Keep the last successful board while a refresh fails. Polls never overlap,
  * and responses from a view that has been left cannot replace newer data. */
@@ -26,8 +27,7 @@ export function useSportsFeed(active) {
       try {
         const next = await api("GET", "/api/sports", undefined, { signal: controller.signal });
         if (stopped) return;
-        if (!next || !Array.isArray(next.fixtures)) throw new Error("invalid feed");
-        setSports(next);
+        setSports(readSportsFeed(next));
         setUpdatedAt(Date.now());
         setError("");
       } catch (e) {
