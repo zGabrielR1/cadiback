@@ -53,6 +53,13 @@ Thumbs.db
 # a runtime snapshot the sports stats engine writes (per-match cards, corners,
 # fouls); a live cache, not a committed probe artifact like the fixtures feed
 probes/flashscore-stats-cache.json
+probes/flashscore-cache.json
+
+# agent skill packs and design-review scratch (screenshots, mocks, verdicts)
+# live outside the release tree; never commit tooling artifacts
+.agents/skills/
+.impeccable/
+.playwright-mcp/
 
 # Local Asaas webhook credentials; never publish with source.
 asaaswebhook.txt
