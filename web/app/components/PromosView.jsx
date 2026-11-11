@@ -1,11 +1,30 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { BRL } from "../../lib/api";
 
 /** Promotions view: welcome bonus + daily cashback (F1 extract from
  * page.jsx). Real mechanics over the double-entry wallet; the page owns
  * the claim() handler, this view renders progress + claim buttons. */
-export default function PromosView({ profile, player, busy, onClaim }) {
+export default function PromosView({ profile, player, busy, onClaim, onOptOut }) {
+  const [pending, setPending] = useState("");
+  const [actionError, setActionError] = useState("");
+  const actionLock = useRef(false);
+  const run = async (kind, action) => {
+    if (busy || actionLock.current || !action) return;
+    actionLock.current = true;
+    setPending(kind);
+    setActionError("");
+    try { await action(); }
+    catch { setActionError("Não foi possível concluir a ação. Atualize a conta antes de tentar novamente."); }
+    finally { actionLock.current = false; setPending(""); }
+  };
+  const disabled = busy || !!pending;
+  const optedOut = !!profile?.bonus?.opt_out;
+  const event = profile?.bonus?.event;
+  const percent = event && event.target_minor > 0 && Number.isFinite(event.wagered_minor)
+    ? Math.min(100, Math.max(0, Math.floor(event.wagered_minor / event.target_minor * 100))) : 0;
+  const remaining = event ? Math.max(0, event.target_minor - event.wagered_minor) : 0;
   return (
     <>
       <section className="panel">
@@ -15,6 +34,8 @@ export default function PromosView({ profile, player, busy, onClaim }) {
           lançamento de bônus nos livros e o valor só vira saldo
           retirável quando a meta de giro é atingida.
         </p>
+        {actionError ? <p className="account-notice err" role="alert">{actionError}</p> : null}
+        {pending ? <p className="account-notice" role="status">{pending === "preference" ? "Salvando preferência…" : "Processando resgate…"}</p> : null}
         {profile && profile.bonus && profile.bonus.active && profile.bonus.event ? (
           <div className="promo" style={{ marginTop: 14, display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
@@ -28,6 +49,12 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               </span>
             </div>
             <div
+              role="progressbar"
+              aria-label="Giro do bônus"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent}
+              aria-valuetext={`${percent}% concluído; faltam ${BRL(remaining)} em giro`}
               style={{
                 height: 8,
                 background: "var(--chip)",
@@ -40,7 +67,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               <div
                 style={{
                   height: "100%",
-                  width: profile.bonus.event.percent + "%",
+                  width: percent + "%",
                   background: "var(--acc)",
                   transition: "width .4s",
                 }}
@@ -53,10 +80,10 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               <span>
                 Giro: {BRL(profile.bonus.event.wagered_minor)} de{" "}
                 {BRL(profile.bonus.event.target_minor)}
-                {profile.bonus.event.remaining_minor > 0 ? ` · faltam ${BRL(profile.bonus.event.remaining_minor)}` : " · meta atingida"}
+                {remaining > 0 ? ` · faltam ${BRL(remaining)}` : " · meta atingida"}
               </span>
               <span style={{ color: "var(--acc)" }}>
-                {profile.bonus.event.percent}%
+                {percent}%
               </span>
             </div>
           </div>
@@ -73,10 +100,10 @@ export default function PromosView({ profile, player, busy, onClaim }) {
                 <span className="badge b-ok" style={{ marginTop: 8 }}>
                   ✓ resgatado
                 </span>
-              ) : profile.bonus.can_claim_welcome ? (
+              ) : optedOut ? <span className="gmeta" style={{ display: "block", marginTop: 8 }}>Promoções desativadas para esta conta.</span> : profile.bonus.can_claim_welcome ? (
                 <button
-                  disabled={busy}
-                  onClick={() => onClaim("welcome")}
+                  disabled={disabled || !onClaim}
+                  onClick={() => run("welcome", () => onClaim("welcome"))}
                   style={{ marginTop: 8 }}
                 >
                   Resgatar Bônus
@@ -92,7 +119,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               )
             ) : (
               <span className="gmeta" style={{ display: "block", marginTop: 8 }}>
-                Carregando…
+                {player ? "Carregando promoções…" : "Entre para consultar seus bônus."}
               </span>
             )}
           </div>
@@ -107,10 +134,10 @@ export default function PromosView({ profile, player, busy, onClaim }) {
                 <span className="badge b-ok" style={{ marginTop: 8 }}>
                   ✓ resgatado hoje
                 </span>
-              ) : profile.bonus.can_claim_cashback ? (
+              ) : optedOut ? <span className="gmeta" style={{ display: "block", marginTop: 8 }}>Promoções desativadas para esta conta.</span> : profile.bonus.can_claim_cashback ? (
                 <button
-                  disabled={busy}
-                  onClick={() => onClaim("cashback")}
+                  disabled={disabled || !onClaim}
+                  onClick={() => run("cashback", () => onClaim("cashback"))}
                   style={{ marginTop: 8 }}
                 >
                   Resgatar {BRL(profile.bonus.cashback_available_minor)}
@@ -124,7 +151,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
               )
             ) : (
               <span className="gmeta" style={{ display: "block", marginTop: 8 }}>
-                Carregando…
+                {player ? "Carregando promoções…" : "Entre para consultar seu cashback."}
               </span>
             )}
           </div>
@@ -135,7 +162,7 @@ export default function PromosView({ profile, player, busy, onClaim }) {
                 ? "Você desativou promoções. Bônus ativos continuam valendo até vencerem, mas nada novo será oferecido."
                 : "Ative ou desative promoções quando quiser. Desativar não apaga o saldo de bônus atual."}
             </span>
-            <button className="ghost" style={{ marginTop: 8 }} disabled={busy || !profile} onClick={() => onOptOut?.(!profile.bonus.opt_out)}>
+            <button className="ghost" style={{ marginTop: 8 }} disabled={disabled || !profile?.bonus || !onOptOut} onClick={() => run("preference", () => onOptOut(!optedOut))}>
               {profile?.bonus?.opt_out ? "Reativar promoções" : "Desativar promoções"}
             </button>
           </div>

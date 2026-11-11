@@ -86,6 +86,7 @@ export default function Page() {
   const [slipState, setSlipState] = useState({status:'idle'});
   const slipRequest = useRef(false);
   const betRequestId = useRef(null);
+  const promoRequest = useRef(false);
   const availability = selectionAvailability(selectedBets, sports);
   useEffect(() => { setSlipState({status:'idle'}); betRequestId.current=null; }, [player]);
   const [betAmount, setBetAmount] = useState("10");
@@ -1031,9 +1032,13 @@ export default function Page() {
       setAcctOpen(true);
       return;
     }
+    if (busy || promoRequest.current) return;
+    const token = getPlayerSession()?.token;
+    promoRequest.current = true;
     setBusy(true);
     try {
       const r = await api("POST", "/api/bonus", { kind });
+      if (getPlayerSession()?.token !== token) return;
       setNotice({
         ok: true,
         text:
@@ -1047,20 +1052,30 @@ export default function Page() {
       });
       await refresh();
     } catch (e) {
-      setNotice({ ok: false, text: e.message });
+      if (getPlayerSession()?.token === token) setNotice({ ok: false, text: e.message });
     } finally {
-      setBusy(false);
+      promoRequest.current = false;
+      if (getPlayerSession()?.token === token) setBusy(false);
     }
   };
 
   const promoOptOut = async (optOut) => {
     if (!player) { setAcctOpen(true); return; }
+    if (busy || promoRequest.current) return;
+    const token = getPlayerSession()?.token;
+    promoRequest.current = true;
     setBusy(true);
     try {
       await api("POST", "/api/player/promo-optout", { opt_out: optOut });
+      if (getPlayerSession()?.token !== token) return;
       setNotice({ ok: true, text: optOut ? "Promoções desativadas." : "Promoções reativadas." });
       await refresh();
-    } catch (e) { setNotice({ ok: false, text: e.message }); } finally { setBusy(false); }
+    } catch (e) {
+      if (getPlayerSession()?.token === token) setNotice({ ok: false, text: e.message });
+    } finally {
+      promoRequest.current = false;
+      if (getPlayerSession()?.token === token) setBusy(false);
+    }
   };
 
   const removeBet = (b) => {
@@ -1313,7 +1328,7 @@ export default function Page() {
         ) : null}
 
         {view === "promos" ? (
-          <PromosView profile={profile} player={player} busy={busy} onClaim={claim} onOptOut={promoOptOut} />
+          <PromosView key={getPlayerSession()?.token || player || "guest"} profile={profile} player={player} busy={busy} onClaim={claim} onOptOut={promoOptOut} />
         ) : null}
 
         {view === "admin" ? (

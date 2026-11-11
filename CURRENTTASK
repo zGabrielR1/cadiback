@@ -1,3 +1,23 @@
+PROMOTION CONTROL RECOVERY 2026-11-11 - IMPLEMENTED, VERIFICATION DEFERRED
+
+- Fixed PromosView not accepting its supplied onOptOut callback. Preference control now works through the existing handler, requires bonus data, and claims explain/observe opt-out state.
+- Added immediate action locks, progress messages and fallback errors. Parent promotion operations suppress stale-account notices/refreshes after credential changes; component state is keyed by credential.
+- Rollover percentage and remaining amount derive from wagered/target values with a clamped accessible progressbar. Guest states ask for login instead of loading indefinitely.
+- Corrected earlier AccountView credential guards: player is a string ID, so request ownership and limits remounting now use the actual stored session token rather than player.token.
+- No tests, build, browser inspection or deployment performed; verification remains deferred at owner request.
+
+ACCOUNT PROTECTION EDITING 2026-11-11 - IMPLEMENTED, VERIFICATION DEFERRED
+
+- Extracted AccountLimits: saved caps populate real inputs; editing one cap preserves the others. Integer-cent conversion accepts comma/dot decimals, rejects fractional minutes/ambiguous amounts/unsafe integers, and empty input explicitly removes a cap.
+- Added unsaved-edit status, discard action, disabled submission while saving/loading, separate success/error messages, and a UTC daily summary with signed net. Account credential changes remount the form so old operations cannot update a different account.
+- Self-exclusion lifting has a busy state and explains the existing 24-hour cooldown before confirmation and after success. Exclusion responses are scoped to the original credential; history retry failures show an accessible error.
+- Added account-limits helper regression cases for later execution. No tests, build, browser inspection or deployment performed at the owner's request. Existing verification does not cover this new source.
+
+ACCOUNT DEVICE RECOVERY 2026-11-11 — LOCAL IMPLEMENTATION
+
+- Device refresh retains successful data with retry/loading and stale-data messaging. Superseded requests are cancelled; delayed revocation responses are scoped to the original account. The devices table scrolls on narrow screens.
+- Owner requested implementation without further verification. No tests, build, browser inspection or deployment run; new source is not independently verified.
+
 LOCAL CSV EXPORT UX 2026-11-08 — BUILD/BROWSER QA PENDING
 
 - CSV action now reports requested record count with current filters and shows an accessible preparation error if browser download APIs fail. Temporary links are attached/removed and object URLs cleaned up even on errors; no browser-download completion claim.

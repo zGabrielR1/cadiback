@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api, BRL } from "../../lib/api";
+import { useEffect, useRef, useState } from "react";
+import { api, BRL, getPlayerSession } from "../../lib/api";
 import UIIcon from "./UIIcon";
+import AccountLimits from "./AccountLimits";
 import { filterHistory, historyCSV, transactionLabel, historySummary } from "../../lib/account-history.mjs";
 
 /** A registry instant (ISO, UTC) in the reader's own timezone. */
@@ -53,13 +54,22 @@ export default function AccountView({ profile, player, health, history, fullAcce
   const [sessions, setSessions] = useState(null);
   const [sessionError, setSessionError] = useState("");
   const [endingSession, setEndingSession] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const sessionRequest = useRef(null);
+  const credential = getPlayerSession()?.token;
+  const sessionIdentity = useRef(credential);
+  sessionIdentity.current = credential;
   // On the public sports surface the history shows sports bets only; casino
   // rounds reappear once the data portal is unlocked (decision 0080).
   const [retryingHistory, setRetryingHistory] = useState(false);
+  const [historyRetryError, setHistoryRetryError] = useState("");
   const retryHistory = async () => {
     if (retryingHistory || !onChanged) return;
     setRetryingHistory(true);
-    try { await onChanged(); } finally { setRetryingHistory(false); }
+    setHistoryRetryError("");
+    try { await onChanged(); }
+    catch { setHistoryRetryError("Não foi possível atualizar o histórico. Tente novamente."); }
+    finally { setRetryingHistory(false); }
   };
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyStatus, setHistoryStatus] = useState("all");
@@ -89,53 +99,72 @@ export default function AccountView({ profile, player, health, history, fullAcce
     }
   };
 
-  const loadSessions = () => {
-    api("GET", "/api/player/sessions")
-      .then((data) => {
-        setSessions(data.sessions || []);
-        setSessionError("");
-      })
-      .catch((e) => {
-        setSessions([]);
-        setSessionError(e.message);
-      });
+  const loadSessions = async () => {
+    sessionRequest.current?.abort();
+    const request = new AbortController();
+    sessionRequest.current = request;
+    setLoadingSessions(true);
+    setSessionError("");
+    try {
+      const data = await api("GET", "/api/player/sessions", undefined, { signal: request.signal });
+      if (request.signal.aborted) return;
+      if (!Array.isArray(data?.sessions)) throw new Error("Não foi possível carregar os dispositivos. Tente novamente.");
+      setSessions(data.sessions);
+    } catch (e) {
+      if (!request.signal.aborted) setSessionError(e.message);
+    } finally {
+      if (sessionRequest.current === request) {
+        sessionRequest.current = null;
+        setLoadingSessions(false);
+      }
+    }
   };
 
   useEffect(() => {
+    setSessions(null);
+    setSessionError("");
+    setEndingSession(false);
     if (player) loadSessions();
-    else setSessions(null);
-    // a login on another tab changes the list; reload with the player
-  }, [player]);
+    else setLoadingSessions(false);
+    return () => {
+      sessionRequest.current?.abort();
+      sessionRequest.current = null;
+    };
+  }, [player, credential]);
 
   const endSession = async (sessionId) => {
     if (endingSession) return;
+    const identity = sessionIdentity.current;
     setEndingSession(true);
     setSessionError("");
     try {
       const result = await api("POST", "/api/player/sessions/revoke", {
         session_id: sessionId,
       });
+      if (sessionIdentity.current !== identity) return;
       // revoking the row this tab is using is a logout for this tab too
       if (result.current) onLogout();
-      else loadSessions();
+      else await loadSessions();
     } catch (e) {
-      setSessionError(e.message);
+      if (sessionIdentity.current === identity) setSessionError(e.message);
     } finally {
-      setEndingSession(false);
+      if (sessionIdentity.current === identity) setEndingSession(false);
     }
   };
 
   const endOtherSessions = async () => {
     if (endingSession) return;
+    const identity = sessionIdentity.current;
     setEndingSession(true);
     setSessionError("");
     try {
       await api("POST", "/api/player/sessions/revoke-others");
-      loadSessions();
+      if (sessionIdentity.current !== identity) return;
+      await loadSessions();
     } catch (e) {
-      setSessionError(e.message);
+      if (sessionIdentity.current === identity) setSessionError(e.message);
     } finally {
-      setEndingSession(false);
+      if (sessionIdentity.current === identity) setEndingSession(false);
     }
   };
 
@@ -145,25 +174,15 @@ export default function AccountView({ profile, player, health, history, fullAcce
   const [excludeNotice, setExcludeNotice] = useState("");
   const [excludeError, setExcludeError] = useState("");
   const [liftOpen, setLiftOpen] = useState(false);
-  const [limitDraft, setLimitDraft] = useState({ deposit_daily_minor: "", bet_daily_minor: "", session_minutes: "" });
-  const [limitBusy, setLimitBusy] = useState(false);
-  const [limitNotice, setLimitNotice] = useState("");
   const responsible = profile?.responsible;
-  const saveLimits = async () => {
-    if (limitBusy) return;
-    setLimitBusy(true); setLimitNotice("");
-    try {
-      const payload = {};
-      for (const [key, value] of Object.entries(limitDraft)) {
-        payload[key] = value === "" ? null : Number(value) * 100;
-        if (key === "session_minutes" && value !== "") payload[key] = Number(value);
-        if (payload[key] !== null && (!Number.isFinite(payload[key]) || payload[key] <= 0)) throw new Error("Valores devem ser positivos.");
-      }
-      const res = await api("POST", "/api/player/limits", payload);
-      setLimitNotice("Limites salvos: " + (res.limits ? "depósito " + (res.limits.deposit_daily_minor ? BRL(res.limits.deposit_daily_minor) : "sem limite") + ", apostas " + (res.limits.bet_daily_minor ? BRL(res.limits.bet_daily_minor) : "sem limite") : ""));
-      if (onChanged) onChanged();
-    } catch (e) { setLimitNotice(e.message); } finally { setLimitBusy(false); }
-  };
+  useEffect(() => {
+    setExcludeBusy(false);
+    setExcludeOpen(false);
+    setLiftOpen(false);
+    setExcludeNotice("");
+    setExcludeError("");
+    setHistoryRetryError("");
+  }, [player, credential]);
 
   const exclusionUntil = () => {
     if (excludeDuration === "permanent") return "2099-12-31";
@@ -172,35 +191,44 @@ export default function AccountView({ profile, player, health, history, fullAcce
 
   const selfExclude = async () => {
     if (excludeBusy) return;
+    const identity = sessionIdentity.current;
     setExcludeBusy(true);
     setExcludeError("");
     setExcludeNotice("");
     try {
       const until = exclusionUntil();
       await api("POST", "/api/self-exclude", { until });
+      if (sessionIdentity.current !== identity) return;
       setExcludeOpen(false);
       setExcludeNotice(
         excludeDuration === "permanent"
           ? "Autoexclusão permanente ativada."
           : "Autoexclusão ativada até " + new Date(until + "T12:00:00").toLocaleDateString("pt-BR") + "."
       );
-      if (onChanged) onChanged();
+      try { await onChanged?.(); } catch { setExcludeError("Pausa ativada. Não foi possível atualizar o resumo da conta."); }
     } catch (e) {
-      setExcludeError(e.message);
+      if (sessionIdentity.current === identity) setExcludeError(e.message);
     } finally {
-      setExcludeBusy(false);
+      if (sessionIdentity.current === identity) setExcludeBusy(false);
     }
   };
   const liftBlock = async () => {
+    if (excludeBusy) return;
+    const identity = sessionIdentity.current;
+    setExcludeBusy(true);
     setExcludeError("");
     setExcludeNotice("");
     try {
       await api("POST", "/api/self-exclude-lift");
-      setExcludeNotice("Bloqueio de autoexclusão removido.");
+      if (sessionIdentity.current !== identity) return;
+      setLiftOpen(false);
+      setExcludeNotice("Autoexclusão removida. Apostas e depósitos permanecem bloqueados por 24 horas de resfriamento.");
+      try { await onChanged?.(); } catch { setExcludeError("Alteração salva. Não foi possível atualizar o resumo da conta."); }
     } catch (e) {
-      setExcludeError(e.message);
+      if (sessionIdentity.current === identity) setExcludeError(e.message);
+    } finally {
+      if (sessionIdentity.current === identity) setExcludeBusy(false);
     }
-    if (onChanged) onChanged();
   };
   return (
     <div className="account-view">
@@ -259,8 +287,9 @@ export default function AccountView({ profile, player, health, history, fullAcce
         )}
         {liftOpen ? (
           <span className="account-exclude-actions" style={{ marginTop: 14, marginLeft: 8 }}>
-            <button className="ghost" onClick={() => setLiftOpen(false)}>Cancelar</button>
-            <button onClick={() => { setLiftOpen(false); liftBlock(); }}>Confirmar levantamento</button>
+            <span className="sub">Após confirmar, apostas e depósitos continuam bloqueados por 24 horas.</span>
+            <button className="ghost" disabled={excludeBusy} onClick={() => setLiftOpen(false)}>Cancelar</button>
+            <button disabled={excludeBusy} onClick={liftBlock}>{excludeBusy ? "Salvando…" : "Confirmar levantamento"}</button>
           </span>
         ) : (
           <button
@@ -273,21 +302,16 @@ export default function AccountView({ profile, player, health, history, fullAcce
           </button>
         )}
         {responsible && responsible.in_cooldown ? <p className="account-notice" role="status">Período de resfriamento após autoexclusão até {when(responsible.cooldown_until)} — transações bloqueadas.</p> : null}
-        <div className="account-limits">
-          <h3>Limites diários</h3>
-          <p className="sub">Heute: depositado {BRL(responsible?.today?.deposited_minor || 0)} · apostado {BRL(responsible?.today?.staked_minor || 0)} · saldo líquido {BRL(Math.abs(responsible?.today?.net_minor || 0))}.</p>
-          <label>Limite de depósito (R$)<input inputMode="decimal" value={limitDraft.deposit_daily_minor} onChange={e => setLimitDraft(v => ({ ...v, deposit_daily_minor: e.target.value }))} placeholder={responsible?.limits?.deposit_daily_minor ? BRL(responsible.limits.deposit_daily_minor) : "sem limite"} /></label>
-          <label>Limite de apostas (R$)<input inputMode="decimal" value={limitDraft.bet_daily_minor} onChange={e => setLimitDraft(v => ({ ...v, bet_daily_minor: e.target.value }))} placeholder={responsible?.limits?.bet_daily_minor ? BRL(responsible.limits.bet_daily_minor) : "sem limite"} /></label>
-          <label>Tempo máximo de sessão (minutos)<input inputMode="numeric" value={limitDraft.session_minutes} onChange={e => setLimitDraft(v => ({ ...v, session_minutes: e.target.value }))} placeholder={responsible?.limits?.session_minutes || "sem limite"} /></label>
-          <button className="ghost" disabled={limitBusy || !player} onClick={saveLimits}>{limitBusy ? "Salvando…" : "Salvar limites"}</button>
-          {limitNotice ? <p className="account-notice" role="status">{limitNotice}</p> : null}
-        </div>
+        <AccountLimits key={credential || player || "guest"} responsible={responsible} onChanged={onChanged} />
         {profile?.player_token_expires_at ? <p className="sub">Esta sessão expira em {when(profile.player_token_expires_at)}.</p> : null}
         {excludeNotice ? <p className="account-notice" role="status">{excludeNotice}</p> : null}
         {excludeError ? <p className="account-notice err" role="alert">{excludeError}</p> : null}
       </section>
       <section className="panel" id="account-sessions" aria-labelledby="account-tab-sessions" tabIndex={0} hidden={section !== "sessions"} role="tabpanel" aria-label="Dispositivos">
         <h2>Dispositivos</h2>
+        <button type="button" className="ghost" disabled={loadingSessions || endingSession || !player} onClick={loadSessions}>
+          {loadingSessions ? "Atualizando dispositivos…" : sessionError ? "Tentar novamente" : "Atualizar dispositivos"}
+        </button>
         <div style={{ fontSize: 12.5, color: "var(--mut)" }}>
           Gerencie seus acessos.
         </div>
@@ -296,16 +320,17 @@ export default function AccountView({ profile, player, health, history, fullAcce
             Sessões: {sessionError}
           </div>
         ) : null}
+        {sessionError && sessions !== null ? <p className="sub">Exibindo a última consulta bem-sucedida. Os acessos podem ter mudado.</p> : null}
         {sessions === null ? (
-          <div className="sub" style={{ marginTop: 8 }}>
-            Carregando...
+          <div className="sub" role="status" style={{ marginTop: 8 }}>
+            {loadingSessions ? "Carregando dispositivos…" : "Lista de dispositivos indisponível."}
           </div>
         ) : sessions.length === 0 ? (
           <div className="sub" style={{ marginTop: 8 }}>
             Nenhuma sessão ativa.
           </div>
         ) : (
-          <table className="hist" style={{ marginTop: 8 }}>
+          <div className="account-table-scroll" aria-busy={loadingSessions}><table className="hist" style={{ marginTop: 8 }}>
             <thead>
               <tr>
                 <th>Dispositivo</th>
@@ -338,7 +363,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
                       className="ghost"
                       style={{ width: "auto", fontSize: 11.5, padding: "4px 8px" }}
                       onClick={() => endSession(s.id)}
-                      disabled={endingSession}
+                      disabled={endingSession || loadingSessions || !!sessionError}
                     >
                       {s.current ? "Sair" : "Encerrar"}
                     </button>
@@ -346,12 +371,12 @@ export default function AccountView({ profile, player, health, history, fullAcce
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
         <button
           className="ghost"
           style={{ width: "auto", marginTop: 12 }}
-          disabled={endingSession || !sessions || sessions.length < 2}
+          disabled={endingSession || loadingSessions || !!sessionError || !sessions || sessions.length < 2}
           onClick={endOtherSessions}
         >
           Encerrar as outras sessões
@@ -359,6 +384,7 @@ export default function AccountView({ profile, player, health, history, fullAcce
       </section>
       <section className="panel" id="account-history" aria-labelledby="account-tab-history" tabIndex={0} hidden={section !== "history"} role="tabpanel" aria-label="Histórico">
         <h2>Histórico</h2>
+        {historyRetryError ? <p className="account-notice err" role="alert">{historyRetryError}</p> : null}
         <div className="account-history-tools">
           <label>Buscar no histórico<input id="account-history-search" value={historyQuery} onChange={e => setHistoryQuery(e.target.value)} placeholder="Partida, jogo ou ID" type="search" /></label>
           <label htmlFor="history-status">Resultado<select id="history-status" aria-label="Resultado" value={historyStatus} onChange={e => setHistoryStatus(e.target.value)}><option value="all">Todos</option><option value="pending">Em aberto</option><option value="settled">Concluídos</option></select></label>
