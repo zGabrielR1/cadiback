@@ -843,6 +843,29 @@ export default function Page() {
   }, [cashOpen, cashTab, player, method, cryptoCoin, cryptoCoins, !!profile?.is_test,
       !!pixCharge, !!cryptoCharge, limitRetry]);
 
+  const [cardCharge, setCardCharge] = useState(null);
+  const [cardChecking, setCardChecking] = useState(false);
+  useEffect(() => {
+    setCardCharge(null);
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("operator-card:" + player) || "null");
+      if (saved?.deposit_id && saved?.checkout_url && new URL(saved.checkout_url).hostname === "www.mercadopago.com.br") setCardCharge(saved);
+    } catch { /* unavailable browser storage */ }
+  }, [player]);
+  const rememberCard = charge => {
+    setCardCharge(charge);
+    try { sessionStorage.setItem("operator-card:" + player, JSON.stringify(charge)); } catch { /* optional recovery */ }
+  };
+  const checkCard = async () => {
+    if (!cardCharge || cardChecking) return;
+    setCardChecking(true);
+    try {
+      const result = await api("POST", "/api/deposit/card/status", { deposit_id: cardCharge.deposit_id });
+      rememberCard(result);
+      if (result.status === "paid") await refresh();
+    } catch (e) { setNotice({ ok: false, text: e.message }); }
+    finally { setCardChecking(false); }
+  };
   const deposit = async () => {
     setCashError("");
     if (!depositAllowed(depositAmount, activeDepositLimit)) {
@@ -858,7 +881,10 @@ export default function Page() {
         && !(profile && profile.is_test);
       const realCrypto = cryptoAvailable && method === "crypto"
         && !(profile && profile.is_test);
-      if (realPix) {
+      if (method === "debit") {
+        const charge = await api("POST", "/api/deposit/card", { amount_minor: amount, deposit_id: cardCharge?.deposit_id || newDepositId() });
+        rememberCard(charge);
+      } else if (realPix) {
         // Real Pix: open the charge and let the poll effect confirm it. The
         // modal stays open showing the QR instead of crediting instantly.
         const charge = await api("POST", "/api/deposit/pix", {
@@ -1425,6 +1451,10 @@ export default function Page() {
         onTab={setCashTab}
         method={method}
         onMethod={setMethod}
+        cardCharge={cardCharge}
+        cardChecking={cardChecking}
+        onCheckCard={checkCard}
+        onResetCard={() => setCardCharge(null)}
         depositAmount={depositAmount}
         onDepositAmount={(value) => { setDepositAmount(value); setCashError(""); }}
         withdrawAmount={withdrawAmount}

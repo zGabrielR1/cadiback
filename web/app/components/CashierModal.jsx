@@ -43,6 +43,7 @@ export default function CashierModal({
   cryptoCoins,
   cryptoCoin,
   onCryptoCoin,
+  cardCharge, cardChecking, onCheckCard, onResetCard,
   onClose,
 }) {
   const [copied, setCopied] = useState(false);
@@ -95,7 +96,19 @@ export default function CashierModal({
           </button>
         </div>
         {tab === "dep" ? (
-          pixCharge ? (
+          cardCharge ? (
+            <section aria-label="Pagamento com cart?o">
+              <h4>Cart?o ? Mercado Pago</h4>
+              <p>Valor: {BRL(cardCharge.amount_minor)}. Seus dados de cart?o s?o preenchidos no checkout do Mercado Pago.</p>
+              {cardCharge.status === "paid" ? <p role="status">Pagamento confirmado. Saldo atualizado.</p> : <>
+                <p>Retornar do checkout n?o confirma o pagamento. Depois de pagar, consulte a confirma??o abaixo.</p>
+                <a href={cardCharge.checkout_url} target="_blank" rel="noopener noreferrer">Abrir checkout seguro</a>
+                <button disabled={cardChecking} onClick={onCheckCard}>{cardChecking ? "Consultando?" : "Verificar pagamento"}</button>
+                <p role="status">Aguardando confirma??o do provedor.</p>
+              </>}
+              <button className="ghost" onClick={onResetCard}>Voltar aos m?todos</button>
+            </section>
+          ) : pixCharge ? (
             <div>
               <p className="sub" style={{ marginTop: 4 }}>
                 Pague <b>{BRL(pixCharge.amount_minor)}</b> via Pix para o saldo cair
@@ -214,7 +227,7 @@ export default function CashierModal({
               <p id="deposit-minimum" className={depositLimit && !canDeposit ? "ferr" : "fhint"} role="status">
                 {limitError ? "Não foi possível consultar o mínimo. O depósito está indisponível até atualizar."
                   : !depositLimit ? "Consultando o mínimo de depósito…"
-                    : `Depósito mínimo: ${BRL(depositLimit.min_minor)}${depositLimit.provider === "demo" ? " (demonstração)" : " — " + depositLimit.provider + (realCrypto ? " nesta moeda/rede" : " via Pix")}. Valores menores não são aceitos.`}
+                    : `Depósito mínimo: ${BRL(depositLimit.min_minor)}${depositLimit.provider === "demo" ? " (demonstração)" : " — " + depositLimit.provider + (realCrypto ? " nesta moeda/rede" : method === "debit" ? " via cart?o" : " via Pix")}. Valores menores não são aceitos.`}
               </p>
               {limitError ? <button className="ghost" onClick={onRetryLimit} disabled={busy}>Consultar novamente</button> : null}
               {depositLimit && !canDeposit ? (
@@ -223,7 +236,7 @@ export default function CashierModal({
                 </button>
               ) : null}
               <button disabled={busy || !canDeposit} onClick={onDeposit} style={{ marginTop: 12 }}>
-                {realPix ? "Gerar Pix para pagar"
+                {method === "debit" ? "Continuar com Mercado Pago" : realPix ? "Gerar Pix para pagar"
                   : realCrypto ? "Gerar cobrança cripto"
                   : "Confirmar Depósito Demo"}
               </button>

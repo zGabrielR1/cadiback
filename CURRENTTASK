@@ -1,3 +1,35 @@
+DEPLOY ATTEMPT 2026-11-12 - VERIFIED RELEASE, PUBLISH BLOCKED
+
+- Commit a4002c57f747af6086620d13b6eba6d20677fcbf passed the complete 14-stage release gate, including isolated PostgreSQL, dependency audits, build, and browser checks. Focused account-limit/history checks passed (12); browser QA passed 10; backend passed 427; core 50; auth 7; structure verifier 93 files/0 problems.
+- Render preflight passed and a validated pre-deployment wallet backup was created. Render environment was merged while preserving 13 dashboard-only values. The deploy trigger rejected commit a4002c5 because it is not on the linked GitHub branch. `git push origin main` failed: no SSH public key is available and GitHub CLI is absent. No backend code deploy occurred.
+- Vercel direct deploy was attempted after the frontend receipt passed. CLI returned “Missing authentication token”; the expected user-scoped auth file and protected environment credential were unavailable to this session. No frontend deploy occurred.
+- Local PostgreSQL was installed with owner approval for isolated verification; the temporary test cluster was stopped and removed after the gate. No production database was used for tests. A Vercel/GitHub connector was suggested; neither is confirmed connected yet.
+- Next: connect GitHub and Vercel, then push main, rerun Render deploy, publish Vercel, and check both live URLs.
+
+DEPLOY RETRY 2026-11-12 - AUTH BLOCKED
+
+- Retried GitHub push from verified commit a4002c5; SSH authentication still fails with publickey denial. No remote branch update occurred.
+- Retried Vercel using the existing project token from the local environment without displaying it. Vercel rejected production deployment permission. No frontend deploy occurred.
+- Render still requires the commit pushed to its connected repository. Release receipt remains valid for the committed source; no production code deploy happened.
+- Resume when GitHub write access and a Vercel token with production deployment permission are connected. Do not ask the owner to paste secrets into chat.
+
+DEPLOY COMPLETE 2026-11-12
+
+- Pushed verified commit a4002c5 to GitHub main through a temporary HTTPS origin; restored the original SSH origin afterward.
+- Render deployment dep-dbqq12ajnfac739e83vg is live. Live /api/health returned HTTP 200, status ok, wallet storage database. A validated pre-deploy backup was created.
+- Authenticated Vercel CLI published deployment dpl_9N81JLLyrJP1G5dXkVz9DPnht81z; inspect reports Ready and the production alias cadiback-web.vercel.app is attached. The live page renders the public fixture board. One console 404 is for favicon.ico only.
+- Vercel upload/build succeeded remotely; the Python helper then reported a Windows temporary-directory cleanup error. Vercel inspection confirms the production deployment is Ready despite that local cleanup error.
+
+
+MERCADO PAGO CARDS 2026-11-12 - IMPLEMENTED, RELEASE CHECKS IN PROGRESS
+
+- Hosted Checkout Pro with isolated persistent card deposit references, explicit provider verification, exact amount/currency/metadata checks, and idempotent wallet credit. Reuses mamyat merchant access token only; no other store settings changed. Credential file is ignored.
+- Card UI opens provider checkout and verifies payment explicitly, retaining pending checkout per player in session storage. Direct demo card credit is blocked when the rail is configured. Test accounts cannot create live card charges. Backup includes card_charges.
+- Focused payment regressions pass (4); full release/deploy pending. No real charge was created during development. See docs/card-payments.md for settlement and reconciliation limitations.
+
+
+PREVIOUS PROJECT HISTORY
+
 PROMOTION CONTROL RECOVERY 2026-11-11 - IMPLEMENTED, VERIFICATION DEFERRED
 
 - Fixed PromosView not accepting its supplied onOptOut callback. Preference control now works through the existing handler, requires bonus data, and claims explain/observe opt-out state.

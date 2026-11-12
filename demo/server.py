@@ -735,6 +735,7 @@ class Demo:
         # movement (decision 0063)
         self.pragmatic_books: dict[str, dict] = {}
         self.pragmatic_tap: list[dict] = []
+        self.card_charges = IdentityStore(db, "card_charges", "") if db is not None else Store(os.path.join(data_dir, "card_charges.json"))
         self.publisher_store = IdentityStore(db, "publisher_state", "") if db is not None else None
         self._publisher_lock = threading.RLock()
         self._publisher_depth = 0
@@ -2125,6 +2126,8 @@ class Demo:
         player_id = payload["player"]
         amount = self._minor(payload["amount_minor"])
         method = payload.get("method", "pix")
+        if method == "debit" and os.environ.get("MERCADOPAGO_ACCESS_TOKEN"):
+            raise PaymentError("Use o checkout de cart?o para confirmar o pagamento.")
         deposit_id = payload.get("deposit_id") or uuid.uuid4().hex
         # A test account funds itself through the same rail, but the posting is
         # tagged so the painel can tell a test deposit from a real one. The
@@ -2206,6 +2209,10 @@ class Demo:
         if not isinstance(profile, dict):
             raise AuthError(PLAYER_SESSION_REFUSED)
         method = check_deposit_method(method)
+        if method == "debit":
+            if not os.environ.get("MERCADOPAGO_ACCESS_TOKEN") or profile.get("is_test"):
+                raise PaymentError("Cart?o indispon?vel para esta conta.")
+            return {"method": method, "min_minor": 500, "currency": "brl", "provider": "Mercado Pago"}
         if not profile.get("is_test"):
             if method == "pix" and self.asaas is not None:
                 return {"method": method, "min_minor": 500, "currency": "brl", "provider": "Asaas"}
@@ -5790,6 +5797,12 @@ class Handler(BaseHTTPRequestHandler):
                     body.get("token") or "", body.get("password") or ""))
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._player_body()))
+            elif path == "/api/deposit/card":
+                from .card_checkout import create
+                self._send(200, create(DEMO, self._player_body()))
+            elif path == "/api/deposit/card/status":
+                from .card_checkout import status
+                self._send(200, status(DEMO, self._player_body()))
             elif path == "/api/deposit/pix":
                 self._send(200, DEMO.create_pix_deposit(self._player_body()))
             elif path == "/api/deposit/pix/status":

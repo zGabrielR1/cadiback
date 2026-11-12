@@ -66,3 +66,4 @@ asaaswebhook.txt
 
 # Alternate local Python environment name
 .ven/
+.env.mercadopago

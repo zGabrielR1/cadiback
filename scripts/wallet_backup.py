@@ -17,7 +17,7 @@ from demo.wallet_snapshot import validate_postings
 from demo.publisher_state import decode_state
 
 NAMES = ("runtime:books", "runtime:rounds", "promos", "crash_pending",
-         "crypto_charges", "asaas_charges", "publisher_state")
+          "crypto_charges", "asaas_charges", "publisher_state", "card_charges")
 
 
 def digest(payload):
