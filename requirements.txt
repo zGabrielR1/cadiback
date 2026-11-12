@@ -3,3 +3,6 @@
 # psycopg 3 as the driver. Pinned floors, not ceilings.
 sqlalchemy>=2
 psycopg[binary]>=3
+
+# CryptAPI RSA-SHA256 webhook verification.
+cryptography>=46

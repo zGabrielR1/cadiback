@@ -1,3 +1,5 @@
+CryptAPI now handles new cryptocurrency invoices via demo/cryptapi.py; only configured receiving networks are offered. Private invoice metadata stays in crypto_charges; signed callbacks and polling independently verify provider logs before the existing idempotent wallet transaction. Legacy NOWPayments invoices retain their original provider client for settlement. Configuration and domain verification: docs/cryptapi.md; decision 0112.
+
 # ARCHITECTURE — operator
 
 Database crypto invoices use the `crypto_charges` IdentityDocument and join wallet confirmation transactions. `demo/publisher_state.py` persists publisher tokens, session bindings, pending stakes/wins and Pragmatic baselines/sequences under a shared wallet operation. The RGS tap settles and removes pending state in that operation. Publisher locks precede wallet locks; wallet_credit's publisher decorator stays outermost. Wallet backups include both documents and are created privately. SQL integration verification remains pending; see docs/durable-payment-and-publisher-state.md.

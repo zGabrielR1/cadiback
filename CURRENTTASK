@@ -1,3 +1,16 @@
+CRYPTAPI REPLACEMENT 2026-11-12 - RELEASE CHECKS IN PROGRESS
+
+- New crypto invoices use CryptAPI custom checkout. .env.cryptapi is ignored and has blank receiving-address fields for later owner configuration; .env.cryptapi.example and docs/cryptapi.md document each supported network and callback-domain verification. No address was invented or activated.
+- Existing durable invoice/wallet seams retained. Private callback nonce, immutable input/output addresses, network minimums/BRL quotes, exact browser amount strings, RSA-SHA256 raw-body verification, independent provider-log checks, partial payment accumulation and duplicate refusal implemented. Existing NOWPayments invoices retain legacy settlement support.
+- Added non-secret HTTP-status diagnostics for Mercado Pago; no live card charge was created or root cause claimed. Twenty-two focused payment checks and the frontend build pass. Full release gate running; production migration pending.
+
+MERCADO PAGO CARD RELEASE LIVE 2026-11-12
+
+- Commit 2bc38bd deployed to Render dep-dbqvrlou01pc73d3kl3g and Vercel dpl_DQgWcmtDwn2p3hHqGLA7bisdtBLa. Original SSH origin restored after HTTPS push.
+- Full 14-stage release gate passed; four focused card regressions passed. Both public /api/health endpoints return 200/ok/database and guest card-status requests return 401. Server credential configuration confirmed without exposing secrets. No real charge created during verification.
+- Customer flow: choose Cart?o ? Mercado Pago, open hosted checkout, then Verificar pagamento. Confirmation retrieves provider records before idempotent wallet credit. Manual verification and refund/chargeback reconciliation limitations documented in docs/card-payments.md.
+- Vercel remote status Ready/production alias independently confirmed after the existing local Windows temporary-directory cleanup error. All prior tracker history preserved below.
+
 DEPLOY ATTEMPT 2026-11-12 - VERIFIED RELEASE, PUBLISH BLOCKED
 
 - Commit a4002c57f747af6086620d13b6eba6d20677fcbf passed the complete 14-stage release gate, including isolated PostgreSQL, dependency audits, build, and browser checks. Focused account-limit/history checks passed (12); browser QA passed 10; backend passed 427; core 50; auth 7; structure verifier 93 files/0 problems.

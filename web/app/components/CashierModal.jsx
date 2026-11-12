@@ -166,6 +166,7 @@ export default function CashierModal({
                 cai quando a rede confirmar.
               </p>
               <label htmlFor="cryptoaddr">Endereço de depósito</label>
+              {cryptoCharge.min_crypto ? <p className="sub">Mínimo por transação: {cryptoCharge.min_crypto} {(cryptoCharge.pay_currency || "").toUpperCase()}. Envie somente a moeda e a rede escolhidas. Valores abaixo do mínimo não são processados pelo provedor.</p> : null}
               <textarea
                 id="cryptoaddr"
                 readOnly
@@ -197,7 +198,7 @@ export default function CashierModal({
                 <option value="pix">Pix Instantâneo</option>
                 <option value="ted">TED</option>
                 <option value="debit">Cartão de Débito</option>
-                <option value="crypto">Criptomoeda</option>
+                <option value="crypto" disabled={!cryptoAvailable}>{cryptoAvailable ? "Criptomoeda · CryptAPI" : "Criptomoeda · configure o recebimento"}</option>
               </select>
               {realCrypto ? (
                 <>
@@ -248,7 +249,7 @@ export default function CashierModal({
               ) : null}
               {realCrypto ? (
                 <p className="sub" style={{ marginTop: 8 }}>
-                  A cobrança é gerada pela NOWPayments; envie a moeda para o
+                  A cobrança é gerada pela CryptAPI; envie a moeda para o
                   endereço e o saldo cai quando a rede confirmar.
                 </p>
               ) : null}

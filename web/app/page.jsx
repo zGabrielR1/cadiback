@@ -165,7 +165,7 @@ export default function Page() {
   // The open Asaas Pix charge, if any: the cashier shows its QR and polls
   // until the provider confirms, then credits through the books.
   const [pixCharge, setPixCharge] = useState(null);
-  // The open NOWPayments invoice, if any: the cashier shows the pay address
+  // The open CryptAPI invoice, if any: the cashier shows the pay address
   // and polls until the provider confirms, then credits through the books.
   const [cryptoCharge, setCryptoCharge] = useState(null);
   const [cryptoCoin, setCryptoCoin] = useState("");
@@ -249,7 +249,7 @@ export default function Page() {
   }, [pixCharge && pixCharge.deposit_id, pixCharge && pixCharge.posted,
       cashOpen, player, refresh]);
 
-  // Poll the open crypto invoice until NOWPayments confirms it. Crypto
+  // Poll the open crypto invoice until CryptAPI confirms it. Crypto
   // confirmations are slow (a block or two), so the interval is longer; the
   // server settles idempotently, so the poll cannot credit twice.
   useEffect(() => {
@@ -895,7 +895,7 @@ export default function Page() {
         setReceipt("");
         setPixCharge(charge);
       } else if (realCrypto) {
-        // Real crypto: open a NOWPayments invoice, show the pay address, and
+        // Real crypto: open a CryptAPI invoice, show the pay address, and
         // poll until the provider confirms.
         const charge = await api("POST", "/api/deposit/crypto", {
           amount_minor: amount,

@@ -779,6 +779,11 @@ class Demo:
         self.crypto_config = CryptoConfig.from_env()
         self.crypto = (CryptoClient(self.crypto_config)
                        if self.crypto_config.configured else None)
+        self.legacy_crypto = self.crypto
+        from .cryptapi import CryptapiConfig, CryptapiClient
+        self.crypto_config = CryptapiConfig.from_env()
+        self.cryptapi = CryptapiClient(self.crypto_config)
+        self.crypto = self.cryptapi if self.crypto_config.configured else None
         self.crypto_path = os.path.join(data_dir, "crypto_charges.json")
         self._crypto_lock = threading.RLock()
         self.crypto_store = IdentityStore(db, "crypto_charges", self.crypto_path) if db is not None else None
@@ -2491,6 +2496,10 @@ class Demo:
         return self.crypto_config.env_name if self.crypto else ""
 
     def crypto_coins(self) -> list[dict]:
+        if self.crypto is getattr(self, "cryptapi", None):
+            return self.cryptapi.coins()
+        if self.crypto is None:
+            return []
         return [{"code": code, "label": label}
                 for code, label in SUPPORTED_COINS]
 
@@ -2547,7 +2556,10 @@ class Demo:
             "posted": bool(row.get("posted")),
             "pay_address": str(row.get("pay_address") or ""),
             "pay_currency": str(row.get("pay_currency") or ""),
-            "pay_amount": float(row.get("pay_amount") or 0.0),
+            "pay_amount": ((row.get("cryptapi") or {})["expected_coin"] if row.get("provider") == "cryptapi"
+                           else float(row.get("pay_amount") or 0.0)),
+            "provider": "CryptAPI" if row.get("provider") == "cryptapi" else "NOWPayments",
+            "min_crypto": str((row.get("cryptapi") or {}).get("minimum_coin") or ""),
             "env": self.crypto_env_name(),
             "available_minor": self.books.available(player_id),
         }
@@ -2605,6 +2617,8 @@ class Demo:
                 "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "posted": False,
             }
+            if hasattr(charge, "private"):
+                row.update(provider="cryptapi", cryptapi=charge.private)
             if client_key:
                 row["idempotency_key"] = client_key
             self._put_crypto_charge(row)
@@ -2646,9 +2660,9 @@ class Demo:
             row = self._get_crypto_charge(deposit_id)
             if not row or row.get("player") != player_id:
                 raise ValueError("cobrança cripto não encontrada")
-            if not row.get("posted") and self.crypto is not None \
-                    and row.get("provider_ref"):
-                charge = self.crypto.get_payment(str(row["provider_ref"]))
+            client = self.cryptapi if row.get("provider") == "cryptapi" else (self.legacy_crypto or self.crypto)
+            if not row.get("posted") and client is not None and row.get("provider_ref"):
+                charge = client.get_invoice(row) if row.get("provider") == "cryptapi" else client.get_payment(str(row["provider_ref"]))
                 row["provider_status"] = charge.status
                 if charge.status == "PAID" \
                         and charge.amount_cents == int(row["amount_minor"]):
@@ -2659,9 +2673,10 @@ class Demo:
 
     def crypto_webhook(self, payload: dict, headers: dict) -> dict:
         """Verify the IPN, then confirm from provider truth — never the event."""
-        if self.crypto is None:
+        client = self.legacy_crypto or (self.crypto if hasattr(self.crypto, "verify_ipn") else None)
+        if client is None:
             raise ValueError("cripto não está configurado neste servidor")
-        if not self.crypto.verify_ipn(headers, payload):
+        if not client.verify_ipn(headers, payload):
             raise PermissionError("invalid NOWPayments IPN signature")
         event = resolve_crypto_ipn(payload)
         if not event["paid"]:
@@ -2680,7 +2695,7 @@ class Demo:
                 return {"received": True, "event": event["event"],
                         "applied": False, "reason": "amount mismatch"}
             if not row.get("posted"):
-                charge = self.crypto.get_payment(str(row["provider_ref"]))
+                charge = client.get_payment(str(row["provider_ref"]))
                 if charge.status != "PAID" \
                         or charge.amount_cents != int(row["amount_minor"]):
                     raise ValueError("provider has not confirmed the payment")
@@ -5381,7 +5396,7 @@ class Handler(BaseHTTPRequestHandler):
         Same status discipline as the Asaas callback: a 5xx asks the provider
         to retry, a 401/400 is terminal, and an unconfigured server answers 503.
         """
-        if not DEMO.crypto_available():
+        if not DEMO.crypto_available() and getattr(DEMO, "legacy_crypto", None) is None:
             self._send(503, {"error": "cripto não está configurado"})
             return
         raw = self._raw_body()
@@ -5525,6 +5540,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         try:
+            if parsed.path == "/.well-known/cryptapi-verification.txt":
+                value = getattr(DEMO.crypto_config, "verification_token", "")
+                if value.startswith("cryptapi-verification=") and len(value) <= 1024:
+                    self._send(200, value, ctype="text/plain")
+                else:
+                    self._send(404, {"error": "verification value not configured"})
+                return
             if parsed.path.startswith(betterauth_proxy.PREFIX):
                 # the Node Better Auth server owns this seam; same-origin
                 # proxy so its cookies and dynamic callback URLs stay on the
@@ -5733,6 +5755,19 @@ class Handler(BaseHTTPRequestHandler):
             # before the same-origin write gate (like the RGS callbacks).
             if urlparse(self.path).path == "/api/webhooks/asaas":
                 self._serve_asaas_webhook()
+                return
+            if urlparse(self.path).path == "/api/webhooks/cryptapi":
+                from .cryptapi import webhook
+                raw = self._raw_body()
+                query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+                try:
+                    webhook(DEMO, raw, self.headers.get("x-ca-signature", ""), query)
+                except PermissionError:
+                    self._send(401, {"error": "invalid CryptAPI callback"})
+                except Exception:
+                    self._send(503, {"error": "CryptAPI confirmation unavailable"})
+                else:
+                    self._send(200, "*ok*", ctype="text/plain")
                 return
             if urlparse(self.path).path == "/api/webhooks/crypto":
                 self._serve_crypto_webhook()

@@ -3,6 +3,8 @@ import json
 import os
 import re
 import uuid
+import logging
+from urllib.error import HTTPError
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlencode, urlparse
@@ -26,6 +28,13 @@ def request(path, body=None):
     try:
         with build_opener(NoRedirect()).open(req, timeout=15) as response:
             return json.load(response)
+    except HTTPError as error:
+        logging.getLogger(__name__).warning("Mercado Pago API refused request: HTTP %s", error.code)
+        if error.code in (401, 403):
+            raise PaymentError("Mercado Pago recusou o acesso desta conta. Verifique as credenciais e as permissões da aplicação.") from None
+        if error.code == 400:
+            raise PaymentError("Mercado Pago recusou a configuração do checkout. Entre em contato antes de tentar pagar novamente.") from None
+        raise PaymentError("Mercado Pago indisponível. Tente novamente.") from None
     except Exception:
         raise PaymentError("Mercado Pago indisponível. Tente novamente.") from None
 
