@@ -45,7 +45,7 @@ def create(demo, payload):
         raise PaymentError("Contas de teste não abrem cobranças reais de cartão.")
     amount = demo._minor(payload["amount_minor"])
     if amount < 500:
-        raise PaymentError("O dep?sito m?nimo com cart?o ? R$ 5,00.")
+        raise PaymentError("O depósito mínimo com cartão é R$ 5,00.")
     key = str(payload.get("deposit_id", ""))
     if not re.fullmatch(r"[A-Za-z0-9_-]{8,100}", key):
         raise PaymentError("Identificador de depósito inválido")
@@ -69,15 +69,17 @@ def create(demo, payload):
             demo.card_charges.write_all(rows)
     # References survive ambiguous provider timeouts; only the first approved
     # payment can credit this deposit even if a preference must be recreated.
+    now = datetime.now(timezone.utc)
     raw = request("/checkout/preferences", {
         "items": [{"id": row["reference"], "title": "Crédito de carteira Candibet", "quantity": 1,
                    "currency_id": "BRL", "unit_price": amount / 100}],
         "external_reference": row["reference"], "metadata": {"operator_deposit": row["reference"]},
         "back_urls": {k: base + "/" for k in ("success", "pending", "failure")},
         "auto_return": "approved", "expires": True,
-        "expiration_date_to": (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(),
+        "expiration_date_from": now.isoformat(timespec="milliseconds"),
+        "expiration_date_to": (now + timedelta(minutes=30)).isoformat(timespec="milliseconds"),
         "payment_methods": {"excluded_payment_types": [{"id": k} for k in
-            ("ticket", "atm", "bank_transfer", "account_money")], "installments": 1},
+            ("ticket", "atm", "bank_transfer")], "installments": 1},
     })
     url = urlparse(raw.get("init_point", ""))
     if not raw.get("id") or url.scheme != "https" or url.hostname not in ("www.mercadopago.com.br", "www.mercadopago.com"):
@@ -113,7 +115,7 @@ def status(demo, payload):
         if (payment.get("external_reference") != row["reference"] or payment.get("currency_id") != "BRL"
                 or payment.get("live_mode") is not True
                 or (payment.get("metadata") or {}).get("operator_deposit") != row["reference"]
-                or payment.get("payment_type_id") not in ("credit_card", "debit_card")
+                or payment.get("payment_type_id") not in ("credit_card", "debit_card", "account_money")
                 or Decimal(str(payment.get("transaction_amount"))) * 100 != row["amount_minor"]):
             raise PaymentError("Pagamento divergente; entre em contato antes de pagar novamente.")
         with demo.books.lock:

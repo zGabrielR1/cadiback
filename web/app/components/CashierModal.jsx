@@ -97,16 +97,16 @@ export default function CashierModal({
         </div>
         {tab === "dep" ? (
           cardCharge ? (
-            <section aria-label="Pagamento com cart?o">
-              <h4>Cart?o ? Mercado Pago</h4>
-              <p>Valor: {BRL(cardCharge.amount_minor)}. Seus dados de cart?o s?o preenchidos no checkout do Mercado Pago.</p>
+            <section aria-label="Pagamento com cartão ou saldo">
+              <h4>Cartão ou saldo · Mercado Pago</h4>
+              <p>Valor: {BRL(cardCharge.amount_minor)}. Escolha cartão ou saldo da conta no checkout do Mercado Pago. Os dados do cartão são preenchidos somente lá.</p>
               {cardCharge.status === "paid" ? <p role="status">Pagamento confirmado. Saldo atualizado.</p> : <>
-                <p>Retornar do checkout n?o confirma o pagamento. Depois de pagar, consulte a confirma??o abaixo.</p>
+                <p>Retornar do checkout não confirma o pagamento. Depois de pagar, consulte a confirmação abaixo.</p>
                 <a href={cardCharge.checkout_url} target="_blank" rel="noopener noreferrer">Abrir checkout seguro</a>
-                <button disabled={cardChecking} onClick={onCheckCard}>{cardChecking ? "Consultando?" : "Verificar pagamento"}</button>
-                <p role="status">Aguardando confirma??o do provedor.</p>
+                <button disabled={cardChecking} onClick={onCheckCard}>{cardChecking ? "Consultando…" : "Verificar pagamento"}</button>
+                <p role="status">Aguardando confirmação do provedor.</p>
               </>}
-              <button className="ghost" onClick={onResetCard}>Voltar aos m?todos</button>
+              <button className="ghost" onClick={onResetCard}>Voltar aos métodos</button>
             </section>
           ) : pixCharge ? (
             <div>
@@ -197,7 +197,7 @@ export default function CashierModal({
               <select id="method" value={method} onChange={(e) => onMethod(e.target.value)}>
                 <option value="pix">Pix Instantâneo</option>
                 <option value="ted">TED</option>
-                <option value="debit">Cartão de Débito</option>
+                <option value="debit">Cartão ou saldo · Mercado Pago</option>
                 <option value="crypto" disabled={!cryptoAvailable}>{cryptoAvailable ? "Criptomoeda · CryptAPI" : "Criptomoeda · configure o recebimento"}</option>
               </select>
               {realCrypto ? (

@@ -1,3 +1,15 @@
+MERCADO PAGO CHECKOUT COMPATIBILITY 2026-11-12
+
+- Continued the unfinished checkout fix: account_money remains enabled as required by Checkout Pro; confirmation accepts approved card/account-balance payments only with matching amount, BRL, production mode and deposit metadata. Cashier labels identify card or account balance. Both ISO expiration dates define the 30-minute checkout window.
+- Existing operator credentials successfully created a live R$5 checkout preference through the corrected create() path using a temporary in-memory store. No payment submitted, no wallet credit and no other application configuration changed. This proves checkout creation, not payment approval.
+- Focused payment tests: 6 pass, including mismatched metadata and explicit refusal to call wallet credit on divergent payments. Required backend suite: 427 pass; core: 50 pass; rebuilt frontend and structure verification pass. Full release gate uses an isolated temporary PostgreSQL container; publication status follows below.
+
+CRYPTAPI RELEASE AND CARD CREDENTIAL REDEPLOY COMPLETE 2026-11-12
+
+- CryptAPI source commit 47b557f passed all 14 release stages and is deployed on Render and Vercel. Vercel dpl_b76FM887s8xPWHTCWbjbzok4DKgh Ready; production alias confirmed. Empty wallet configuration disables new crypto funding; both public endpoints rejected unsigned CryptAPI callbacks with 401. Owner will enter receiving addresses later in ignored .env.cryptapi and complete callback-domain verification per docs/cryptapi.md.
+- Owner regenerated Mercado Pago credentials in the operator root file. The local token differed from Render and the older mamyat file. Read-only account validation succeeded (200, Brazil). The regenerated file used ACESS_TOKEN; added the canonical MERCADOPAGO_ACCESS_TOKEN deployment variable with the same value. No secret displayed; sibling project unchanged.
+- Render redeployment dep-dbr252o8v5cc738nopb0 is live, with validated predeploy wallet backup. Live environment token matches the regenerated local token. Both public health endpoints return 200/ok. No live charge was created to verify card acceptance; authenticated API access is confirmed, not actual payment approval.
+
 CRYPTAPI REPLACEMENT 2026-11-12 - RELEASE CHECKS IN PROGRESS
 
 - New crypto invoices use CryptAPI custom checkout. .env.cryptapi is ignored and has blank receiving-address fields for later owner configuration; .env.cryptapi.example and docs/cryptapi.md document each supported network and callback-domain verification. No address was invented or activated.

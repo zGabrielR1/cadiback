@@ -1,9 +1,11 @@
-﻿# Mercado Pago hosted cards
+# Mercado Pago hosted cards and account balance
 
 Uses the merchant access token explicitly authorized from mamyat, stored only in ignored .env.mercadopago and Render environment. No Mamy Ateliê notification registration or secret is changed.
 
-The authenticated card endpoints create hosted preferences with isolated operator-card references and persist them in card_charges. The browser opens Mercado Pago in another tab and offers explicit payment verification; per-account session storage retains a checkout across refreshes. Returning from checkout is never proof of payment. The status endpoint retrieves provider records and checks approved status, exact BRL amount, production mode, card type and isolated metadata before an idempotent wallet posting. Test player accounts cannot create live charges.
+The authenticated card endpoints create hosted preferences with isolated operator-card references and persist them in card_charges. The browser opens Mercado Pago in another tab and offers explicit payment verification; per-account session storage retains a checkout across refreshes. Returning from checkout is never proof of payment. The status endpoint retrieves provider records and checks approved status, exact BRL amount, production mode, card or account-balance payment type and isolated metadata before an idempotent wallet posting. Test player accounts cannot create live charges.
 
 This initial integration uses authenticated verification rather than background webhook settlement. A player must use Verificar pagamento to refresh the wallet after paying. Refunds/chargebacks require merchant reconciliation; the implementation does not automatically reverse a wallet that may already be spent. Additional payments against the same deposit never generate additional wallet credit.
 
 Official API references: https://www.mercadopago.com.br/developers/en/reference/online-payments/checkout-pro-preferences/create-preference/post and https://www.mercadopago.com.br/developers/en/reference/payments/_payments_id/get
+
+Checkout compatibility: account_money must remain available because Checkout Pro does not allow excluding account balance. The cashier labels this option as cartão ou saldo, and confirmation validates account-money payments with the same amount, currency, production and reference checks as cards. Preferences supply both expiration dates in ISO 8601 with millisecond precision for a 30-minute validity window. Official method restrictions: https://www.mercadopago.com.br/developers/en/docs/checkout-pro-preferences/additional-settings/payment-methods
