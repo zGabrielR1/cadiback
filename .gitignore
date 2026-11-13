@@ -69,3 +69,6 @@ asaaswebhook.txt
 .env.mercadopago
 
 .env.cryptapi
+
+# Owner-provided receiving wallet list
+metamask.txt

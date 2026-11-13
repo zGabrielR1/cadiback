@@ -50,6 +50,12 @@ class CryptapiTests(unittest.TestCase):
         self.assertEqual([x['code'] for x in self.client.coins()], ['btc'])
         self.assertFalse(CryptapiConfig.from_env({}).configured)
 
+    def test_receiving_addresses_wait_for_domain_verification_configuration(self):
+        values = {'CRYPTAPI_WALLET_BTC': 'wallet-out'}
+        self.assertFalse(CryptapiConfig.from_env(values).configured)
+        values['CRYPTAPI_VERIFICATION_TOKEN'] = 'cryptapi-verification=challenge'
+        self.assertTrue(CryptapiConfig.from_env(values).configured)
+
     def test_browser_view_keeps_exact_amount_and_hides_callback_secrets(self):
         from types import SimpleNamespace
         from demo.server import Demo

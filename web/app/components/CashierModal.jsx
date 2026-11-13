@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import EmbeddedCard from "./EmbeddedCard";
+import { cardMessage } from "../../lib/mercadopago.mjs";
 import { BRL } from "../../lib/api";
 import { amountMinor, depositAllowed, clampDeposit } from "../../lib/money.mjs";
 
@@ -43,7 +45,7 @@ export default function CashierModal({
   cryptoCoins,
   cryptoCoin,
   onCryptoCoin,
-  cardCharge, cardChecking, onCheckCard, onResetCard,
+  cardCharge, cardChecking, onCheckCard, onResetCard, onSubmitCard, cardTheme,
   onClose,
 }) {
   const [copied, setCopied] = useState(false);
@@ -97,16 +99,21 @@ export default function CashierModal({
         </div>
         {tab === "dep" ? (
           cardCharge ? (
-            <section aria-label="Pagamento com cartão ou saldo">
-              <h4>Cartão ou saldo · Mercado Pago</h4>
-              <p>Valor: {BRL(cardCharge.amount_minor)}. Escolha cartão ou saldo da conta no checkout do Mercado Pago. Os dados do cartão são preenchidos somente lá.</p>
-              {cardCharge.status === "paid" ? <p role="status">Pagamento confirmado. Saldo atualizado.</p> : <>
-                <p>Retornar do checkout não confirma o pagamento. Depois de pagar, consulte a confirmação abaixo.</p>
-                <a href={cardCharge.checkout_url} target="_blank" rel="noopener noreferrer">Abrir checkout seguro</a>
-                <button disabled={cardChecking} onClick={onCheckCard}>{cardChecking ? "Consultando…" : "Verificar pagamento"}</button>
-                <p role="status">Aguardando confirmação do provedor.</p>
+            <section aria-label="Pagamento com cartão">
+              <h4>Cartão de crédito ou débito</h4>
+              <p>Valor: {BRL(cardCharge.amount_minor)}</p>
+              {cardCharge.checkout_mode === "embedded" && cardCharge.public_key &&
+                open && tab === "dep" && (cardCharge.status === "prepared" || cardCharge.three_ds_info) &&
+                <EmbeddedCard charge={cardCharge} onSubmit={onSubmitCard} theme={cardTheme} />}
+              {cardCharge.checkout_url && cardCharge.status !== "paid" && <>
+                <p>Este pagamento foi iniciado no checkout anterior.</p>
+                <a href={cardCharge.checkout_url} target="_blank" rel="noopener noreferrer">Continuar pagamento anterior</a>
               </>}
-              <button className="ghost" onClick={onResetCard}>Voltar aos métodos</button>
+              {cardCharge.status !== "prepared" && <p role="status">{cardMessage(cardCharge.status)}</p>}
+              {cardCharge.status !== "paid" && <button disabled={cardChecking} onClick={onCheckCard}>{cardChecking ? "Consultando…" : "Verificar pagamento"}</button>}
+              {!['prepared', 'paid', 'rejected', 'cancelled', 'refunded', 'charged_back'].includes(cardCharge.status) &&
+                <p className="sub">Antes de iniciar outro depósito, confirme este pagamento para evitar pagar duas vezes.</p>}
+              <button className="ghost" disabled={cardChecking} onClick={onResetCard}>Voltar aos métodos</button>
             </section>
           ) : pixCharge ? (
             <div>
@@ -197,7 +204,7 @@ export default function CashierModal({
               <select id="method" value={method} onChange={(e) => onMethod(e.target.value)}>
                 <option value="pix">Pix Instantâneo</option>
                 <option value="ted">TED</option>
-                <option value="debit">Cartão ou saldo · Mercado Pago</option>
+                <option value="debit">Cartão de crédito ou débito</option>
                 <option value="crypto" disabled={!cryptoAvailable}>{cryptoAvailable ? "Criptomoeda · CryptAPI" : "Criptomoeda · configure o recebimento"}</option>
               </select>
               {realCrypto ? (
@@ -228,7 +235,7 @@ export default function CashierModal({
               <p id="deposit-minimum" className={depositLimit && !canDeposit ? "ferr" : "fhint"} role="status">
                 {limitError ? "Não foi possível consultar o mínimo. O depósito está indisponível até atualizar."
                   : !depositLimit ? "Consultando o mínimo de depósito…"
-                    : `Depósito mínimo: ${BRL(depositLimit.min_minor)}${depositLimit.provider === "demo" ? " (demonstração)" : " — " + depositLimit.provider + (realCrypto ? " nesta moeda/rede" : method === "debit" ? " via cart?o" : " via Pix")}. Valores menores não são aceitos.`}
+                    : `Depósito mínimo: ${BRL(depositLimit.min_minor)}${depositLimit.provider === "demo" ? " (demonstração)" : " — " + depositLimit.provider + (realCrypto ? " nesta moeda/rede" : method === "debit" ? " via cartão" : " via Pix")}. Valores menores não são aceitos.`}
               </p>
               {limitError ? <button className="ghost" onClick={onRetryLimit} disabled={busy}>Consultar novamente</button> : null}
               {depositLimit && !canDeposit ? (
@@ -237,7 +244,7 @@ export default function CashierModal({
                 </button>
               ) : null}
               <button disabled={busy || !canDeposit} onClick={onDeposit} style={{ marginTop: 12 }}>
-                {method === "debit" ? "Continuar com Mercado Pago" : realPix ? "Gerar Pix para pagar"
+                {method === "debit" ? "Preencher dados do cartão" : realPix ? "Gerar Pix para pagar"
                   : realCrypto ? "Gerar cobrança cripto"
                   : "Confirmar Depósito Demo"}
               </button>

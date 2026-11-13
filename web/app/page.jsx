@@ -5,6 +5,7 @@ import { api, BRL, newDepositId, getAdminSession, setAdminSession, getPlayerSess
 import { validateCPF, validateCNPJ, validateEmail, validateName, validatePassword, validateUsername } from "../lib/validation";
 import { amountMinor, depositAllowed, matchingDepositLimit } from "../lib/money.mjs";
 import { rememberGame } from "../lib/localCache";
+import { cardSnapshot } from "../lib/mercadopago.mjs";
 import { useSession } from "../lib/useSession";
 import { socialErrorMessage } from "../lib/auth-errors.mjs";
 import { useSportsFeed } from "../lib/useSportsFeed";
@@ -845,26 +846,81 @@ export default function Page() {
 
   const [cardCharge, setCardCharge] = useState(null);
   const [cardChecking, setCardChecking] = useState(false);
+  const cardOwnerToken = getPlayerSession()?.token;
+  const ownsCardRequest = token => !!token && getPlayerSession()?.token === token;
   useEffect(() => {
+    let active = true;
     setCardCharge(null);
+    setCardChecking(false);
     try {
       const saved = JSON.parse(sessionStorage.getItem("operator-card:" + player) || "null");
-      if (saved?.deposit_id && saved?.checkout_url && new URL(saved.checkout_url).hostname === "www.mercadopago.com.br") setCardCharge(saved);
+      if (saved?.deposit_id && /^[A-Za-z0-9_-]{8,100}$/.test(saved.deposit_id)) {
+        api("POST", "/api/deposit/card/status", { deposit_id: saved.deposit_id }).then(result => {
+          if (active && ownsCardRequest(cardOwnerToken)) setCardCharge(result);
+        }).catch(() => {
+          if (active && ownsCardRequest(cardOwnerToken)) {
+            setCardCharge({ ...cardSnapshot(saved), status: "submitting" });
+            setCashError("Não foi possível recuperar o pagamento. Consulte a confirmação antes de iniciar outro depósito.");
+          }
+        });
+      }
     } catch { /* unavailable browser storage */ }
-  }, [player]);
+    return () => { active = false; };
+  }, [player, cardOwnerToken]);
   const rememberCard = charge => {
     setCardCharge(charge);
-    try { sessionStorage.setItem("operator-card:" + player, JSON.stringify(charge)); } catch { /* optional recovery */ }
+    try { sessionStorage.setItem("operator-card:" + player, JSON.stringify(cardSnapshot(charge))); } catch { /* optional recovery */ }
   };
   const checkCard = async () => {
     if (!cardCharge || cardChecking) return;
+    const token = getPlayerSession()?.token;
     setCardChecking(true);
     try {
       const result = await api("POST", "/api/deposit/card/status", { deposit_id: cardCharge.deposit_id });
+      if (!ownsCardRequest(token)) return;
       rememberCard(result);
       if (result.status === "paid") await refresh();
-    } catch (e) { setNotice({ ok: false, text: e.message }); }
-    finally { setCardChecking(false); }
+    } catch (e) { if (ownsCardRequest(token)) setCashError(e.message); }
+    finally { if (ownsCardRequest(token)) setCardChecking(false); }
+  };
+  useEffect(() => {
+    if (!cashOpen || cashTab !== "dep" || cardCharge?.checkout_mode !== "embedded" ||
+        !["pending", "submitting"].includes(cardCharge?.status)) return;
+    let active = true;
+    let timer;
+    const poll = async () => {
+      try {
+        const result = await api("POST", "/api/deposit/card/status", { deposit_id: cardCharge.deposit_id });
+        if (!active || !ownsCardRequest(cardOwnerToken)) return;
+        rememberCard(result);
+        if (result.status === "paid") { await refresh(); return; }
+        if (!["pending", "submitting"].includes(result.status)) return;
+      } catch { /* Keep the last result and the manual verification action. */ }
+      if (active) timer = setTimeout(poll, 5000);
+    };
+    timer = setTimeout(poll, 5000);
+    return () => { active = false; clearTimeout(timer); };
+  }, [cashOpen, cashTab, cardCharge?.deposit_id, cardCharge?.status, cardCharge?.checkout_mode, cardOwnerToken]);
+  const submitCard = async formData => {
+    const token = getPlayerSession()?.token;
+    if (!cardCharge || cardChecking || !ownsCardRequest(token)) throw new Error("Pagamento indisponível.");
+    setCardChecking(true);
+    setCashError("");
+    try {
+      const result = await api("POST", "/api/deposit/card/pay", { deposit_id: cardCharge.deposit_id, form_data: formData });
+      if (!ownsCardRequest(token)) return;
+      rememberCard(result);
+      if (result.status === "paid") {
+        try { await refresh(); }
+        catch { if (ownsCardRequest(token)) setCashError("Pagamento confirmado. Atualize a carteira para consultar o saldo."); }
+      }
+    } catch (e) {
+      if (ownsCardRequest(token)) {
+        rememberCard({ ...cardCharge, status: "submitting" });
+        setCashError(e.message + " Consulte a confirmação antes de pagar novamente.");
+      }
+      throw e;
+    } finally { if (ownsCardRequest(token)) setCardChecking(false); }
   };
   const deposit = async () => {
     setCashError("");
@@ -882,8 +938,9 @@ export default function Page() {
       const realCrypto = cryptoAvailable && method === "crypto"
         && !(profile && profile.is_test);
       if (method === "debit") {
+        const token = getPlayerSession()?.token;
         const charge = await api("POST", "/api/deposit/card", { amount_minor: amount, deposit_id: cardCharge?.deposit_id || newDepositId() });
-        rememberCard(charge);
+        if (ownsCardRequest(token)) rememberCard(charge);
       } else if (realPix) {
         // Real Pix: open the charge and let the poll effect confirm it. The
         // modal stays open showing the QR instead of crediting instantly.
@@ -1454,7 +1511,13 @@ export default function Page() {
         cardCharge={cardCharge}
         cardChecking={cardChecking}
         onCheckCard={checkCard}
-        onResetCard={() => setCardCharge(null)}
+        onSubmitCard={submitCard}
+        cardTheme={theme}
+        onResetCard={() => {
+          setCardCharge(null);
+          setCashError("");
+          try { sessionStorage.removeItem("operator-card:" + player); } catch { /* optional recovery */ }
+        }}
         depositAmount={depositAmount}
         onDepositAmount={(value) => { setDepositAmount(value); setCashError(""); }}
         withdrawAmount={withdrawAmount}

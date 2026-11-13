@@ -120,7 +120,7 @@ export async function api(method, path, body, options = {}) {
   const session = getAdminSession();
   const player = getPlayerSession();
   const controller = new AbortController();
-  const timeout = /^\/api\/deposit\/(pix|crypto|card)(?:\/status)?$/.test(path) || ['/api/sports/quote','/api/bet'].includes(path) ? PAYMENT_TIMEOUT_MS : path === '/api/sports' ? 20000 : REQUEST_TIMEOUT_MS;
+  const timeout = /^\/api\/deposit\/(pix|crypto|card)(?:\/(?:status|pay))?$/.test(path) || ['/api/sports/quote','/api/bet'].includes(path) ? PAYMENT_TIMEOUT_MS : path === '/api/sports' ? 20000 : REQUEST_TIMEOUT_MS;
   const abort = () => controller.abort();
   if (options.signal?.aborted) abort();
   else options.signal?.addEventListener("abort", abort, { once: true });

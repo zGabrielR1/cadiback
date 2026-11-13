@@ -1,3 +1,5 @@
+New card deposits use demo/embedded_card.py and web/app/components/EmbeddedCard.jsx: official secure Card Payment fields, server-owned deposit amounts, provider idempotency and independently verified wallet credit. Legacy hosted references remain readable through demo/card_checkout.py. See decision 0113 and docs/card-payments.md.
+
 CryptAPI now handles new cryptocurrency invoices via demo/cryptapi.py; only configured receiving networks are offered. Private invoice metadata stays in crypto_charges; signed callbacks and polling independently verify provider logs before the existing idempotent wallet transaction. Legacy NOWPayments invoices retain their original provider client for settlement. Configuration and domain verification: docs/cryptapi.md; decision 0112.
 
 # ARCHITECTURE — operator

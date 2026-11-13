@@ -18,13 +18,16 @@ class NoRedirect(HTTPRedirectHandler):
         raise PaymentError("Mercado Pago redirect refused")
 
 
-def request(path, body=None):
+def request(path, body=None, *, idempotency_key=None):
     token = os.environ.get("MERCADOPAGO_ACCESS_TOKEN", "")
     if not token:
         raise PaymentError("Cartão indisponível. Escolha outro método.")
+    headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
+    if idempotency_key:
+        headers["X-Idempotency-Key"] = idempotency_key
     req = Request("https://api.mercadopago.com" + path,
                   data=json.dumps(body).encode() if body is not None else None,
-                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
+                  headers=headers)
     try:
         with build_opener(NoRedirect()).open(req, timeout=15) as response:
             return json.load(response)

@@ -1,3 +1,15 @@
+EMBEDDED CARDS AND OWNER CRYPTO WALLETS 2026-11-12 - RELEASE VERIFIED
+
+- Owner explicitly selected embedded Checkout Transparente. New card preparation/submission uses the official secure Card Payment Brick, server-owned amounts, persistent provider idempotency/request digests, optional 3DS Status Screen challenges, account-scoped recovery and automatic pending verification. Legacy Checkout Pro deposits remain verifiable. No raw PAN/CVV accepted; no card tokens/payer details persisted.
+- Added isolated SQLite/PostgreSQL cross-worker credit and rollback tests, strict payment mismatch/token timeout tests, desktop/mobile browser payment/recovery/challenge tests and browser-storage regressions. All 14 release gates passed: backend 580, core 50, browser 13. The real official secure form initialized successfully with the existing public key on the production origin; no payment submitted.
+- Imported only the explicitly labeled BTC/ETH public receiving addresses from ignored metamask.txt into ignored .env.cryptapi. Other listed chains remain unsupported/unconfigured. Added the owner-supplied domain challenge; unconfigured verification now keeps the crypto option disabled. Predeploy provider probes confirmed live BRL quotes but rejected invoices pending callback-domain verification. Deployment and post-deploy verification follow.
+
+MERCADO PAGO CHECKOUT FIX DEPLOYED 2026-11-12
+
+- Verified source 3627efc pushed to main. All 14 release stages passed: backend discovery 566, core 50, browser 10; focused card tests 6. Temporary PostgreSQL container stopped and removed after verification.
+- Render dep-dbr5dflg1s2s73ffd7k0 is live with a validated pre-deployment wallet backup and 14 dashboard-only environment settings retained. Vercel dpl_7rUJryhxGtvnM7qH3cNTVq8GAeoK is Ready and aliased to cadiback-web.vercel.app. Both public health endpoints return 200/ok/database.
+- Existing merchant credentials successfully created a checkout preference with the corrected request; no payment submitted. Actual payment approval and resulting wallet settlement still require a customer payment. No credentials need re-entry for this fix.
+
 MERCADO PAGO CHECKOUT COMPATIBILITY 2026-11-12
 
 - Continued the unfinished checkout fix: account_money remains enabled as required by Checkout Pro; confirmation accepts approved card/account-balance payments only with matching amount, BRL, production mode and deposit metadata. Cashier labels identify card or account balance. Both ISO expiration dates define the 30-minute checkout window.

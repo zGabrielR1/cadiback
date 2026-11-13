@@ -2215,8 +2215,9 @@ class Demo:
             raise AuthError(PLAYER_SESSION_REFUSED)
         method = check_deposit_method(method)
         if method == "debit":
-            if not os.environ.get("MERCADOPAGO_ACCESS_TOKEN") or profile.get("is_test"):
-                raise PaymentError("Cart?o indispon?vel para esta conta.")
+            from .embedded_card import configured
+            if not configured() or profile.get("is_test"):
+                raise PaymentError("Cartão indisponível para esta conta.")
             return {"method": method, "min_minor": 500, "currency": "brl", "provider": "Mercado Pago"}
         if not profile.get("is_test"):
             if method == "pix" and self.asaas is not None:
@@ -5833,10 +5834,13 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/deposit":
                 self._send(200, DEMO.deposit(self._player_body()))
             elif path == "/api/deposit/card":
-                from .card_checkout import create
+                from .embedded_card import create
                 self._send(200, create(DEMO, self._player_body()))
+            elif path == "/api/deposit/card/pay":
+                from .embedded_card import submit
+                self._send(200, submit(DEMO, self._player_body()))
             elif path == "/api/deposit/card/status":
-                from .card_checkout import status
+                from .embedded_card import status
                 self._send(200, status(DEMO, self._player_body()))
             elif path == "/api/deposit/pix":
                 self._send(200, DEMO.create_pix_deposit(self._player_body()))

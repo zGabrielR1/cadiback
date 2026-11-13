@@ -40,3 +40,4 @@ demo/data
 **/__pycache__
 **/*.pyc
 *.md
+metamask.txt

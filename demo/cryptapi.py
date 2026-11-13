@@ -43,7 +43,7 @@ class CryptapiConfig:
 
     @property
     def configured(self):
-        return bool(self.wallets)
+        return bool(self.wallets and self.verification_token.startswith('cryptapi-verification='))
 
 
 class NoRedirect(HTTPRedirectHandler):

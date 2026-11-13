@@ -14,7 +14,7 @@ Set only public receiving addresses; never enter a private key or seed phrase.
 | CRYPTAPI_WALLET_USDC | USDC on Ethereum mainnet |
 
 Blank networks are hidden from checkout. If all receiving addresses are blank,
-the live crypto rail is disabled. Existing dashboard values are preserved when
+the live crypto rail is disabled. A receiving address also waits for a configured domain-verification value before the live rail is offered. Existing dashboard values are preserved when
 the local file does not supply a nonempty value. Restart the local Python
 server after editing; use the normal verified Render deploy to update the live
 environment. Addresses for existing invoices are immutable; changing a receiving
@@ -64,3 +64,5 @@ References: [custom flow](https://docs.cryptapi.io/get-started/custom-payment-fl
 [domain verification](https://docs.cryptapi.io/kb/developers/how-to-verify-your-callback-domain),
 [address logs](https://docs.cryptapi.io/api/tickerlogs),
 [signature verification](https://docs.cryptapi.io/webhooks/verify-webhook-signature).
+
+Owner wallet import (2026-11-12): `metamask.txt` is ignored. Only its explicitly labeled BTC and Ethereum-mainnet addresses were copied into the ignored environment file. Solana, Linea, Base, Arbitrum, BNB Chain and Monad entries are not mapped to another chain. No token network was inferred from the Ethereum address.

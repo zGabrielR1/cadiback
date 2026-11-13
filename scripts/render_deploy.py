@@ -475,7 +475,7 @@ def runtime_env() -> list[dict]:
     return (SERVICE["envVars"] + read_asaas_env() + read_crypto_env()
             + read_resend_env() + read_turnstile_env() + read_supabase_env()
             + [{"key": k, "value": v} for k, v in _env_pairs(os.path.join(ROOT, ".env.cryptapi")).items() if k.startswith("CRYPTAPI_") and v]
-            + read_betterauth_env() + [{"key": k, "value": v} for k, v in _env_pairs(os.path.join(ROOT, ".env.mercadopago")).items() if k in ("MERCADOPAGO_ACCESS_TOKEN", "CARD_PUBLIC_BASE_URL")])
+            + read_betterauth_env() + [{"key": k, "value": v} for k, v in _env_pairs(os.path.join(ROOT, ".env.mercadopago")).items() if k in ("MERCADOPAGO_ACCESS_TOKEN", "MERCADOPAGO_PUBLIC_KEY", "CARD_PUBLIC_BASE_URL")])
 
 
 class RenderError(RuntimeError):
