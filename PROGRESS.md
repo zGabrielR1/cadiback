@@ -1,3 +1,20 @@
+CARD CHECKOUT VISUAL FIX DEPLOYED 2026-11-13
+
+- Commit 501c801 pushed and deployed: Render dep-dbrfbkuc6qcc73do6qkg live with validated wallet backup; Vercel dpl_3YFjHrN5tEjJrjzaUWWo6g2BPEyN Ready and production alias confirmed. Existing tracker changes preserved.
+- Embedded Mercado Pago form now reads cashier colors, uses Source Sans 3 in both regular and secure iframe fields, matches corners/labels and removes the duplicate heading. Real SDK inspected on production at 1440/768/390 in light/dark; fonts loaded, no horizontal overflow, footer controls reachable. No payment submitted.
+- All 14 release stages passed: backend 580, core 50, browser 13; explicit demo.test_demo 427 and structure verifier pass. Taste source lint passes; automatic screenshot inspector hit CDP Page.enable timeout, so visual checks used Playwright screenshots and computed/font-load checks.
+
+CRYPTAPI DOMAIN VERIFIED AND LIVE INVOICE CREATION CONFIRMED 2026-11-12
+
+- Owner completed CryptAPI domain verification. Fresh provider probes through the deployed client's configured callback host successfully created unpaid BTC and ETH invoices; each returned a deposit address and matched the configured receiving address. No wallet addresses/nonces printed, no crypto sent, no wallet credited.
+- Existing deployment already carries both networks and the verification challenge; no redeploy or source change required. Invoice creation is verified; actual on-chain forwarding, callback delivery and wallet settlement still require a payment and are not claimed as live-tested.
+
+EMBEDDED CHECKOUT LIVE 2026-11-12 - CRYPTAPI FINAL DOMAIN CHECK PENDING
+
+- Source 221216a is pushed and deployed: Render dep-dbr5lv5bedkc73cjqc90 live with validated wallet backup; Vercel dpl_6uBjoWr6LndibyGkVhGUAFHRa69Q Ready/production alias. All 14 release stages passed (580 backend, 50 core, 13 browser checks). Temporary SQL test container removed.
+- Both public health endpoints return 200/ok/database with BTC/ETH enabled. All card prepare/pay/status routes reject guests with 401. The domain-verification file is live, HTTP 200, and exactly matches the owner-supplied challenge. No secrets or wallet addresses committed.
+- Owner asked to finish HTTPS-file verification on CryptAPI after publication. Live BTC/ETH invoice generation must be rechecked after that external step; quote endpoints already work. No card charge or crypto transfer submitted during validation. Real card field initialization with the configured public key passed; payment approval remains untested.
+
 EMBEDDED CARDS AND OWNER CRYPTO WALLETS 2026-11-12 - RELEASE VERIFIED
 
 - Owner explicitly selected embedded Checkout Transparente. New card preparation/submission uses the official secure Card Payment Brick, server-owned amounts, persistent provider idempotency/request digests, optional 3DS Status Screen challenges, account-scoped recovery and automatic pending verification. Legacy Checkout Pro deposits remain verifiable. No raw PAN/CVV accepted; no card tokens/payer details persisted.
