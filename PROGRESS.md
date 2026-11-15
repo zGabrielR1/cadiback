@@ -1,5 +1,6 @@
-DESIGNEER-INSPIRED CATALOG DISCOVERY 2026-11-15 — VERIFIED, PUBLICATION IN PROGRESS
+DESIGNEER-INSPIRED CATALOG DISCOVERY 2026-11-15 — DEPLOYED
 
+- Source 50e0f53 pushed; Render dep-dbt1mmhsrm7s739vesc0 live with validated wallet backup and 14 dashboard-only settings preserved. Vercel dpl_HAiRSi5bgEm33mY4ecdwtBMG3S9g Ready and aliased to cadiback-web.vercel.app.
 - Added visible catalog search and A–Z sorting on desktop/mobile, accessible selected category/provider states, compact category navigation and bounded provider browsing. Reset clears category, provider, query and sorting; featured games respect provider filtering.
 - Preserved the existing typography/tab edits; corrected missing font paths to bundled Barlow regular/semibold and Geist Mono. Added reduced-motion support and keyboard play affordance.
 - All 14 release stages pass: 580 backend, 50 core, 13 browser; explicit demo suite 427 and structure verification pass. Additional controlled catalog search/sort/reset checks pass at 1440/768/390/320 in both themes; screenshots inspected. Mocked accounts only, no payment or wager submitted.
