@@ -1,3 +1,9 @@
+DESIGNEER-INSPIRED CATALOG DISCOVERY 2026-11-15 — VERIFIED, PUBLICATION IN PROGRESS
+
+- Added visible catalog search and A–Z sorting on desktop/mobile, accessible selected category/provider states, compact category navigation and bounded provider browsing. Reset clears category, provider, query and sorting; featured games respect provider filtering.
+- Preserved the existing typography/tab edits; corrected missing font paths to bundled Barlow regular/semibold and Geist Mono. Added reduced-motion support and keyboard play affordance.
+- All 14 release stages pass: 580 backend, 50 core, 13 browser; explicit demo suite 427 and structure verification pass. Additional controlled catalog search/sort/reset checks pass at 1440/768/390/320 in both themes; screenshots inspected. Mocked accounts only, no payment or wager submitted.
+
 CARD CHECKOUT VISUAL FIX DEPLOYED 2026-11-13
 
 - Commit 501c801 pushed and deployed: Render dep-dbrfbkuc6qcc73do6qkg live with validated wallet backup; Vercel dpl_3YFjHrN5tEjJrjzaUWWo6g2BPEyN Ready and production alias confirmed. Existing tracker changes preserved.

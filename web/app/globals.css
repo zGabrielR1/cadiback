@@ -1202,8 +1202,8 @@ nav.main button.on::after { content: ''; height: 3px; background: var(--acc); po
 .sporthead .sub { margin: 5px 0 0; font-size: 12px; }
 .sportfeed { gap: 8px; }
 .sx-sports { gap: 0; padding: 0; margin-top: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--card2); }
-.sx-tab { flex-shrink: 0; padding: 13px 17px; margin: 0; gap: 8px; border: 0; border-right: 1px solid var(--line); border-bottom: 3px solid transparent; border-radius: 0; background: transparent; }
-.sx-tab.on { background: var(--acc-soft); color: var(--acc); border-bottom-color: var(--acc); }
+  .sx-tab { flex-shrink: 0; padding: 13px 17px; margin: 0; gap: 8px; border: 0; border-right: 1px solid var(--line); border-bottom: 3px solid var(--line); border-radius: 0; background: transparent; }
+  .sx-tab.on { background: var(--acc-soft); color: var(--acc); border-bottom-color: var(--line); }
 .sx-tab-text { font-size: 13px; }
 .sx-tab-count { background: transparent; padding: 0; }
 .sx-icon { width: 21px; height: 21px; transform: none; }

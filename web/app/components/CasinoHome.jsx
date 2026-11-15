@@ -132,6 +132,7 @@ export default function CasinoHome({
 }) {
   const [category, setCategory] = useState("Todos");
   const [provider, setProvider] = useState("Todos");
+  const [sort, setSort] = useState("default");
   const [banner, setBanner] = useState(0);
   const sportsFeed = useSportsFeed(true);
   const [jackpot, setJackpot] = useState(null);
@@ -371,12 +372,13 @@ export default function CasinoHome({
     category === "Recentes"
       ? playableRecent.filter(matchesScope)
       : all.filter(matches);
+  const ordered = sort === "name" ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")) : filtered;
   const visible =
-    category === "Recentes"
+    category === "Recentes" && sort === "default"
       ? [...filtered].sort(
           (a, b) => recentOrder.indexOf(a.game_id) - recentOrder.indexOf(b.game_id)
         )
-      : filtered;
+      : ordered;
   const FEATURED_IDS = ["pp:gates-of-olympus", "spribe:aviator", "pp:sweet-bonanza", "pp:spaceman", "pp:sugar-rush", "pp:big-bass-bonanza"];
   const featured = (() => {
     const picked = all.filter((g) => FEATURED_IDS.includes(g.game_id));
@@ -438,22 +440,24 @@ export default function CasinoHome({
         </div>
       </div>
 
-      <div className="chips" style={{ marginTop: 14 }}>
+      <nav className="chips casino-categories" aria-label="Categorias de jogos">
         {QUICK_LINKS.map((q) => (
           <button
             key={q.label}
             className={"qlink" + (category === q.category ? " on" : "")}
+            aria-pressed={category === q.category}
             onClick={() => setCategory(q.category)}
           >
             <UIIcon name={q.category === "Favoritos" ? "star" : q.category === "Ao vivo" ? "live" : "data"} size={16} /> {q.label}
           </button>
         ))}
-      </div>
-      <div className="chips" style={{ marginTop: 8 }}>
+      </nav>
+      <div className="chips casino-providers" role="group" aria-label="Provedores">
         {providers.map((p) => (
           <button
             key={p}
             className={"qlink" + (provider === p ? " on" : "")}
+            aria-pressed={provider === p}
             onClick={() => setProvider(p)}
             style={{ fontSize: 11.5, textTransform: "capitalize" }}
           >
@@ -528,7 +532,7 @@ export default function CasinoHome({
               </div>
             </Section>
           ) : null}
-          {category === "Todos" && !query && featured.length > 0 ? (
+          {category === "Todos" && provider === "Todos" && !query && featured.length > 0 ? (
             <Section className="casino-catalog" title="Jogos em destaque" note="Uma seleção dos títulos disponíveis no catálogo.">
               <div className="rowscroll">
                 {featured.map((g) => (
@@ -542,12 +546,26 @@ export default function CasinoHome({
             className="casino-catalog"
             title={category === "Todos" ? "Todos os Jogos" : category}
             note={`${visible.length} jogo(s) disponível(is) para jogar diretamente`}
-            action="Ver Todos"
+            action="Limpar filtros"
             onAction={() => {
               setCategory("Todos");
+              setProvider("Todos");
+              setSort("default");
               onQuery("");
             }}
           >
+            <div className="catalog-discovery">
+              <label className="catalog-search">Buscar no catálogo
+                <input type="search" placeholder="Nome do jogo ou provedor…" value={query || ""} onChange={e => onQuery(e.target.value)} />
+              </label>
+              <label className="catalog-sort">Ordenar por
+                <select value={sort} onChange={e => setSort(e.target.value)}>
+                  <option value="default">{category === "Recentes" ? "Mais recentes" : "Ordem do catálogo"}</option>
+                  <option value="name">Nome: A–Z</option>
+                </select>
+              </label>
+              <p role="status">{visible.length} {visible.length === 1 ? "jogo encontrado" : "jogos encontrados"}</p>
+            </div>
             <div id="lobby">
               {visible.length === 0 ? (
                 <Empty>
