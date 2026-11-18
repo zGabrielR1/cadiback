@@ -2346,6 +2346,22 @@ class TrendingTest(unittest.TestCase):
         self.assertEqual(board["hot"], [])
         self.assertIn("demo:neon-gems", board["cold"])
 
+    def test_durable_rounds_and_malformed_activity(self):
+        now = datetime.now(timezone.utc)
+        game_id = "demo:neon-gems"
+        with open(self.demo.plays_path, "w", encoding="utf-8") as handle:
+            for row in (
+                [],
+                {"game_id": game_id, "ts": now.date().isoformat()},
+                {"game_id": game_id, "ts": (now + timedelta(hours=1)).isoformat()},
+                {"game_id": game_id, "ts": now.isoformat()},
+            ):
+                handle.write(json.dumps(row) + "\n")
+        with patch.object(self.demo, "round_log") as log:
+            log.read.return_value = [{"game_id": game_id, "ts": now.isoformat()}]
+            board = self.demo.trending()
+        self.assertEqual(board["hot"], [{"game_id": game_id, "opens": 1, "rounds": 1}])
+
     def test_missing_game_id_refused(self):
         with self.assertRaises(ValueError):
             self.demo.record_play({"player": "p1"})

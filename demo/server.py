@@ -3482,40 +3482,21 @@ class Demo:
         known.update(d.get("game_id") for d in self.provider_demos().get("demos", []))
         known.discard(None)
 
-        def _recent(path: str):
-            if not os.path.exists(path):
-                return
-            with open(path, "r", encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        row = json.loads(line)
-                    except ValueError:
-                        continue  # torn tail line: skip, keep serving
-                    try:
-                        at = datetime.fromisoformat(
-                            str(row.get("ts", "")).replace("Z", "+00:00"))
-                    except ValueError:
-                        continue
-                    if now - at > timedelta(hours=24):
-                        continue
-                    gid = row.get("game_id")
-                    if isinstance(gid, str) and gid in known:
-                        yield gid
-
+        since = now - timedelta(hours=24)
         opens: dict[str, int] = {}
-        for gid in _recent(self.plays_path):
-            opens[gid] = opens.get(gid, 0) + 1
+        for row in self._recent_plays(since, now):
+            gid = row.get("game_id")
+            if isinstance(gid, str) and gid in known:
+                opens[gid] = opens.get(gid, 0) + 1
         rounds: dict[str, int] = {}
-        for gid in _recent(self.rounds_path):
-            rounds[gid] = rounds.get(gid, 0) + 1
+        for row in self._all_rounds():
+            gid = row.get("game_id")
+            if isinstance(gid, str) and gid in known and self._in_activity_window(row, since, now):
+                rounds[gid] = rounds.get(gid, 0) + 1
         active = set(opens) | set(rounds)
         ranked = sorted(
             active,
-            key=lambda g: (opens.get(g, 0) + rounds.get(g, 0), rounds.get(g, 0)),
-            reverse=True,
+            key=lambda g: (-(opens.get(g, 0) + rounds.get(g, 0)), -rounds.get(g, 0), g),
         )
         return {
             "window_hours": 24,
@@ -3525,6 +3506,27 @@ class Demo:
             ],
             "cold": sorted(known - active)[:8],
         }
+
+    @staticmethod
+    def _in_activity_window(row: dict, since: datetime, now: datetime) -> bool:
+        try:
+            at = datetime.fromisoformat(str(row.get("ts", "")).replace("Z", "+00:00"))
+        except ValueError:
+            return False
+        return at.tzinfo is not None and since <= at <= now
+
+    def _recent_plays(self, since: datetime, now: datetime):
+        try:
+            with open(self.plays_path, "r", encoding="utf-8", errors="replace") as handle:
+                for line in handle:
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(row, dict) and self._in_activity_window(row, since, now):
+                        yield row
+        except OSError:
+            return
 
     def news(self) -> dict:
         """News panel = real facts the server already knows. No static
@@ -3547,9 +3549,8 @@ class Demo:
         titles: dict[str, str] = {}
         for g in self.catalog():
             titles[g["game_id"]] = str(g.get("title", g["game_id"]))
-        for d in self.provider_demos().get("demos", []):
-            d.setdefault("title", d.get("game_id", "?"))
-            titles[d["game_id"]] = str(d["title"])
+        for d in demos:
+            titles[d["game_id"]] = str(d.get("title") or d["game_id"])
         board = self.trending()
         if board["hot"]:
             top = board["hot"][0]
@@ -3674,25 +3675,12 @@ class Demo:
         window = timedelta(minutes=15)
         opens: dict[str, int] = {}
         players: set[str] = set()
-        if os.path.exists(self.plays_path):
-            with open(self.plays_path, "r", encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        row = json.loads(line)
-                        at = datetime.fromisoformat(
-                            str(row.get("ts", "")).replace("Z", "+00:00"))
-                    except (ValueError, TypeError):
-                        continue  # torn line: skip, never crash the pulse
-                    if now - at > window:
-                        continue
-                    gid = row.get("game_id")
-                    if isinstance(gid, str) and gid:
-                        opens[gid] = opens.get(gid, 0) + 1
-                        if row.get("player"):
-                            players.add(str(row["player"]))
+        for row in self._recent_plays(now - window, now):
+            gid = row.get("game_id")
+            if isinstance(gid, str) and gid:
+                opens[gid] = opens.get(gid, 0) + 1
+                if row.get("player"):
+                    players.add(str(row["player"]))
         titles: dict[str, str] = {}
         for g in self.catalog():
             titles[g["game_id"]] = str(g.get("title", g["game_id"]))
