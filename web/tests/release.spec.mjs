@@ -21,6 +21,14 @@ async function setup(page, { member = false } = {}) {
       '/api/player/sessions': {sessions:[]},
       '/api/history': {rounds:[{round_id:'test-round',type:'sports',title:'Flamengo x Santos',tier:'pendente',stake_minor:100,payout_minor:0,ts:'2026-11-06T12:00:00Z'}], transactions:[{id:'seed',kind:'deposit',cash_minor:10000,bonus_minor:0,ts:'2026-11-06T12:00:00Z'}]},
       '/api/health': {status:'ok'},
+      '/api/catalog': {games:[
+        {game_id:'qa:dragon',title:'Dragão Dourado',provider:'demo_studio',category:'Slots'},
+        {game_id:'qa:flight',title:'Voo Rápido',provider:'other',category:'Crash'},
+      ]},
+      '/api/live': {active_players:0,active_games:[],latest_wins:[]},
+      '/api/trending': {hot:[],cold:[]},
+      '/api/tournaments': {boards:[]},
+      '/api/jackpot': {pool_minor:0},
     };
     await route.fulfill({status:path==='/api/betterauth/sign-in/social'?503:200,
       contentType:'application/json',body:JSON.stringify(responses[path] || {})});
@@ -83,4 +91,28 @@ for (const width of [1440,768,390,320]) test(`account history filters, wallet ac
   expect((await download).suggestedFilename()).toBe('candibet-historico.csv');
   await page.getByLabel('Resultado',{exact:true}).selectOption('settled');
   await expect(page.getByText('Nenhum registro corresponde aos filtros.')).toBeVisible();
+});
+
+
+test('catalog combines provider and title terms and resets provider filters on mobile', async ({ page }) => {
+  await page.setViewportSize({width:390,height:950});
+  await setup(page,{member:true});
+  await page.route('**/games/qa-*.svg', route => route.fulfill({status:204}));
+  await page.goto('/');
+  await page.getByRole('button',{name:'Cassino',exact:true}).first().click();
+
+  const search = page.getByRole('searchbox',{name:'Buscar no catálogo'});
+  const provider = page.getByRole('combobox',{name:'Provedor',exact:true});
+  const results = page.locator('#catalog-discovery').getByRole('status');
+  await search.fill('studio DRAGAO');
+  await expect(results).toHaveText('1 jogo encontrado');
+  await expect(page.locator('#lobby')).toContainText('Dragão Dourado');
+
+  await provider.selectOption('other');
+  await expect(results).toHaveText('0 jogos encontrados');
+  await page.getByRole('button',{name:'Limpar filtros'}).click();
+  await expect(provider).toHaveValue('Todos');
+  await expect(search).toHaveValue('');
+  await expect(results).toHaveText('2 jogos encontrados');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });

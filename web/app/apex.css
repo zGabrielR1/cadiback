@@ -629,20 +629,18 @@ body:has(.market-detail) .guest-login-card { display: none; }
 .casino-categories { margin-top: 20px; gap: 6px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; }
 .casino-categories .qlink { flex-shrink: 0; min-height: 44px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--mut); }
 .casino-categories .qlink.on { background: var(--acc-soft); color: var(--acc); border-color: var(--acc); }
-.casino-providers { margin-top: 4px; max-height: 144px; overflow-y: auto; padding: 8px 0 16px; border-bottom: 1px solid var(--line); }
-.casino-providers .qlink { min-height: 36px; border-radius: 6px; background: var(--card2); color: var(--mut); border: 1px solid var(--line); }
-.casino-providers .qlink.on { color: var(--ink); border-color: var(--ink); }
 .catalog-discovery { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; scroll-margin-top: 90px; margin: 20px 0 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .catalog-discovery label { display: grid; gap: 8px; color: var(--mut); font-size: 14px; }
 .catalog-search { flex: 1 1 220px; }
-.catalog-sort { flex: 0 1 190px; }
+.catalog-provider, .catalog-sort { flex: 1 1 150px; min-width: 0; }
 .catalog-discovery input, .catalog-discovery select { width: 100%; min-width: 0; min-height: 44px; margin: 0; background: var(--field); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.catalog-cache-note { grid-column: 1 / -1; margin: 0; }
 .catalog-discovery p { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--mut); font-variant-numeric: tabular-nums; }
 .game-launch:focus-visible .play-hover-btn { opacity: 1; }
 .gbody > b { display: block; line-height: 1.4; }
 @media (max-width: 600px) {
- .catalog-sort { flex: 1 1 160px; }
- .casino-providers { max-height: 108px; }
+ .catalog-search { flex-basis: 100%; }
+ .catalog-provider, .catalog-sort { flex-basis: 120px; }
 }
 @media (prefers-reduced-motion: reduce) {
  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

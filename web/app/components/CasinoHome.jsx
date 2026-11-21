@@ -249,15 +249,6 @@ export default function CasinoHome({
 
   const byId = useMemo(() => new Map(all.map((g) => [g.game_id, g])), [all]);
 
-  const providers = useMemo(() => {
-    const seen = [];
-    for (const g of all) {
-      const p = g.provider || "—";
-      if (!seen.includes(p)) seen.push(p);
-    }
-    return ["Todos", ...seen];
-  }, [all]);
-
   const lsRecents = useMemo(() => {
     // re-read on every category switch: picking the Recentes tab re-renders,
     // so plays from another view (or tab) surface without a full reload
@@ -304,17 +295,11 @@ export default function CasinoHome({
     return out;
   }, [recentGames, byId]);
 
-  const recentOrder = useMemo(
-    () => recentGames.map((g) => g.game_id),
-    [recentGames]
-  );
-
-  // how many of the recents are being served from this machine rather than
-  // from the catalog that just arrived
-  const cachedCount = useMemo(
-    () => recentGames.filter((g) => g.from_local_cache).length,
-    [recentGames]
-  );
+  const providerPool = category === "Recentes" ? playableRecent : all;
+  const providers = [...new Set([
+    ...providerPool.map(game => game.provider).filter(Boolean),
+    ...(provider === "Todos" ? [] : [provider]),
+  ])].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   const favIds = useMemo(() => {
     // re-read whenever the category changes OR a favorite is toggled in the
@@ -326,16 +311,15 @@ export default function CasinoHome({
     }
   }, [category, favTick]);
 
-  const searchTerm = normalizeCatalogSearch(query);
+  const searchTerms = normalizeCatalogSearch(query).split(" ").filter(Boolean);
 
-  // The search box and the provider chip apply to every tab, including the
-  // one served from the local cache — so they are separated from the
-  // category switch, which is what decides the pool in the first place.
   const matchesScope = (game) => {
     if (provider !== "Todos" && game.provider !== provider) return false;
-    return !searchTerm ||
-      normalizeCatalogSearch(game.title).includes(searchTerm) ||
-      normalizeCatalogSearch(game.provider).includes(searchTerm);
+    if (searchTerms.length === 0) return true;
+
+    const title = normalizeCatalogSearch(game.title);
+    const providerName = normalizeCatalogSearch(game.provider);
+    return searchTerms.every(term => title.includes(term) || providerName.includes(term));
   };
 
   const matchesCategory = (game, selectedCategory) => {
@@ -380,13 +364,12 @@ export default function CasinoHome({
     onQuery("");
   };
 
-  const ordered = sort === "name" ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")) : filtered;
-  const visible =
-    category === "Recentes" && sort === "default"
-      ? [...filtered].sort(
-          (a, b) => recentOrder.indexOf(a.game_id) - recentOrder.indexOf(b.game_id)
-        )
-      : ordered;
+  const visible = sort === "name"
+    ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"))
+    : filtered;
+  const cachedCount = category === "Recentes"
+    ? visible.filter(game => game.from_local_cache).length
+    : 0;
   const FEATURED_IDS = ["pp:gates-of-olympus", "spribe:aviator", "pp:sweet-bonanza", "pp:spaceman", "pp:sugar-rush", "pp:big-bass-bonanza"];
   const featured = (() => {
     const picked = all.filter((g) => FEATURED_IDS.includes(g.game_id));
@@ -463,20 +446,6 @@ export default function CasinoHome({
           </button>
         ))}
       </nav>
-      <div className="chips casino-providers" role="group" aria-label="Provedores">
-        {providers.map((p) => (
-          <button
-            key={p}
-            className={"qlink" + (provider === p ? " on" : "")}
-            aria-pressed={provider === p}
-            onClick={() => setProvider(p)}
-            style={{ fontSize: 11.5, textTransform: "capitalize" }}
-          >
-            {p === "Todos" ? "Todos os Provedores" : p.replace(/_/g, " ")}
-          </button>
-        ))}
-      </div>
-
       <div className="layout">
         <nav className="sidebar" aria-label="Categorias do catálogo">
           <div className="side-title">Categorias</div>
@@ -511,7 +480,7 @@ export default function CasinoHome({
               </div>
             </Section>
           ) : null}
-          {category === "Todos" && provider === "Todos" && !searchTerm && featured.length > 0 ? (
+          {category === "Todos" && provider === "Todos" && searchTerms.length === 0 && featured.length > 0 ? (
             <Section className="casino-catalog" title="Jogos em destaque" note="Uma seleção dos títulos disponíveis no catálogo.">
               <div className="rowscroll">
                 {featured.map((g) => (
@@ -531,6 +500,14 @@ export default function CasinoHome({
               <label className="catalog-search">Buscar no catálogo
                 <input type="search" placeholder="Nome do jogo ou provedor…" value={query || ""} onChange={e => onQuery(e.target.value)} />
               </label>
+              <label className="catalog-provider">Provedor
+                <select value={provider} onChange={e => setProvider(e.target.value)}>
+                  <option value="Todos">Todos os provedores</option>
+                  {providers.map(name => (
+                    <option key={name} value={name}>{name.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+              </label>
               <label className="catalog-sort">Ordenar por
                 <select value={sort} onChange={e => setSort(e.target.value)}>
                   <option value="default">{category === "Recentes" ? "Mais recentes" : "Ordem do catálogo"}</option>
@@ -548,14 +525,12 @@ export default function CasinoHome({
                 </Empty>
               ) : (
                 <>
-                  {/* say where the list came from: a row served from this
-                      machine's cache is not a fresh catalog row, and the
-                      player should not have to guess which one they got */}
-                  {category === "Recentes" && cachedCount > 0 ? (
-                    <div className="gmeta" style={{ marginBottom: 10 }}>
-                      {cachedCount} deste(s) veio do cache deste dispositivo
-                      {catalog ? "" : " — o catálogo ainda não respondeu"}.
-                    </div>
+                  {cachedCount > 0 ? (
+                    <p className="gmeta catalog-cache-note">
+                      {cachedCount === 1
+                        ? "1 jogo carregado do cache deste dispositivo."
+                        : `${cachedCount} jogos carregados do cache deste dispositivo.`}
+                    </p>
                   ) : null}
                   {visible.map((g) => (
                     <GameCard key={g.game_id} game={g} onPlay={onPlay} onDetails={onDetails} />
