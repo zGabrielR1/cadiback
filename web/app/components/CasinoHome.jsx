@@ -52,6 +52,16 @@ function tone(gameId) {
   return "t-neon";
 }
 
+function normalizeCatalogSearch(value) {
+  return (value || "")
+    .toLocaleLowerCase("pt-BR")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function Section({ title, note, action, onAction, className = "", children }) {
   return (
     <section className={"panel casino-section " + className}>
@@ -316,24 +326,20 @@ export default function CasinoHome({
     }
   }, [category, favTick]);
 
-  const recentIds = useMemo(() => new Set(recentOrder), [recentOrder]);
+  const searchTerm = normalizeCatalogSearch(query);
 
   // The search box and the provider chip apply to every tab, including the
   // one served from the local cache — so they are separated from the
   // category switch, which is what decides the pool in the first place.
   const matchesScope = (game) => {
-    if (query) {
-      const q = query.toLowerCase();
-      const matchTitle = (game.title || "").toLowerCase().includes(q);
-      const matchProvider = (game.provider || "").toLowerCase().includes(q);
-      if (!matchTitle && !matchProvider) return false;
-    }
-    if (provider && provider !== "Todos" && game.provider !== provider) return false;
-    return true;
+    if (provider !== "Todos" && game.provider !== provider) return false;
+    return !searchTerm ||
+      normalizeCatalogSearch(game.title).includes(searchTerm) ||
+      normalizeCatalogSearch(game.provider).includes(searchTerm);
   };
 
-  const matchesCategory = (game) => {
-    switch (category) {
+  const matchesCategory = (game, selectedCategory) => {
+    switch (selectedCategory) {
       case "Todos":
         return true;
       case "Slots":
@@ -355,23 +361,25 @@ export default function CasinoHome({
         return game.provider === "demo_studio" || game.category === "Originais";
       case "Promoções":
         return PROMO_GAME_IDS.includes(game.game_id);
-      case "Recentes":
-        return recentIds.has(game.game_id);
       case "Favoritos":
         return favIds.has(game.game_id);
       default:
-        return game.category === category;
+        return game.category === selectedCategory;
     }
   };
 
-  const matches = (game) => matchesScope(game) && matchesCategory(game);
+  const scopedGames = all.filter(matchesScope);
+  const filtered = category === "Recentes"
+    ? playableRecent.filter(matchesScope)
+    : scopedGames.filter((game) => matchesCategory(game, category));
 
-  const filtered =
-    // Recentes is served from the cache-merged list, so it is the only tab
-    // that can show a game the catalog has not delivered yet
-    category === "Recentes"
-      ? playableRecent.filter(matchesScope)
-      : all.filter(matches);
+  const clearFilters = () => {
+    setCategory("Todos");
+    setProvider("Todos");
+    setSort("default");
+    onQuery("");
+  };
+
   const ordered = sort === "name" ? [...filtered].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")) : filtered;
   const visible =
     category === "Recentes" && sort === "default"
@@ -395,8 +403,11 @@ export default function CasinoHome({
     if (target === "cash") onCash();
     else if (target === "account") onAccount();
     else {
-      const el = document.getElementById("lobby");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const el = document.getElementById("catalog-discovery");
+      if (el) {
+        el.focus({ preventScroll: true });
+        el.scrollIntoView({ block: "start" });
+      }
     }
   };
 
@@ -467,55 +478,23 @@ export default function CasinoHome({
       </div>
 
       <div className="layout">
-        <aside className="sidebar">
+        <nav className="sidebar" aria-label="Categorias do catálogo">
           <div className="side-title">Categorias</div>
           {CATEGORIES.map((c) => (
             <button
               key={c}
               className={"side-item" + (category === c ? " on" : "")}
+              aria-pressed={category === c}
               onClick={() => setCategory(c)}
               style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
             >
               <span>{c}</span>
               <span style={{ color: "var(--mut)", fontSize: 11 }}>
-                {all.filter((g) => {
-                  if (provider && provider !== "Todos" && g.provider !== provider) return false;
-                  switch (c) {
-                    case "Todos":
-                      return true;
-                    case "Slots":
-                      return g.category === "Slots";
-                    case "Crash":
-                      return g.category === "Crash";
-                    case "Mesa":
-                      return g.category === "Mesa";
-                    case "Ao vivo":
-                      return g.category === "Ao vivo";
-                    case "Jackpots":
-                      return (
-                        g.category === "Slots" ||
-                        g.game_id.includes("olympus") ||
-                        g.game_id.includes("bonanza") ||
-                        g.game_id.includes("wolf")
-                      );
-                    case "Originais":
-                      return g.provider === "demo_studio" || g.category === "Originais";
-                    case "Promoções":
-                      return PROMO_GAME_IDS.includes(g.game_id);
-                    default:
-                      return g.category === c;
-                  }
-                }).length}
+                {scopedGames.filter((game) => matchesCategory(game, c)).length}
               </span>
             </button>
           ))}
-          <div className="side-title" style={{ marginTop: 18 }}>Buscar Jogo</div>
-          <input
-            placeholder="Nome do jogo ou provedor…"
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-          />
-        </aside>
+        </nav>
 
         <div className="main casino-content">
           {category === "Promoções" ? (
@@ -532,7 +511,7 @@ export default function CasinoHome({
               </div>
             </Section>
           ) : null}
-          {category === "Todos" && provider === "Todos" && !query && featured.length > 0 ? (
+          {category === "Todos" && provider === "Todos" && !searchTerm && featured.length > 0 ? (
             <Section className="casino-catalog" title="Jogos em destaque" note="Uma seleção dos títulos disponíveis no catálogo.">
               <div className="rowscroll">
                 {featured.map((g) => (
@@ -545,16 +524,10 @@ export default function CasinoHome({
           <Section
             className="casino-catalog"
             title={category === "Todos" ? "Todos os Jogos" : category}
-            note={`${visible.length} jogo(s) disponível(is) para jogar diretamente`}
             action="Limpar filtros"
-            onAction={() => {
-              setCategory("Todos");
-              setProvider("Todos");
-              setSort("default");
-              onQuery("");
-            }}
+            onAction={clearFilters}
           >
-            <div className="catalog-discovery">
+            <div className="catalog-discovery" id="catalog-discovery" tabIndex={-1}>
               <label className="catalog-search">Buscar no catálogo
                 <input type="search" placeholder="Nome do jogo ou provedor…" value={query || ""} onChange={e => onQuery(e.target.value)} />
               </label>
@@ -569,9 +542,9 @@ export default function CasinoHome({
             <div id="lobby">
               {visible.length === 0 ? (
                 <Empty>
-                  {category === "Recentes"
+                  {category === "Recentes" && playableRecent.length === 0
                     ? "Você ainda não abriu nenhum jogo neste dispositivo — jogue um e ele fica aqui."
-                    : `Nenhum jogo encontrado para “${query || category}”.`}
+                    : "Nenhum jogo corresponde aos filtros selecionados."}
                 </Empty>
               ) : (
                 <>
